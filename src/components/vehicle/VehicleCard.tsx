@@ -26,7 +26,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           <div className="mt-4 pt-4 border-t border-border/50">
             <p className="text-xs text-muted-foreground mb-2">Zimmetli Personel</p>
             <div className="flex flex-wrap gap-2">
-                {vehicle.aktifPersonel.map(person => (
+                {((vehicle as any).aktifPersonel || (vehicle as any).aktif_personel || []).map((person: string) => (
                 <Badge key={person} variant="outline" className="text-[10px] bg-muted/50">{person}</Badge>
                 ))}
             </div>
