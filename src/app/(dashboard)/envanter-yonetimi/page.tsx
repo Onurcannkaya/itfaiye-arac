@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { QRCodeSVG } from "qrcode.react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
@@ -284,41 +285,55 @@ export default function EnvanterYonetimiPage() {
       </div>
 
       {/* --- A4 Print Düzeni (Toplu Izgara - Grid) --- */}
-      <div className="hidden print:block w-full text-black bg-white -m-8">
-         <div className="flex flex-col w-full px-8 pt-8">
-            <h1 className="text-3xl font-black mb-1">ETİKET DİZİNİ</h1>
-            <p className="text-xl font-bold border-b-4 border-black pb-4 mb-8">Araç: {selectedPlaka}</p>
-            
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
-              {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
-                <div key={comp} className="border-4 border-black p-6 flex flex-col items-center justify-center rounded-2xl page-break-inside-avoid shadow-sm text-center">
-                   <h2 className="text-2xl font-black bg-black text-white px-4 py-1.5 rounded-full mb-6 whitespace-nowrap">
-                      {selectedPlaka}
-                   </h2>
-                   
-                   <div className="bg-white p-2">
-                     <QRCodeSVG value={JSON.stringify({p: selectedPlaka, c: comp})} size={180} level={"H"} />
-                   </div>
-                   
-                   <div className="mt-5 border-t-2 border-black w-full pt-3">
-                     <h3 className="text-xl font-bold uppercase tracking-widest">{COMPARTMENT_NAMES[comp] || comp}</h3>
-                     <p className="text-[10px] uppercase font-mono mt-2 tracking-widest text-black/60 font-bold">Sivas İtfaiyesİ</p>
-                   </div>
-                </div>
-              ))}
-            </div>
-         </div>
-      </div>
+      {typeof document !== 'undefined' && createPortal(
+        <div id="print-area" className="hidden bg-white text-black p-8">
+           <div className="flex flex-col w-full">
+              <h1 className="text-4xl font-black mb-2">ETİKET DİZİNİ</h1>
+              <p className="text-2xl font-bold border-b-4 border-black pb-4 mb-8">Araç: {selectedPlaka}</p>
+              
+              <div className="grid grid-cols-2 gap-8 auto-rows-max">
+                {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
+                  <div key={comp} className="border-[6px] border-black p-8 flex flex-col items-center justify-center rounded-3xl page-break-inside-avoid shadow-sm text-center">
+                     <h2 className="text-3xl font-black bg-black text-white px-6 py-2 rounded-full mb-8 whitespace-nowrap">
+                        {selectedPlaka}
+                     </h2>
+                     
+                     <div className="bg-white p-2">
+                       <QRCodeSVG value={JSON.stringify({p: selectedPlaka, c: comp})} size={220} level={"H"} />
+                     </div>
+                     
+                     <div className="mt-8 border-t-4 border-black w-full pt-4">
+                       <h3 className="text-2xl font-black uppercase tracking-widest leading-normal">{COMPARTMENT_NAMES[comp] || comp}</h3>
+                       <p className="text-xs uppercase font-mono mt-3 tracking-widest text-black/80 font-bold">Sivas İtfaiyesİ</p>
+                     </div>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </div>,
+        document.body
+      )}
       
       {/* Sadece Yazdırma Esnasında Görünen A4 CSS Rules */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          body * { visibility: hidden; }
-          .print\\:block, .print\\:block * { visibility: visible; }
-          .print\\:block { position: absolute; left: 0; top: 0; width: 100%; }
-          .print\\:hidden { display: none !important; }
-          @page { size: auto; margin: 0mm; }
+          /* Bütün normal DOM elementlerini kapat */
+          body > *:not(#print-area) {
+            display: none !important;
+          }
+          /* Print portala tam imtiyaz ver */
+          #print-area {
+            display: block !important;
+            width: 100%;
+            height: auto;
+            position: relative;
+            background: white !important;
+          }
+          @page { size: A4; margin: 10mm; }
           .page-break-inside-avoid { break-inside: avoid; }
+          body {
+            background: white;
+          }
         }
       `}} />
 
