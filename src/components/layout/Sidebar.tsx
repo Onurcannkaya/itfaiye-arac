@@ -30,9 +30,9 @@ export function Sidebar() {
           <ScanLine size={20} />
           <span>Barkod Tarayıcı</span>
         </Link>
-        <Link href="/qr-olustur" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+        <Link href="/envanter-yonetimi" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
           <ScanLine size={20} />
-          <span>QR Etiket Basımı</span>
+          <span>QR & Envanter Yön.</span>
         </Link>
         <Link href="/gorevler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
           <FileText size={20} />
