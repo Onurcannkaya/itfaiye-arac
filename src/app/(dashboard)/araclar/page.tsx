@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { VehicleCard } from "@/components/vehicle/VehicleCard"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function VehiclesPage() {
   const supabase = await createClient()
   const { data } = await supabase.from('vehicles').select('*')

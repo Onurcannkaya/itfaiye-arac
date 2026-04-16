@@ -1,5 +1,6 @@
 import { Bell } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export function Topbar() {
   return (
@@ -14,15 +15,15 @@ export function Topbar() {
           <Bell size={20} />
           <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-danger border-2 border-surface"></span>
         </button>
-        <div className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3">
+        <Link href="/login" title="Çıkış Yap" className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3 hover:bg-muted cursor-pointer transition-colors">
           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
             ÖÇ
           </div>
           <div className="hidden md:block text-sm pr-2">
             <p className="font-semibold leading-none text-foreground">Ömer Çakmak</p>
-            <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide">Vardiya Çavuşu</p>
+            <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide">Vardiya Çavuşu (Çıkış)</p>
           </div>
-        </div>
+        </Link>
       </div>
     </header>
   )
