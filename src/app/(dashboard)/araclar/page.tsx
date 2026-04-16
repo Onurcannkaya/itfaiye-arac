@@ -1,13 +1,21 @@
-import { createClient } from "@/lib/supabase/server"
+"use client"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { VehicleCard } from "@/components/vehicle/VehicleCard"
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export default function VehiclesPage() {
+  const [vehicles, setVehicles] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function VehiclesPage() {
-  const supabase = await createClient()
-  const { data } = await supabase.from('vehicles').select('*')
-  const vehicles = data || []
+  useEffect(() => {
+    async function fetchVehicles() {
+      const supabase = createClient()
+      const { data } = await supabase.from('vehicles').select('*')
+      setVehicles(data || [])
+      setLoading(false)
+    }
+    fetchVehicles()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -16,11 +24,15 @@ export default async function VehiclesPage() {
         <p className="text-muted-foreground mt-1 text-sm">İstasyondaki araçların listesi ve anlık envanter durumları.</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {vehicles.map(v => (
-          <VehicleCard key={v.plaka} vehicle={v} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="p-8 text-center text-muted-foreground">Araçlar yükleniyor...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {vehicles.map(v => (
+            <VehicleCard key={v.plaka} vehicle={v} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

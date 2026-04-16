@@ -12,8 +12,8 @@ type FlatItem = {
   internalId: string;
   bolme: string;
   id: string; // The one from bolmeler (usually numeric or uuid but here it comes from JSON)
-  isim: string;
-  miktar: number;
+  malzeme: string;
+  adet: number;
   durum: string;
 }
 
@@ -27,6 +27,7 @@ export default function EnvanterYonetimiPage() {
   // UI states
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [printFilter, setPrintFilter] = useState("all")
 
   // Fetch initial data
   useEffect(() => {
@@ -78,8 +79,8 @@ export default function EnvanterYonetimiPage() {
         internalId: Math.random().toString(36).substring(7),
         id: Math.floor(Math.random() * 100000).toString(),
         bolme: Object.keys(COMPARTMENT_NAMES)[0],
-        isim: "",
-        miktar: 1,
+        malzeme: "",
+        adet: 1,
         durum: "Tam"
       }
     ])
@@ -97,14 +98,14 @@ export default function EnvanterYonetimiPage() {
     const newBolmeler: Record<string, any[]> = {}
     
     inventory.forEach(item => {
-      if (!item.isim || item.isim.trim() === "") return; // Skip empty items
+      if (!item.malzeme || item.malzeme.trim() === "") return; // Skip empty items
       
       if (!newBolmeler[item.bolme]) newBolmeler[item.bolme] = []
       
       newBolmeler[item.bolme].push({
         id: item.id,
-        isim: item.isim,
-        miktar: Number(item.miktar),
+        malzeme: item.malzeme,
+        adet: Number(item.adet),
         durum: item.durum
       })
     })
@@ -142,10 +143,22 @@ export default function EnvanterYonetimiPage() {
           <p className="text-muted-foreground mt-1 text-sm">Araç malzemelerini canlı düzenleyin, sistem QR etiketlerini toplu şekilde yazdırın.</p>
         </div>
         
-        <Button onClick={handlePrint} variant="default" className="w-full sm:w-auto h-11 shrink-0 font-bold bg-primary hover:bg-primary/90">
-          <Printer className="w-4 h-4 mr-2" />
-          Toplu QR Bölme Etiketleri Yazdır
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select 
+            value={printFilter} 
+            onChange={e => setPrintFilter(e.target.value)} 
+            className="h-11 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
+          >
+            <option value="all">Tüm Bölmeler</option>
+            {distinctCompartments.map(c => (
+               <option key={c} value={c}>{COMPARTMENT_NAMES[c] || c}</option>
+            ))}
+          </select>
+          <Button onClick={handlePrint} variant="default" className="w-full sm:w-auto h-11 shrink-0 font-bold bg-primary hover:bg-primary/90">
+            <Printer className="w-4 h-4 mr-2" />
+            Etiketleri Yazdır
+          </Button>
+        </div>
       </div>
 
       <div className="print:hidden space-y-6">
@@ -223,8 +236,8 @@ export default function EnvanterYonetimiPage() {
                       <td className="px-5 py-3 align-top">
                         <Input 
                           placeholder="Malzeme adı..."
-                          value={item.isim}
-                          onChange={(e) => handleFieldChange(item.internalId, "isim", e.target.value)}
+                          value={item.malzeme}
+                          onChange={(e) => handleFieldChange(item.internalId, "malzeme", e.target.value)}
                           className="bg-background"
                         />
                       </td>
@@ -232,8 +245,8 @@ export default function EnvanterYonetimiPage() {
                         <Input 
                           type="number"
                           min="1"
-                          value={item.miktar}
-                          onChange={(e) => handleFieldChange(item.internalId, "miktar", e.target.value)}
+                          value={item.adet}
+                          onChange={(e) => handleFieldChange(item.internalId, "adet", e.target.value)}
                           className="bg-background"
                         />
                       </td>
@@ -277,7 +290,7 @@ export default function EnvanterYonetimiPage() {
             <p className="text-xl font-bold border-b-4 border-black pb-4 mb-8">Araç: {selectedPlaka}</p>
             
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
-              {printCompartments.map(comp => (
+              {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
                 <div key={comp} className="border-4 border-black p-6 flex flex-col items-center justify-center rounded-2xl page-break-inside-avoid shadow-sm text-center">
                    <h2 className="text-2xl font-black bg-black text-white px-4 py-1.5 rounded-full mb-6 whitespace-nowrap">
                       {selectedPlaka}
