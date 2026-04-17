@@ -69,7 +69,7 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col gap-0 p-0 border-primary/20">
+      <DialogContent className="max-w-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col gap-0 p-0 border-primary/20 mb-[80px] sm:mb-0">
         <DialogHeader className="p-5 pb-4 border-b border-border bg-muted/30">
           <DialogTitle className="text-xl flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-primary" />

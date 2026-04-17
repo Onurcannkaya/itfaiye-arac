@@ -14,7 +14,8 @@ export function MobileNav() {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-surface/90 backdrop-blur-md flex items-center justify-between h-[68px] pb-safe z-50 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-surface/95 backdrop-blur-md flex items-center justify-between z-50 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]"
+         style={{ height: 'calc(68px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <Link 
         href="/" 
         className={cn(

@@ -297,7 +297,8 @@ export default function EnvanterYonetimiPage() {
                 </tbody>
              </table>
           </CardContent>
-          <div className="p-4 border-t border-border/50 bg-surface flex justify-end items-center gap-3 rounded-b-lg">
+          <div className="p-4 border-t border-border/50 bg-surface/95 backdrop-blur-sm flex justify-end items-center gap-3 rounded-b-lg md:relative sticky bottom-0 z-40"
+               style={{ bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))' }}>
              {saveSuccess && <span className="text-sm font-bold text-success animate-in fade-in mr-2 flex items-center gap-1"> Başarıyla kaydedildi!</span>}
              <Button onClick={saveInventoryToDB} disabled={isSaving} className="font-bold">
                {isSaving ? "Kaydediliyor..." : <><Save className="w-4 h-4 mr-2"/> Supabase'e Kaydet</>}
