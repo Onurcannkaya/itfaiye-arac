@@ -55,9 +55,13 @@ function LoginForm() {
   return (
     <Card className="w-full border-primary/20 shadow-2xl shadow-primary/5 backdrop-blur-sm">
       <CardHeader className="text-center pb-2">
-        <div className="flex justify-center items-center gap-4 mb-4">
-          <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={64} height={64} className="object-contain" />
-          <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={64} height={64} className="object-contain" />
+        <div className="flex justify-center items-center gap-5 mb-4">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border/50 bg-white flex items-center justify-center shrink-0 shadow-lg">
+            <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={56} height={56} className="object-contain" />
+          </div>
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border/50 bg-white flex items-center justify-center shrink-0 shadow-lg">
+            <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={56} height={56} className="object-contain" />
+          </div>
         </div>
         <CardTitle className="text-2xl">Sivas İtfaiyesi</CardTitle>
         <p className="text-sm text-muted-foreground mt-2">Araç ve Envanter Yönetim Portalı</p>
@@ -89,7 +93,7 @@ function LoginForm() {
                   required
                   className="font-mono tracking-wider"
               />
-              <p className="text-[10px] text-muted-foreground">Demo: SB5801 — SB5812 arası kullanabilirsiniz.</p>
+              <p className="text-[10px] text-muted-foreground">Demo: SB5801 — SB5830 arası kullanabilirsiniz.</p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Parola</label>
