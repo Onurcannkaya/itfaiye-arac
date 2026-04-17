@@ -130,7 +130,25 @@ export default function EnvanterYonetimiPage() {
   }
 
   const handlePrint = () => {
-    window.print()
+    // Get the print area div
+    const printArea = document.getElementById('print-area-qr')
+    if (!printArea) return
+
+    // Clone the print area and append directly to body as a top-level child
+    const clone = printArea.cloneNode(true) as HTMLElement
+    clone.className = 'print-area-container'
+    clone.id = 'print-area-live'
+    document.body.appendChild(clone)
+
+    // Wait for QR SVGs to fully render, then print
+    setTimeout(() => {
+      window.print()
+      // Remove after print dialog closes
+      setTimeout(() => {
+        const live = document.getElementById('print-area-live')
+        if (live) document.body.removeChild(live)
+      }, 500)
+    }, 400)
   }
 
   // Find unique compartments present in the inventory to generate QR codes
@@ -288,15 +306,15 @@ export default function EnvanterYonetimiPage() {
         </Card>
       </div>
 
-      {/* --- A4 Print Düzeni (Ekranda gizli, yazdırırken görünür) --- */}
-      <div id="print-area" className="print-only">
-         <div className="flex flex-col w-full">
+      {/* --- Hidden QR Source (never displayed, cloned to body on print) --- */}
+      <div id="print-area-qr" style={{ display: 'none' }}>
+         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
             <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem', color: 'black' }}>ETİKET DİZİNİ</h1>
             <p style={{ fontSize: '1.25rem', fontWeight: 700, borderBottom: '4px solid black', paddingBottom: '1rem', marginBottom: '2rem', color: 'black' }}>Araç: {selectedPlaka}</p>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
               {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
-                <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '1.5rem', textAlign: 'center', breakInside: 'avoid' }}>
+                <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '1.5rem', textAlign: 'center', breakInside: 'avoid' as any, pageBreakInside: 'avoid' }}>
                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, background: 'black', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', marginBottom: '2rem', whiteSpace: 'nowrap' }}>
                       {selectedPlaka}
                    </h2>
@@ -314,31 +332,6 @@ export default function EnvanterYonetimiPage() {
             </div>
          </div>
       </div>
-      
-      {/* Print/Screen CSS */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .print-only {
-          display: none !important;
-        }
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #print-area, #print-area * {
-            visibility: visible !important;
-          }
-          #print-area {
-            display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            background: white !important;
-            padding: 20mm;
-          }
-          @page { size: A4; margin: 10mm; }
-        }
-      `}} />
 
     </div>
   )
