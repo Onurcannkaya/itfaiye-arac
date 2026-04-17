@@ -30,8 +30,8 @@ export async function middleware(request: NextRequest) {
     const roleCookie = request.cookies.get("sivas-auth-role");
     const role = roleCookie?.value || "";
 
-    if (role !== "Admin" && role !== "Editor") {
-      // Redirect unauthorized users to dashboard with a flag
+    if (role !== "Admin" && role !== "Editor" && role !== "Shift_Leader") {
+      // Redirect unauthorized users (User role) to dashboard
       const dashUrl = new URL("/", request.url);
       dashUrl.searchParams.set("unauthorized", "1");
       return NextResponse.redirect(dashUrl);

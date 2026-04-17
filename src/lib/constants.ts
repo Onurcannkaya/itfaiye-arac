@@ -1,4 +1,8 @@
-export const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sivas-itfaiye.vercel.app";
+// Site URL — uses NEXT_PUBLIC_SITE_URL env var, falls back to Vercel production URL
+// For QR codes this MUST be the canonical production domain, not a deployment-specific URL
+export const APP_BASE_URL = 
+  process.env.NEXT_PUBLIC_SITE_URL || 
+  (typeof window !== 'undefined' ? window.location.origin : "https://itfaiye-arac.vercel.app");
 
 export const COMPARTMENT_NAMES: Record<string, string> = {
   kabin_ici: "Kabin İçi",
