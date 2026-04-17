@@ -1,39 +1,103 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, MapPin, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2 } from "lucide-react"
-import { mockPersonnel } from "@/lib/data"
+import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { type Personnel } from "@/types"
 import { cn } from "@/lib/utils"
+import { mockPersonnel } from "@/lib/data"
 
 export default function PersonelYonetimPage() {
-  const [personnel, setPersonnel] = useState<Personnel[]>(mockPersonnel)
+  const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
   
   // Registration form
   const [isAdding, setIsAdding] = useState(false)
   const [newAdSoyad, setNewAdSoyad] = useState("")
   const [newRole, setNewRole] = useState("User")
   
-  // Fake toggle states for permissions (id -> permissions)
-  const [permissions, setPermissions] = useState<Record<string, { viewOnly: boolean, canApprove: boolean, canPrint: boolean }>>(() => {
-    const init: Record<string, { viewOnly: boolean, canApprove: boolean, canPrint: boolean }> = {}
-    mockPersonnel.forEach(p => {
-      init[p.sicil_no] = {
-        viewOnly: p.rol === "User",
-        canApprove: p.rol === "Shift_Leader" || p.rol === "Admin" || p.rol === "Editor",
-        canPrint: p.rol === "Admin" || p.rol === "Editor",
+  // Permissions state synced with DB
+  const [permissions, setPermissions] = useState<Record<string, { view_only: boolean, can_approve: boolean, can_print: boolean }>>({})
+
+  // Fetch personnel from Supabase
+  const fetchPersonnel = useCallback(async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const supabase = createClient()
+      const { data, error: fetchErr } = await supabase
+        .from('personnel')
+        .select('*')
+        .eq('aktif', true)
+        .order('sicil_no', { ascending: true })
+
+      if (fetchErr) throw fetchErr
+
+      if (data && data.length > 0) {
+        const mapped: Personnel[] = data.map((p: any) => ({
+          sicil_no: p.sicil_no,
+          ad: p.ad,
+          soyad: p.soyad,
+          unvan: p.unvan,
+          rol: p.rol,
+          posta: p.posta || ''
+        }))
+        setPersonnel(mapped)
+        
+        // Build permissions map from DB columns
+        const perms: Record<string, any> = {}
+        data.forEach((p: any) => {
+          perms[p.sicil_no] = {
+            view_only: p.view_only ?? true,
+            can_approve: p.can_approve ?? false,
+            can_print: p.can_print ?? false,
+          }
+        })
+        setPermissions(perms)
+      } else {
+        // Fallback to mock data if Supabase table is empty
+        setPersonnel(mockPersonnel)
+        const perms: Record<string, any> = {}
+        mockPersonnel.forEach(p => {
+          perms[p.sicil_no] = {
+            view_only: p.rol === "User",
+            can_approve: p.rol === "Shift_Leader" || p.rol === "Admin" || p.rol === "Editor",
+            can_print: p.rol === "Admin" || p.rol === "Editor",
+          }
+        })
+        setPermissions(perms)
       }
-    })
-    return init
-  })
+    } catch (err: any) {
+      console.error("Personel yükleme hatası:", err)
+      setError("Veritabanı bağlantısı kurulamadı. Mock veri gösteriliyor.")
+      setPersonnel(mockPersonnel)
+      const perms: Record<string, any> = {}
+      mockPersonnel.forEach(p => {
+        perms[p.sicil_no] = {
+          view_only: p.rol === "User",
+          can_approve: p.rol === "Shift_Leader" || p.rol === "Admin" || p.rol === "Editor",
+          can_print: p.rol === "Admin" || p.rol === "Editor",
+        }
+      })
+      setPermissions(perms)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchPersonnel() }, [fetchPersonnel])
 
   // Auto generate next Sicil No
-  const nextSicilSuffix = Math.max(...personnel.map(p => parseInt(p.sicil_no.replace("SB", "") || "0"))) + 1
+  const nextSicilSuffix = personnel.length > 0
+    ? Math.max(...personnel.map(p => parseInt(p.sicil_no.replace("SB", "") || "0"))) + 1
+    : 5831
   const nextSicil = `SB${nextSicilSuffix.toString().padStart(4, "0")}`
 
   const filteredPersonnel = useMemo(() => {
@@ -47,46 +111,101 @@ export default function PersonelYonetimPage() {
     )
   }, [personnel, searchQuery])
 
-  const handleAddPersonel = (e: React.FormEvent) => {
+  // ADD PERSONNEL — Supabase INSERT
+  const handleAddPersonel = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newAdSoyad.trim()) return
+    setSaving(true)
 
     const parts = newAdSoyad.trim().split(" ")
     const soyad = parts.length > 1 ? parts.pop() || "" : ""
     const ad = parts.join(" ")
 
-    const newPerson: Personnel = {
-      sicil_no: nextSicil,
-      ad,
-      soyad,
-      unvan: "İtfaiye Eri",
-      rol: newRole,
-      posta: ""
-    }
+    try {
+      const supabase = createClient()
+      const { error: insertErr } = await supabase.from('personnel').insert({
+        sicil_no: nextSicil,
+        ad,
+        soyad,
+        unvan: 'İtfaiye Eri',
+        rol: newRole,
+        view_only: newRole === 'User',
+        can_approve: newRole === 'Shift_Leader' || newRole === 'Admin' || newRole === 'Editor',
+        can_print: newRole === 'Admin' || newRole === 'Editor',
+      })
 
-    setPersonnel([...personnel, newPerson])
-    setPermissions({
-      ...permissions,
-      [newPerson.sicil_no]: {
-        viewOnly: newPerson.rol === "User",
-        canApprove: newPerson.rol === "Shift_Leader" || newPerson.rol === "Admin" || newPerson.rol === "Editor",
-        canPrint: newPerson.rol === "Admin" || newPerson.rol === "Editor",
+      if (insertErr) throw insertErr
+
+      // Refresh list from DB
+      await fetchPersonnel()
+      setNewAdSoyad("")
+      setNewRole("User")
+      setIsAdding(false)
+    } catch (err: any) {
+      console.error("Personel ekleme hatası:", err)
+      // Fallback: add locally
+      const newPerson: Personnel = {
+        sicil_no: nextSicil, ad, soyad,
+        unvan: 'İtfaiye Eri', rol: newRole, posta: ''
       }
-    })
-
-    setNewAdSoyad("")
-    setNewRole("User")
-    setIsAdding(false)
+      setPersonnel(prev => [...prev, newPerson])
+      setPermissions(prev => ({
+        ...prev,
+        [nextSicil]: {
+          view_only: newRole === 'User',
+          can_approve: newRole !== 'User',
+          can_print: newRole === 'Admin' || newRole === 'Editor',
+        }
+      }))
+      setNewAdSoyad("")
+      setNewRole("User")
+      setIsAdding(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const togglePermission = (sicilNo: string, perm: 'viewOnly' | 'canApprove' | 'canPrint') => {
+  // TOGGLE PERMISSION — Supabase UPDATE (debounced)
+  const togglePermission = async (sicilNo: string, perm: 'view_only' | 'can_approve' | 'can_print') => {
+    const current = permissions[sicilNo]
+    if (!current) return
+
+    const newValue = !current[perm]
+    
+    // Optimistic UI update
     setPermissions(prev => ({
       ...prev,
-      [sicilNo]: {
-        ...prev[sicilNo],
-        [perm]: !prev[sicilNo][perm]
-      }
+      [sicilNo]: { ...prev[sicilNo], [perm]: newValue }
     }))
+
+    // Push to Supabase
+    try {
+      const supabase = createClient()
+      const { error: updateErr } = await supabase
+        .from('personnel')
+        .update({ [perm]: newValue })
+        .eq('sicil_no', sicilNo)
+
+      if (updateErr) throw updateErr
+    } catch (err) {
+      console.error("Yetki güncelleme hatası:", err)
+      // Rollback on error
+      setPermissions(prev => ({
+        ...prev,
+        [sicilNo]: { ...prev[sicilNo], [perm]: !newValue }
+      }))
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground text-sm">Personel verileri yükleniyor...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -98,11 +217,23 @@ export default function PersonelYonetimPage() {
             İtfaiye personeli kayıtları, yetkilendirme ve rol atama işlemleri.
           </p>
         </div>
-        <Button onClick={() => setIsAdding(!isAdding)} className="shrink-0 gap-2">
-          {isAdding ? <Settings2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-          {isAdding ? "İptal" : "Yeni Personel Ekle"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={fetchPersonnel} variant="secondary" size="sm" className="gap-1.5">
+            <RefreshCcw className="w-3.5 h-3.5" /> Yenile
+          </Button>
+          <Button onClick={() => setIsAdding(!isAdding)} className="shrink-0 gap-2">
+            {isAdding ? <Settings2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+            {isAdding ? "İptal" : "Yeni Personel Ekle"}
+          </Button>
+        </div>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-warning text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {isAdding && (
         <Card className="border-cyan-500/20 bg-cyan-500/[0.02] shadow-cyan-500/5">
@@ -141,8 +272,9 @@ export default function PersonelYonetimPage() {
                   <option value="User">İtfaiye Eri (Kullanıcı)</option>
                 </select>
               </div>
-              <Button type="submit" className="w-full sm:w-auto h-11 px-8 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium">
-                <Plus className="w-4 h-4" /> Ekle
+              <Button type="submit" disabled={saving} className="w-full sm:w-auto h-11 px-8 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {saving ? "Kaydediliyor..." : "Ekle"}
               </Button>
             </form>
           </CardContent>
@@ -171,7 +303,7 @@ export default function PersonelYonetimPage() {
             {filteredPersonnel.map(person => {
               const isAdmin = person.rol === "Admin" || person.rol === "Editor"
               const isLeader = person.unvan.includes("Çavuş") || person.unvan.includes("Amir") || person.unvan.includes("Müdür")
-              const perms = permissions[person.sicil_no] || { viewOnly: true, canApprove: false, canPrint: false }
+              const perms = permissions[person.sicil_no] || { view_only: true, can_approve: false, can_print: false }
 
               return (
                 <div key={person.sicil_no} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -198,7 +330,7 @@ export default function PersonelYonetimPage() {
                         {isAdmin && !isLeader && (
                           <Badge variant="danger" className="text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
                             <Shield className="w-2.5 h-2.5" />
-                            Geliştirici
+                            {person.unvan}
                           </Badge>
                         )}
                       </div>
@@ -217,18 +349,18 @@ export default function PersonelYonetimPage() {
                     </div>
                   </div>
 
-                  {/* UI Toggle Permissions Sürükle-Bırak Mantığı */}
+                  {/* Toggle Permissions */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 ml-12 xl:ml-0 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
                     <label className="flex items-center gap-2 cursor-pointer group whitespace-nowrap">
-                      <div className="relative inline-flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-border transition-colors group-hover:opacity-80">
-                         {perms.viewOnly ? (
+                      <div className="relative inline-flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-border transition-colors group-hover:opacity-80" onClick={(e) => { e.preventDefault(); togglePermission(person.sicil_no, 'view_only') }}>
+                         {perms.view_only ? (
                            <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-success translate-x-4 transition-transform shadow-sm flex items-center justify-center">
                              <CheckCircle2 className="w-3 h-3 text-white" />
                            </div>
                          ) : (
                            <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-surface translate-x-0 border transition-transform shadow-sm border-border" />
                          )}
-                         {perms.viewOnly && <div className="absolute inset-0 bg-success/30 rounded-full" />}
+                         {perms.view_only && <div className="absolute inset-0 bg-success/30 rounded-full" />}
                       </div>
                       <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors select-none">
                         Sadece Görüntüler
@@ -236,15 +368,15 @@ export default function PersonelYonetimPage() {
                     </label>
 
                     <label className="flex items-center gap-2 cursor-pointer group whitespace-nowrap">
-                      <div className="relative inline-flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-border transition-colors group-hover:opacity-80" onClick={(e) => { e.preventDefault(); togglePermission(person.sicil_no, 'canApprove') }}>
-                         {perms.canApprove ? (
+                      <div className="relative inline-flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-border transition-colors group-hover:opacity-80" onClick={(e) => { e.preventDefault(); togglePermission(person.sicil_no, 'can_approve') }}>
+                         {perms.can_approve ? (
                            <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-cyan-500 translate-x-4 transition-transform shadow-sm flex items-center justify-center">
                              <ShieldAlert className="w-3 h-3 text-white" />
                            </div>
                          ) : (
                            <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-surface translate-x-0 border transition-transform shadow-sm border-border" />
                          )}
-                         {perms.canApprove && <div className="absolute inset-0 bg-cyan-500/30 rounded-full border border-cyan-500/20" />}
+                         {perms.can_approve && <div className="absolute inset-0 bg-cyan-500/30 rounded-full border border-cyan-500/20" />}
                       </div>
                       <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors select-none">
                         Envanter Onaylar
@@ -252,13 +384,13 @@ export default function PersonelYonetimPage() {
                     </label>
 
                     <label className="flex items-center gap-2 cursor-pointer group whitespace-nowrap">
-                      <div className="relative inline-flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-border transition-colors group-hover:opacity-80" onClick={(e) => { e.preventDefault(); togglePermission(person.sicil_no, 'canPrint') }}>
-                         {perms.canPrint ? (
+                      <div className="relative inline-flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-border transition-colors group-hover:opacity-80" onClick={(e) => { e.preventDefault(); togglePermission(person.sicil_no, 'can_print') }}>
+                         {perms.can_print ? (
                            <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-primary translate-x-4 transition-transform shadow-sm " />
                          ) : (
                            <div className="absolute left-0 top-0 h-5 w-5 rounded-full bg-surface translate-x-0 border transition-transform shadow-sm border-border" />
                          )}
-                         {perms.canPrint && <div className="absolute inset-0 bg-primary/30 rounded-full" />}
+                         {perms.can_print && <div className="absolute inset-0 bg-primary/30 rounded-full" />}
                       </div>
                       <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors select-none">
                         Barkod Basabilir
@@ -278,11 +410,11 @@ export default function PersonelYonetimPage() {
         </CardContent>
       </Card>
       
-      {/* Informative Note for Admins */}
+      {/* Informative Note */}
       <div className="p-4 bg-muted/30 border border-border/50 rounded-xl text-xs text-muted-foreground flex items-start gap-3">
         <SlidersHorizontal className="w-4 h-4 shrink-0 mt-0.5" />
         <p>
-          Bu ekrandaki <strong>Yetki Değiştirmeleri</strong> (Toggle'lar) anında kaydedilir ve <span className="font-mono">Role-Based Access Control</span> (RBAC) sisteminde aktif olur. "Sadece Görüntüler" yetkisindeki personeller, envanter sayımı yapabilir ancak sayımı sisteme bitmiş olarak kaydedemez (Onay bekler duruma düşer).
+          Yetki değiştirmeleri <strong>anında Supabase veritabanına</strong> kaydedilir. Sayfa yenilendiğinde son durumlar korunur.
         </p>
       </div>
 

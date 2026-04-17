@@ -77,6 +77,7 @@ export const useAuthStore = create<AuthState>()(
         // Set cookie for middleware auth check
         if (typeof document !== 'undefined') {
           document.cookie = `sivas-auth-active=1; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+          document.cookie = `sivas-auth-role=${entry.user.rol}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
         }
         return { success: true }
       },
@@ -86,6 +87,7 @@ export const useAuthStore = create<AuthState>()(
         // Clear auth cookie
         if (typeof document !== 'undefined') {
           document.cookie = 'sivas-auth-active=; path=/; max-age=0'
+          document.cookie = 'sivas-auth-role=; path=/; max-age=0'
         }
       },
 

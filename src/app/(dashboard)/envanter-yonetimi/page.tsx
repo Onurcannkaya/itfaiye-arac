@@ -1,6 +1,5 @@
 "use client"
 import { useState, useEffect } from "react"
-import { createPortal } from "react-dom"
 import { QRCodeSVG } from "qrcode.react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
@@ -289,56 +288,55 @@ export default function EnvanterYonetimiPage() {
         </Card>
       </div>
 
-      {/* --- A4 Print Düzeni (Toplu Izgara - Grid) --- */}
-      {typeof document !== 'undefined' && createPortal(
-        <div id="print-area" className="hidden bg-white text-black p-8">
-           <div className="flex flex-col w-full">
-              <h1 className="text-4xl font-black mb-2">ETİKET DİZİNİ</h1>
-              <p className="text-2xl font-bold border-b-4 border-black pb-4 mb-8">Araç: {selectedPlaka}</p>
-              
-              <div className="grid grid-cols-2 gap-8 auto-rows-max">
-                {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
-                  <div key={comp} className="border-[6px] border-black p-8 flex flex-col items-center justify-center rounded-3xl page-break-inside-avoid shadow-sm text-center">
-                     <h2 className="text-3xl font-black bg-black text-white px-6 py-2 rounded-full mb-8 whitespace-nowrap">
-                        {selectedPlaka}
-                     </h2>
-                     
-                     <div className="bg-white p-2">
-                       <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={220} level={"H"} />
-                     </div>
-                     
-                     <div className="mt-8 border-t-4 border-black w-full pt-4">
-                       <h3 className="text-2xl font-black uppercase tracking-widest leading-normal">{COMPARTMENT_NAMES[comp] || comp}</h3>
-                       <p className="text-xs uppercase font-mono mt-3 tracking-widest text-black/80 font-bold">Sivas İtfaiyesİ</p>
-                     </div>
-                  </div>
-                ))}
-              </div>
-           </div>
-        </div>,
-        document.body
-      )}
+      {/* --- A4 Print Düzeni (Ekranda gizli, yazdırırken görünür) --- */}
+      <div id="print-area" className="print-only">
+         <div className="flex flex-col w-full">
+            <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem', color: 'black' }}>ETİKET DİZİNİ</h1>
+            <p style={{ fontSize: '1.25rem', fontWeight: 700, borderBottom: '4px solid black', paddingBottom: '1rem', marginBottom: '2rem', color: 'black' }}>Araç: {selectedPlaka}</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
+                <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '1.5rem', textAlign: 'center', breakInside: 'avoid' }}>
+                   <h2 style={{ fontSize: '1.5rem', fontWeight: 900, background: 'black', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', marginBottom: '2rem', whiteSpace: 'nowrap' }}>
+                      {selectedPlaka}
+                   </h2>
+                   
+                   <div style={{ background: 'white', padding: '0.5rem' }}>
+                     <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={220} level={"H"} />
+                   </div>
+                   
+                   <div style={{ marginTop: '2rem', borderTop: '4px solid black', width: '100%', paddingTop: '1rem' }}>
+                     <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'black' }}>{COMPARTMENT_NAMES[comp] || comp}</h3>
+                     <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontFamily: 'monospace', marginTop: '0.75rem', letterSpacing: '0.15em', color: 'rgba(0,0,0,0.8)', fontWeight: 700 }}>Sivas İtfaiyesi</p>
+                   </div>
+                </div>
+              ))}
+            </div>
+         </div>
+      </div>
       
-      {/* Sadece Yazdırma Esnasında Görünen A4 CSS Rules */}
+      {/* Print/Screen CSS */}
       <style dangerouslySetInnerHTML={{__html: `
+        .print-only {
+          display: none !important;
+        }
         @media print {
-          /* Bütün normal DOM elementlerini kapat */
-          body > *:not(#print-area) {
-            display: none !important;
+          body * {
+            visibility: hidden;
           }
-          /* Print portala tam imtiyaz ver */
+          #print-area, #print-area * {
+            visibility: visible !important;
+          }
           #print-area {
             display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
             width: 100%;
-            height: auto;
-            position: relative;
             background: white !important;
+            padding: 20mm;
           }
           @page { size: A4; margin: 10mm; }
-          .page-break-inside-avoid { break-inside: avoid; }
-          body {
-            background: white;
-          }
         }
       `}} />
 
