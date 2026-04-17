@@ -15,7 +15,7 @@ export function Topbar() {
 
   const displayName = user ? `${user.ad} ${user.soyad}` : "Misafir"
   const initials = user?.initials || "?"
-  const rolLabel = user?.rol === 'vardiya_cavusu' ? 'Vardiya Çavuşu' : user?.rol === 'sofor' ? 'Şoför' : user?.rol === 'sistem_yoneticisi' ? 'Yönetici' : 'İtfaiye Eri'
+  const rolLabel = user?.unvan || (user?.rol === 'Admin' ? 'Yönetici' : user?.rol === 'Editor' ? 'Amir' : user?.rol === 'Shift_Leader' ? 'Vardiya Çavuşu' : 'İtfaiye Eri')
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 md:px-6 z-10">

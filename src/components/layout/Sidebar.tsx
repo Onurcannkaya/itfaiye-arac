@@ -18,7 +18,7 @@ export function Sidebar() {
           <Truck size={20} />
           <span>Araçlar & Envanter</span>
         </Link>
-        <Link href="/personel" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+        <Link href="/yonetim/personel" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
           <Users size={20} />
           <span>Personel</span>
         </Link>

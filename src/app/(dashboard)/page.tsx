@@ -7,17 +7,38 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  
-  // Just get the count, no need to download all rows
-  const { count } = await supabase.from('vehicles').select('*', { count: 'exact', head: true })
-  
-  const activeVehicles = count || 0
-  const shiftPersonnel = mockPersonnel.filter(p => !!p.ad)
-  const sergeants = mockPersonnel.filter(p => p.rol === 'vardiya_cavusu')
-  const others = mockPersonnel.filter(p => p.rol !== 'vardiya_cavusu').sort((a,b) => a.ad.localeCompare(b.ad))
-  const sortedPersonnel = [...sergeants, ...others]
+  let activeVehicles = 0
 
+  try {
+    const supabase = await createClient()
+    const { count } = await supabase.from('vehicles').select('*', { count: 'exact', head: true })
+    activeVehicles = count || 0
+  } catch {
+    // Supabase unreachable — fallback to mock data count
+    activeVehicles = mockVehicles.length
+  }
+
+  const shiftPersonnel = mockPersonnel.filter(p => !!p.ad)
+
+  // Updated role matching — now uses Shift_Leader and Admin/Editor
+  const leaders = mockPersonnel.filter(p =>
+    p.rol === 'Shift_Leader' || p.rol === 'Admin' || p.rol === 'Editor'
+  )
+  const others = mockPersonnel.filter(p =>
+    p.rol !== 'Shift_Leader' && p.rol !== 'Admin' && p.rol !== 'Editor'
+  ).sort((a, b) => a.ad.localeCompare(b.ad))
+  const sortedPersonnel = [...leaders, ...others]
+
+  // Role display helper
+  function rolLabel(rol: string, unvan?: string): string {
+    if (unvan) return unvan
+    switch (rol) {
+      case 'Admin': return 'Yönetici'
+      case 'Editor': return 'Amir'
+      case 'Shift_Leader': return 'Vardiya Çavuşu'
+      default: return 'İtfaiye Eri'
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -68,22 +89,22 @@ export default async function DashboardPage() {
                   <tr>
                     <th className="px-4 py-3 rounded-tl-md">Sicil No</th>
                     <th className="px-4 py-3">Ad Soyad</th>
-                    <th className="px-4 py-3 min-w-[120px]">Rol</th>
-                    <th className="px-4 py-3 rounded-tr-md text-right min-w-[100px]">Posta</th>
+                    <th className="px-4 py-3 min-w-[120px]">Unvan</th>
+                    <th className="px-4 py-3 rounded-tr-md text-right min-w-[100px]">Rol</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedPersonnel.map((p, idx) => (
+                  {sortedPersonnel.map((p) => (
                     <tr key={p.sicil_no} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3 font-medium whitespace-nowrap">{p.sicil_no}</td>
                       <td className="px-4 py-3 font-medium whitespace-nowrap">
                         {p.ad} {p.soyad}
-                        {p.rol === 'vardiya_cavusu' && <Badge variant="default" className="ml-2 scale-90">Çavuş</Badge>}
+                        {(p.rol === 'Shift_Leader' || p.rol === 'Admin') && <Badge variant="default" className="ml-2 scale-90">{p.unvan}</Badge>}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {p.rol === 'vardiya_cavusu' ? 'Vardiya Çavuşu' : p.rol === 'sofor' ? 'Şoför' : 'İtfaiye Eri'}
+                        {p.unvan}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">{p.posta}</td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">{rolLabel(p.rol)}</td>
                     </tr>
                   ))}
                 </tbody>
