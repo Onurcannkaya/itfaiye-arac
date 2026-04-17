@@ -22,8 +22,9 @@ export interface Personnel {
   sicil_no: string;
   ad: string;
   soyad: string;
-  rol: "sistem_yoneticisi" | "vardiya_cavusu" | "sofor" | "itfaiye_eri" | string;
-  posta: string;
+  unvan: string;
+  rol: "Admin" | "Editor" | "Shift_Leader" | "User" | string;
+  posta?: string;
 }
 
 export interface MaintenanceLog {

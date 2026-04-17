@@ -1,9 +1,10 @@
 "use client"
 import { useState } from "react"
-import { ScanLine, Camera, Check } from "lucide-react"
+import { ScanLine, Camera, Check, ExternalLink } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/Card"
 import { InventoryCheckModal } from "@/components/inventory/InventoryCheckModal"
 import { useRouter } from "next/navigation"
+import { APP_BASE_URL } from "@/lib/constants"
 
 import { Scanner } from "@yudiel/react-qr-scanner"
 
@@ -15,9 +16,27 @@ export default function BarkodPage() {
   const [selectedCompartment, setSelectedCompartment] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Auto parsing the real QR data: {"p": "58-ACT-367", "c": "kabini_ici"}
+  // Parse QR data - supports both URL format and legacy JSON format
   const handleRealScan = (dataStr: string) => {
     try {
+      // Try URL format first: https://domain/arac/{plaka-slug}/{compartment}
+      const urlPattern = /\/arac\/([^/]+)\/([^/?#]+)/
+      const urlMatch = dataStr.match(urlPattern)
+      
+      if (urlMatch) {
+        const plakaSlug = urlMatch[1]
+        const compartment = urlMatch[2]
+        // Convert slug back to plaka: "58-act-367" -> "58 ACT 367"
+        const plaka = plakaSlug.replace(/-/g, ' ').toUpperCase()
+        
+        setIsScanning(false)
+        setSelectedVehicle(plaka)
+        setSelectedCompartment(compartment)
+        setModalOpen(true)
+        return
+      }
+
+      // Fallback: legacy JSON format {"p": "58-ACT-367", "c": "kabin_ici"}
       const data = JSON.parse(dataStr)
       if (data.p && data.c) {
         setIsScanning(false)
@@ -39,17 +58,21 @@ export default function BarkodPage() {
   }
 
   const handleSaveInventoryCheck = (results: any[]) => {
-    // In a real app, this would save to Supabase via an API call
     console.log("Saving inventory check:", results)
     
     setModalOpen(false)
     setSuccessMessage(`${selectedVehicle} aracı için sayım başarıyla kaydedildi!`)
     setIsScanning(true)
 
-    // Hide message after 3 seconds
     setTimeout(() => {
       setSuccessMessage("")
     }, 3000)
+  }
+
+  // Build QR URL for display
+  const buildQrUrl = (plaka: string, comp: string) => {
+    const slug = plaka.replace(/\s+/g, "-").toLowerCase()
+    return `/arac/${slug}/${comp}`
   }
 
   return (
@@ -60,7 +83,7 @@ export default function BarkodPage() {
           <ScanLine className="w-6 h-6 text-primary" />
           Barkod / QR Tarayıcı
         </h1>
-        <p className="text-sm text-muted-foreground max-w-sm">Araç bölmelerindeki barkodu okutarak devir-teslim listesini otomatik açın.</p>
+        <p className="text-sm text-muted-foreground max-w-sm">Araç bölmelerindeki QR kodu okutarak devir-teslim listesini otomatik açın.</p>
       </div>
 
       {successMessage && (
@@ -70,11 +93,11 @@ export default function BarkodPage() {
         </div>
       )}
 
-      {/* Simulator Viewfinder */}
+      {/* Scanner Viewfinder */}
       <Card className="w-full max-w-sm aspect-square bg-surface border-2 border-border/50 relative overflow-hidden group shadow-lg">
         <CardContent className="p-0 w-full h-full flex flex-col items-center justify-center relative">
           
-          {/* Mock Camera Background (Dark gradient) */}
+          {/* Camera Background */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none" />
 
           {isScanning ? (
@@ -84,7 +107,7 @@ export default function BarkodPage() {
                   if (result && result.length > 0) handleRealScan(result[0].rawValue)
                 }} 
                 components={{
-                  finder: false // We use our own finder overlay
+                  finder: false
                 }}
               />
               
@@ -113,8 +136,19 @@ export default function BarkodPage() {
         </CardContent>
       </Card>
 
-      {/* Mock Actions for Testing */}
-      <div className="w-full max-w-sm space-y-3 pt-4">
+      {/* Deep Link Info */}
+      <div className="w-full max-w-sm">
+        <div className="p-3 bg-cyan-500/5 border border-cyan-500/15 rounded-xl text-[11px] text-muted-foreground flex items-start gap-2">
+          <ExternalLink className="w-3.5 h-3.5 mt-0.5 text-cyan-400 shrink-0" />
+          <span>
+            <strong className="text-foreground">Yeni:</strong> QR kodlar artık derin bağlantı (URL) içeriyor. Telefonunuzun 
+            kamerası ile de direkt okutabilirsiniz.
+          </span>
+        </div>
+      </div>
+
+      {/* Test Barcodes */}
+      <div className="w-full max-w-sm space-y-3 pt-2">
         <p className="text-xs text-center font-bold text-muted-foreground uppercase tracking-widest border-b border-border/50 pb-2">Test Barkodları</p>
         
         <button 

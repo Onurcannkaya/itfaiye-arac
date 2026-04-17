@@ -7,7 +7,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Printer, Settings, Combine, Save, Trash2, Plus, ArrowRight } from "lucide-react"
-import { COMPARTMENT_NAMES } from "@/lib/constants"
+import { COMPARTMENT_NAMES, APP_BASE_URL } from "@/lib/constants"
+
+function buildQrUrl(plaka: string, compartment: string): string {
+  const slug = plaka.replace(/\s+/g, "-").toLowerCase()
+  return `${APP_BASE_URL}/arac/${slug}/${compartment}`
+}
 
 type FlatItem = {
   internalId: string;
@@ -299,7 +304,7 @@ export default function EnvanterYonetimiPage() {
                      </h2>
                      
                      <div className="bg-white p-2">
-                       <QRCodeSVG value={JSON.stringify({p: selectedPlaka, c: comp})} size={220} level={"H"} />
+                       <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={220} level={"H"} />
                      </div>
                      
                      <div className="mt-8 border-t-4 border-black w-full pt-4">

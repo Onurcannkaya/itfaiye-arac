@@ -1,13 +1,13 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { mockVehicles } from "@/lib/data"
 import { COMPARTMENT_NAMES } from "@/lib/constants"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
-import { Truck, PackageSearch, ChevronRight, ArrowLeft, Gauge, Clock, ShieldCheck, CalendarDays } from "lucide-react"
+import { Truck, PackageSearch, ChevronRight, ArrowLeft, Gauge, Clock, ShieldCheck, CalendarDays, History } from "lucide-react"
 import { InventoryList } from "@/components/vehicle/InventoryList"
-import { VehicleSchematic } from "@/components/vehicle/VehicleSchematic"
+import { Vehicle3DSchematic } from "@/components/vehicle/Vehicle3DSchematic"
+import { AuditTimeline } from "@/components/inventory/AuditTimeline"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -20,12 +20,13 @@ export default function VehicleDetailPage() {
   const [vehicle, setVehicle] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeCompartment, setActiveCompartment] = useState<string | null>(null)
+  const [showTimeline, setShowTimeline] = useState(false)
 
   useEffect(() => {
     async function fetchVehicle() {
       const supabase = createClient()
       const { data: vehicles } = await supabase.from('vehicles').select('*')
-      const found = (vehicles || []).find(v => v.plaka.replace(/\s+/g, '-').toLowerCase() === idStr)
+      const found = (vehicles || []).find((v: any) => v.plaka.replace(/\s+/g, '-').toLowerCase() === idStr)
       setVehicle(found)
       if (found && Object.keys(found.bolmeler).length > 0) {
         setActiveCompartment(Object.keys(found.bolmeler)[0])
@@ -35,7 +36,11 @@ export default function VehicleDetailPage() {
     fetchVehicle()
   }, [idStr])
   
-  if (loading) return <div className="p-6">Yükleniyor...</div>
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="w-10 h-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+    </div>
+  )
   if (!vehicle) return <div className="p-6">Araç bulunamadı.</div>
 
   const compartKeys = Object.keys(vehicle?.bolmeler || {})
@@ -86,13 +91,16 @@ export default function VehicleDetailPage() {
         </CardContent></Card>
       </div>
 
-      {/* İnteraktif Araç Şeması */}
-      <Card>
-        <CardHeader className="pb-2 border-b border-border/50">
-          <CardTitle className="text-base">Araç Şeması — Bölme Seçin</CardTitle>
+      {/* 3D İnteraktif Araç Şeması */}
+      <Card className="border-cyan-500/10 overflow-hidden">
+        <CardHeader className="pb-2 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_2px_rgba(34,211,238,0.3)]" />
+            İnteraktif Araç Şeması — Bölme Seçin
+          </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 pb-2">
-          <VehicleSchematic
+          <Vehicle3DSchematic
             compartmentKeys={compartKeys}
             activeCompartment={activeCompartment}
             onSelect={setActiveCompartment}
@@ -103,7 +111,7 @@ export default function VehicleDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
         {/* Bölme Listesi */}
-        <Card className="lg:col-span-1 h-fit sticky top-4">
+        <Card className="lg:col-span-1 h-fit lg:sticky lg:top-4">
           <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center space-x-2">
@@ -145,24 +153,56 @@ export default function VehicleDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Envanter Listesi */}
-        <Card className="lg:col-span-2 shadow-sm">
-           <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
-             <CardTitle className="text-base flex items-center space-x-2">
-               <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-               <span>{activeCompartment ? COMPARTMENT_NAMES[activeCompartment] || activeCompartment : "Bölme Seçin"} Envanteri</span>
-             </CardTitle>
-           </CardHeader>
-           <CardContent className="pt-0 px-0">
-              {activeCompartment ? (
-                <InventoryList items={activeItems} />
-              ) : (
-                <div className="p-8 text-center text-muted-foreground">Lütfen sol menüden veya şemadan bir araç bölmesi seçin.</div>
-              )}
-           </CardContent>
-        </Card>
+        {/* Envanter Listesi + Audit Trail */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="shadow-sm">
+             <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
+               <div className="flex items-center justify-between">
+                 <CardTitle className="text-base flex items-center space-x-2">
+                   <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                   <span>{activeCompartment ? COMPARTMENT_NAMES[activeCompartment] || activeCompartment : "Bölme Seçin"} Envanteri</span>
+                 </CardTitle>
+                 {activeCompartment && (
+                   <button
+                     onClick={() => setShowTimeline(!showTimeline)}
+                     className={cn(
+                       "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors",
+                       showTimeline
+                         ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
+                         : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/50"
+                     )}
+                   >
+                     <History className="w-3.5 h-3.5" />
+                     Geçmiş
+                   </button>
+                 )}
+               </div>
+             </CardHeader>
+             <CardContent className="pt-0 px-0">
+                {activeCompartment ? (
+                  <InventoryList items={activeItems} />
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground">Lütfen sol menüden veya şemadan bir araç bölmesi seçin.</div>
+                )}
+             </CardContent>
+          </Card>
+
+          {/* Audit Timeline */}
+          {showTimeline && activeCompartment && (
+            <Card className="border-cyan-500/10 animate-in fade-in slide-in-from-top-3">
+              <CardHeader className="pb-3 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <History className="w-4 h-4 text-cyan-400" />
+                  Vardiya Devir Logları — {COMPARTMENT_NAMES[activeCompartment] || activeCompartment}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <AuditTimeline plaka={vehicle.plaka} compartmentKey={activeCompartment} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   )
 }
-

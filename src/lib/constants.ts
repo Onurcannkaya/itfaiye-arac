@@ -1,3 +1,5 @@
+export const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sivas-itfaiye.vercel.app";
+
 export const COMPARTMENT_NAMES: Record<string, string> = {
   kabin_ici: "Kabin İçi",
   arac_ici: "Araç İçi",
@@ -8,3 +10,7 @@ export const COMPARTMENT_NAMES: Record<string, string> = {
   sag_arka_kapak: "Sağ Arka Kapak",
   arac_ustu: "Araç Üstü",
 };
+
+export const COMPARTMENT_SLUGS: Record<string, string> = Object.fromEntries(
+  Object.entries(COMPARTMENT_NAMES).map(([key, label]) => [key, key])
+);

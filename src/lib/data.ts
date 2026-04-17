@@ -147,19 +147,126 @@ export const mockVehicles: Vehicle[] = [
 ];
 
 export const mockPersonnel: Personnel[] = [
-  { sicil_no: "SIV-0042", ad: "Ömer", soyad: "Çakmak", rol: "vardiya_cavusu", posta: "A Postası" },
-  { sicil_no: "SIV-0087", ad: "Hidayet", soyad: "Yücekaya", rol: "vardiya_cavusu", posta: "B Postası" },
-  { sicil_no: "SIV-0103", ad: "Mustafa", soyad: "Köse", rol: "sofor", posta: "A Postası" },
-  { sicil_no: "SIV-0115", ad: "Onurcan", soyad: "Kaya", rol: "itfaiye_eri", posta: "A Postası" },
-  { sicil_no: "SIV-0120", ad: "Melih", soyad: "Arslan", rol: "sofor", posta: "B Postası" },
-  { sicil_no: "SIV-0125", ad: "Selahattin", soyad: "Tosun", rol: "itfaiye_eri", posta: "B Postası" },
-  { sicil_no: "SIV-0130", ad: "İsmail", soyad: "Aslan", rol: "itfaiye_eri", posta: "A Postası" },
-  { sicil_no: "SIV-0131", ad: "Muhammed", soyad: "Enes Yıldırım", rol: "itfaiye_eri", posta: "A Postası" },
-  { sicil_no: "SIV-0132", ad: "Uğur", soyad: "Budak", rol: "itfaiye_eri", posta: "B Postası" },
-  { sicil_no: "SIV-0133", ad: "Mustafa", soyad: "Demir", rol: "sofor", posta: "B Postası" },
-  { sicil_no: "SIV-0134", ad: "Muhammed", soyad: "Yasir İnce", rol: "itfaiye_eri", posta: "C Postası" },
-  { sicil_no: "SIV-0135", ad: "Muhammed", soyad: "Kara", rol: "itfaiye_eri", posta: "C Postası" },
+  { sicil_no: "SB5801", ad: "İbrahim", soyad: "Alaçam", unvan: "Müdür", rol: "Admin" },
+  { sicil_no: "SB5802", ad: "Seyfi Ali", soyad: "Gül", unvan: "Amir", rol: "Editor" },
+  { sicil_no: "SB5803", ad: "Ahmet", soyad: "Çelimli", unvan: "Amir", rol: "Editor" },
+  { sicil_no: "SB5804", ad: "Ahmet", soyad: "Yıldız", unvan: "Amir", rol: "Editor" },
+  { sicil_no: "SB5805", ad: "Hidayet", soyad: "Yücekaya", unvan: "Başçavuş", rol: "Shift_Leader" },
+  { sicil_no: "SB5806", ad: "Ömer", soyad: "Çakmak", unvan: "Çavuş", rol: "Shift_Leader" },
+  { sicil_no: "SB5807", ad: "Abdullah Übeyde", soyad: "Özkur", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5808", ad: "Beyza", soyad: "Durak", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5809", ad: "Beyza", soyad: "Kılıç", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5810", ad: "Elif", soyad: "Tunçer", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5811", ad: "Emir Furkan", soyad: "Taşdelen", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5812", ad: "Fatih", soyad: "Güler", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5813", ad: "Fatmanur", soyad: "Kişi", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5814", ad: "Gülenay", soyad: "Koçak", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5815", ad: "Hasan Çınar", soyad: "Kuzu", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5816", ad: "İsmail", soyad: "Aslan", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5817", ad: "Kadir", soyad: "Kuru", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5818", ad: "Melih", soyad: "Arslan", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5819", ad: "Muhammed Emin", soyad: "Kara", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5820", ad: "Muhammed Enes", soyad: "Yıldırım", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5821", ad: "Muhammed", soyad: "Kara", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5822", ad: "Muhammed Yasir", soyad: "İnce", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5823", ad: "Mustafa", soyad: "Demir", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5824", ad: "Mustafa", soyad: "Köse", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5825", ad: "Mustafa Metin", soyad: "Bıçakcigil", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5826", ad: "Onurcan", soyad: "Kaya", unvan: "İtfaiye Eri / Geliştirici", rol: "Admin" },
+  { sicil_no: "SB5827", ad: "Selahattin", soyad: "Tosun", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5828", ad: "Sencer", soyad: "Yıldız", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5829", ad: "Uğur", soyad: "Budak", unvan: "İtfaiye Eri", rol: "User" },
+  { sicil_no: "SB5830", ad: "Yağmur", soyad: "Aydın", unvan: "İtfaiye Eri", rol: "User" }
+];
 
+// Audit Trail — Vardiya devir logları
+export interface AuditLogEntry {
+  id: string;
+  plaka: string;
+  compartmentKey: string;
+  userId: string;
+  userName: string;
+  checkedAt: string;
+  results: { malzeme: string; durum: string; note?: string }[];
+  notes?: string;
+}
+
+export const mockAuditLogs: AuditLogEntry[] = [
+  {
+    id: "audit-001",
+    plaka: "58 TH 256",
+    compartmentKey: "sol_on_kapak",
+    userId: "SB5804",
+    userName: "Onurcan Kaya",
+    checkedAt: "2026-04-16T18:00:00",
+    results: [
+      { malzeme: "Holmatro Güç Ünitesi", durum: "Tam" },
+      { malzeme: "Holmatro Kesici", durum: "Tam" },
+      { malzeme: "Holmatro Ayırıcı", durum: "Tam" },
+      { malzeme: "Hilti", durum: "Eksik", note: "1 adet mevcut, 1 adet eksik. Tamire gönderildi." },
+      { malzeme: "Amir Baltası", durum: "Tam" },
+    ],
+    notes: "Hilti motoru yanmış. Yeni sipariş verildi."
+  },
+  {
+    id: "audit-002",
+    plaka: "58 TH 256",
+    compartmentKey: "sol_on_kapak",
+    userId: "SB5806",
+    userName: "Selahattin Tosun",
+    checkedAt: "2026-04-16T08:15:00",
+    results: [
+      { malzeme: "Holmatro Güç Ünitesi", durum: "Tam" },
+      { malzeme: "Holmatro Kesici", durum: "Tam" },
+      { malzeme: "Holmatro Ayırıcı", durum: "Tam" },
+      { malzeme: "Hilti", durum: "Eksik", note: "1 adet eksik" },
+      { malzeme: "Amir Baltası", durum: "Tam" },
+    ],
+  },
+  {
+    id: "audit-003",
+    plaka: "58 ACT 367",
+    compartmentKey: "kabin_ici",
+    userId: "SB5803",
+    userName: "Mustafa Köse",
+    checkedAt: "2026-04-16T07:45:00",
+    results: [
+      { malzeme: "Kriko", durum: "Tam" },
+      { malzeme: "Lastik Şişirme Aparatı", durum: "Tam" },
+      { malzeme: "Çeki Demiri", durum: "Tam" },
+      { malzeme: "Şarjlı Projektör", durum: "Tam" },
+    ],
+    notes: "Tüm malzemeler eksiksiz kontrol edildi."
+  },
+  {
+    id: "audit-004",
+    plaka: "58 ACT 367",
+    compartmentKey: "sag_on_kapak",
+    userId: "SB5804",
+    userName: "Onurcan Kaya",
+    checkedAt: "2026-04-15T17:30:00",
+    results: [
+      { malzeme: "Ayaklı Aydınlatma Lambası", durum: "Tam" },
+      { malzeme: "Jeneratör", durum: "Tam" },
+      { malzeme: "Hidrolik Güç Ünitesi", durum: "Tam" },
+      { malzeme: "Hidrolik Kesici", durum: "Tam" },
+      { malzeme: "Hidrolik Ayırıcı", durum: "Tam" },
+    ],
+  },
+  {
+    id: "audit-005",
+    plaka: "58 TH 257",
+    compartmentKey: "sol_orta_kapak",
+    userId: "SB5807",
+    userName: "İsmail Aslan",
+    checkedAt: "2026-04-15T08:00:00",
+    results: [
+      { malzeme: "Hidrolik El Manueli ve Hortumu", durum: "Tam" },
+      { malzeme: "Manuel Kapı Açma", durum: "Tam" },
+      { malzeme: "Cam Kırma Aparatı", durum: "Arızalı", note: "Cam kırma ucu kırık, yenisi gerekiyor." },
+    ],
+    notes: "Cam kırma aparatı arızalı, yedek depodan alınmalı."
+  },
 ];
 
 export const mockMaintenanceLogs: MaintenanceLog[] = [
@@ -256,64 +363,52 @@ export const mockTaskLogs: TaskLog[] = [
   {
     id: "t-001",
     plaka: "58 ACT 367",
-    tip: "devir_teslim",
+    tip: "gunluk_kontrol",
     checklist: [
-      { label: "Motor yağ seviyesi kontrolü", checked: true },
-      { label: "Antifriz/su seviyesi kontrolü", checked: true },
-      { label: "Pompa çalışma testi", checked: true },
-      { label: "Telsiz çalışma kontrolü", checked: true },
-      { label: "Lastik basınçları kontrolü", checked: false },
-      { label: "Farlar ve ikaz lambaları testi", checked: true },
+      { label: "Araç motor yağ seviyesi ve radyatör suyu kontrolü yapıldı", checked: true },
     ],
-    durum: "devam_ediyor",
+    durum: "tamamlandi",
     atanan: "Mustafa Köse",
-    tarih: "2026-04-16",
-    notlar: "Sağ arka lastik basıncı düşük, kompresörle şişirilecek."
+    tarih: "2026-04-17",
+    notlar: "Motor yağı ve radyatör suyu normal seviyede. Günlük şoför görevi tamam."
   },
   {
     id: "t-002",
-    plaka: "58 TH 256",
-    tip: "devir_teslim",
+    plaka: "58 ACT 367",
+    tip: "envanter_sayim",
     checklist: [
-      { label: "Motor yağ seviyesi kontrolü", checked: true },
-      { label: "Antifriz/su seviyesi kontrolü", checked: true },
-      { label: "Pompa çalışma testi", checked: true },
-      { label: "Telsiz çalışma kontrolü", checked: true },
-      { label: "Lastik basınçları kontrolü", checked: true },
-      { label: "Farlar ve ikaz lambaları testi", checked: true },
+      { label: "Sağ ön kapaktaki tüm malzemeler barkodla okutularak tam olduğu teyit edildi", checked: true },
     ],
     durum: "tamamlandi",
-    atanan: "Melih Arslan",
-    tarih: "2026-04-16",
-    tamamlanmaTarihi: "2026-04-16T08:30:00"
+    atanan: "Ömer Çakmak",
+    tarih: "2026-04-17",
+    tamamlanmaTarihi: "2026-04-17T11:30:00"
   },
   {
     id: "t-003",
     plaka: "58 TH 256",
-    tip: "ariza_bildirimi",
+    tip: "devir_teslim", // Haftalık mekanik bakım map to devir_teslim or custom
     checklist: [
-      { label: "Arıza tanımı yapıldı", checked: true },
-      { label: "Fotoğraf eklendi", checked: false },
-      { label: "Amire bildirildi", checked: true },
+      { label: "Merdiven hidrolik sistem sızdırmazlık kontrolü ve yağlama işlemi yapıldı", checked: false },
+      { label: "Sistem fotoğrafları rapora eklendi", checked: false },
     ],
-    durum: "tamamlandi",
-    atanan: "Selahattin Tosun",
-    tarih: "2026-04-15",
-    tamamlanmaTarihi: "2026-04-15T14:20:00",
-    notlar: "Sol ön kapaktaki Hilti'nin motoru yanmış. Yenisi talep edildi."
+    durum: "devam_ediyor",
+    atanan: "İbrahim Alaçam",
+    tarih: "2026-04-17",
+    notlar: "Bakım devam ediyor, fotoğraflar yüklenecek."
   },
   {
     id: "t-004",
-    plaka: "58 ACT 367",
-    tip: "envanter_sayim",
+    plaka: "58 TH 256",
+    tip: "gunluk_kontrol", // Yakıt takip
     checklist: [
-      { label: "Kabin İçi sayıldı", checked: true },
-      { label: "Sağ Ön Kapak sayıldı", checked: true },
-      { label: "Sol Arka Kapak sayıldı", checked: true },
+      { label: "Yakıt alımı sonrası fiş görseli sisteme yüklendi", checked: true },
+      { label: "Çalışma saati girildi", checked: true },
     ],
     durum: "tamamlandi",
-    atanan: "Onurcan Kaya",
-    tarih: "2026-04-14",
-    tamamlanmaTarihi: "2026-04-14T16:00:00"
+    atanan: "Selahattin Tosun",
+    tarih: "2026-04-16",
+    tamamlanmaTarihi: "2026-04-16T16:00:00",
+    notlar: "PTO: 5605 saat olarak güncellendi."
   }
 ];
