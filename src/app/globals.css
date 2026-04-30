@@ -288,11 +288,10 @@ img, video, svg {
   body > .print-area-container,
   .print-area-container {
     display: block !important;
-    position: fixed !important;
+    position: relative !important;
     left: 0 !important;
     top: 0 !important;
     width: 100vw !important;
-    height: auto !important;
     background: white !important;
     z-index: 999999 !important;
     padding: 15mm !important;
