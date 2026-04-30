@@ -11,18 +11,16 @@ export async function GET() {
 
   const results: Record<string, any> = {};
 
-  // Personnel tablosunun yapısını test et - sicil_no PK mi yoksa id PK mi?
-  const { data: testData, error: testErr } = await admin.from('personnel').select('*').limit(1);
+  // Vehicles tablosunun yapısını test et
+  const { data: testData, error: testErr } = await admin.from('vehicles').select('*').limit(1);
   
   if (testErr) {
-    results.personnelError = testErr.message;
+    results.vehiclesError = testErr.message;
   } else if (testData && testData.length > 0) {
-    results.personnelColumns = Object.keys(testData[0]);
-    results.hasIdColumn = 'id' in testData[0];
-    results.hasSicilColumn = 'sicil_no' in testData[0];
+    results.vehiclesColumns = Object.keys(testData[0]);
     results.sampleRow = testData[0];
   } else {
-    results.personnelEmpty = true;
+    results.vehiclesEmpty = true;
   }
 
   // Personnel tablosuna sicil_no ile sorgu yap

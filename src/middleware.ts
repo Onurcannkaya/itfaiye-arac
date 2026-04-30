@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't need auth
-  const publicPaths = ["/login", "/api/seed", "/api/debug-auth", "/api/setup", "/api/check-schema"];
+  const publicPaths = ["/login", "/api/seed", "/api/debug-auth", "/api/setup", "/api/check-schema", "/api/insert-vehicle"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   // API rotalarını atla (bazıları public, bazıları kendi içinde korunuyor)
