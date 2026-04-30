@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Truck, Wind, FileText, Menu, X, Users, ListChecks, Wrench } from 'lucide-react'
+import { Home, Truck, ScanLine, Menu, X, Users, ListChecks, Wrench, Wind, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
@@ -41,6 +41,12 @@ export function MobileNav() {
               <h3 className="font-bold text-sm">Tüm Modüller</h3>
               <button onClick={() => setMenuOpen(false)} className="p-2 rounded-lg hover:bg-muted"><X className="w-5 h-5" /></button>
             </div>
+            <Link href="/scba" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors min-h-[52px]", isActive('/scba') ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
+              <Wind className="w-5 h-5" /> <span className="font-medium">SCBA Tüp Takibi</span>
+            </Link>
+            <Link href="/gorevler" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors min-h-[52px]", isActive('/gorevler') ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
+              <FileText className="w-5 h-5" /> <span className="font-medium">Görevler & Teslim</span>
+            </Link>
             <Link href="/bakim" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors min-h-[52px]", isActive('/bakim') ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
               <Wrench className="w-5 h-5" /> <span className="font-medium">Bakım & Yakıt</span>
             </Link>
@@ -59,8 +65,28 @@ export function MobileNav() {
            style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {navLink("/", <Home size={22} />, "Ana Sayfa")}
         {navLink("/araclar", <Truck size={22} />, "Araçlar")}
-        {navLink("/scba", <Wind size={22} />, "SCBA")}
-        {navLink("/gorevler", <FileText size={22} />, "Görevler")}
+        
+        {/* ★ Barkod Tarayıcı — Ortada Belirgin Yüzen Buton */}
+        <Link
+          href="/barkod"
+          onClick={() => setMenuOpen(false)}
+          className="flex flex-col items-center justify-center relative -mt-5"
+        >
+          <div className={cn(
+            "w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-primary/30 transition-all active:scale-95",
+            isActive('/barkod')
+              ? "bg-primary text-white ring-4 ring-primary/20"
+              : "bg-primary/90 text-white hover:bg-primary"
+          )}>
+            <ScanLine size={26} />
+          </div>
+          <span className={cn(
+            "text-[10px] mt-1 font-bold leading-none",
+            isActive('/barkod') ? "text-primary" : "text-muted-foreground"
+          )}>Barkod</span>
+        </Link>
+
+        {navLink("/envanter-yonetimi", <Truck size={22} />, "Envanter")}
         
         <button 
           onClick={() => setMenuOpen(!menuOpen)}

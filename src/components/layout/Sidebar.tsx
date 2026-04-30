@@ -16,7 +16,15 @@ export function Sidebar() {
         </Link>
         <Link href="/araclar" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
           <Truck size={20} />
-          <span>Araçlar & Envanter</span>
+          <span>Araçlar</span>
+        </Link>
+        <Link href="/barkod" className="flex items-center space-x-3 rounded-md px-3 py-2 bg-primary/10 text-primary font-bold shadow-sm">
+          <ScanLine size={20} />
+          <span>Barkod Oku</span>
+        </Link>
+        <Link href="/envanter-yonetimi" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+          <ScanLine size={20} className="opacity-0" /> {/* Just for spacing if needed, but let's use a proper icon like PackageSearch or keep it aligned */}
+          <span>Envanter Yönetimi</span>
         </Link>
         <Link href="/bakim" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
           <Wrench size={20} />

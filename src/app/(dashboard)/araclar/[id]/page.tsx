@@ -4,7 +4,7 @@ import { useParams } from "next/navigation"
 import { COMPARTMENT_NAMES } from "@/lib/constants"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
-import { Truck, PackageSearch, ChevronRight, ArrowLeft, Gauge, Clock, ShieldCheck, CalendarDays, History } from "lucide-react"
+import { Truck, PackageSearch, ChevronRight, ArrowLeft, Gauge, Clock, ShieldCheck, CalendarDays, History, Printer } from "lucide-react"
 import { InventoryList } from "@/components/vehicle/InventoryList"
 import { Vehicle3DSchematic } from "@/components/vehicle/Vehicle3DSchematic"
 import { AuditTimeline } from "@/components/inventory/AuditTimeline"
@@ -12,6 +12,13 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { QRCodeSVG } from "qrcode.react"
+import { APP_BASE_URL } from "@/lib/constants"
+
+function buildQrUrl(plaka: string, compartment: string): string {
+  const slug = plaka.replace(/\s+/g, "-").toLowerCase()
+  return `${APP_BASE_URL}/arac/${slug}/${compartment}`
+}
 
 export default function VehicleDetailPage() {
   const params = useParams()
@@ -36,6 +43,24 @@ export default function VehicleDetailPage() {
     fetchVehicle()
   }, [idStr])
   
+  const handlePrint = () => {
+    const printArea = document.getElementById('vehicle-print-area')
+    if (!printArea) return
+
+    const clone = printArea.cloneNode(true) as HTMLElement
+    clone.className = 'print-area-container'
+    clone.id = 'vehicle-print-area-live'
+    document.body.appendChild(clone)
+
+    setTimeout(() => {
+      window.print()
+      setTimeout(() => {
+        const live = document.getElementById('vehicle-print-area-live')
+        if (live) document.body.removeChild(live)
+      }, 500)
+    }, 400)
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
       <div className="w-10 h-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
@@ -53,22 +78,32 @@ export default function VehicleDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 border-b border-border/50 pb-4">
-        <Link href="/araclar" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors sm:mr-2">
-            <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="bg-primary/10 p-3 rounded-xl border border-primary/20 shrink-0 w-fit">
-            <Truck className="w-8 h-8 text-primary" />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold tracking-tight">{vehicle.plaka}</h1>
-            <Badge variant={vehicle.durum === "aktif" ? "success" : vehicle.durum === "bakimda" ? "warning" : "danger"}>
-              {vehicle.durum === "aktif" ? "Aktif" : vehicle.durum === "bakimda" ? "Bakımda" : "Arızalı"}
-            </Badge>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 border-b border-border/50 pb-4 print:hidden">
+        <div className="flex items-center space-x-4">
+          <Link href="/araclar" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors sm:mr-2 shrink-0">
+              <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="bg-primary/10 p-3 rounded-xl border border-primary/20 shrink-0 w-fit">
+              <Truck className="w-8 h-8 text-primary" />
           </div>
-          <p className="text-muted-foreground text-sm mt-1">{vehicle.aracTipi}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold tracking-tight">{vehicle.plaka}</h1>
+              <Badge variant={vehicle.durum === "aktif" ? "success" : vehicle.durum === "bakimda" ? "warning" : "danger"}>
+                {vehicle.durum === "aktif" ? "Aktif" : vehicle.durum === "bakimda" ? "Bakımda" : "Arızalı"}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground text-sm mt-1">{vehicle.aracTipi}</p>
+          </div>
         </div>
+        
+        <button 
+          onClick={handlePrint}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-md active:scale-95 shrink-0"
+        >
+          <Printer className="w-5 h-5" />
+          <span>Toplu Etiket Yazdır</span>
+        </button>
       </div>
 
       {/* Araç Bilgi Kartları */}
@@ -201,6 +236,44 @@ export default function VehicleDetailPage() {
               </CardContent>
             </Card>
           )}
+        </div>
+      </div>
+
+      {/* Hidden Print Area */}
+      <div id="vehicle-print-area" className="hidden print:block print:w-full">
+        <div className="print-header mb-8 text-center border-b-2 border-black pb-4">
+          <h1 className="text-3xl font-black">{vehicle.plaka}</h1>
+          <p className="text-xl font-bold mt-1">Araç İçi Envanter ve Barkod Sistemi</p>
+          <p className="text-sm mt-2 text-gray-600">Bu QR kodları ilgili bölmelere yapıştırarak hızlı sayım yapabilirsiniz.</p>
+        </div>
+
+        <div className="print-grid grid grid-cols-2 gap-8 gap-y-12 place-items-center">
+          {compartKeys.map((comp) => {
+             const qrUrl = buildQrUrl(vehicle.plaka, comp)
+             return (
+               <div key={comp} className="print-qr-item flex flex-col items-center border-2 border-black p-6 rounded-2xl w-[85%] relative break-inside-avoid shadow-sm">
+                 <div className="absolute -top-4 bg-white px-4">
+                   <h3 className="text-xl font-black tracking-tight">{vehicle.plaka}</h3>
+                 </div>
+                 
+                 <div className="bg-white p-2 rounded-xl mb-4 border border-gray-200 shadow-inner">
+                   <QRCodeSVG 
+                     value={qrUrl} 
+                     size={220}
+                     level="M"
+                     includeMargin={false}
+                   />
+                 </div>
+                 
+                 <div className="text-center w-full bg-gray-100 py-3 rounded-lg border border-gray-300">
+                   <p className="font-bold text-lg text-black">{COMPARTMENT_NAMES[comp] || comp}</p>
+                   <p className="text-xs text-gray-600 mt-1">{vehicle.bolmeler[comp]?.length || 0} Malzeme</p>
+                 </div>
+                 
+                 <p className="text-[10px] text-gray-400 mt-4 text-center">Sivas İtfaiyesi Araç ve Envanter Yönetimi</p>
+               </div>
+             )
+          })}
         </div>
       </div>
     </div>
