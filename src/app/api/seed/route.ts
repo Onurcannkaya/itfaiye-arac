@@ -12,60 +12,65 @@ export async function GET() {
       const email = `${p.sicil_no.toLowerCase()}@itfaiye.local`;
       const password = "1234";
 
-      // Önce auth kullanıcısını oluştur/güncelle
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          sicil_no: p.sicil_no,
-          ad: p.ad,
-          soyad: p.soyad,
-        }
-      });
-
-      if (authError && authError.message.includes('already been registered')) {
-        logs.push(`User already exists: ${p.sicil_no}`);
-        // Mevcut kullanıcıyı çek
-        const { data: usersData } = await supabase.auth.admin.listUsers();
-        const existingUser = usersData.users.find(u => u.email === email);
-        
-        if (existingUser) {
-           await supabase.from('personnel').upsert({
-             id: existingUser.id,
-             sicil_no: p.sicil_no,
-             ad: p.ad,
-             soyad: p.soyad,
-             unvan: p.unvan,
-             rol: p.rol,
-             aktif: true,
-             view_only: p.rol === 'User',
-             can_approve: p.rol === 'Shift_Leader' || p.rol === 'Admin',
-             can_print: p.rol !== 'User'
-           });
-        }
-      } else if (authError) {
-        logs.push(`Hata Auth (${p.sicil_no}): ${authError.message}`);
-      } else if (authData.user) {
-        // Personel profilini oluştur
-        const { error: profileError } = await supabase.from('personnel').insert({
-          id: authData.user.id,
-          sicil_no: p.sicil_no,
-          ad: p.ad,
-          soyad: p.soyad,
-          unvan: p.unvan,
-          rol: p.rol,
-          aktif: true,
-          view_only: p.rol === 'User',
-          can_approve: p.rol === 'Shift_Leader' || p.rol === 'Admin',
-          can_print: p.rol !== 'User'
+      try {
+        // Önce auth kullanıcısını oluştur
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            sicil_no: p.sicil_no,
+            ad: p.ad,
+            soyad: p.soyad,
+          }
         });
 
-        if (profileError) {
-          logs.push(`Hata Profil (${p.sicil_no}): ${profileError.message}`);
-        } else {
-          logs.push(`Başarılı: ${p.sicil_no} eklendi.`);
+        if (authError && authError.message.includes('already been registered')) {
+          logs.push(`Mevcut: ${p.sicil_no} — zaten kayıtlı, profil güncelleniyor...`);
+          const { data: usersData } = await supabase.auth.admin.listUsers();
+          const existingUser = usersData.users.find(u => u.email === email);
+          
+          if (existingUser) {
+             const { error: upsertErr } = await supabase.from('personnel').upsert({
+               id: existingUser.id,
+               sicil_no: p.sicil_no,
+               ad: p.ad,
+               soyad: p.soyad,
+               unvan: p.unvan,
+               rol: p.rol,
+               aktif: true,
+               view_only: p.rol === 'User',
+               can_approve: p.rol === 'Shift_Leader' || p.rol === 'Admin',
+               can_print: p.rol !== 'User'
+             }, { onConflict: 'sicil_no' });
+             if (upsertErr) logs.push(`  → Profil güncelleme hatası: ${upsertErr.message}`);
+             else logs.push(`  → Profil güncellendi.`);
+          }
+        } else if (authError) {
+          // Detaylı hata logla
+          logs.push(`Hata Auth (${p.sicil_no}): ${authError.message} | status: ${(authError as any).status || 'N/A'} | code: ${(authError as any).code || 'N/A'}`);
+        } else if (authData.user) {
+          const { error: profileError } = await supabase.from('personnel').insert({
+            id: authData.user.id,
+            sicil_no: p.sicil_no,
+            ad: p.ad,
+            soyad: p.soyad,
+            unvan: p.unvan,
+            rol: p.rol,
+            aktif: true,
+            view_only: p.rol === 'User',
+            can_approve: p.rol === 'Shift_Leader' || p.rol === 'Admin',
+            can_print: p.rol !== 'User'
+          });
+
+          if (profileError) {
+            logs.push(`Hata Profil (${p.sicil_no}): ${profileError.message}`);
+          } else {
+            logs.push(`✓ ${p.sicil_no} — ${p.ad} ${p.soyad} (${p.unvan}) eklendi.`);
+          }
         }
+      } catch (err: any) {
+        logs.push(`Exception (${p.sicil_no}): ${err.message}`);
       }
     }
 

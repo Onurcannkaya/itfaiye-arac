@@ -63,11 +63,11 @@ export const useAuthStore = create<AuthState>()(
           return { success: false, error: "Sicil numarası veya parola hatalı." }
         }
 
-        // 2. Personel tablosundan detayları çek
+        // 2. Personel tablosundan detayları çek (sicil_no PRIMARY KEY)
         const { data: profile, error: profileError } = await supabase
           .from('personnel')
           .select('*')
-          .eq('id', authData.user.id)
+          .eq('sicil_no', key)
           .single()
 
         if (profileError || !profile) {

@@ -56,12 +56,8 @@ export default function SablonlarPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Get sicil_no from personnel
-    let sicil_no = null
-    if (user) {
-      const { data } = await supabase.from('personnel').select('sicil_no').eq('id', user.id).single()
-      if (data) sicil_no = data.sicil_no
-    }
+    // sicil_no'yu auth email'den çıkar
+    const sicil_no = user?.email?.split('@')[0]?.toUpperCase() || null
 
     const { error } = await supabase.from('task_templates').insert({
       baslik,

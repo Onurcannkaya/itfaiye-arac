@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't need auth
-  const publicPaths = ["/login", "/api/seed"];
+  const publicPaths = ["/login", "/api/seed", "/api/debug-auth", "/api/setup", "/api/check-schema"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   // API rotalarını atla (bazıları public, bazıları kendi içinde korunuyor)
@@ -35,11 +35,12 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
 
   if (isAdminPath) {
-    // Profil tablosundan rolü çek
+    // Profil tablosundan rolü çek (sicil_no PK)
+    const sicilNo = user.email?.split('@')[0]?.toUpperCase() || '';
     const { data: profile } = await supabase
       .from('personnel')
       .select('rol')
-      .eq('id', user.id)
+      .eq('sicil_no', sicilNo)
       .single();
 
     const role = profile?.rol || "";
