@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Badge } from "@/components/ui/Badge"
-import { Loader2, Calendar, Users, Plus, CheckCircle2, Search, GraduationCap } from "lucide-react"
+import { Loader2, Calendar, Users, Plus, CheckCircle2, Search, GraduationCap, Clock } from "lucide-react"
 
 type Activity = any;
 type Personnel = any;
