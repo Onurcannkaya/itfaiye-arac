@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client"
 import { type Personnel } from "@/types"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/authStore"
+import Link from 'next/link'
 
 export default function PersonelYonetimPage() {
   const { user: currentUser } = useAuthStore()
@@ -314,14 +315,13 @@ export default function PersonelYonetimPage() {
               const isAdmin = person.rol === "Admin" || person.rol === "Editor"
               const isLeader = person.unvan.includes("Çavuş") || person.unvan.includes("Amir") || person.unvan.includes("Müdür")
               const perms = permissions[person.sicil_no] || { view_only: true, can_approve: false, can_print: false }
-
               return (
                 <div key={person.sicil_no} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                   
-                  {/* Info Section */}
-                  <div className="flex items-center gap-3 w-full xl:w-2/5 shrink-0">
+                  {/* Info Section - Now clickable Link */}
+                  <Link href={`/yonetim/personel/${person.sicil_no}`} className="flex items-center gap-3 w-full xl:w-2/5 shrink-0 group">
                     <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border-2",
+                      "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border-2 transition-transform group-hover:scale-105",
                       isAdmin ? "bg-primary/10 text-primary border-primary/20" : 
                       isLeader ? "bg-warning/10 text-warning border-warning/20" : 
                       "bg-muted border-border"
@@ -357,7 +357,7 @@ export default function PersonelYonetimPage() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Toggle Permissions */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ml-12 xl:ml-0 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
