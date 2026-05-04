@@ -200,7 +200,7 @@ export default function HizmetlerPage() {
                     disabled={updating === selectedRequest.id}
                   >Onaylandı</Button>
                   <Button 
-                    variant={selectedRequest.durum === 'Reddedildi' ? 'destructive' : 'outline'} 
+                    variant={selectedRequest.durum === 'Reddedildi' ? 'danger' : 'outline'} 
                     size="sm" onClick={() => updateStatus(selectedRequest.id, 'Reddedildi')}
                     disabled={updating === selectedRequest.id}
                   >Reddedildi</Button>
