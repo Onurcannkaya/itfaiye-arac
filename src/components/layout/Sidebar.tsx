@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Home, Truck, Users, Wrench, FileText, ScanLine, Wind, ListChecks, BarChart3 } from 'lucide-react'
+import { Home, Truck, Users, Wrench, FileText, ScanLine, Wind, ListChecks, BarChart3, GraduationCap } from 'lucide-react'
 
 export function Sidebar() {
   return (
@@ -44,6 +44,14 @@ export function Sidebar() {
           <Link href="/yonetim/istatistikler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
             <BarChart3 size={20} />
             <span>Olay İstatistikleri</span>
+          </Link>
+          <Link href="/yonetim/hizmetler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+            <FileText size={20} />
+            <span>Hizmet Başvuruları</span>
+          </Link>
+          <Link href="/yonetim/egitimler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+            <GraduationCap size={20} />
+            <span>Eğitim & Faaliyetler</span>
           </Link>
           <Link href="/yonetim/olaylar" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
             <FileText size={20} />
