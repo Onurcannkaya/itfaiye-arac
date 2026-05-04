@@ -5,6 +5,10 @@
 -- ============================================================
 -- TABLO 1: incidents (Ana Olay Kayıt Tablosu)
 -- ============================================================
+DROP TABLE IF EXISTS public.incident_personnel CASCADE;
+DROP TABLE IF EXISTS public.incident_vehicles CASCADE;
+DROP TABLE IF EXISTS public.incidents CASCADE;
+
 CREATE TABLE IF NOT EXISTS public.incidents (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   olay_turu TEXT NOT NULL, -- Yangın, Trafik Kazası, Kurtarma, Su Baskını, Diğer
