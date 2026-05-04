@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Badge } from "@/components/ui/Badge"
-import { Loader2, Calendar, Users, Plus, CheckCircle2, Search, GraduationCap, Clock } from "lucide-react"
+import { Loader2, Calendar, Users, Plus, CheckCircle2, Search, GraduationCap } from "lucide-react"
 
 type Activity = any;
 type Personnel = any;
@@ -271,7 +271,7 @@ export default function EgitimlerPage() {
                       </div>
                       <p className="text-sm text-muted-foreground">{act.hedef_kitle}</p>
                       <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-muted-foreground font-mono">
-                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {new Date(act.baslangic_tarihi).toLocaleString('tr-TR')}</span>
+                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(act.baslangic_tarihi).toLocaleString('tr-TR')}</span>
                         {act.toplam_sure_saat > 0 && <span>Süre: {act.toplam_sure_saat} Saat</span>}
                         {act.katilimci_sayisi > 0 && <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {act.katilimci_sayisi} Katılımcı</span>}
                       </div>
