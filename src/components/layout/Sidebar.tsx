@@ -45,6 +45,10 @@ export function Sidebar() {
             <BarChart3 size={20} />
             <span>Olay İstatistikleri</span>
           </Link>
+          <Link href="/yonetim/arac-bakim" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+            <Wrench size={20} />
+            <span>Araç Bakım & Arıza</span>
+          </Link>
           <Link href="/yonetim/hizmetler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
             <FileText size={20} />
             <span>Hizmet Başvuruları</span>
