@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Home, Truck, Users, Wrench, FileText, ScanLine, Wind, ListChecks, BarChart3, GraduationCap, Map } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 export function Sidebar() {
   return (
@@ -75,6 +76,10 @@ export function Sidebar() {
           </Link>
         </div>
       </nav>
+      <div className="p-4 border-t border-border flex items-center justify-between">
+        <span className="text-xs font-semibold text-muted-foreground">Tema Ayarı</span>
+        <ThemeToggle />
+      </div>
     </aside>
   )
 }
