@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
@@ -38,7 +38,7 @@ interface Incident {
   mahalle: string
   adres: string
   cikis_saati: string
-  location?: any // GeoJSON point
+  location?: any
 }
 
 interface Hydrant {
@@ -47,25 +47,24 @@ interface Hydrant {
   tip: string
   durum: string
   mahalle: string
-  location?: any // GeoJSON point
+  location?: any
 }
 
 interface MapProps {
   incidents: Incident[]
   hydrants: Hydrant[]
+  mode: 'idle' | 'add_incident' | 'add_hydrant'
+  onMapClick: (lat: number, lng: number) => void
+  focusLocation: [number, number] | null
 }
 
 const parseLocation = (loc: any) => {
-  // PostGIS location points often come as GeoJSON or WKT string depending on the Supabase client settings.
-  // Assuming Supabase returns GeoJSON { type: 'Point', coordinates: [lng, lat] }
   if (!loc) return null;
   if (typeof loc === 'string') {
-    // If it's a WKT string, we would need to parse it, but Supabase usually returns strings for Geography if casted, 
-    // or we might need to cast to GeoJSON in SQL. We'll handle both basic cases.
     try {
       const parsed = JSON.parse(loc);
       if (parsed.coordinates) {
-        return [parsed.coordinates[1], parsed.coordinates[0]] as [number, number]; // leaflet uses [lat, lng]
+        return [parsed.coordinates[1], parsed.coordinates[0]] as [number, number];
       }
     } catch(e) {}
     return null;
@@ -77,18 +76,52 @@ const parseLocation = (loc: any) => {
   return null;
 }
 
-export default function Map({ incidents, hydrants }: MapProps) {
-  // Sivas Coordinates
-  const defaultCenter: [number, number] = [39.750, 37.016]
+// Controller component to handle flyTo and cursor styling
+function MapController({ focusLocation, mode }: { focusLocation: [number, number] | null, mode: string }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (focusLocation) {
+      map.flyTo(focusLocation, 16, { duration: 1.5 })
+    }
+  }, [focusLocation, map])
+
+  useEffect(() => {
+    if (mode !== 'idle') {
+      map.getContainer().style.cursor = 'crosshair'
+    } else {
+      map.getContainer().style.cursor = ''
+    }
+  }, [mode, map])
+
+  return null
+}
+
+// Click Handler component
+function MapClickHandler({ onMapClick, mode }: { onMapClick: (lat: number, lng: number) => void, mode: string }) {
+  useMapEvents({
+    click(e) {
+      if (mode !== 'idle') {
+        onMapClick(e.latlng.lat, e.latlng.lng)
+      }
+    }
+  })
+  return null
+}
+
+export default function Map({ incidents, hydrants, mode, onMapClick, focusLocation }: MapProps) {
+  const defaultCenter: [number, number] = [39.750, 37.016] // Sivas center
 
   return (
     <MapContainer center={defaultCenter} zoom={13} style={{ height: '100%', width: '100%', zIndex: 0 }}>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       
-      {/* Incidents Layer */}
+      <MapController focusLocation={focusLocation} mode={mode} />
+      <MapClickHandler onMapClick={onMapClick} mode={mode} />
+
       {incidents.map(inc => {
         const coords = parseLocation(inc.location)
         if (!coords) return null
@@ -99,14 +132,15 @@ export default function Map({ incidents, hydrants }: MapProps) {
                 <h3 className="font-bold text-danger text-sm border-b pb-1 mb-1">{inc.olay_turu}</h3>
                 <p className="text-xs"><strong>Mahalle:</strong> {inc.mahalle}</p>
                 <p className="text-xs"><strong>Adres:</strong> {inc.adres}</p>
-                <p className="text-xs text-muted-foreground mt-1">{new Date(inc.cikis_saati).toLocaleString('tr-TR')}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {inc.cikis_saati ? new Date(inc.cikis_saati).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}
+                </p>
               </div>
             </Popup>
           </Marker>
         )
       })}
 
-      {/* Hydrants Layer */}
       {hydrants.map(hyd => {
         const coords = parseLocation(hyd.location)
         if (!coords) return null
