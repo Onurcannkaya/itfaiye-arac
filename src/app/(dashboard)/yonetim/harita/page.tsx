@@ -76,11 +76,15 @@ export default function HaritaPage() {
     setIsSearching(true)
     const supabase = createClient()
     try {
+      // Türkçe karakter hatalarını önlemek için küçük harfe ve büyük harfe çevirme alternatifleri kullanılabilir,
+      // ancak Supabase ILIKE genel olarak case-insensitive'dir. Yine de term'i temizleyelim.
+      const term = searchQuery.trim()
+
       // Fuzzy search on spatial_addresses table (using the GIN index we created)
       const { data, error } = await supabase
         .from('spatial_addresses')
         .select('*')
-        .or(`abs_mahalle_adi.ilike.%${searchQuery}%,adi.ilike.%${searchQuery}%`)
+        .or(`abs_mahalle_adi.ilike.%${term}%,adi.ilike.%${term}%`)
         .limit(10)
 
       if (error) throw error
