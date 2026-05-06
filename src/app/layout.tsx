@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <body className="min-h-full flex flex-col bg-background text-foreground antialiased selection:bg-primary/20">
+      <body className="min-h-screen w-full overflow-x-hidden bg-background text-foreground antialiased selection:bg-primary/20 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
         </ThemeProvider>

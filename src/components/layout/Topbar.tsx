@@ -19,8 +19,7 @@ export function Topbar() {
   const rolLabel = user?.unvan || (user?.rol === 'Admin' ? 'Yönetici' : user?.rol === 'Editor' ? 'Amir' : user?.rol === 'Shift_Leader' ? 'Vardiya Çavuşu' : 'İtfaiye Eri')
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-surface px-4 md:px-6 z-10 min-h-16 pt-safe"
-            style={{ minHeight: 'max(64px, calc(64px + env(safe-area-inset-top, 0px)))' }}>
+    <header className="flex items-center justify-between border-b border-border bg-surface px-3 sm:px-4 md:px-6 z-10 min-h-14 sm:min-h-16">
       <div className="flex items-center md:hidden space-x-2">
         <Image src="/logo-itfaiye.png" alt="Logo" width={28} height={28} className="object-contain" />
         <h1 className="text-lg font-bold tracking-tight">Sivas İtfaiyesi</h1>
