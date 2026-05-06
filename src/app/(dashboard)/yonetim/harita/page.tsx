@@ -21,7 +21,14 @@ const Map = dynamic(() => import("@/components/map/Map"), {
 
 type Incident = any
 type Hydrant = any
-type Address = any
+type NominatimResult = {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+  type: string
+  class: string
+}
 
 export default function HaritaPage() {
   const [incidents, setIncidents] = useState<Incident[]>([])
@@ -30,7 +37,7 @@ export default function HaritaPage() {
 
   // Search Engine State
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<Address[]>([])
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [focusLocation, setFocusLocation] = useState<[number, number] | null>(null)
@@ -69,25 +76,24 @@ export default function HaritaPage() {
     }
   }
 
-  // Handle Local Database Search
+  // Handle Nominatim (OSM) Search
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!searchQuery.trim() || searchQuery.length < 3) return
     
     setIsSearching(true)
     setHasSearched(false)
-    const supabase = createClient()
     try {
-      const term = searchQuery.trim()
+      const term = encodeURIComponent(searchQuery.trim())
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${term}&city=Sivas&country=Turkey&limit=10&accept-language=tr`
 
-      // Fuzzy search on spatial_addresses table (using the GIN index we created)
-      const { data, error } = await supabase
-        .from('spatial_addresses')
-        .select('*')
-        .or(`abs_mahalle_adi.ilike.%${term}%,adi.ilike.%${term}%`)
-        .limit(10)
+      const response = await fetch(url, {
+        headers: { 'Accept': 'application/json' }
+      })
 
-      if (error) throw error
+      if (!response.ok) throw new Error(`Nominatim API hatası: ${response.status}`)
+      
+      const data: NominatimResult[] = await response.json()
       setSearchResults(data || [])
       setHasSearched(true)
     } catch (error) {
@@ -107,25 +113,14 @@ export default function HaritaPage() {
     }
   }
 
-  const handleSelectAddress = (addr: Address) => {
-    if (addr.location) {
-      try {
-        let coords: [number, number] | null = null;
-        if (typeof addr.location === 'string') {
-          const parsed = JSON.parse(addr.location);
-          if (parsed.coordinates) coords = [parsed.coordinates[1], parsed.coordinates[0]];
-        } else if (addr.location.coordinates) {
-          coords = [addr.location.coordinates[1], addr.location.coordinates[0]];
-        }
-
-        if (coords) {
-          setFocusLocation(coords)
-          setSearchResults([])
-          setSearchQuery(addr.adi ? `${addr.adi}, ${addr.abs_mahalle_adi}` : addr.abs_mahalle_adi)
-        }
-      } catch (e) {
-        console.error(e)
-      }
+  const handleSelectAddress = (result: NominatimResult) => {
+    const lat = parseFloat(result.lat)
+    const lon = parseFloat(result.lon)
+    if (!isNaN(lat) && !isNaN(lon)) {
+      setFocusLocation([lat, lon])
+      setSearchResults([])
+      setHasSearched(false)
+      setSearchQuery(result.display_name)
     }
   }
 
@@ -285,12 +280,14 @@ export default function HaritaPage() {
                 </div>
                 {searchResults.map(res => (
                   <div 
-                    key={res.id} 
+                    key={res.place_id} 
                     className="px-4 py-3 hover:bg-surface cursor-pointer border-b last:border-0 transition-colors"
                     onClick={() => handleSelectAddress(res)}
                   >
-                    <div className="font-medium text-sm flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-primary" /> {res.abs_mahalle_adi}</div>
-                    {res.adi && <div className="text-xs text-muted-foreground ml-5">{res.adi}</div>}
+                    <div className="font-medium text-sm flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="line-clamp-2">{res.display_name}</span>
+                    </div>
                   </div>
                 ))}
               </div>

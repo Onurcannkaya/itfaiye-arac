@@ -79,18 +79,6 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
             tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
             tileSize: 256,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          },
-          'sivas-binalar': {
-            type: 'vector',
-            tiles: ['https://harita.sivas.bel.tr/binalar/{z}/{x}/{y}'],
-            minzoom: 0,
-            maxzoom: 18
-          },
-          'sivas-sokaklar': {
-            type: 'vector',
-            tiles: ['https://harita.sivas.bel.tr/sokaklar/{z}/{x}/{y}'],
-            minzoom: 0,
-            maxzoom: 18
           }
         },
         layers: [
@@ -100,50 +88,6 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
             source: 'osm-raster',
             minzoom: 0,
             maxzoom: 19
-          },
-          // ── Sokak vektör katmanı ──
-          {
-            id: 'sokaklar-line',
-            type: 'line',
-            source: 'sivas-sokaklar',
-            'source-layer': 'sokaklar',
-            paint: {
-              'line-color': '#6366f1',
-              'line-width': [
-                'interpolate', ['linear'], ['zoom'],
-                12, 1,
-                16, 3,
-                20, 6
-              ],
-              'line-opacity': 0.7
-            }
-          },
-          // ── Bina vektör katmanı ──
-          {
-            id: 'binalar-fill',
-            type: 'fill',
-            source: 'sivas-binalar',
-            'source-layer': 'binalar',
-            paint: {
-              'fill-color': '#f59e0b',
-              'fill-opacity': [
-                'interpolate', ['linear'], ['zoom'],
-                13, 0.15,
-                16, 0.35,
-                19, 0.55
-              ]
-            }
-          },
-          {
-            id: 'binalar-outline',
-            type: 'line',
-            source: 'sivas-binalar',
-            'source-layer': 'binalar',
-            paint: {
-              'line-color': '#d97706',
-              'line-width': 0.8,
-              'line-opacity': 0.6
-            }
           }
         ]
       },
@@ -160,7 +104,6 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       console.error('[MapLibre Hata]', {
         message: e.error?.message || e.message || 'Bilinmeyen hata',
         sourceId: (e as any).sourceId,
-        tileId: (e as any).tile?.tileID,
         error: e.error || e
       })
     })
@@ -170,51 +113,6 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       if (modeRef.current !== 'idle') {
         onMapClick(e.lngLat.lat, e.lngLat.lng)
       }
-    })
-
-    // Interactive tooltips for vector layers
-    map.on('click', 'binalar-fill', (e) => {
-      if (modeRef.current !== 'idle') return
-      if (e.features && e.features.length > 0) {
-        const props = e.features[0].properties
-        const html = Object.entries(props)
-          .filter(([, v]) => v != null && v !== '')
-          .map(([k, v]) => `<strong>${k}:</strong> ${v}`)
-          .join('<br/>')
-        new maplibregl.Popup({ maxWidth: '320px' })
-          .setLngLat(e.lngLat)
-          .setHTML(`<div style="font-family:system-ui;font-size:12px;line-height:1.6">${html || 'Bina verisi'}</div>`)
-          .addTo(map)
-      }
-    })
-
-    map.on('click', 'sokaklar-line', (e) => {
-      if (modeRef.current !== 'idle') return
-      if (e.features && e.features.length > 0) {
-        const props = e.features[0].properties
-        const html = Object.entries(props)
-          .filter(([, v]) => v != null && v !== '')
-          .map(([k, v]) => `<strong>${k}:</strong> ${v}`)
-          .join('<br/>')
-        new maplibregl.Popup({ maxWidth: '320px' })
-          .setLngLat(e.lngLat)
-          .setHTML(`<div style="font-family:system-ui;font-size:12px;line-height:1.6">${html || 'Sokak verisi'}</div>`)
-          .addTo(map)
-      }
-    })
-
-    // Pointer cursor on hover over vector features
-    map.on('mouseenter', 'binalar-fill', () => {
-      if (modeRef.current === 'idle') map.getCanvas().style.cursor = 'pointer'
-    })
-    map.on('mouseleave', 'binalar-fill', () => {
-      if (modeRef.current === 'idle') map.getCanvas().style.cursor = ''
-    })
-    map.on('mouseenter', 'sokaklar-line', () => {
-      if (modeRef.current === 'idle') map.getCanvas().style.cursor = 'pointer'
-    })
-    map.on('mouseleave', 'sokaklar-line', () => {
-      if (modeRef.current === 'idle') map.getCanvas().style.cursor = ''
     })
 
     mapRef.current = map
