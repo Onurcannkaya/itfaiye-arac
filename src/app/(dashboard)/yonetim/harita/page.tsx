@@ -84,11 +84,14 @@ export default function HaritaPage() {
     setIsSearching(true)
     setHasSearched(false)
     try {
-      const term = encodeURIComponent(searchQuery.trim())
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${term}&city=Sivas&country=Turkey&limit=10&accept-language=tr`
+      const searchTerm = encodeURIComponent(`${searchQuery.trim()} Sivas`)
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${searchTerm}&addressdetails=1&limit=5`
 
       const response = await fetch(url, {
-        headers: { 'Accept': 'application/json' }
+        headers: {
+          'Accept-Language': 'tr-TR',
+          'User-Agent': 'SivasItfaiyeKomuta/1.0'
+        }
       })
 
       if (!response.ok) throw new Error(`Nominatim API hatası: ${response.status}`)
