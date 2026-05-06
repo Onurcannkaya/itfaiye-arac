@@ -1,36 +1,8 @@
 "use client"
 
-import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
-
-// Fix for default Leaflet icons in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
-
-// Custom Icons
-const incidentIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-})
-
-const hydrantIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-})
+import { useEffect, useRef, useCallback } from 'react'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 
 interface Incident {
   id: string
@@ -58,105 +30,282 @@ interface MapProps {
   focusLocation: [number, number] | null
 }
 
-const parseLocation = (loc: any) => {
-  if (!loc) return null;
+const parseLocation = (loc: any): [number, number] | null => {
+  if (!loc) return null
   if (typeof loc === 'string') {
     try {
-      const parsed = JSON.parse(loc);
+      const parsed = JSON.parse(loc)
       if (parsed.coordinates) {
-        return [parsed.coordinates[1], parsed.coordinates[0]] as [number, number];
+        // GeoJSON stores [lng, lat]
+        return [parsed.coordinates[0], parsed.coordinates[1]]
       }
-    } catch(e) {}
-    return null;
+    } catch {
+      return null
+    }
   }
-  
   if (loc.coordinates) {
-    return [loc.coordinates[1], loc.coordinates[0]] as [number, number];
+    return [loc.coordinates[0], loc.coordinates[1]]
   }
-  return null;
-}
-
-// Controller component to handle flyTo and cursor styling
-function MapController({ focusLocation, mode }: { focusLocation: [number, number] | null, mode: string }) {
-  const map = useMap()
-
-  useEffect(() => {
-    if (focusLocation) {
-      map.flyTo(focusLocation, 16, { duration: 1.5 })
-    }
-  }, [focusLocation, map])
-
-  useEffect(() => {
-    if (mode !== 'idle') {
-      map.getContainer().style.cursor = 'crosshair'
-    } else {
-      map.getContainer().style.cursor = ''
-    }
-  }, [mode, map])
-
-  return null
-}
-
-// Click Handler component
-function MapClickHandler({ onMapClick, mode }: { onMapClick: (lat: number, lng: number) => void, mode: string }) {
-  useMapEvents({
-    click(e) {
-      if (mode !== 'idle') {
-        onMapClick(e.latlng.lat, e.latlng.lng)
-      }
-    }
-  })
   return null
 }
 
 export default function Map({ incidents, hydrants, mode, onMapClick, focusLocation }: MapProps) {
-  const defaultCenter: [number, number] = [39.750, 37.016] // Sivas center
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<maplibregl.Marker[]>([])
+  const modeRef = useRef(mode)
+
+  // Keep modeRef in sync so the click handler can read the latest value
+  useEffect(() => {
+    modeRef.current = mode
+    if (mapRef.current) {
+      mapRef.current.getCanvas().style.cursor = mode !== 'idle' ? 'crosshair' : ''
+    }
+  }, [mode])
+
+  // ─── Initialize MapLibre GL ───────────────────────────────
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: {
+        version: 8,
+        name: 'Sivas İtfaiye CBS',
+        sources: {
+          'osm-raster': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          },
+          'sivas-binalar': {
+            type: 'vector',
+            tiles: ['https://harita.sivas.bel.tr/binalar/{z}/{x}/{y}'],
+            minzoom: 0,
+            maxzoom: 18
+          },
+          'sivas-sokaklar': {
+            type: 'vector',
+            tiles: ['https://harita.sivas.bel.tr/sokaklar/{z}/{x}/{y}'],
+            minzoom: 0,
+            maxzoom: 18
+          }
+        },
+        layers: [
+          {
+            id: 'osm-base',
+            type: 'raster',
+            source: 'osm-raster',
+            minzoom: 0,
+            maxzoom: 19
+          },
+          // ── Sokak vektör katmanı ──
+          {
+            id: 'sokaklar-line',
+            type: 'line',
+            source: 'sivas-sokaklar',
+            'source-layer': 'default',
+            paint: {
+              'line-color': '#6366f1',
+              'line-width': [
+                'interpolate', ['linear'], ['zoom'],
+                12, 1,
+                16, 3,
+                20, 6
+              ],
+              'line-opacity': 0.7
+            }
+          },
+          // ── Bina vektör katmanı ──
+          {
+            id: 'binalar-fill',
+            type: 'fill',
+            source: 'sivas-binalar',
+            'source-layer': 'default',
+            paint: {
+              'fill-color': '#f59e0b',
+              'fill-opacity': [
+                'interpolate', ['linear'], ['zoom'],
+                13, 0.15,
+                16, 0.35,
+                19, 0.55
+              ]
+            }
+          },
+          {
+            id: 'binalar-outline',
+            type: 'line',
+            source: 'sivas-binalar',
+            'source-layer': 'default',
+            paint: {
+              'line-color': '#d97706',
+              'line-width': 0.8,
+              'line-opacity': 0.6
+            }
+          }
+        ]
+      },
+      center: [37.016, 39.750], // Sivas merkez [lng, lat]
+      zoom: 13,
+      maxZoom: 20,
+      attributionControl: {}
+    })
+
+    map.addControl(new maplibregl.NavigationControl(), 'bottom-right')
+
+    // Map click handler — uses modeRef so it always reads latest mode
+    map.on('click', (e) => {
+      if (modeRef.current !== 'idle') {
+        onMapClick(e.lngLat.lat, e.lngLat.lng)
+      }
+    })
+
+    // Interactive tooltips for vector layers
+    map.on('click', 'binalar-fill', (e) => {
+      if (modeRef.current !== 'idle') return
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties
+        const html = Object.entries(props)
+          .filter(([, v]) => v != null && v !== '')
+          .map(([k, v]) => `<strong>${k}:</strong> ${v}`)
+          .join('<br/>')
+        new maplibregl.Popup({ maxWidth: '320px' })
+          .setLngLat(e.lngLat)
+          .setHTML(`<div style="font-family:system-ui;font-size:12px;line-height:1.6">${html || 'Bina verisi'}</div>`)
+          .addTo(map)
+      }
+    })
+
+    map.on('click', 'sokaklar-line', (e) => {
+      if (modeRef.current !== 'idle') return
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties
+        const html = Object.entries(props)
+          .filter(([, v]) => v != null && v !== '')
+          .map(([k, v]) => `<strong>${k}:</strong> ${v}`)
+          .join('<br/>')
+        new maplibregl.Popup({ maxWidth: '320px' })
+          .setLngLat(e.lngLat)
+          .setHTML(`<div style="font-family:system-ui;font-size:12px;line-height:1.6">${html || 'Sokak verisi'}</div>`)
+          .addTo(map)
+      }
+    })
+
+    // Pointer cursor on hover over vector features
+    map.on('mouseenter', 'binalar-fill', () => {
+      if (modeRef.current === 'idle') map.getCanvas().style.cursor = 'pointer'
+    })
+    map.on('mouseleave', 'binalar-fill', () => {
+      if (modeRef.current === 'idle') map.getCanvas().style.cursor = ''
+    })
+    map.on('mouseenter', 'sokaklar-line', () => {
+      if (modeRef.current === 'idle') map.getCanvas().style.cursor = 'pointer'
+    })
+    map.on('mouseleave', 'sokaklar-line', () => {
+      if (modeRef.current === 'idle') map.getCanvas().style.cursor = ''
+    })
+
+    mapRef.current = map
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ─── Sync markers for incidents & hydrants ────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    // Clear old markers
+    markersRef.current.forEach(m => m.remove())
+    markersRef.current = []
+
+    // Incident markers (red)
+    incidents.forEach(inc => {
+      const coords = parseLocation(inc.location)
+      if (!coords) return
+      
+      const el = document.createElement('div')
+      el.className = 'map-marker-incident'
+      el.style.cssText = `
+        width: 28px; height: 28px;
+        background: #ef4444;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(239,68,68,0.5);
+        cursor: pointer;
+      `
+
+      const popup = new maplibregl.Popup({ offset: 18, maxWidth: '280px' }).setHTML(`
+        <div style="font-family:system-ui;padding:4px 0">
+          <h3 style="font-weight:700;color:#ef4444;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px;margin-bottom:4px">${inc.olay_turu}</h3>
+          <p style="font-size:12px;margin:2px 0"><strong>Mahalle:</strong> ${inc.mahalle || '-'}</p>
+          <p style="font-size:12px;margin:2px 0"><strong>Adres:</strong> ${inc.adres || '-'}</p>
+          <p style="font-size:11px;color:#888;margin-top:4px">${inc.cikis_saati ? new Date(inc.cikis_saati).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}</p>
+        </div>
+      `)
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(coords)
+        .setPopup(popup)
+        .addTo(map)
+
+      markersRef.current.push(marker)
+    })
+
+    // Hydrant markers (blue)
+    hydrants.forEach(hyd => {
+      const coords = parseLocation(hyd.location)
+      if (!coords) return
+
+      const el = document.createElement('div')
+      el.className = 'map-marker-hydrant'
+      el.style.cssText = `
+        width: 24px; height: 24px;
+        background: #3b82f6;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.5);
+        cursor: pointer;
+      `
+
+      const popup = new maplibregl.Popup({ offset: 16, maxWidth: '260px' }).setHTML(`
+        <div style="font-family:system-ui;padding:4px 0">
+          <h3 style="font-weight:700;color:#3b82f6;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px;margin-bottom:4px">Yangın Hidrantı #${hyd.no}</h3>
+          <p style="font-size:12px;margin:2px 0"><strong>Tip:</strong> ${hyd.tip}</p>
+          <p style="font-size:12px;margin:2px 0"><strong>Durum:</strong> ${hyd.durum}</p>
+          <p style="font-size:12px;margin:2px 0"><strong>Mahalle:</strong> ${hyd.mahalle || '-'}</p>
+        </div>
+      `)
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(coords)
+        .setPopup(popup)
+        .addTo(map)
+
+      markersRef.current.push(marker)
+    })
+  }, [incidents, hydrants])
+
+  // ─── Focus / flyTo on search result ───────────────────────
+  useEffect(() => {
+    if (!mapRef.current || !focusLocation) return
+    // focusLocation is [lat, lng] from the parent — convert to [lng, lat]
+    mapRef.current.flyTo({
+      center: [focusLocation[1], focusLocation[0]],
+      zoom: 16,
+      duration: 1500
+    })
+  }, [focusLocation])
 
   return (
-    <MapContainer center={defaultCenter} zoom={13} style={{ height: '100%', width: '100%', zIndex: 0 }}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      
-      <MapController focusLocation={focusLocation} mode={mode} />
-      <MapClickHandler onMapClick={onMapClick} mode={mode} />
-
-      {incidents.map(inc => {
-        const coords = parseLocation(inc.location)
-        if (!coords) return null
-        return (
-          <Marker key={`inc-${inc.id}`} position={coords} icon={incidentIcon}>
-            <Popup>
-              <div className="font-sans">
-                <h3 className="font-bold text-danger text-sm border-b pb-1 mb-1">{inc.olay_turu}</h3>
-                <p className="text-xs"><strong>Mahalle:</strong> {inc.mahalle}</p>
-                <p className="text-xs"><strong>Adres:</strong> {inc.adres}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {inc.cikis_saati ? new Date(inc.cikis_saati).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        )
-      })}
-
-      {hydrants.map(hyd => {
-        const coords = parseLocation(hyd.location)
-        if (!coords) return null
-        return (
-          <Marker key={`hyd-${hyd.id}`} position={coords} icon={hydrantIcon}>
-            <Popup>
-              <div className="font-sans">
-                <h3 className="font-bold text-primary text-sm border-b pb-1 mb-1">Yangın Hidrantı #{hyd.no}</h3>
-                <p className="text-xs"><strong>Tip:</strong> {hyd.tip}</p>
-                <p className="text-xs"><strong>Durum:</strong> {hyd.durum}</p>
-                <p className="text-xs"><strong>Mahalle:</strong> {hyd.mahalle}</p>
-              </div>
-            </Popup>
-          </Marker>
-        )
-      })}
-    </MapContainer>
+    <div
+      ref={mapContainerRef}
+      style={{ width: '100%', height: '100%' }}
+    />
   )
 }
