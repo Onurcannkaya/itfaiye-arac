@@ -155,6 +155,16 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
 
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right')
 
+    // ─── Error handler for tile/source loading problems ─────
+    map.on('error', (e) => {
+      console.error('[MapLibre Hata]', {
+        message: e.error?.message || e.message || 'Bilinmeyen hata',
+        sourceId: (e as any).sourceId,
+        tileId: (e as any).tile?.tileID,
+        error: e.error || e
+      })
+    })
+
     // Map click handler — uses modeRef so it always reads latest mode
     map.on('click', (e) => {
       if (modeRef.current !== 'idle') {
