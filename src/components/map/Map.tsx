@@ -70,8 +70,9 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
-        version: 8,
+        version: 8 as const,
         name: 'Sivas İtfaiye CBS',
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
           'osm-raster': {
             type: 'raster',
@@ -105,7 +106,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
             id: 'sokaklar-line',
             type: 'line',
             source: 'sivas-sokaklar',
-            'source-layer': 'default',
+            'source-layer': 'sokaklar',
             paint: {
               'line-color': '#6366f1',
               'line-width': [
@@ -122,7 +123,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
             id: 'binalar-fill',
             type: 'fill',
             source: 'sivas-binalar',
-            'source-layer': 'default',
+            'source-layer': 'binalar',
             paint: {
               'fill-color': '#f59e0b',
               'fill-opacity': [
@@ -137,7 +138,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
             id: 'binalar-outline',
             type: 'line',
             source: 'sivas-binalar',
-            'source-layer': 'default',
+            'source-layer': 'binalar',
             paint: {
               'line-color': '#d97706',
               'line-width': 0.8,
@@ -305,7 +306,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
   return (
     <div
       ref={mapContainerRef}
-      style={{ width: '100%', height: '100%' }}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
     />
   )
 }
