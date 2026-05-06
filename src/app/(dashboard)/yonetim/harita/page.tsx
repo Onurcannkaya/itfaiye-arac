@@ -210,34 +210,34 @@ export default function HaritaPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] space-y-4 max-w-[1600px] mx-auto w-full relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+    <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><MapIcon className="w-6 h-6 text-primary" /> Komuta Kontrol Haritası (CBS)</h1>
-          <p className="text-muted-foreground text-sm">İnteraktif mekansal analiz ve saha yönetimi</p>
+          <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2"><MapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" /> Komuta Kontrol Haritası</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm hidden sm:block">İnteraktif mekansal analiz ve saha yönetimi</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
           <Button 
             variant={mode === 'add_incident' ? 'default' : 'outline'}
-            className={mode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}
+            className={`min-h-[44px] text-xs sm:text-sm ${mode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
             onClick={() => setMode(mode === 'add_incident' ? 'idle' : 'add_incident')}
           >
-            <Flame className="w-4 h-4 mr-2" /> 
-            {mode === 'add_incident' ? 'Haritaya Tıklayın...' : 'Yeni Olay İşaretle'}
+            <Flame className="w-4 h-4 mr-1 sm:mr-2" /> 
+            {mode === 'add_incident' ? 'Haritaya Tıklayın...' : 'Yeni Olay'}
           </Button>
           
           <Button 
             variant={mode === 'add_hydrant' ? 'default' : 'outline'}
-            className={mode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}
+            className={`min-h-[44px] text-xs sm:text-sm ${mode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}`}
             onClick={() => setMode(mode === 'add_hydrant' ? 'idle' : 'add_hydrant')}
           >
-            <Droplets className="w-4 h-4 mr-2" /> 
-            {mode === 'add_hydrant' ? 'Haritaya Tıklayın...' : 'Yeni Hidrant Ekle'}
+            <Droplets className="w-4 h-4 mr-1 sm:mr-2" /> 
+            {mode === 'add_hydrant' ? 'Haritaya Tıklayın...' : 'Yeni Hidrant'}
           </Button>
 
           {mode !== 'idle' && (
-            <Button variant="ghost" size="icon" onClick={() => setMode('idle')} className="text-muted-foreground" title="İşlemi İptal Et">
+            <Button variant="ghost" size="icon" onClick={() => setMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px]" title="İşlemi İptal Et">
               <X className="w-5 h-5" />
             </Button>
           )}
@@ -248,7 +248,7 @@ export default function HaritaPage() {
         <CardContent className="p-0 h-full w-full relative">
           
           {/* Arama Çubuğu (Search Engine) */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[400] w-full max-w-md px-4">
+          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[400] w-full max-w-md px-3 sm:px-4">
             <form onSubmit={handleSearch} className="relative bg-background rounded-full shadow-lg border flex items-center overflow-hidden">
               <Search className="w-5 h-5 text-muted-foreground ml-4 shrink-0" />
               <input 
@@ -259,7 +259,7 @@ export default function HaritaPage() {
                 onChange={(e) => { setSearchQuery(e.target.value); setHasSearched(false) }}
                 onKeyDown={handleSearchKeyDown}
               />
-              <Button type="button" variant="ghost" className="rounded-full mr-1 h-10 w-10 p-0 shrink-0" onClick={() => handleSearch()}>
+              <Button type="button" variant="ghost" className="rounded-full mr-1 h-11 w-11 sm:h-10 sm:w-10 p-0 shrink-0" onClick={() => handleSearch()}>
                 {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               </Button>
             </form>
@@ -309,7 +309,7 @@ export default function HaritaPage() {
           </div>
 
           {/* Harita Katman ve Bilgi Kontrolü */}
-          <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-2 pointer-events-none">
+          <div className="absolute bottom-6 right-4 z-[400] flex-col gap-2 pointer-events-none hidden sm:flex">
             <div className="bg-background/90 backdrop-blur-md border shadow-lg rounded-xl p-3 space-y-2 w-48 pointer-events-auto">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-1 mb-2">Canlı Katmanlar</h3>
               
@@ -341,13 +341,13 @@ export default function HaritaPage() {
       {/* ========================================================= */}
       
       {showModal === 'incident' && (
-        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <Card className="w-full max-w-md shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <h2 className="text-lg font-bold flex items-center gap-2"><Flame className="w-5 h-5 text-danger" /> Olay İşaretle</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')}><X className="w-4 h-4" /></Button>
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
+          <Card className="w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2"><Flame className="w-5 h-5 text-danger" /> Olay İşaretle</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px]"><X className="w-4 h-4" /></Button>
             </div>
-            <form onSubmit={handleSaveIncident} className="p-6 space-y-4">
+            <form onSubmit={handleSaveIncident} className="p-4 sm:p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Olay Türü</label>
                 <select name="olay_turu" value={incidentForm.olay_turu} onChange={(e) => setIncidentForm({...incidentForm, olay_turu: e.target.value})} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
@@ -383,13 +383,13 @@ export default function HaritaPage() {
       )}
 
       {showModal === 'hydrant' && (
-        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <Card className="w-full max-w-md shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <h2 className="text-lg font-bold flex items-center gap-2"><Droplets className="w-5 h-5 text-blue-500" /> Yangın Hidrantı Ekle</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')}><X className="w-4 h-4" /></Button>
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
+          <Card className="w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2"><Droplets className="w-5 h-5 text-blue-500" /> Yangın Hidrantı Ekle</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px]"><X className="w-4 h-4" /></Button>
             </div>
-            <form onSubmit={handleSaveHydrant} className="p-6 space-y-4">
+            <form onSubmit={handleSaveHydrant} className="p-4 sm:p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Hidrant / Şube No</label>
                 <Input value={hydrantForm.no} onChange={(e) => setHydrantForm({...hydrantForm, no: e.target.value})} required placeholder="Örn: H-128" />

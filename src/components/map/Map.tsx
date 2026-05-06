@@ -93,11 +93,20 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       },
       center: [37.016, 39.750], // Sivas merkez [lng, lat]
       zoom: 13,
-      maxZoom: 20,
+      maxZoom: 19,
       attributionControl: {}
     })
 
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right')
+
+    // ─── Canlı GPS Konum Bulucu (Geolocation) ───────────────
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true
+      }),
+      'top-right'
+    )
 
     // ─── Error handler for tile/source loading problems ─────
     map.on('error', (e) => {
