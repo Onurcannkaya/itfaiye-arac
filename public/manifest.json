@@ -1,0 +1,19 @@
+{
+  "name": "Sivas İtfaiye Araç ve Envanter Yönetimi",
+  "short_name": "Sivas İtfaiye",
+  "description": "Mobil öncelikli İtfaiye Görev ve Envanter Yönetim Portalı",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#ef4444",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-itfaiye.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"]
+}
