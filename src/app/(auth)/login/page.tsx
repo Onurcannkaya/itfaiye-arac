@@ -21,7 +21,7 @@ function LoginForm() {
   useEffect(() => {
     if (isAuthenticated) {
       const redirect = searchParams.get("redirect") || "/"
-      router.push(redirect)
+      window.location.href = redirect
     }
   }, [isAuthenticated, router, searchParams])
 
@@ -45,8 +45,11 @@ function LoginForm() {
       const result = await login(sicilNo, password)
 
       if (result.success) {
-        const redirect = searchParams.get("redirect") || "/"
-        router.push(redirect)
+        if (result.token) {
+          localStorage.setItem('auth_token', result.token)
+          document.cookie = `itfaiye_token=${result.token}; path=/; max-age=86400; SameSite=Lax`
+        }
+        window.location.href = '/yonetim'
       } else {
         setError(result.error || "Giriş başarısız.")
       }

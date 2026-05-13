@@ -34,7 +34,7 @@ interface AuthState {
   token: string | null
   isAuthenticated: boolean
   redirectUrl: string | null
-  login: (sicilNo: string, password: string) => Promise<{ success: boolean; error?: string }>
+  login: (sicilNo: string, password: string) => Promise<{ success: boolean; error?: string; token?: string }>
   logout: () => Promise<void>
   setRedirectUrl: (url: string | null) => void
 }
@@ -75,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           set({ user: userObj, token: data.token, isAuthenticated: true })
-          return { success: true }
+          return { success: true, token: data.token }
         } catch (err: any) {
           console.error('[AuthStore] Login hatası:', err)
           return { success: false, error: "Sunucu bağlantı hatası." }
