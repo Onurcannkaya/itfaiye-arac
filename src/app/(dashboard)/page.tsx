@@ -4,11 +4,13 @@ import { Badge } from "@/components/ui/Badge"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 
 import { createClient } from "@/lib/supabase/server"
+import { ShiftList } from "@/components/dashboard/ShiftList"
 
 export default async function DashboardPage() {
   let activeVehicles = 0
   let personnelData: any[] = []
   let scbaWarningCount = 0
+  let expiringCertifications: any[] = []
 
   try {
     const supabase = await createClient()
@@ -27,6 +29,12 @@ export default async function DashboardPage() {
          const diffDays = (next - now) / (1000 * 60 * 60 * 24)
          return diffDays <= 180
       }).length
+    }
+
+    // Expiring Certifications
+    const { data: certsData } = await supabase.from('vw_expiring_certifications').select('*')
+    if (certsData) {
+      expiringCertifications = certsData
     }
 
   } catch {
@@ -71,9 +79,9 @@ export default async function DashboardPage() {
         />
         <StatCard 
           title="Nöbetçi Personel" 
-          value={personnelData.length} 
+          value={activeShiftPersonnel.length} 
           icon={Users} 
-          description="A Postası aktif nöbetçi listesi" 
+          description={`${activePosta}. Posta aktif nöbetçi listesi`} 
         />
         <StatCard 
           title="Acil Bakım" 
@@ -92,37 +100,14 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Nöbetçi Personel Listesi</CardTitle>
+          <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
+            <CardTitle className="text-base flex items-center space-x-2">
+              <Users className="w-5 h-5 text-muted-foreground" />
+              <span>{activePosta}. Posta Nöbetçi Personel Listesi</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="px-0 sm:px-6">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-t-md">
-                  <tr>
-                    <th className="px-4 py-3 rounded-tl-md">Sicil No</th>
-                    <th className="px-4 py-3">Ad Soyad</th>
-                    <th className="px-4 py-3 min-w-[120px]">Unvan</th>
-                    <th className="px-4 py-3 rounded-tr-md text-right min-w-[100px]">Rol</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedPersonnel.map((p) => (
-                    <tr key={p.sicil_no} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">{p.sicil_no}</td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">
-                        {p.ad} {p.soyad}
-                        {(p.rol === 'Shift_Leader' || p.rol === 'Admin') && <Badge variant="default" className="ml-2 scale-90">{p.unvan}</Badge>}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {p.unvan}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">{rolLabel(p.rol)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <CardContent className="p-4 sm:p-6">
+            <ShiftList personnel={sortedPersonnel} activePosta={activePosta} />
           </CardContent>
         </Card>
 
@@ -132,6 +117,17 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
              <div className="space-y-4">
+               {expiringCertifications.map(cert => (
+                 <div key={cert.id} className="flex items-start space-x-3 p-3 bg-danger/10 border border-danger/20 rounded-lg text-danger">
+                   <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+                   <div>
+                     <h4 className="text-sm font-bold">{cert.ad} {cert.soyad} - {cert.tip} Uyarısı</h4>
+                     <p className="text-xs mt-1 text-danger/80">
+                       {cert.tip} belgesinin dolmasına <strong>{cert.kalan_gun < 0 ? 0 : cert.kalan_gun} gün kaldı!</strong> (Bitiş: {new Date(cert.gecerlilik_tarihi).toLocaleDateString('tr-TR')})
+                     </p>
+                   </div>
+                 </div>
+               ))}
                {scbaWarningCount > 0 && (
                  <div className="flex items-start space-x-3 p-3 bg-danger/10 border border-danger/20 rounded-lg text-danger">
                     <Activity size={20} className="shrink-0 mt-0.5" />

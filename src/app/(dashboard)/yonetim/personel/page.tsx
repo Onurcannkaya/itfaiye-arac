@@ -24,6 +24,8 @@ export default function PersonelYonetimPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [newAdSoyad, setNewAdSoyad] = useState("")
   const [newRole, setNewRole] = useState("User")
+  const [newPostaNo, setNewPostaNo] = useState("1")
+  const [newDurum, setNewDurum] = useState("Görevde")
   
   // Permissions state synced with DB
   const [permissions, setPermissions] = useState<Record<string, { view_only: boolean, can_approve: boolean, can_print: boolean }>>({})
@@ -49,7 +51,9 @@ export default function PersonelYonetimPage() {
           soyad: p.soyad,
           unvan: p.unvan,
           rol: p.rol,
-          posta: p.posta || ''
+          posta: p.posta || '',
+          posta_no: p.posta_no || 1,
+          durum: p.durum || 'Görevde'
         }))
         setPersonnel(mapped)
         
@@ -117,6 +121,8 @@ export default function PersonelYonetimPage() {
         view_only: newRole === 'User',
         can_approve: newRole === 'Shift_Leader' || newRole === 'Admin' || newRole === 'Editor',
         can_print: newRole === 'Admin' || newRole === 'Editor',
+        posta_no: parseInt(newPostaNo, 10),
+        durum: newDurum
       })
 
       if (insertErr) throw insertErr
@@ -144,7 +150,8 @@ export default function PersonelYonetimPage() {
       // Fallback: add locally
       const newPerson: Personnel = {
         sicil_no: nextSicil, ad, soyad,
-        unvan: 'İtfaiye Eri', rol: newRole, posta: ''
+        unvan: 'İtfaiye Eri', rol: newRole, posta: '',
+        posta_no: parseInt(newPostaNo, 10), durum: newDurum
       }
       setPersonnel(prev => [...prev, newPerson])
       setPermissions(prev => ({
@@ -283,6 +290,30 @@ export default function PersonelYonetimPage() {
                   <option value="User">İtfaiye Eri (Kullanıcı)</option>
                 </select>
               </div>
+              <div className="space-y-2 flex-col w-full sm:w-1/4">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Posta</label>
+                <select 
+                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={newPostaNo}
+                  onChange={e => setNewPostaNo(e.target.value)}
+                >
+                  <option value="1">1. Posta</option>
+                  <option value="2">2. Posta</option>
+                  <option value="3">3. Posta</option>
+                </select>
+              </div>
+              <div className="space-y-2 flex-col w-full sm:w-1/4">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Durum</label>
+                <select 
+                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={newDurum}
+                  onChange={e => setNewDurum(e.target.value)}
+                >
+                  <option value="Görevde">Görevde</option>
+                  <option value="İzinli">İzinli</option>
+                  <option value="Raporlu">Raporlu</option>
+                </select>
+              </div>
               <Button type="submit" disabled={saving} className="w-full sm:w-auto h-11 px-8 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {saving ? "Kaydediliyor..." : "Ekle"}
@@ -355,6 +386,17 @@ export default function PersonelYonetimPage() {
                             <span>{person.unvan}</span>
                           </>
                         )}
+                        <span className="opacity-50">|</span>
+                        <span>Posta: {person.posta_no || 1}</span>
+                        <span className="opacity-50">|</span>
+                        <span className={cn(
+                          "font-medium",
+                          person.durum === 'İzinli' ? "text-warning" : 
+                          person.durum === 'Raporlu' ? "text-danger" : 
+                          "text-success"
+                        )}>
+                          {person.durum || 'Görevde'}
+                        </span>
                       </div>
                     </div>
                   </Link>

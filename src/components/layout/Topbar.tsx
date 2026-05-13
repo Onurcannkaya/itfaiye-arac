@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
 import Link from 'next/link'
+import { GeofenceButton } from './GeofenceButton'
 
 export function Topbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
@@ -35,6 +36,7 @@ export function Topbar() {
           <ScanLine size={18} />
           <span className="text-sm font-bold">Barkod Oku</span>
         </Link>
+        <GeofenceButton />
         <button className="rounded-full p-2 hover:bg-muted relative transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
           <Bell size={20} />
           <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-danger border-2 border-surface"></span>

@@ -10,7 +10,7 @@ import {
   AlertCircle, FileText, CheckCircle2, Clock, MapPin, 
   Loader2, Plus, ArrowLeft, Search, Flame, Droplets, 
   Activity, ArrowRight, UserPlus, Phone, Home as HomeIcon,
-  HeartPulse, Shield, Crosshair
+  HeartPulse, Shield, Crosshair, UploadCloud
 } from "lucide-react"
 
 type Incident = any;
@@ -65,6 +65,8 @@ export default function OlaylarPage() {
 
   const [personnelSearch, setPersonnelSearch] = useState("")
   const [vehicleSearch, setVehicleSearch] = useState("")
+  
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
 
   useEffect(() => {
     fetchData()
@@ -134,6 +136,7 @@ export default function OlaylarPage() {
       olu_halk: "0", yarali_halk: "0", kurtarilan_halk: "0",
       olu_itfaiye: "0", yarali_itfaiye: "0", kurtarilan_hayvan: "0", olen_hayvan: "0"
     })
+    setMediaFiles([])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,6 +177,31 @@ export default function OlaylarPage() {
       if (selectedVehicles.length > 0) {
         const vPayload = selectedVehicles.map(plaka => ({ incident_id: incidentId, plaka, gorev_turu: "Müdahale Aracı" }))
         await supabase.from('incident_vehicles').insert(vPayload)
+      }
+
+      // Upload Media Files
+      if (mediaFiles.length > 0) {
+        for (const file of mediaFiles) {
+          const fileExt = file.name.split('.').pop()
+          const fileName = `${incidentId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+          
+          const { error: uploadError } = await supabase.storage
+            .from('incident_vault')
+            .upload(fileName, file)
+            
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage.from('incident_vault').getPublicUrl(fileName)
+            const fileType = file.type.startsWith('video/') ? 'video' : 'fotoğraf'
+            
+            await supabase.from('incident_media').insert({
+              incident_id: incidentId,
+              url: publicUrlData.publicUrl,
+              tip: fileType
+            })
+          } else {
+            console.error("Dosya yükleme hatası:", uploadError)
+          }
+        }
       }
 
       resetForm()
@@ -489,6 +517,25 @@ export default function OlaylarPage() {
                         value={formData.aciklama} onChange={handleInputChange} 
                         className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
+                    </div>
+
+                    <div className="space-y-2 p-4 border border-dashed border-primary/50 rounded-xl bg-primary/5">
+                      <label className="text-sm font-semibold flex items-center gap-2 text-primary">
+                        <UploadCloud className="w-5 h-5" /> Olay Medya Arşivi (Fotoğraf / Video)
+                      </label>
+                      <p className="text-xs text-muted-foreground mb-2">Çoklu dosya seçebilirsiniz. Rapor kaydedildiğinde bulut arşive yüklenecektir.</p>
+                      <Input 
+                        type="file" 
+                        multiple 
+                        accept="image/*,video/*"
+                        onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
+                        className="bg-background cursor-pointer"
+                      />
+                      {mediaFiles.length > 0 && (
+                        <div className="mt-2 text-sm text-primary font-medium">
+                          {mediaFiles.length} dosya seçildi.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

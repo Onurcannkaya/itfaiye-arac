@@ -25,6 +25,25 @@ export interface Personnel {
   unvan: string;
   rol: "Admin" | "Editor" | "Shift_Leader" | "User" | string;
   posta?: string;
+  posta_no?: number;
+  durum?: "Görevde" | "İzinli" | "Raporlu" | string;
+}
+
+export interface StaffCertification {
+  id: string;
+  sicil_no: string;
+  tip: string;
+  gecerlilik_tarihi: string;
+  belge_no?: string;
+  personnel?: Personnel;
+}
+
+export interface IncidentMedia {
+  id: string;
+  incident_id: string;
+  url: string;
+  tip: "fotoğraf" | "video" | string;
+  created_at: string;
 }
 
 export interface MaintenanceLog {
