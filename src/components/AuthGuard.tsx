@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    // Client tarafında localStorage'dan token'ı kontrol et
+    // Sadece component mount olduktan (Client Side) sonra kontrol yap
     const authData = localStorage.getItem('sivas-itfaiye-auth');
     const token = localStorage.getItem('auth_token');
     
@@ -26,15 +26,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (!hasToken) {
-      // Token yoksa doğrudan login'e at
-      window.location.replace("/login");
+    if (hasToken) {
+      setIsAuthorized(true);
     } else {
-      setIsAuthenticated(true);
+      window.location.href = '/login';
     }
   }, []);
 
-  if (isAuthenticated === null) {
+  if (!isAuthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background">
         <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
