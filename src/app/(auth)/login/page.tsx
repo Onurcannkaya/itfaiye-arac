@@ -17,13 +17,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const { login, isAuthenticated, setRedirectUrl } = useAuthStore()
 
-  // If user is already authenticated, redirect
-  /* useEffect(() => {
-    if (isAuthenticated) {
-      const redirect = searchParams.get("redirect") || "/"
-      window.location.href = redirect
-    }
-  }, [isAuthenticated, router, searchParams]) */
+
 
   // Store redirect URL from query param
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
@@ -93,6 +94,14 @@ const activityIcon = (type: ActivityItem["type"]) => {
 
 // ─── Component ──────────────────────────────────────────────
 export default function DashboardPage() {
+  const router = useRouter()
+  
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("auth_token")) {
+      router.replace("/login")
+    }
+  }, [router])
+
   const [loading, setLoading] = useState(true)
   const [kpi, setKpi] = useState<KPIData>({
     activeIncidents: 0,
