@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { Input } from "@/components/ui/Input"
@@ -62,13 +62,11 @@ export default function GorevlerPage() {
   const fetchTasksAndTemplates = useCallback(async () => {
     setLoading(true)
     try {
-      const supabase = createClient()
-      
       const [tasksRes, templatesRes, vRes, pRes] = await Promise.all([
-        supabase.from('tasks').select('*').order('created_at', { ascending: false }),
-        supabase.from('task_templates').select('*').eq('aktif', true),
-        supabase.from('vehicles').select('plaka'),
-        supabase.from('personnel').select('sicil_no, ad, soyad').eq('aktif', true),
+        api.from('tasks').select('*').order('created_at', { ascending: false }),
+        api.from('task_templates').select('*').eq('aktif', true),
+        api.from('vehicles').select('plaka'),
+        api.from('personnel').select('sicil_no, ad, soyad').eq('aktif', true),
       ])
 
       if (tasksRes.data) setTasks(tasksRes.data)
@@ -109,8 +107,7 @@ export default function GorevlerPage() {
     }))
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from('tasks').insert({
+      const { error } = await api.from('tasks').insert({
         plaka: newPlaka,
         tip: tpl.baslik, // Use template title as task tip
         checklist,
@@ -174,8 +171,7 @@ export default function GorevlerPage() {
     }))
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from('tasks').update({
+      const { error } = await api.from('tasks').update({
         checklist: updatedChecklist,
         durum: 'tamamlandi',
         tamamlanma_tarihi: new Date().toISOString()

@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
@@ -31,12 +31,10 @@ export default function BakimPage() {
 
   useEffect(() => {
     async function loadData() {
-      const supabase = createClient()
-      
       const [vehiclesRes, maintenanceRes, fuelRes] = await Promise.all([
-        supabase.from('vehicles').select('plaka'),
-        supabase.from('maintenance_logs').select('*').order('tarih', { ascending: false }),
-        supabase.from('fuel_logs').select('*').order('tarih', { ascending: false })
+        api.from('vehicles').select('plaka'),
+        api.from('maintenance_logs').select('*').order('tarih', { ascending: false }),
+        api.from('fuel_logs').select('*').order('tarih', { ascending: false })
       ])
       
       if (vehiclesRes.data) setVehicles(vehiclesRes.data)

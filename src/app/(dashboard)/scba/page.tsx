@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
@@ -46,8 +46,7 @@ export default function SCBAModulePage() {
   const fetchCylinders = useCallback(async () => {
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.from('scba_cylinders').select('*').order('created_at', { ascending: false })
+      const { data, error } = await api.from('scba_cylinders').select('*').order('created_at', { ascending: false })
       if (error) throw error
       if (data) setCylinders(data)
     } catch (err) {
@@ -69,8 +68,7 @@ export default function SCBAModulePage() {
   const handleAddNew = async (e: React.FormEvent) => {
     e.preventDefault()
     setSavingNew(true)
-    const supabase = createClient()
-    const { error } = await supabase.from('scba_cylinders').insert({
+    const { error } = await api.from('scba_cylinders').insert({
       seri_no: newCyl.seri_no,
       marka: newCyl.marka,
       kapasite_lt: parseFloat(newCyl.kapasite_lt),
@@ -94,10 +92,8 @@ export default function SCBAModulePage() {
     e.preventDefault()
     if (!selectedCyl || !fillBasinc) return
     setSavingFill(true)
-    const supabase = createClient()
-
     // Insert Fill Log
-    const { error: logError } = await supabase.from('scba_fill_logs').insert({
+    const { error: logError } = await api.from('scba_fill_logs').insert({
       cylinder_id: selectedCyl.id,
       dolduran_sicil: user?.sicilNo,
       basilan_bar: parseInt(fillBasinc),
@@ -106,7 +102,7 @@ export default function SCBAModulePage() {
 
     if (!logError) {
       // Update cylinder current pressure
-      await supabase.from('scba_cylinders').update({ guncel_basinc: parseInt(fillBasinc) }).eq('id', selectedCyl.id)
+      await api.from('scba_cylinders').update({ guncel_basinc: parseInt(fillBasinc) }).eq('id', selectedCyl.id)
       setSelectedCyl(null)
       setFillBasinc("")
       setFillNotlar("")

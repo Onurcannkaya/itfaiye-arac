@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -74,13 +74,11 @@ export default function OlaylarPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const supabase = createClient()
-    
     try {
       const [incRes, perRes, vehRes] = await Promise.all([
-        supabase.from('incidents').select('*').order('created_at', { ascending: false }),
-        supabase.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true }),
-        supabase.from('vehicles').select('*').order('plaka', { ascending: true })
+        api.from('incidents').select('*').order('created_at', { ascending: false }),
+        api.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true }),
+        api.from('vehicles').select('*').order('plaka', { ascending: true })
       ])
       
       if (incRes.data) setIncidents(incRes.data)
@@ -142,8 +140,6 @@ export default function OlaylarPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
-    const supabase = createClient()
-    
     try {
       const payload = {
         ...formData,
@@ -159,7 +155,7 @@ export default function OlaylarPage() {
         olen_hayvan: Number(formData.olen_hayvan) || 0,
       }
       
-      const { data: incData, error: incErr } = await supabase
+      const { data: incData, error: incErr } = await api
         .from('incidents')
         .insert(payload)
         .select()
@@ -171,35 +167,34 @@ export default function OlaylarPage() {
 
       if (selectedPersonnel.length > 0) {
         const pPayload = selectedPersonnel.map(sicil_no => ({ incident_id: incidentId, sicil_no, gorev: "Müdahale Personeli" }))
-        await supabase.from('incident_personnel').insert(pPayload)
+        await api.from('incident_personnel').insert(pPayload)
       }
 
       if (selectedVehicles.length > 0) {
         const vPayload = selectedVehicles.map(plaka => ({ incident_id: incidentId, plaka, gorev_turu: "Müdahale Aracı" }))
-        await supabase.from('incident_vehicles').insert(vPayload)
+        await api.from('incident_vehicles').insert(vPayload)
       }
 
       // Upload Media Files
       if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
-          const fileExt = file.name.split('.').pop()
-          const fileName = `${incidentId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-          
-          const { error: uploadError } = await supabase.storage
-            .from('incident_vault')
-            .upload(fileName, file)
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('folder', 'incidents')
+
+          const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
+          const uploadResult = await uploadRes.json()
             
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage.from('incident_vault').getPublicUrl(fileName)
+          if (!uploadResult.error) {
             const fileType = file.type.startsWith('video/') ? 'video' : 'fotoğraf'
             
-            await supabase.from('incident_media').insert({
+            await api.from('incident_media').insert({
               incident_id: incidentId,
-              url: publicUrlData.publicUrl,
+              url: uploadResult.url,
               tip: fileType
             })
           } else {
-            console.error("Dosya yükleme hatası:", uploadError)
+            console.error("Dosya yükleme hatası:", uploadResult.error)
           }
         }
       }

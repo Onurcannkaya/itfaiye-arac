@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { QRCodeSVG } from "qrcode.react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -39,8 +39,7 @@ export default function EnvanterYonetimiPage() {
   // Fetch initial data
   useEffect(() => {
     async function fetchVehicles() {
-      const supabase = createClient()
-      const { data } = await supabase.from('vehicles').select('*')
+      const { data } = await api.from('vehicles').select('*')
       if (data) {
         setVehicles(data)
         if (data.length > 0) {
@@ -116,9 +115,7 @@ export default function EnvanterYonetimiPage() {
         durum: item.durum
       })
     })
-
-    const supabase = createClient()
-    const { error } = await supabase.from('vehicles')
+    const { error } = await api.from('vehicles')
       .update({ bolmeler: newBolmeler })
       .eq('plaka', selectedPlaka)
 

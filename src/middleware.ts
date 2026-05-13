@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { verifyToken } from "@/lib/auth";
 
 // Paths that require Admin or Editor role
 const ADMIN_PATHS = ["/yonetim"];
@@ -8,56 +8,47 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't need auth
-  const publicPaths = ["/login", "/api/seed", "/api/debug-auth", "/api/setup", "/api/check-schema", "/api/insert-vehicle"];
+  const publicPaths = ["/login", "/api/seed", "/api/setup", "/api/auth/login", "/api/auth/logout", "/api/db/", "/api/upload"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
-  // API rotalarını atla (bazıları public, bazıları kendi içinde korunuyor)
+  // Static files, public routes
   if (isPublicPath) {
     return NextResponse.next({ request });
   }
 
-  // Update session and get user
-  const { supabaseResponse, user, supabase } = await updateSession(request);
+  // JWT token kontrolü
+  const token = request.cookies.get("itfaiye_token")?.value;
+  const authHeader = request.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
 
-  if (!user) {
-    // User is not authenticated, redirect to login
-    // BUT only if it's not an API route (API routes should return 401 instead)
+  const session = verifyToken(token || bearerToken || "");
+
+  if (!session) {
+    // API routes → 401
     if (pathname.startsWith('/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
+    // Page routes → login redirect
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // RBAC: Check role for admin-only paths
+  // RBAC: Admin-only paths
   const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
-
   if (isAdminPath) {
-    // Profil tablosundan rolü çek (sicil_no PK)
-    const sicilNo = user.email?.split('@')[0]?.toUpperCase() || '';
-    const { data: profile } = await supabase
-      .from('personnel')
-      .select('rol')
-      .eq('sicil_no', sicilNo)
-      .single();
-
-    const role = profile?.rol || "";
-
-    if (role !== "Admin" && role !== "Editor" && role !== "Shift_Leader") {
-      // Redirect unauthorized users (User role) to dashboard
+    if (session.rol !== "Admin" && session.rol !== "Editor" && session.rol !== "Shift_Leader") {
       const dashUrl = new URL("/", request.url);
       dashUrl.searchParams.set("unauthorized", "1");
       return NextResponse.redirect(dashUrl);
     }
   }
 
-  return supabaseResponse;
+  return NextResponse.next({ request });
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icons|models|manifest\\.json|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icons|models|uploads|manifest\\.json|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

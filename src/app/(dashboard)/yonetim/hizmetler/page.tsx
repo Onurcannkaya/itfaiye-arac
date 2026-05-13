@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -23,9 +23,8 @@ export default function HizmetlerPage() {
 
   const fetchRequests = async () => {
     setLoading(true)
-    const supabase = createClient()
     try {
-      const { data, error } = await supabase
+      const { data, error } = await api
         .from('citizen_requests')
         .select('*')
         .order('created_at', { ascending: false })
@@ -39,9 +38,8 @@ export default function HizmetlerPage() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdating(id)
-    const supabase = createClient()
     try {
-      const { error } = await supabase
+      const { error } = await api
         .from('citizen_requests')
         .update({ durum: newStatus })
         .eq('id', id)

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import {
@@ -109,29 +109,27 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     setLoading(true)
-    const supabase = createClient()
-
     try {
       // ── 1. KPI: Active Incidents ──────────────────────────
-      const { count: incidentCount } = await supabase
+      const { count: incidentCount } = await api
         .from("incidents")
         .select("*", { count: "exact", head: true })
 
       // ── 2. KPI: Vehicles in Maintenance ───────────────────
-      const { count: maintCount } = await supabase
+      const { count: maintCount } = await api
         .from("vehicle_maintenances")
         .select("*", { count: "exact", head: true })
         .in("durum", ["Bekliyor", "Serviste"])
 
       // ── 3. KPI: Faulty Hydrants ───────────────────────────
-      const { count: hydrantCount } = await supabase
+      const { count: hydrantCount } = await api
         .from("fire_hydrants")
         .select("*", { count: "exact", head: true })
         .in("durum", ["Arızalı", "Bakımda"])
 
       // ── 4. KPI: Upcoming Trainings ────────────────────────
       const now = new Date().toISOString()
-      const { data: trainings, count: trainingCount } = await supabase
+      const { data: trainings, count: trainingCount } = await api
         .from("activities_and_trainings")
         .select("faaliyet_konusu,baslangic_tarihi", { count: "exact" })
         .gte("baslangic_tarihi", now)
@@ -154,7 +152,7 @@ export default function DashboardPage() {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
       sevenDaysAgo.setHours(0, 0, 0, 0)
 
-      const { data: recentIncidents } = await supabase
+      const { data: recentIncidents } = await api
         .from("incidents")
         .select("created_at")
         .gte("created_at", sevenDaysAgo.toISOString())
@@ -185,7 +183,7 @@ export default function DashboardPage() {
       // ── 6. Activity Feed (last 5 from each table) ─────────
       const feed: ActivityItem[] = []
 
-      const { data: recentInc } = await supabase
+      const { data: recentInc } = await api
         .from("incidents")
         .select("id,olay_turu,mahalle,created_at")
         .order("created_at", { ascending: false })
@@ -202,7 +200,7 @@ export default function DashboardPage() {
         })
       )
 
-      const { data: recentMaint } = await supabase
+      const { data: recentMaint } = await api
         .from("vehicle_maintenances")
         .select("id,plaka,islem_turu,created_at")
         .order("created_at", { ascending: false })
@@ -219,7 +217,7 @@ export default function DashboardPage() {
         })
       )
 
-      const { data: recentHyd } = await supabase
+      const { data: recentHyd } = await api
         .from("fire_hydrants")
         .select("id,no,durum,created_at")
         .order("created_at", { ascending: false })
@@ -236,7 +234,7 @@ export default function DashboardPage() {
         })
       )
 
-      const { data: recentTrain } = await supabase
+      const { data: recentTrain } = await api
         .from("activities_and_trainings")
         .select("id,faaliyet_turu,faaliyet_konusu,created_at")
         .order("created_at", { ascending: false })

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { BarChart3, Droplets, Flame, Activity, MapPin, Loader2, Clock, Calendar, ShieldAlert } from "lucide-react"
@@ -14,9 +14,8 @@ export default function IstatistiklerPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const supabase = createClient()
       try {
-        const { data, error } = await supabase
+        const { data, error } = await api
           .from('incidents')
           .select('*')
           .order('created_at', { ascending: false })

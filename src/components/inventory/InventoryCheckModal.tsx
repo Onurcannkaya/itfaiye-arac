@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/Input"
 import { Badge } from "@/components/ui/Badge"
 import { Check, X, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react"
 
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/authStore"
 
 export interface InventoryCheckModalProps {
@@ -29,8 +29,7 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
     async function fetchInventory() {
       if (isOpen && vehiclePlaka && compartmentKey) {
         setSaveError("")
-        const supabase = createClient()
-        const { data: vehicle } = await supabase.from('vehicles').select('bolmeler').eq('plaka', vehiclePlaka).single()
+        const { data: vehicle } = await api.from('vehicles').select('bolmeler').eq('plaka', vehiclePlaka).single()
         
         if (vehicle && vehicle.bolmeler[compartmentKey]) {
           const initialItems = vehicle.bolmeler[compartmentKey].map((item: any) => ({

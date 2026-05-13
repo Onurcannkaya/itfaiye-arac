@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
@@ -62,10 +62,9 @@ export default function HaritaPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const supabase = createClient()
     try {
-      const { data: incData } = await supabase.from('incidents').select('*').not('location', 'is', null)
-      const { data: hydData } = await supabase.from('fire_hydrants').select('*')
+      const { data: incData } = await api.from('incidents').select('*').not('location', 'is', null)
+      const { data: hydData } = await api.from('fire_hydrants').select('*')
 
       if (incData) setIncidents(incData)
       if (hydData) setHydrants(hydData)
@@ -146,8 +145,6 @@ export default function HaritaPage() {
     e.preventDefault()
     if (!clickedCoords) return
     setIsSubmitting(true)
-    const supabase = createClient()
-
     try {
       // WKT format for inserting Point geometry
       const locationWKT = `POINT(${clickedCoords.lng} ${clickedCoords.lat})`
@@ -164,7 +161,7 @@ export default function HaritaPage() {
         kullanilan_kkt_kg: 0
       }
 
-      const { error } = await supabase.from('incidents').insert(payload)
+      const { error } = await api.from('incidents').insert(payload)
       if (error) throw error
 
       setShowModal('none')
@@ -182,8 +179,6 @@ export default function HaritaPage() {
     e.preventDefault()
     if (!clickedCoords) return
     setIsSubmitting(true)
-    const supabase = createClient()
-
     try {
       const locationWKT = `POINT(${clickedCoords.lng} ${clickedCoords.lat})`
       
@@ -195,7 +190,7 @@ export default function HaritaPage() {
         location: locationWKT
       }
 
-      const { error } = await supabase.from('fire_hydrants').insert(payload)
+      const { error } = await api.from('fire_hydrants').insert(payload)
       if (error) throw error
 
       setShowModal('none')

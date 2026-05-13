@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -43,12 +43,11 @@ export default function AracBakimPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const supabase = createClient()
     try {
       const [mainRes, vehRes, perRes] = await Promise.all([
-        supabase.from('vehicle_maintenances').select('*').order('tarih', { ascending: false }),
-        supabase.from('vehicles').select('*').order('plaka', { ascending: true }),
-        supabase.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true })
+        api.from('vehicle_maintenances').select('*').order('tarih', { ascending: false }),
+        api.from('vehicles').select('*').order('plaka', { ascending: true }),
+        api.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true })
       ])
       if (mainRes.data) setMaintenances(mainRes.data)
       if (vehRes.data) setVehicles(vehRes.data)
@@ -75,26 +74,19 @@ export default function AracBakimPage() {
 
   const uploadImage = async (selectedFile: File): Promise<string | null> => {
     setUploading(true)
-    const supabase = createClient()
     try {
-      const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `arizalar/${fileName}`
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      formData.append('folder', 'arizalar')
 
-      const { error: uploadError } = await supabase.storage
-        .from('vehicle_evidence')
-        .upload(filePath, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const result = await res.json()
 
-      if (uploadError) throw uploadError
-
-      const { data } = supabase.storage.from('vehicle_evidence').getPublicUrl(filePath)
-      return data.publicUrl
+      if (result.error) throw new Error(result.error)
+      return result.url
     } catch (error) {
       console.error('Error uploading image: ', error)
-      alert('Fotoğraf yüklenirken hata oluştu! Storage ayarlarınızı (RLS ve Bucket) kontrol edin.')
+      alert('Fotoğraf yüklenirken hata oluştu!')
       return null
     } finally {
       setUploading(false)
@@ -109,8 +101,6 @@ export default function AracBakimPage() {
     }
 
     setSubmitting(true)
-    const supabase = createClient()
-    
     try {
       let finalPhotoUrl = null
 
@@ -130,7 +120,7 @@ export default function AracBakimPage() {
         fotograf_url: finalPhotoUrl
       }
       
-      const { error } = await supabase.from('vehicle_maintenances').insert(payload)
+      const { error } = await api.from('vehicle_maintenances').insert(payload)
         
       if (error) throw error
 

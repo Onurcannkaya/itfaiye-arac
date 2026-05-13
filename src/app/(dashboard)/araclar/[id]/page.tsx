@@ -11,7 +11,7 @@ import { AuditTimeline } from "@/components/inventory/AuditTimeline"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { QRCodeSVG } from "qrcode.react"
 import { APP_BASE_URL } from "@/lib/constants"
 
@@ -31,8 +31,7 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     async function fetchVehicle() {
-      const supabase = createClient()
-      const { data: vehicles } = await supabase.from('vehicles').select('*')
+      const { data: vehicles } = await api.from('vehicles').select('*')
       const found = (vehicles || []).find((v: any) => v.plaka.replace(/\s+/g, '-').toLowerCase() === idStr)
       setVehicle(found)
       if (found && Object.keys(found.bolmeler).length > 0) {

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
+import { useAuthStore } from "@/lib/authStore"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/Badge"
 import { Plus, Trash2, ListChecks, CheckSquare, Type, Hash, Loader2, RefreshCcw, Camera } from "lucide-react"
 
 export default function SablonlarPage() {
+  const { user } = useAuthStore()
   const [templates, setTemplates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -24,8 +26,7 @@ export default function SablonlarPage() {
 
   const fetchTemplates = useCallback(async () => {
     setLoading(true)
-    const supabase = createClient()
-    const { data } = await supabase.from('task_templates').select('*').order('created_at', { ascending: false })
+    const { data } = await api.from('task_templates').select('*').order('created_at', { ascending: false })
     if (data) setTemplates(data)
     setLoading(false)
   }, [])
@@ -53,18 +54,13 @@ export default function SablonlarPage() {
     }
 
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
-    // sicil_no'yu auth email'den çıkar
-    const sicil_no = user?.email?.split('@')[0]?.toUpperCase() || null
-
-    const { error } = await supabase.from('task_templates').insert({
+    const { error } = await api.insert('task_templates', {
       baslik,
       tip,
       periyot,
       sorular,
-      olusturan_sicil: sicil_no
+      olusturan_sicil: user?.sicilNo || null
     })
 
     setSaving(false)
@@ -80,8 +76,7 @@ export default function SablonlarPage() {
   }
 
   const toggleAktif = async (id: string, current: boolean) => {
-    const supabase = createClient()
-    await supabase.from('task_templates').update({ aktif: !current }).eq('id', id)
+    await api.update('task_templates', { aktif: !current }, { id })
     fetchTemplates()
   }
 

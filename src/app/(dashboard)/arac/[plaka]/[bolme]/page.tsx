@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { COMPARTMENT_NAMES } from "@/lib/constants"
 import { InventoryCheckModal } from "@/components/inventory/InventoryCheckModal"
 import { AuditTimeline } from "@/components/inventory/AuditTimeline"
@@ -25,8 +25,7 @@ export default function DeepLinkCompartmentPage() {
   // Parse plaka from slug: "58-act-367" -> try matching against DB
   useEffect(() => {
     async function fetchVehicle() {
-      const supabase = createClient()
-      const { data: vehicles } = await supabase.from("vehicles").select("*")
+      const { data: vehicles } = await api.from("vehicles").select("*")
       const found = (vehicles || []).find(
         (v: any) => v.plaka.replace(/\s+/g, "-").toLowerCase() === plakaSlug.toLowerCase()
       )

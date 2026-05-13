@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { VehicleCard } from "@/components/vehicle/VehicleCard"
 
 export default function VehiclesPage() {
@@ -9,8 +9,7 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     async function fetchVehicles() {
-      const supabase = createClient()
-      const { data } = await supabase.from('vehicles').select('*')
+      const { data } = await api.from('vehicles').select('*')
       setVehicles(data || [])
       setLoading(false)
     }

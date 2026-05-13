@@ -3,7 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard"
 import { Badge } from "@/components/ui/Badge"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 
-import { createClient } from "@/lib/supabase/server"
+import { query, queryMany, queryOne } from "@/lib/db"
 import { ShiftList } from "@/components/dashboard/ShiftList"
 
 export default async function DashboardPage() {
@@ -13,53 +13,48 @@ export default async function DashboardPage() {
   let expiringCertifications: any[] = []
 
   try {
-    const supabase = await createClient()
-    const { count } = await supabase.from('vehicles').select('*', { count: 'exact', head: true })
-    activeVehicles = count || 0
+    // Aktif araç sayısı
+    const vResult = await queryOne<{ count: string }>('SELECT COUNT(*) as count FROM vehicles');
+    activeVehicles = parseInt(vResult?.count || '0', 10);
 
-    const { data } = await supabase.from('personnel').select('*').eq('aktif', true)
-    if (data) personnelData = data
+    // Aktif personel
+    personnelData = await queryMany('SELECT * FROM personnel WHERE aktif = true');
 
     // SCBA Warnings (< 6 months)
-    const { data: scbaData } = await supabase.from('scba_cylinders').select('sonraki_test_tarihi')
-    if (scbaData) {
-      const now = new Date().getTime()
-      scbaWarningCount = scbaData.filter(c => {
-         const next = new Date(c.sonraki_test_tarihi).getTime()
-         const diffDays = (next - now) / (1000 * 60 * 60 * 24)
-         return diffDays <= 180
-      }).length
-    }
+    const scbaData = await queryMany<{ sonraki_test_tarihi: string }>('SELECT sonraki_test_tarihi FROM scba_cylinders');
+    const now = new Date().getTime();
+    scbaWarningCount = scbaData.filter(c => {
+      const next = new Date(c.sonraki_test_tarihi).getTime();
+      const diffDays = (next - now) / (1000 * 60 * 60 * 24);
+      return diffDays <= 180;
+    }).length;
 
-    // Expiring Certifications
-    const { data: certsData } = await supabase.from('vw_expiring_certifications').select('*')
-    if (certsData) {
-      expiringCertifications = certsData
-    }
+    // Expiring Certifications (view)
+    expiringCertifications = await queryMany('SELECT * FROM vw_expiring_certifications');
 
   } catch {
-    // Supabase unreachable
+    // DB unreachable
   }
 
-  // Role matching
-  const leaders = personnelData.filter(p =>
+  // Calculate active posta based on days since epoch (rotation of 3 shifts: 1, 2, 3)
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const daysSinceEpoch = Math.floor(todayStart.getTime() / MS_PER_DAY);
+  const activePosta = (daysSinceEpoch % 3) + 1;
+
+  // Filter personnel for active posta
+  const activeShiftPersonnel = personnelData.filter(p => p.posta_no === activePosta)
+
+  // Role matching for active shift
+  const leaders = activeShiftPersonnel.filter(p =>
     p.rol === 'Shift_Leader' || p.rol === 'Admin' || p.rol === 'Editor'
   )
-  const others = personnelData.filter(p =>
+  const others = activeShiftPersonnel.filter(p =>
     p.rol !== 'Shift_Leader' && p.rol !== 'Admin' && p.rol !== 'Editor'
-  ).sort((a, b) => a.ad.localeCompare(b.ad))
+  ).sort((a: any, b: any) => a.ad.localeCompare(b.ad))
+  
   const sortedPersonnel = [...leaders, ...others]
-
-  // Role display helper
-  function rolLabel(rol: string, unvan?: string): string {
-    if (unvan) return unvan
-    switch (rol) {
-      case 'Admin': return 'Yönetici'
-      case 'Editor': return 'Amir'
-      case 'Shift_Leader': return 'Vardiya Çavuşu'
-      default: return 'İtfaiye Eri'
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -117,7 +112,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
              <div className="space-y-4">
-               {expiringCertifications.map(cert => (
+               {expiringCertifications.map((cert: any) => (
                  <div key={cert.id} className="flex items-start space-x-3 p-3 bg-danger/10 border border-danger/20 rounded-lg text-danger">
                    <AlertTriangle size={20} className="shrink-0 mt-0.5" />
                    <div>

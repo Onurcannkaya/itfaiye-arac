@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -43,11 +43,10 @@ export default function EgitimlerPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const supabase = createClient()
     try {
       const [actRes, perRes] = await Promise.all([
-        supabase.from('activities_and_trainings').select('*').order('baslangic_tarihi', { ascending: false }),
-        supabase.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true })
+        api.from('activities_and_trainings').select('*').order('baslangic_tarihi', { ascending: false }),
+        api.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true })
       ])
       if (actRes.data) setActivities(actRes.data)
       if (perRes.data) setPersonnelList(perRes.data)
@@ -78,8 +77,6 @@ export default function EgitimlerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
-    const supabase = createClient()
-    
     try {
       const payload = {
         ...formData,
@@ -87,7 +84,7 @@ export default function EgitimlerPage() {
         katilimci_sayisi: Number(formData.katilimci_sayisi) || 0,
       }
       
-      const { data: actData, error: actErr } = await supabase
+      const { data: actData, error: actErr } = await api
         .from('activities_and_trainings')
         .insert(payload)
         .select()
@@ -101,7 +98,7 @@ export default function EgitimlerPage() {
           sicil_no: p.sicil_no,
           rol: p.rol
         }))
-        await supabase.from('personnel_activities').insert(pivotPayload)
+        await api.from('personnel_activities').insert(pivotPayload)
       }
 
       setIsAdding(false)

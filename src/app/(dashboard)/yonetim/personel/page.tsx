@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { type Personnel } from "@/types"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/authStore"
@@ -35,8 +35,7 @@ export default function PersonelYonetimPage() {
     setLoading(true)
     setError("")
     try {
-      const supabase = createClient()
-      const { data, error: fetchErr } = await supabase
+      const { data, error: fetchErr } = await api
         .from('personnel')
         .select('*')
         .eq('aktif', true)
@@ -111,8 +110,7 @@ export default function PersonelYonetimPage() {
     const ad = parts.join(" ")
 
     try {
-      const supabase = createClient()
-      const { error: insertErr } = await supabase.from('personnel').insert({
+      const { error: insertErr } = await api.from('personnel').insert({
         sicil_no: nextSicil,
         ad,
         soyad,
@@ -185,8 +183,7 @@ export default function PersonelYonetimPage() {
 
     // Push to Supabase
     try {
-      const supabase = createClient()
-      const { error: updateErr } = await supabase
+      const { error: updateErr } = await api
         .from('personnel')
         .update({ [perm]: newValue })
         .eq('sicil_no', sicilNo)

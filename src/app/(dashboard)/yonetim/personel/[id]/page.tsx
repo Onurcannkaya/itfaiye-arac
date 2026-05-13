@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -29,12 +29,11 @@ export default function PersonelProfilPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const supabase = createClient()
       setLoading(true)
       
       try {
         // Fetch Main Personnel Info
-        const { data: pData, error: pErr } = await supabase
+        const { data: pData, error: pErr } = await api
           .from('personnel')
           .select('*')
           .eq('sicil_no', sicil_no)
@@ -43,23 +42,23 @@ export default function PersonelProfilPage() {
         if (pData) setPersonel(pData)
 
         // Fetch Details
-        const { data: dData } = await supabase.from('personnel_details').select('*').eq('sicil_no', sicil_no).single()
+        const { data: dData } = await api.from('personnel_details').select('*').eq('sicil_no', sicil_no).single()
         if (dData) setDetails(dData)
 
         // Fetch Leaves
-        const { data: lData } = await supabase.from('personnel_leaves').select('*').eq('sicil_no', sicil_no).order('created_at', { ascending: false })
+        const { data: lData } = await api.from('personnel_leaves').select('*').eq('sicil_no', sicil_no).order('created_at', { ascending: false })
         if (lData) setLeaves(lData)
 
         // Fetch Equipments
-        const { data: eData } = await supabase.from('personnel_equipment').select('*').eq('sicil_no', sicil_no).order('created_at', { ascending: false })
+        const { data: eData } = await api.from('personnel_equipment').select('*').eq('sicil_no', sicil_no).order('created_at', { ascending: false })
         if (eData) setEquipments(eData)
 
         // Fetch Activities
-        const { data: aData } = await supabase.from('personnel_activities').select('*').eq('sicil_no', sicil_no).order('tarih', { ascending: false })
+        const { data: aData } = await api.from('personnel_activities').select('*').eq('sicil_no', sicil_no).order('tarih', { ascending: false })
         if (aData) setActivities(aData)
 
         // Fetch Records
-        const { data: rData } = await supabase.from('personnel_records').select('*').eq('sicil_no', sicil_no).order('tarih', { ascending: false })
+        const { data: rData } = await api.from('personnel_records').select('*').eq('sicil_no', sicil_no).order('tarih', { ascending: false })
         if (rData) setRecords(rData)
 
       } catch (err) {

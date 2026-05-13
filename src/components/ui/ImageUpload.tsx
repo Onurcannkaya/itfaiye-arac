@@ -2,18 +2,17 @@
 
 import { useState, useRef } from "react"
 import imageCompression from "browser-image-compression"
-import { createClient } from "@/lib/supabase/client"
 import { Camera, ImagePlus, Loader2, CheckCircle2, XCircle, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ImageUploadProps {
   /** Unique field id for naming the storage file */
   fieldId: string
-  /** Called with the Supabase storage path after successful upload */
+  /** Called with the local URL path after successful upload */
   onUploaded: (path: string) => void
   /** Called when image is removed */
   onRemoved?: () => void
-  /** Current value (storage path) */
+  /** Current value (URL path) */
   value?: string | null
   /** Whether the field is disabled */
   disabled?: boolean
@@ -34,13 +33,6 @@ export function ImageUpload({ fieldId, onUploaded, onRemoved, value, disabled }:
   const [error, setError] = useState("")
   const [progress, setProgress] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Generate signed URL for preview
-  const getPreviewUrl = (path: string) => {
-    const supabase = createClient()
-    const { data } = supabase.storage.from("evidence-photos").getPublicUrl(path)
-    return data?.publicUrl || ""
-  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -63,26 +55,26 @@ export function ImageUpload({ fieldId, onUploaded, onRemoved, value, disabled }:
       reader.onload = (ev) => setPreview(ev.target?.result as string)
       reader.readAsDataURL(compressed)
 
-      // Step 2: Upload to Supabase Storage
+      // Step 2: Upload to local server
       setState("uploading")
       setProgress(50)
 
-      const supabase = createClient()
-      const fileName = `${fieldId}_${Date.now()}.jpg`
-      const filePath = `incidents/${fileName}`
+      const formData = new FormData()
+      formData.append('file', compressed, `${fieldId}_${Date.now()}.jpg`)
+      formData.append('folder', 'incidents')
 
-      const { error: uploadError } = await supabase.storage
-        .from("evidence-photos")
-        .upload(filePath, compressed, {
-          contentType: "image/jpeg",
-          upsert: true,
-        })
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      const result = await res.json()
 
-      if (uploadError) throw uploadError
+      if (result.error) throw new Error(result.error)
 
       setProgress(100)
       setState("success")
-      onUploaded(filePath)
+      onUploaded(result.url)
     } catch (err: any) {
       console.error("[ImageUpload] Hata:", err)
       setState("error")
@@ -121,7 +113,7 @@ export function ImageUpload({ fieldId, onUploaded, onRemoved, value, disabled }:
       {(preview || value) && state !== "idle" ? (
         <div className="relative group">
           <img
-            src={preview || (value ? getPreviewUrl(value) : "")}
+            src={preview || value || ""}
             alt="Yüklenen fotoğraf"
             className="w-full max-h-56 object-cover rounded-xl border-2 border-border"
           />
