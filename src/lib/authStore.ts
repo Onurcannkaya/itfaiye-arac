@@ -94,6 +94,12 @@ export const useAuthStore = create<AuthState>()(
 
         logAuthEvent(sicilNo, 'logout', currentUser ? `${currentUser.ad} ${currentUser.soyad} çıkış yaptı` : 'Bilinmeyen')
         set({ user: null, token: null, isAuthenticated: false, redirectUrl: null })
+
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token')
+          document.cookie = 'itfaiye_token=; path=/; Max-Age=0'
+          window.location.replace('/login')
+        }
       },
 
       setRedirectUrl: (url) => set({ redirectUrl: url }),
