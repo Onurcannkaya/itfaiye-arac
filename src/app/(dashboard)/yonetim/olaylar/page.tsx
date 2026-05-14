@@ -12,6 +12,12 @@ import {
   Activity, ArrowRight, UserPlus, Phone, Home as HomeIcon,
   HeartPulse, Shield, Crosshair, UploadCloud
 } from "lucide-react"
+import dynamic from "next/dynamic"
+
+const Map = dynamic(() => import("@/components/map/Map"), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full flex items-center justify-center bg-surface/50 border rounded-xl border-dashed text-sm text-muted-foreground"><Loader2 className="w-6 h-6 animate-spin mr-2" /> Harita Yükleniyor...</div>
+})
 
 type Incident = any;
 type Personnel = any;
@@ -57,7 +63,10 @@ export default function OlaylarPage() {
     // Kayıplar (Sayısal)
     olu_halk: "0", yarali_halk: "0", kurtarilan_halk: "0",
     olu_itfaiye: "0", yarali_itfaiye: "0",
-    kurtarilan_hayvan: "0", olen_hayvan: "0"
+    kurtarilan_hayvan: "0", olen_hayvan: "0",
+    
+    // GIS
+    location_lat: 39.750, location_lng: 37.016
   })
   
   const [selectedPersonnel, setSelectedPersonnel] = useState<string[]>([])
@@ -132,7 +141,8 @@ export default function OlaylarPage() {
       kullanilan_su_ton: "", kullanilan_kopuk_litre: "", kullanilan_kkt_kg: "",
       cikis_sebebi: "Bilinmiyor", hasar_durumu: "Yok", olay_teslim_edilen_kisi: "", aciklama: "",
       olu_halk: "0", yarali_halk: "0", kurtarilan_halk: "0",
-      olu_itfaiye: "0", yarali_itfaiye: "0", kurtarilan_hayvan: "0", olen_hayvan: "0"
+      olu_itfaiye: "0", yarali_itfaiye: "0", kurtarilan_hayvan: "0", olen_hayvan: "0",
+      location_lat: 39.750, location_lng: 37.016
     })
     setMediaFiles([])
   }
@@ -141,8 +151,9 @@ export default function OlaylarPage() {
     e.preventDefault()
     setSubmitting(true)
     try {
+      const { location_lat, location_lng, ...restFormData } = formData;
       const payload = {
-        ...formData,
+        ...restFormData,
         kullanilan_su_ton: Number(formData.kullanilan_su_ton) || 0,
         kullanilan_kopuk_litre: Number(formData.kullanilan_kopuk_litre) || 0,
         kullanilan_kkt_kg: Number(formData.kullanilan_kkt_kg) || 0,
@@ -153,6 +164,7 @@ export default function OlaylarPage() {
         yarali_itfaiye: Number(formData.yarali_itfaiye) || 0,
         kurtarilan_hayvan: Number(formData.kurtarilan_hayvan) || 0,
         olen_hayvan: Number(formData.olen_hayvan) || 0,
+        location: `POINT(${location_lng} ${location_lat})`
       }
       
       const { data: incData, error: incErr } = await api.insert('incidents', payload)
@@ -344,14 +356,32 @@ export default function OlaylarPage() {
                 {/* STEP 2 */}
                 {step === 2 && (
                   <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold">Mahalle *</label>
-                        <Input name="mahalle" placeholder="Örn: Alibaba" value={formData.mahalle} onChange={handleInputChange} required />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-xl bg-surface/30">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold">Mahalle *</label>
+                          <Input name="mahalle" placeholder="Örn: Alibaba" value={formData.mahalle} onChange={handleInputChange} required />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold">Açık Adres *</label>
+                          <Input name="adres" placeholder="Sokak, Cadde, Bina No..." value={formData.adres} onChange={handleInputChange} required />
+                        </div>
                       </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-semibold">Açık Adres *</label>
-                        <Input name="adres" placeholder="Sokak, Cadde, Bina No..." value={formData.adres} onChange={handleInputChange} required />
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-primary" />
+                          Haritada Seç (İsteğe Bağlı)
+                        </label>
+                        <div className="h-[250px] relative rounded-xl overflow-hidden border border-border shadow-sm">
+                          <Map 
+                            incidents={[{ id: 'new', olay_turu: 'Seçili Konum', mahalle: formData.mahalle, adres: formData.adres, cikis_saati: new Date().toISOString(), location: { coordinates: [formData.location_lng, formData.location_lat] } }]} 
+                            hydrants={[]} 
+                            mode="add_incident"
+                            onMapClick={(lat, lng) => setFormData({ ...formData, location_lat: lat, location_lng: lng })}
+                            focusLocation={null}
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1">Konumu seçmek için haritaya tıklayın veya sürükleyin.</p>
                       </div>
                     </div>
 

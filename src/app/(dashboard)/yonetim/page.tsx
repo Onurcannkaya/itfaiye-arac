@@ -22,6 +22,7 @@ import {
   ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
+import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -369,6 +370,9 @@ export default function DashboardPage() {
           CANLI
         </Badge>
       </div>
+
+      {/* ═══════════ CRITICAL ALERTS ═══════════ */}
+      <CriticalAlertsWidget />
 
       {/* ═══════════ KPI CARDS ═══════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
