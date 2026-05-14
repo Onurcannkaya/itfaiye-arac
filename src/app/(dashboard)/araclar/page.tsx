@@ -2,10 +2,18 @@
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import { VehicleCard } from "@/components/vehicle/VehicleCard"
+import { QRLabelModal } from "@/components/vehicle/QRLabelModal"
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // QR Label Modal state
+  const [qrModal, setQrModal] = useState<{ open: boolean; plaka: string; aracTipi: string }>({
+    open: false,
+    plaka: "",
+    aracTipi: "",
+  })
 
   useEffect(() => {
     async function fetchVehicles() {
@@ -28,10 +36,22 @@ export default function VehiclesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {vehicles.map(v => (
-            <VehicleCard key={v.plaka} vehicle={v} />
+            <VehicleCard
+              key={v.plaka}
+              vehicle={v}
+              onPrintQR={(plaka, aracTipi) => setQrModal({ open: true, plaka, aracTipi })}
+            />
           ))}
         </div>
       )}
+
+      {/* QR Label Print Modal */}
+      <QRLabelModal
+        isOpen={qrModal.open}
+        onClose={() => setQrModal({ open: false, plaka: "", aracTipi: "" })}
+        plaka={qrModal.plaka}
+        aracTipi={qrModal.aracTipi}
+      />
     </div>
   )
 }
