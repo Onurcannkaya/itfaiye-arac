@@ -42,8 +42,14 @@ function buildWhereClause(filters: Array<{ column: string; op: string; value: st
         conditions.push(`"${col}" IN (${placeholders})`);
         params.push(...vals);
         break;
-      case 'eq': conditions.push(`"${col}" = $${currentIdx++}`); params.push(f.value); break;
-      case 'neq': conditions.push(`"${col}" != $${currentIdx++}`); params.push(f.value); break;
+      case 'eq':
+        if (f.value === 'null') { conditions.push(`"${col}" IS NULL`); }
+        else { conditions.push(`"${col}" = $${currentIdx++}`); params.push(f.value); }
+        break;
+      case 'neq':
+        if (f.value === 'null') { conditions.push(`"${col}" IS NOT NULL`); }
+        else { conditions.push(`"${col}" != $${currentIdx++}`); params.push(f.value); }
+        break;
       case 'gt': conditions.push(`"${col}" > $${currentIdx++}`); params.push(f.value); break;
       case 'gte': conditions.push(`"${col}" >= $${currentIdx++}`); params.push(f.value); break;
       case 'lt': conditions.push(`"${col}" < $${currentIdx++}`); params.push(f.value); break;

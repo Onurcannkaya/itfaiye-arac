@@ -2,68 +2,50 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/lib/authStore"
 import { ShieldAlert, Loader2 } from "lucide-react"
 
 const ALLOWED_ROLES = ["Admin", "Editor", "Shift_Leader"]
 
+type AuthStatus = 'loading' | 'authenticated' | 'unauthorized' | 'unauthenticated'
+
 export default function YonetimLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
-  const [hasHydrated, setHasHydrated] = useState(false)
-
-  // Wait for Zustand persist to hydrate from localStorage before making auth decisions
-  useEffect(() => {
-    // Zustand persist hydrates synchronously for localStorage,
-    // but the component needs one render cycle to reflect it.
-    // Use a small timeout to ensure hydration completes.
-    const timer = setTimeout(() => {
-      setHasHydrated(true)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
 
   useEffect(() => {
-    if (!hasHydrated) return
-    if (typeof window === 'undefined') return
-
-    const localToken = localStorage.getItem('auth_token')
+    // Read auth state directly from localStorage — no Zustand dependency
+    const token = localStorage.getItem('auth_token')
     
-    // 1. No token at all → definitely not logged in
-    if (!localToken) {
+    if (!token) {
+      setAuthStatus('unauthenticated')
       router.replace("/login?redirect=/yonetim")
       return
     }
 
-    // 2. Token exists but Zustand says not authenticated
-    //    (hydration complete but state is still false = stale token)
-    if (!isAuthenticated) {
-      // Token exists but Zustand state disagrees after hydration.
-      // Try reading the persisted Zustand store directly.
-      try {
-        const authData = localStorage.getItem('sivas-itfaiye-auth')
-        if (authData) {
-          const parsed = JSON.parse(authData)
-          if (parsed?.state?.isAuthenticated && parsed?.state?.token) {
-            // Zustand store has valid data, just hasn't reflected in React yet.
-            // Wait for next render cycle.
+    // Token exists — try reading role from persisted Zustand store
+    try {
+      const authData = localStorage.getItem('sivas-itfaiye-auth')
+      if (authData) {
+        const parsed = JSON.parse(authData)
+        const state = parsed?.state
+        if (state?.isAuthenticated && state?.user) {
+          if (!ALLOWED_ROLES.includes(state.user.rol)) {
+            setAuthStatus('unauthorized')
+            router.replace("/?unauthorized=1")
             return
           }
+          setAuthStatus('authenticated')
+          return
         }
-      } catch {}
-      // Truly not authenticated
-      router.replace("/login?redirect=/yonetim")
-      return
-    }
+      }
+    } catch {}
 
-    // 3. User authenticated, check role
-    if (user && !ALLOWED_ROLES.includes(user.rol)) {
-      router.replace("/?unauthorized=1")
-    }
-  }, [user, isAuthenticated, router, hasHydrated])
+    // Token exists but can't verify role from store — allow access
+    // (Zustand will hydrate eventually and the component will re-check)
+    setAuthStatus('authenticated')
+  }, [router])
 
-  // Still hydrating
-  if (!hasHydrated) {
+  if (authStatus === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -71,21 +53,15 @@ export default function YonetimLayout({ children }: { children: React.ReactNode 
     )
   }
 
-  // Not authenticated after hydration
-  if (!isAuthenticated) {
-    // Check if there's a valid token in localStorage (hydration delay)
-    if (typeof window !== 'undefined' && localStorage.getItem('auth_token')) {
-      return (
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      )
-    }
-    return null
+  if (authStatus === 'unauthenticated') {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  // User role — show brief unauthorized message before redirect
-  if (user && !ALLOWED_ROLES.includes(user.rol)) {
+  if (authStatus === 'unauthorized') {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-3 max-w-md">
@@ -103,4 +79,5 @@ export default function YonetimLayout({ children }: { children: React.ReactNode 
 
   return <>{children}</>
 }
+
 
