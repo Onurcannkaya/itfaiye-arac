@@ -11,18 +11,19 @@ interface QRLabelModalProps {
   onClose: () => void
   plaka: string
   aracTipi: string
+  marka?: string
   /** Optional: if provided, generates a compartment-specific label */
   compartmentKey?: string
 }
 
-export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, compartmentKey }: QRLabelModalProps) {
+export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartmentKey }: QRLabelModalProps) {
   const printRef = useRef<HTMLDivElement>(null)
 
-  // Build QR content — URL format for deep linking
+  // Build QR content — Always a full URL so phone camera can open it directly
   const plakaSlug = plaka.replace(/\s+/g, "-").toLowerCase()
   const qrValue = compartmentKey
     ? `${APP_BASE_URL}/arac/${plakaSlug}/${compartmentKey}`
-    : plaka
+    : `${APP_BASE_URL}/arac/${plakaSlug}`
 
   const compartmentLabel = compartmentKey ? COMPARTMENT_NAMES[compartmentKey] || compartmentKey : null
 
@@ -61,10 +62,10 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, compartmentKey 
             {/* Header */}
             <div className="text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-                Sivas Büyükşehir Belediyesi
+              Sivas Belediyesi
               </p>
               <p className="text-sm font-black uppercase tracking-wider text-red-600 mt-0.5">
-                🚒 İTFAİYE DAİRE BAŞKANLIĞI
+                🚒 İTFAİYE MÜDÜRLÜĞÜ
               </p>
             </div>
 
@@ -88,7 +89,7 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, compartmentKey 
                 {plaka}
               </p>
               <p className="text-sm font-semibold text-gray-600">
-                {aracTipi}
+                {aracTipi}{marka ? ` — ${marka}` : ""}
               </p>
               {compartmentLabel && (
                 <p className="text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full inline-block mt-1">

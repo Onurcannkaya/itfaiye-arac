@@ -6,7 +6,7 @@ import { Vehicle } from "@/types"
 
 interface VehicleCardProps {
   vehicle: Vehicle
-  onPrintQR?: (plaka: string, aracTipi: string) => void
+  onPrintQR?: (plaka: string, aracTipi: string, marka?: string) => void
 }
 
 export function VehicleCard({ vehicle, onPrintQR }: VehicleCardProps) {
@@ -31,7 +31,7 @@ export function VehicleCard({ vehicle, onPrintQR }: VehicleCardProps) {
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  onPrintQR(vehicle.plaka, vehicle.aracTipi || "Araç")
+                  onPrintQR(vehicle.plaka, vehicle.aracTipi || "Araç", (vehicle as any).marka || "")
                 }}
                 className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors cursor-pointer"
                 title="QR Etiket Yazdır"

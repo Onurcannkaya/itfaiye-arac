@@ -9,10 +9,11 @@ export default function VehiclesPage() {
   const [loading, setLoading] = useState(true)
 
   // QR Label Modal state
-  const [qrModal, setQrModal] = useState<{ open: boolean; plaka: string; aracTipi: string }>({
+  const [qrModal, setQrModal] = useState<{ open: boolean; plaka: string; aracTipi: string; marka: string }>({
     open: false,
     plaka: "",
     aracTipi: "",
+    marka: "",
   })
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function VehiclesPage() {
             <VehicleCard
               key={v.plaka}
               vehicle={v}
-              onPrintQR={(plaka, aracTipi) => setQrModal({ open: true, plaka, aracTipi })}
+              onPrintQR={(plaka, aracTipi, marka) => setQrModal({ open: true, plaka, aracTipi, marka: marka || "" })}
             />
           ))}
         </div>
@@ -48,9 +49,10 @@ export default function VehiclesPage() {
       {/* QR Label Print Modal */}
       <QRLabelModal
         isOpen={qrModal.open}
-        onClose={() => setQrModal({ open: false, plaka: "", aracTipi: "" })}
+        onClose={() => setQrModal({ open: false, plaka: "", aracTipi: "", marka: "" })}
         plaka={qrModal.plaka}
         aracTipi={qrModal.aracTipi}
+        marka={qrModal.marka}
       />
     </div>
   )
