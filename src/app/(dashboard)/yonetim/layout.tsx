@@ -12,11 +12,23 @@ export default function YonetimLayout({ children }: { children: React.ReactNode 
   const router = useRouter()
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/login?redirect=/yonetim/personel")
+    // SSR'da window objesi yoktur, çalışmasın.
+    if (typeof window === 'undefined') return
+
+    const localToken = localStorage.getItem('auth_token')
+    
+    // 1. Eğer localStorage'da token bile yoksa kesin çıkış yapmıştır, gönder.
+    if (!localToken) {
+      router.replace("/login?redirect=/yonetim")
       return
     }
 
+    // 2. Token var ama user yüklenmediyse (Zustand Hydration bekleniyor), bekle.
+    if (!isAuthenticated) {
+      return
+    }
+
+    // 3. User var, auth başarılı, rol kontrolü:
     if (user && !ALLOWED_ROLES.includes(user.rol)) {
       router.replace("/?unauthorized=1")
     }
