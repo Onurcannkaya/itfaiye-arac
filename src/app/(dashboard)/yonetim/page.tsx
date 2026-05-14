@@ -96,12 +96,6 @@ const activityIcon = (type: ActivityItem["type"]) => {
 // ─── Component ──────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
-  
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("auth_token")) {
-      router.replace("/login")
-    }
-  }, [router])
 
   const [loading, setLoading] = useState(true)
   const [kpi, setKpi] = useState<KPIData>({

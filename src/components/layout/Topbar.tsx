@@ -10,9 +10,8 @@ export function Topbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
   const router = useRouter()
 
-  const handleLogout = () => {
-    logout()
-    router.push('/login')
+  const handleLogout = async () => {
+    await logout()
   }
 
   const displayName = user ? `${user.ad} ${user.soyad}` : "Misafir"

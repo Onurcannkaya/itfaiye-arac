@@ -11,7 +11,7 @@ const ALLOWED_TABLES = [
   'incidents', 'incident_vehicles', 'incident_personnel', 'incident_media',
   'citizen_requests', 'activities_and_trainings', 'personnel_activities',
   'vehicle_maintenances', 'fire_hydrants', 'spatial_addresses',
-  'staff_certifications', 'vw_expiring_certifications'
+  'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks'
 ];
 
 function parseFilters(searchParams: URLSearchParams): Array<{ column: string; op: string; value: string }> {
