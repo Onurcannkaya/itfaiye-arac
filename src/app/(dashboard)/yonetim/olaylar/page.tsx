@@ -9,8 +9,8 @@ import {
   AlertCircle, FileText, Clock, Loader2, Plus, X
 } from "lucide-react"
 import { IncidentWizard } from "@/components/incident/IncidentWizard"
+import { Incident } from "@/types"
 
-type Incident = any;
 type Personnel = any;
 type Vehicle = any;
 

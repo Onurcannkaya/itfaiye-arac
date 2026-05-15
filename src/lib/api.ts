@@ -134,55 +134,75 @@ export const api = {
   },
 
   async insert(table: string, data: any | any[]) {
-    const res = await fetch(`/api/db/${table}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ data }),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`/api/db/${table}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ data }),
+      });
+      return await res.json();
+    } catch (err: any) {
+      return { data: null, error: err.message || 'Bağlantı hatası' };
+    }
   },
 
   async update(table: string, data: Record<string, any>, filters: Record<string, any>) {
-    const res = await fetch(`/api/db/${table}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ data, filters }),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`/api/db/${table}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ data, filters }),
+      });
+      return await res.json();
+    } catch (err: any) {
+      return { data: null, error: err.message || 'Bağlantı hatası' };
+    }
   },
 
   async upsert(table: string, data: any | any[], conflictColumn: string) {
-    const res = await fetch(`/api/db/${table}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ data, upsert: true, conflictColumn }),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`/api/db/${table}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ data, upsert: true, conflictColumn }),
+      });
+      return await res.json();
+    } catch (err: any) {
+      return { data: null, error: err.message || 'Bağlantı hatası' };
+    }
   },
 
   async remove(table: string, filters: Record<string, any>) {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k, v]) => {
-      params.append('filter', `${k}:eq:${v}`);
-    });
-    const res = await fetch(`/api/db/${table}?${params.toString()}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return res.json();
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([k, v]) => {
+        params.append('filter', `${k}:eq:${v}`);
+      });
+      const res = await fetch(`/api/db/${table}?${params.toString()}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      return await res.json();
+    } catch (err: any) {
+      return { data: null, error: err.message || 'Bağlantı hatası' };
+    }
   },
 
   async upload(file: File, folder?: string): Promise<{ url: string | null; error: string | null }> {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (folder) formData.append('folder', folder);
-    
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    const json = await res.json();
-    return { url: json.url || null, error: json.error || null };
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (folder) formData.append('folder', folder);
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      const json = await res.json();
+      return { url: json.url || null, error: json.error || null };
+    } catch (err: any) {
+      return { url: null, error: err.message || 'Yükleme hatası' };
+    }
   },
 };

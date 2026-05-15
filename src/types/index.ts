@@ -85,3 +85,20 @@ export interface TaskLog {
   tarih: string;
   tamamlanmaTarihi?: string;
 }
+
+export interface Incident {
+  id: string;
+  olay_turu: string;
+  ihbar_saati: string;
+  cikis_saati: string;
+  varis_saati: string;
+  donus_saati: string;
+  mahalle: string;
+  adres: string;
+  cikis_sebebi?: string;
+  status: "active" | "closed";
+  ek16_personel?: string;
+  ek16_araclar?: string;
+  created_at?: string;
+  location?: string | { coordinates: [number, number] };
+}
