@@ -45,7 +45,7 @@ export default function HaritaPage() {
   const [hasFetchedAddress, setHasFetchedAddress] = useState(false)
 
   // Map Interactivity State
-  const [mode, setMode] = useState<'idle' | 'add_incident' | 'add_hydrant'>('idle')
+  const [interactionMode, setInteractionMode] = useState<'idle' | 'add_incident' | 'add_hydrant'>('idle')
   
   // Modals Data State
   const [showModal, setShowModal] = useState<'none' | 'incident' | 'hydrant'>('none')
@@ -145,15 +145,15 @@ export default function HaritaPage() {
       console.error("Reverse geocoding error:", e)
     }
 
-    if (mode === 'add_incident') {
+    if (interactionMode === 'add_incident') {
       setIncidentForm(prev => ({ ...prev, adres: fetchedAddress || "" }))
       setShowModal('incident')
-    } else if (mode === 'add_hydrant') {
+    } else if (interactionMode === 'add_hydrant') {
       setShowModal('hydrant')
     }
     
     // Reset mode back to idle after click
-    setMode('idle')
+    setInteractionMode('idle')
   }
 
   // Save to DB
@@ -222,7 +222,7 @@ export default function HaritaPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
-      {mode === 'add_incident' && <div className="emergency-glow-overlay" />}
+      {interactionMode === 'add_incident' && <div className="emergency-glow-overlay" />}
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 shrink-0 z-10 relative">
         <div>
@@ -232,25 +232,25 @@ export default function HaritaPage() {
         
         <div className="flex flex-wrap items-center gap-2">
           <Button 
-            variant={mode === 'add_incident' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm ${mode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
-            onClick={() => setMode(mode === 'add_incident' ? 'idle' : 'add_incident')}
+            variant={interactionMode === 'add_incident' ? 'default' : 'outline'}
+            className={`min-h-[44px] text-xs sm:text-sm ${interactionMode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
+            onClick={() => setInteractionMode(interactionMode === 'add_incident' ? 'idle' : 'add_incident')}
           >
             <Flame className="w-4 h-4 mr-1 sm:mr-2" /> 
-            {mode === 'add_incident' ? 'Haritaya Tıklayın...' : 'Yeni Olay'}
+            {interactionMode === 'add_incident' ? 'Haritaya Tıklayın...' : 'Yeni Olay'}
           </Button>
           
           <Button 
-            variant={mode === 'add_hydrant' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm ${mode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}`}
-            onClick={() => setMode(mode === 'add_hydrant' ? 'idle' : 'add_hydrant')}
+            variant={interactionMode === 'add_hydrant' ? 'default' : 'outline'}
+            className={`min-h-[44px] text-xs sm:text-sm ${interactionMode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}`}
+            onClick={() => setInteractionMode(interactionMode === 'add_hydrant' ? 'idle' : 'add_hydrant')}
           >
             <Droplets className="w-4 h-4 mr-1 sm:mr-2" /> 
-            {mode === 'add_hydrant' ? 'Haritaya Tıklayın...' : 'Yeni Hidrant'}
+            {interactionMode === 'add_hydrant' ? 'Haritaya Tıklayın...' : 'Yeni Hidrant'}
           </Button>
 
-          {mode !== 'idle' && (
-            <Button variant="ghost" size="icon" onClick={() => setMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px]" title="İşlemi İptal Et">
+          {interactionMode !== 'idle' && (
+            <Button variant="ghost" size="icon" onClick={() => setInteractionMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px]" title="İşlemi İptal Et">
               <X className="w-5 h-5" />
             </Button>
           )}
@@ -344,7 +344,7 @@ export default function HaritaPage() {
           <Map 
             incidents={incidents} 
             hydrants={hydrants} 
-            mode={mode} 
+            mode={interactionMode} 
             onMapClick={handleMapClick} 
             focusLocation={focusLocation}
           />
