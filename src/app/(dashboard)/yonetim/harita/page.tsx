@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
-import { Loader2, Map as MapIcon, Flame, Droplets, Target, Search, Plus, MapPin, X } from "lucide-react"
+import { Loader2, Map as MapIcon, Flame, Droplets, Target, Search, Plus, MapPin, X, Sparkles } from "lucide-react"
 import { RouteAnalysisPanel } from "@/components/ai/RouteAnalysisPanel"
 
 const Map = dynamic(() => import("@/components/map/Map"), { 
@@ -42,6 +42,7 @@ export default function HaritaPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [focusLocation, setFocusLocation] = useState<[number, number] | null>(null)
+  const [hasFetchedAddress, setHasFetchedAddress] = useState(false)
 
   // Map Interactivity State
   const [mode, setMode] = useState<'idle' | 'add_incident' | 'add_hydrant'>('idle')
@@ -130,6 +131,7 @@ export default function HaritaPage() {
   // Map Click Handler
   const handleMapClick = async (lat: number, lng: number) => {
     setClickedCoords({ lat, lng })
+    setHasFetchedAddress(false)
     
     let fetchedAddress = ""
     try {
@@ -137,6 +139,7 @@ export default function HaritaPage() {
       const data = await res.json()
       if (data && data.display_name) {
         fetchedAddress = data.display_name
+        setHasFetchedAddress(true)
       }
     } catch (e) {
       console.error("Reverse geocoding error:", e)
@@ -219,7 +222,9 @@ export default function HaritaPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 shrink-0">
+      {mode === 'add_incident' && <div className="emergency-glow-overlay" />}
+      
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 shrink-0 z-10 relative">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2"><MapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" /> Komuta Kontrol Haritası</h1>
           <p className="text-muted-foreground text-xs sm:text-sm hidden sm:block">İnteraktif mekansal analiz ve saha yönetimi</p>
@@ -373,7 +378,15 @@ export default function HaritaPage() {
                 <Input value={incidentForm.mahalle} onChange={(e) => setIncidentForm({...incidentForm, mahalle: e.target.value})} required placeholder="Örn: Alibaba" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Adres / Detay</label>
+                <label className="text-sm font-semibold flex items-center justify-between w-full">
+                  <span>Adres / Detay</span>
+                  {hasFetchedAddress && (
+                    <span className="flex items-center gap-1 text-[10px] sm:text-xs text-blue-500 font-medium bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                      <Sparkles className="w-3 h-3" />
+                      Yapay Zeka Tarafından Doğrulandı
+                    </span>
+                  )}
+                </label>
                 <Input value={incidentForm.adres} onChange={(e) => setIncidentForm({...incidentForm, adres: e.target.value})} required placeholder="Sokak, Bina detayları..." />
               </div>
               

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import * as turf from '@turf/turf'
 
 interface Incident {
   id: string
@@ -53,6 +54,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
+  const hydrantElementsRef = useRef<{el: HTMLDivElement, coords: [number, number]}[]>([])
   const modeRef = useRef(mode)
 
   // Keep modeRef in sync so the click handler can read the latest value
@@ -181,6 +183,8 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       markersRef.current.push(marker)
     })
 
+    hydrantElementsRef.current = []
+
     // Hydrant markers (blue)
     hydrants.forEach(hyd => {
       const coords = parseLocation(hyd.location)
@@ -253,15 +257,133 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
 
   }, [incidents, hydrants])
 
-  // ─── Focus / flyTo on search result ───────────────────────
+  // ─── Focus, Buffer, and Routing on search result ───────────────────────
   useEffect(() => {
     if (!mapRef.current || !focusLocation) return
-    // focusLocation is [lat, lng] from the parent — convert to [lng, lat]
-    mapRef.current.flyTo({
-      center: [focusLocation[1], focusLocation[0]],
-      zoom: 16,
+    const map = mapRef.current
+    const center = [focusLocation[1], focusLocation[0]] as [number, number]
+    
+    map.flyTo({
+      center,
+      zoom: 15,
       duration: 1500
     })
+
+    // 1. Draw 300m Buffer
+    const buffer = turf.circle(center, 0.3, { steps: 64, units: 'kilometers' })
+    if (map.getSource('buffer-source')) {
+      (map.getSource('buffer-source') as maplibregl.GeoJSONSource).setData(buffer)
+    } else {
+      map.addSource('buffer-source', { type: 'geojson', data: buffer })
+      map.addLayer({
+        id: 'buffer-layer',
+        type: 'fill',
+        source: 'buffer-source',
+        paint: {
+          'fill-color': '#3b82f6',
+          'fill-opacity': 0.15
+        }
+      })
+      map.addLayer({
+        id: 'buffer-outline',
+        type: 'line',
+        source: 'buffer-source',
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 2,
+          'line-dasharray': [2, 2]
+        }
+      })
+    }
+
+    // 2. Highlight Hydrants in Buffer
+    hydrantElementsRef.current.forEach(({ el, coords }) => {
+      const pt = turf.point(coords)
+      if (turf.booleanPointInPolygon(pt, buffer)) {
+        // inside buffer: neon green glow
+        el.style.background = '#22c55e'
+        el.style.boxShadow = '0 0 15px 5px rgba(34,197,94,0.8)'
+        el.style.transform = 'scale(1.2)'
+        el.style.transition = 'all 0.3s'
+      } else {
+        // outside buffer: normal
+        el.style.background = '#3b82f6'
+        el.style.boxShadow = '0 4px 12px rgba(59,130,246,0.5)'
+        el.style.transform = 'scale(1)'
+      }
+    })
+
+    // 3. Animated OSRM Route
+    const station = [37.016, 39.750] // [lng, lat]
+    fetch(`https://router.project-osrm.org/route/v1/driving/${station[0]},${station[1]};${center[0]},${center[1]}?overview=full&geometries=geojson`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.routes && data.routes[0]) {
+          const routeGeojson = data.routes[0].geometry
+          
+          if (map.getSource('route-source')) {
+            (map.getSource('route-source') as maplibregl.GeoJSONSource).setData(routeGeojson)
+          } else {
+            map.addSource('route-source', { type: 'geojson', data: routeGeojson })
+            
+            // Background line
+            map.addLayer({
+              id: 'route-line-bg',
+              type: 'line',
+              source: 'route-source',
+              paint: {
+                'line-color': '#ef4444',
+                'line-width': 5,
+                'line-opacity': 0.3
+              }
+            })
+
+            // Animated dashed line
+            map.addLayer({
+              id: 'route-line-animated',
+              type: 'line',
+              source: 'route-source',
+              paint: {
+                'line-color': '#ef4444',
+                'line-width': 5,
+                'line-dasharray': [0, 4, 3]
+              }
+            })
+
+            // Setup animation
+            const dashArraySeq = [
+              [0, 4, 3],
+              [0.5, 4, 2.5],
+              [1, 4, 2],
+              [1.5, 4, 1.5],
+              [2, 4, 1],
+              [2.5, 4, 0.5],
+              [3, 4, 0],
+              [0, 0, 3, 4],
+              [0, 0.5, 3, 3.5],
+              [0, 1, 3, 3],
+              [0, 1.5, 3, 2.5],
+              [0, 2, 3, 2],
+              [0, 2.5, 3, 1.5],
+              [0, 3, 3, 1],
+              [0, 3.5, 3, 0.5]
+            ]
+            let step = 0
+            
+            const animateDashArray = () => {
+              if (!map.getLayer('route-line-animated')) return
+              step = (step + 1) % dashArraySeq.length
+              map.setPaintProperty('route-line-animated', 'line-dasharray', dashArraySeq[step])
+              setTimeout(() => {
+                requestAnimationFrame(animateDashArray)
+              }, 50)
+            }
+            animateDashArray()
+          }
+        }
+      })
+      .catch(err => console.error("OSRM Route Error:", err))
+
   }, [focusLocation])
 
   return (
