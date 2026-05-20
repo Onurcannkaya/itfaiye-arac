@@ -27,6 +27,7 @@ export default function EnvanterYonetimiPage() {
   const { user } = useAuthStore()
   const [vehicles, setVehicles] = useState<any[]>([])
   const [selectedPlaka, setSelectedPlaka] = useState("")
+  const [mounted, setMounted] = useState(false)
   
   // Flattened inventory state
   const [inventory, setInventory] = useState<FlatItem[]>([])
@@ -38,6 +39,7 @@ export default function EnvanterYonetimiPage() {
 
   // Fetch initial data
   useEffect(() => {
+    setMounted(true)
     async function fetchVehicles() {
       const { data } = await api.from('vehicles').select('*')
       if (data) {
@@ -321,31 +323,33 @@ export default function EnvanterYonetimiPage() {
       </div>
 
       {/* --- Hidden QR Source (never displayed, cloned to body on print) --- */}
-      <div id="print-area-qr" style={{ display: 'none' }}>
-         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem', color: 'black' }}>ETİKET DİZİNİ</h1>
-            <p style={{ fontSize: '1.25rem', fontWeight: 700, borderBottom: '4px solid black', paddingBottom: '1rem', marginBottom: '2rem', color: 'black' }}>Araç: {selectedPlaka}</p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-              {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
-                <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '1.5rem', textAlign: 'center', breakInside: 'avoid' as any, pageBreakInside: 'avoid' }}>
-                   <h2 style={{ fontSize: '1.5rem', fontWeight: 900, background: 'black', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', marginBottom: '2rem', whiteSpace: 'nowrap' }}>
-                      {selectedPlaka}
-                   </h2>
-                   
-                   <div style={{ background: 'white', padding: '0.5rem' }}>
-                     <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={220} level={"H"} />
-                   </div>
-                   
-                   <div style={{ marginTop: '2rem', borderTop: '4px solid black', width: '100%', paddingTop: '1rem' }}>
-                     <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'black' }}>{COMPARTMENT_NAMES[comp] || comp}</h3>
-                     <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontFamily: 'monospace', marginTop: '0.75rem', letterSpacing: '0.15em', color: 'rgba(0,0,0,0.8)', fontWeight: 700 }}>Sivas İtfaiyesi</p>
-                   </div>
-                </div>
-              ))}
-            </div>
-         </div>
-      </div>
+      {mounted && (
+        <div id="print-area-qr" style={{ display: 'none' }}>
+           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+              <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem', color: 'black' }}>ETİKET DİZİNİ</h1>
+              <p style={{ fontSize: '1.25rem', fontWeight: 700, borderBottom: '4px solid black', paddingBottom: '1rem', marginBottom: '2rem', color: 'black' }}>Araç: {selectedPlaka}</p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                {(printFilter === "all" ? printCompartments : [printFilter]).map(comp => (
+                  <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '1.5rem', textAlign: 'center', breakInside: 'avoid' as any, pageBreakInside: 'avoid' }}>
+                     <h2 style={{ fontSize: '1.5rem', fontWeight: 900, background: 'black', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', marginBottom: '2rem', whiteSpace: 'nowrap' }}>
+                        {selectedPlaka}
+                     </h2>
+                     
+                     <div style={{ background: 'white', padding: '0.5rem' }}>
+                       <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={220} level={"H"} />
+                     </div>
+                     
+                     <div style={{ marginTop: '2rem', borderTop: '4px solid black', width: '100%', paddingTop: '1rem' }}>
+                       <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'black' }}>{COMPARTMENT_NAMES[comp] || comp}</h3>
+                       <p style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontFamily: 'monospace', marginTop: '0.75rem', letterSpacing: '0.15em', color: 'rgba(0,0,0,0.8)', fontWeight: 700 }}>Sivas İtfaiyesi</p>
+                     </div>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </div>
+      )}
 
     </div>
   )
