@@ -24,7 +24,153 @@ export function Topbar() {
   
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Track window size for responsive layout and set mounted to true
+  useEffect(() => {
+    setMounted(true)
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Helper to determine notification triage styling
+  const getNotificationTriage = (item: NotificationItem) => {
+    const text = `${item.title} ${item.description}`.toLowerCase()
+    
+    // Critical Cases: Bina/Ev Yangını, Süresi Dolan Belge, Kritik
+    if (
+      text.includes('bina') || 
+      text.includes('ev yang') || 
+      text.includes('fabrika') || 
+      text.includes('sıkışmalı') || 
+      text.includes('kbrn') || 
+      text.includes('süresi dolan') ||
+      text.includes('kritik')
+    ) {
+      return 'critical'
+    }
+    
+    // Medium Cases: Araç Yangını, Kurtarma Operasyonları, Denetim Görevi, SCBA Tüp/Maske Kontrolü, Belge Yenileme Uyarısı
+    if (
+      text.includes('araç') || 
+      text.includes('kurtarma') || 
+      text.includes('işyeri') ||
+      text.includes('denetim') ||
+      text.includes('scba tüp') ||
+      text.includes('scba maske') ||
+      text.includes('yenileme uyarısı')
+    ) {
+      return 'medium'
+    }
+    
+    // Low Cases: Çöp/Ot Yangını, Malzeme Testi, normal tasks
+    return 'low'
+  }
+
+  const renderNotificationsList = () => {
+    if (notifications.length === 0) {
+      return (
+        <div className="p-8 text-center text-slate-500 space-y-2">
+          <CheckCircle2 className="w-8 h-8 text-slate-600 mx-auto" />
+          <p className="text-xs text-slate-400">Yeni bir bildirim veya göreviniz yok.</p>
+        </div>
+      )
+    }
+
+    return notifications.map((item) => {
+      const triage = getNotificationTriage(item)
+      let triageClass = ""
+      let triageDot = null
+
+      if (triage === 'critical') {
+        triageClass = "border-l-4 border-l-red-500 bg-red-950/20"
+        triageDot = (
+          <span className="relative flex h-2 w-2 shrink-0 self-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+          </span>
+        )
+      } else if (triage === 'medium') {
+        triageClass = "border-l-4 border-l-amber-500 bg-amber-950/20"
+      } else {
+        triageClass = "border-l-4 border-l-green-500 bg-green-950/20"
+      }
+
+      return (
+        <div 
+          key={item.id}
+          onClick={() => handleNotificationClick(item)}
+          className={`p-4 flex gap-3 transition-colors cursor-pointer group hover:bg-slate-900/40 relative border-b border-slate-800/20 ${triageClass} ${
+            !item.read ? 'opacity-100 font-semibold' : 'opacity-80'
+          }`}
+        >
+          {/* Left Icon Indicator */}
+          <div className="mt-0.5 shrink-0">
+            {item.type === 'urgent' && (
+              <div className="bg-red-500/10 p-1.5 rounded-lg text-red-500">
+                <Flame className="w-4 h-4 text-red-500 animate-pulse" />
+              </div>
+            )}
+            {item.type === 'warning' && (
+              <div className="bg-amber-500/10 p-1.5 rounded-lg text-amber-500">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+            )}
+            {item.type === 'info' && (
+              <div className="bg-blue-500/10 p-1.5 rounded-lg text-blue-500">
+                <Info className="w-4 h-4" />
+              </div>
+            )}
+            {item.type === 'success' && (
+              <div className="bg-emerald-500/10 p-1.5 rounded-lg text-emerald-500">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+
+          {/* Content using flex flex-col gap-1 layout */}
+          <div className="flex-1 flex flex-col gap-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {triageDot}
+                <p className={`text-sm font-bold leading-tight truncate ${!item.read ? 'text-slate-100' : 'text-slate-400'}`}>
+                  {item.title}
+                </p>
+              </div>
+              <span className="text-[10px] text-slate-500 shrink-0 font-medium">{item.time}</span>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-400 line-clamp-2">
+              {item.description}
+            </p>
+          </div>
+
+          {/* Right Control Overlay */}
+          <div className="absolute right-2 bottom-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => toggleRead(item.id, e)}
+              title={item.read ? "Okunmadı İşaretle" : "Okundu İşaretle"}
+              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded p-1 text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              <Check className="w-3 h-3" />
+            </button>
+            <button
+              onClick={(e) => removeNotification(item.id, e)}
+              title="Sil"
+              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded p-1 text-slate-400 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )
+    })
+  }
 
   const displayName = user ? `${user.ad} ${user.soyad}` : "Misafir"
   const initials = user?.initials || "?"
@@ -232,102 +378,94 @@ export function Topbar() {
             )}
           </button>
 
-          {isOpen && (
-            <div className={`absolute mt-3 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl overflow-hidden z-50 transition-all duration-300 animate-in fade-in slide-in-from-top-3 ${
-              isAuthenticated ? 'right-[-4.5rem] sm:right-0' : 'right-[-6.5rem] sm:right-0'
-            }`}>
-              {/* Dropdown Header */}
+          {isOpen && mounted && isMobile && (
+            <>
+              {/* Backdrop Overlay */}
+              <div 
+                className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 transition-opacity duration-300 animate-in fade-in"
+                onClick={() => setIsOpen(false)}
+              />
+              {/* Sliding Drawer Panel */}
+              <div className="fixed inset-y-0 right-0 w-full max-w-[320px] bg-slate-950 border-l border-slate-800/80 shadow-2xl z-50 flex flex-col transition-transform duration-300 animate-in slide-in-from-right">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-slate-800/60 bg-slate-900/40 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-primary" />
+                    <span className="font-bold text-sm text-slate-100">Bildirimler</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={markAllAsRead}
+                        className="text-[11px] text-primary hover:text-primary-hover font-semibold transition-colors flex items-center gap-1 shrink-0"
+                      >
+                        <Check className="w-3.5 h-3.5" /> Tümünü Okundu İşaretle
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setIsOpen(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-colors font-semibold"
+                      aria-label="Kapat"
+                    >
+                      <span className="text-xl leading-none">&times;</span>
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Content Container */}
+                <div className="flex-1 overflow-y-auto divide-y divide-slate-900/60">
+                  {renderNotificationsList()}
+                </div>
+
+                {/* Footer view CBS Map shortcut */}
+                {notifications.length > 0 && (
+                  <div className="p-3 border-t border-slate-800/60 bg-slate-950 text-center shrink-0">
+                    <Link 
+                      href="/yonetim/harita" 
+                      onClick={() => setIsOpen(false)}
+                      className="text-xs text-primary font-semibold hover:underline block"
+                    >
+                      Canlı CBS Haritasını Görüntüle
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {isOpen && mounted && !isMobile && (
+            <div className="absolute right-0 mt-3 w-96 origin-top-right bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl overflow-hidden z-50 transition-all duration-300 animate-in fade-in slide-in-from-top-3">
+              {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-slate-800/60 bg-slate-900/40">
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4 text-primary" />
                   <span className="font-bold text-sm text-slate-100">Bildirimler ve Görevler</span>
                 </div>
-                {unreadCount > 0 && (
-                  <button 
-                    onClick={markAllAsRead}
-                    className="text-[11px] text-primary hover:text-primary-hover font-semibold transition-colors flex items-center gap-1"
-                  >
-                    <Check className="w-3.5 h-3.5" /> Tümünü Oku
-                  </button>
-                )}
-              </div>
-
-              {/* Notifications List */}
-              <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-900/60">
-                {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 space-y-2">
-                    <CheckCircle2 className="w-8 h-8 text-slate-600 mx-auto" />
-                    <p className="text-xs">Yeni bir bildirim veya göreviniz yok.</p>
-                  </div>
-                ) : (
-                  notifications.map((item) => (
-                    <div 
-                      key={item.id}
-                      onClick={() => handleNotificationClick(item)}
-                      className={`p-3.5 flex gap-3 transition-colors cursor-pointer group hover:bg-slate-900/50 relative ${
-                        !item.read ? 'bg-slate-900/20' : ''
-                      }`}
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button 
+                      onClick={markAllAsRead}
+                      className="text-[11px] text-primary hover:text-primary-hover font-semibold transition-colors flex items-center gap-1"
                     >
-                      {/* Left Dot or Icon Indicator */}
-                      <div className="mt-1">
-                        {item.type === 'urgent' && (
-                          <div className="bg-red-500/10 p-1.5 rounded-lg text-red-500">
-                            <Flame className="w-4 h-4 text-red-500 animate-pulse" />
-                          </div>
-                        )}
-                        {item.type === 'warning' && (
-                          <div className="bg-amber-500/10 p-1.5 rounded-lg text-amber-500">
-                            <AlertTriangle className="w-4 h-4" />
-                          </div>
-                        )}
-                        {item.type === 'info' && (
-                          <div className="bg-blue-500/10 p-1.5 rounded-lg text-blue-500">
-                            <Info className="w-4 h-4" />
-                          </div>
-                        )}
-                        {item.type === 'success' && (
-                          <div className="bg-emerald-500/10 p-1.5 rounded-lg text-emerald-500">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className={`text-xs font-bold leading-tight ${!item.read ? 'text-slate-100' : 'text-slate-400'}`}>
-                            {item.title}
-                          </p>
-                          <span className="text-[9px] text-slate-500 shrink-0 font-medium">{item.time}</span>
-                        </div>
-                        <p className="text-[11px] leading-relaxed text-slate-400">
-                          {item.description}
-                        </p>
-                      </div>
-
-                      {/* Right Control Overlay */}
-                      <div className="absolute right-2 bottom-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => toggleRead(item.id, e)}
-                          title={item.read ? "Okunmadı İşaretle" : "Okundu İşaretle"}
-                          className="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded p-1 text-slate-400 hover:text-slate-200 transition-colors"
-                        >
-                          <Check className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={(e) => removeNotification(item.id, e)}
-                          title="Sil"
-                          className="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded p-1 text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                      <Check className="w-3.5 h-3.5" /> Tümünü Okundu İşaretle
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setIsOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-colors font-semibold"
+                    aria-label="Kapat"
+                  >
+                    <span className="text-xl leading-none">&times;</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Content Container */}
+              <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-900/60">
+                {renderNotificationsList()}
               </div>
 
-              {/* Footer View Map shortcut */}
+              {/* Footer view CBS Map shortcut */}
               {notifications.length > 0 && (
                 <div className="p-2.5 border-t border-slate-800/60 bg-slate-950 text-center">
                   <Link 
