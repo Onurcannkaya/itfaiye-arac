@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as turf from '@turf/turf'
+import { Layers, Building2, Map as MapIcon, Milestone } from 'lucide-react'
+
+
 
 // ─── Sivas Merkez İtfaiye İstasyonu (Yenişehir) ────────────
 const STATION_COORDS: [number, number] = [37.0209312, 39.7339522] // [lng, lat]
@@ -63,6 +66,13 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
   const modeRef = useRef(mode)
   const onMapClickRef = useRef(onMapClick)
   const routeAnimFrameRef = useRef<number | null>(null)
+
+  const [showBinalar, setShowBinalar] = useState(true)
+  const [showNumarataj, setShowNumarataj] = useState(true)
+  const [showMahalleler, setShowMahalleler] = useState(false)
+  const [showSokaklar, setShowSokaklar] = useState(false)
+  const [binalarOpacity, setBinalarOpacity] = useState(0.3)
+  const [mahallelerOpacity, setMahallelerOpacity] = useState(1.0)
 
   useEffect(() => {
     onMapClickRef.current = onMapClick
@@ -241,6 +251,117 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       'top-right'
     )
 
+    // ─── Sivas Akıllı Şehir Vektör Katmanları Entegrasyonu ───
+    map.on('load', () => {
+      // Binalar Vektör Kaynağı
+      map.addSource('binalar', {
+        type: 'vector',
+        tiles: ['https://harita.sivas.bel.tr/binalar/{z}/{x}/{y}']
+      })
+
+      // Binalar Dolgu Katmanı
+      map.addLayer({
+        id: 'binalar-fill',
+        type: 'fill',
+        source: 'binalar',
+        'source-layer': 'binalar',
+        paint: {
+          'fill-color': '#3b82f6',
+          'fill-opacity': binalarOpacity
+        },
+        layout: {
+          visibility: showBinalar ? 'visible' : 'none'
+        }
+      })
+
+      // Binalar Dış Hat Çizgisi
+      map.addLayer({
+        id: 'binalar-outline',
+        type: 'line',
+        source: 'binalar',
+        'source-layer': 'binalar',
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 0.8,
+          'line-opacity': 0.6
+        },
+        layout: {
+          visibility: showBinalar ? 'visible' : 'none'
+        }
+      })
+
+      // Numarataj Vektör Kaynağı
+      map.addSource('numarataj', {
+        type: 'vector',
+        tiles: ['https://harita.sivas.bel.tr/numarataj/{z}/{x}/{y}']
+      })
+
+      // Numarataj Metin Katmanı
+      map.addLayer({
+        id: 'numarataj-layer',
+        type: 'symbol',
+        source: 'numarataj',
+        'source-layer': 'numarataj',
+        layout: {
+          'text-field': ['coalesce', ['get', 'kapino'], ['get', 'kapi_no'], ['get', 'kapiNo'], ''],
+          'text-size': 11,
+          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+          'text-offset': [0, 0],
+          'text-anchor': 'center',
+          visibility: showNumarataj ? 'visible' : 'none'
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#0f172a',
+          'text-halo-width': 1.5
+        }
+      })
+
+      // Mahalleler Vektör Kaynağı
+      map.addSource('mahalleler', {
+        type: 'vector',
+        tiles: ['https://harita.sivas.bel.tr/mahalleler/{z}/{x}/{y}']
+      })
+
+      // Mahalleler Çizgi Katmanı
+      map.addLayer({
+        id: 'mahalleler-layer',
+        type: 'line',
+        source: 'mahalleler',
+        'source-layer': 'mahalleler',
+        paint: {
+          'line-color': '#4b5563',
+          'line-width': 1.8,
+          'line-dasharray': [4, 2],
+          'line-opacity': mahallelerOpacity
+        },
+        layout: {
+          visibility: showMahalleler ? 'visible' : 'none'
+        }
+      })
+
+      // Sokaklar Vektör Kaynağı
+      map.addSource('sokaklar', {
+        type: 'vector',
+        tiles: ['https://harita.sivas.bel.tr/sokaklar/{z}/{x}/{y}']
+      })
+
+      // Sokaklar Çizgi Katmanı
+      map.addLayer({
+        id: 'sokaklar-layer',
+        type: 'line',
+        source: 'sokaklar',
+        'source-layer': 'sokaklar',
+        paint: {
+          'line-color': '#0284c7',
+          'line-width': 1.2
+        },
+        layout: {
+          visibility: showSokaklar ? 'visible' : 'none'
+        }
+      })
+    })
+
 
 
     // ─── Error handler for tile/source loading problems ─────
@@ -294,18 +415,21 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       const el = document.createElement('div')
       el.className = 'map-marker-incident'
       el.style.cssText = `
-        width: 32px; height: 32px;
+        width: 34px; height: 34px;
         background: #ef4444;
         border: 2px solid #fff;
         border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(239,68,68,0.5);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
       `
-      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/></svg>`
+      el.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 3px rgba(255,255,255,0.8));">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/>
+        </svg>
+      `
 
 
       const popup = new maplibregl.Popup({ offset: 18, maxWidth: '280px' }).setHTML(`
@@ -333,20 +457,29 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       if (!coords) return
 
       const el = document.createElement('div')
-      el.className = 'map-marker-hydrant'
+      el.className = 'map-marker-hydrant map-marker-hydrant-pulse'
       el.style.cssText = `
-        width: 28px; height: 28px;
-        background: #3b82f6;
-        border: 2px solid #fff;
-        border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(59,130,246,0.5);
+        width: 32px; height: 32px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
       `
-      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`
+      el.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 6px rgba(59,130,246,0.6));">
+          <circle cx="50" cy="50" r="42" fill="url(#hydrant-grad)" stroke="#ffffff" stroke-width="3"/>
+          <path d="M35 42 L35 70 C35 76 65 76 65 70 L65 42 Z" fill="#ffffff" opacity="0.95"/>
+          <path d="M30 32 H70 V42 H30 Z" fill="#ffffff"/>
+          <circle cx="50" cy="22" r="8" fill="#ffffff"/>
+          <path d="M50 48 C53 52 53 58 50 62 C47 58 47 52 50 48 Z" fill="#1d4ed8"/>
+          <defs>
+            <linearGradient id="hydrant-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" />
+              <stop offset="100%" stop-color="#1d4ed8" />
+            </linearGradient>
+          </defs>
+        </svg>
+      `
 
 
       const popup = new maplibregl.Popup({ offset: 16, maxWidth: '260px' }).setHTML(`
@@ -371,18 +504,26 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
     const stationEl = document.createElement('div')
     stationEl.className = 'map-marker-station'
     stationEl.style.cssText = `
-      width: 40px; height: 40px;
-      background: #f97316;
-      border: 3px solid #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(249,115,22,0.6);
+      width: 44px; height: 44px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
     `
-    stationEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`
+    stationEl.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(249,115,22,0.6));">
+        <path d="M50 5 L90 20 L90 55 C90 75 75 90 50 95 C25 90 10 75 10 55 L10 20 Z" fill="url(#station-grad)" stroke="#ffffff" stroke-width="3"/>
+        <path d="M35 80 L35 45 L65 45 L65 80 Z" fill="#ffffff" opacity="0.2"/>
+        <path d="M50 25 C60 38 60 55 50 68 C40 55 40 38 50 25 Z" fill="#ffffff"/>
+        <path d="M50 35 C55 45 55 55 50 62 C45 55 45 45 50 35 Z" fill="#f97316"/>
+        <defs>
+          <linearGradient id="station-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ea580c" />
+            <stop offset="100%" stop-color="#b91c1c" />
+          </linearGradient>
+        </defs>
+      </svg>
+    `
 
     const stationPopup = new maplibregl.Popup({ offset: 20 }).setHTML(`
       <div style="font-family:system-ui;padding:4px 0">
@@ -401,6 +542,112 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
 
   }, [incidents, hydrants])
 
+  // ─── Sync visibility of binalar & numarataj layers ───
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateVisibility = () => {
+      if (map.getLayer('binalar-fill')) {
+        map.setLayoutProperty('binalar-fill', 'visibility', showBinalar ? 'visible' : 'none')
+      }
+      if (map.getLayer('binalar-outline')) {
+        map.setLayoutProperty('binalar-outline', 'visibility', showBinalar ? 'visible' : 'none')
+      }
+    }
+
+    if (map.isStyleLoaded()) {
+      updateVisibility()
+    } else {
+      map.once('idle', updateVisibility)
+    }
+  }, [showBinalar])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateOpacity = () => {
+      if (map.getLayer('binalar-fill')) {
+        map.setPaintProperty('binalar-fill', 'fill-opacity', binalarOpacity)
+      }
+    }
+
+    if (map.isStyleLoaded()) {
+      updateOpacity()
+    } else {
+      map.once('idle', updateOpacity)
+    }
+  }, [binalarOpacity])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateVisibility = () => {
+      if (map.getLayer('numarataj-layer')) {
+        map.setLayoutProperty('numarataj-layer', 'visibility', showNumarataj ? 'visible' : 'none')
+      }
+    }
+
+    if (map.isStyleLoaded()) {
+      updateVisibility()
+    } else {
+      map.once('idle', updateVisibility)
+    }
+  }, [showNumarataj])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateVisibility = () => {
+      if (map.getLayer('mahalleler-layer')) {
+        map.setLayoutProperty('mahalleler-layer', 'visibility', showMahalleler ? 'visible' : 'none')
+      }
+    }
+
+    if (map.isStyleLoaded()) {
+      updateVisibility()
+    } else {
+      map.once('idle', updateVisibility)
+    }
+  }, [showMahalleler])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateOpacity = () => {
+      if (map.getLayer('mahalleler-layer')) {
+        map.setPaintProperty('mahalleler-layer', 'line-opacity', mahallelerOpacity)
+      }
+    }
+
+    if (map.isStyleLoaded()) {
+      updateOpacity()
+    } else {
+      map.once('idle', updateOpacity)
+    }
+  }, [mahallelerOpacity])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const updateVisibility = () => {
+      if (map.getLayer('sokaklar-layer')) {
+        map.setLayoutProperty('sokaklar-layer', 'visibility', showSokaklar ? 'visible' : 'none')
+      }
+    }
+
+    if (map.isStyleLoaded()) {
+      updateVisibility()
+    } else {
+      map.once('idle', updateVisibility)
+    }
+  }, [showSokaklar])
+
   // ─── Sinematik Drone FlyTo on search ──────────────────────
   // Search bar only pans the camera cinematically; user must click to target
   useEffect(() => {
@@ -416,9 +663,171 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
   }, [focusLocation])
 
   return (
-    <div
-      ref={mapContainerRef}
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
-    />
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}>
+      <div
+        ref={mapContainerRef}
+        style={{ width: '100%', height: '100%' }}
+      />
+      
+      {/* Sleek Floating Control Panel for Sivas Kent Rehberi */}
+      <div className="absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 rounded-xl p-4 w-64 shadow-2xl transition-all duration-300">
+        <div className="flex items-center gap-2 mb-3 text-slate-100 font-semibold text-sm">
+          <Layers className="w-4 h-4 text-blue-400" />
+          <span>Akıllı Şehir Katmanları</span>
+        </div>
+        <div className="h-px bg-slate-800/60 my-2" />
+        <div className="space-y-3 mt-3">
+          {/* Binalar Katmanı Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 select-none">
+              <Building2 className="w-4 h-4 text-slate-400" />
+              <span className="text-xs font-medium text-slate-200">Binalar (Vektör)</span>
+            </div>
+            <button
+              onClick={() => setShowBinalar(!showBinalar)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showBinalar ? 'bg-blue-500' : 'bg-slate-700'
+              }`}
+              type="button"
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showBinalar ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {showBinalar && (
+            <div className="pl-6 pr-2 py-1 space-y-1 transition-all duration-300 animate-in slide-in-from-top-1">
+              <div className="flex justify-between text-[10px] text-slate-400">
+                <span>Bina Opaklığı</span>
+                <span>{Math.round(binalarOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={binalarOpacity}
+                onChange={(e) => setBinalarOpacity(parseFloat(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Numarataj Katmanı Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 select-none">
+              <span className="text-slate-400 font-bold text-xs w-4 text-center">#</span>
+              <span className="text-xs font-medium text-slate-200">Numarataj</span>
+            </div>
+            <button
+              onClick={() => setShowNumarataj(!showNumarataj)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showNumarataj ? 'bg-blue-500' : 'bg-slate-700'
+              }`}
+              type="button"
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showNumarataj ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Mahalle Sınırları Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 select-none">
+              <MapIcon className="w-4 h-4 text-slate-400" />
+              <span className="text-xs font-medium text-slate-200">Mahalle Sınırları</span>
+            </div>
+            <button
+              onClick={() => setShowMahalleler(!showMahalleler)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showMahalleler ? 'bg-blue-500' : 'bg-slate-700'
+              }`}
+              type="button"
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showMahalleler ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {showMahalleler && (
+            <div className="pl-6 pr-2 py-1 space-y-1 transition-all duration-300 animate-in slide-in-from-top-1">
+              <div className="flex justify-between text-[10px] text-slate-400">
+                <span>Mahalle Sınır Opaklığı</span>
+                <span>{Math.round(mahallelerOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={mahallelerOpacity}
+                onChange={(e) => setMahallelerOpacity(parseFloat(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Sokak Aksları Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 select-none">
+              <Milestone className="w-4 h-4 text-slate-400" />
+              <span className="text-xs font-medium text-slate-200">Sokak Aksları</span>
+            </div>
+            <button
+              onClick={() => setShowSokaklar(!showSokaklar)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showSokaklar ? 'bg-blue-500' : 'bg-slate-700'
+              }`}
+              type="button"
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showSokaklar ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes pulse-glow {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8);
+            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.6));
+          }
+          70% {
+            transform: scale(1.08);
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.9));
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.6));
+          }
+        }
+        .map-marker-incident {
+          animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes pulse-hydrant {
+          0% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5)); }
+          50% { transform: scale(1.04); filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8)); }
+          100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5)); }
+        }
+        .map-marker-hydrant-pulse {
+          animation: pulse-hydrant 3s infinite ease-in-out;
+        }
+      `}</style>
+    </div>
   )
 }
