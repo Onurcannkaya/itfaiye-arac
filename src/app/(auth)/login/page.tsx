@@ -216,13 +216,13 @@ function LoginForm() {
                 />
               </div>
               <p className="text-[11px] text-slate-500 text-center font-medium leading-relaxed max-w-[300px]">
-                Bu alan Sivas Belediyesi Akıllı Şehir ve Kent Bilgi Sistemleri Müdürlüğü tarafından geliştirilmiştir.
+                Sivas Belediyesi Akıllı Şehir ve Kent Bilgi Sistemleri Müdürlüğü tarafından geliştirilmiştir.
               </p>
             </div>
 
             <div className="space-y-1">
               <p className="text-[11px] text-slate-600 font-bold tracking-wider uppercase">
-                SİVAS BELEDİYESİ İTFAİYE MÜDÜRLÜĞÜ © 2026
+                Sivas Belediyesi Akıllı Şehir ve Kent Bilgi Sistemleri Müdürlüğü © 2026
               </p>
               <p className="text-[9px] text-slate-700 font-medium">
                 Tüm hakları saklıdır. Yetkisiz erişimler loglanmaktadır.
