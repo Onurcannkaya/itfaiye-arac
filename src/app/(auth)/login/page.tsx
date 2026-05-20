@@ -71,11 +71,11 @@ function LoginForm() {
 
         {/* Sol Panel Üst Bölüm: Kurumsal Logolar */}
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-            <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={32} height={32} className="object-contain" />
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+            <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={44} height={44} className="object-contain" />
           </div>
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-            <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={32} height={32} className="object-contain" />
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+            <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={44} height={44} className="object-contain" />
           </div>
           <div className="h-6 w-px bg-white/20" />
           <span className="text-sm font-bold tracking-widest text-slate-200">SİVAS BELEDİYESİ</span>
@@ -97,7 +97,6 @@ function LoginForm() {
         {/* Sol Panel Alt Bilgi */}
         <div className="relative z-10 mt-12 flex justify-between items-center text-xs text-slate-400 border-t border-white/5 pt-6">
           <span className="font-semibold">Sivas İtfaiye Komuta Merkezi</span>
-          <span className="font-mono text-slate-500">v12.0.0 (Stabil)</span>
         </div>
       </div>
 
@@ -112,11 +111,11 @@ function LoginForm() {
           {/* Mobil Görünümde Başlık */}
           <div className="text-center lg:hidden space-y-4">
             <div className="flex justify-center items-center gap-4">
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center p-2 shadow-lg">
-                <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={40} height={40} className="object-contain" />
+              <div className="w-18 h-18 rounded-full overflow-hidden bg-white flex items-center justify-center p-2.5 shadow-lg">
+                <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={52} height={52} className="object-contain" />
               </div>
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-white flex items-center justify-center p-2 shadow-lg">
-                <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={40} height={40} className="object-contain" />
+              <div className="w-18 h-18 rounded-full overflow-hidden bg-white flex items-center justify-center p-2.5 shadow-lg">
+                <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={52} height={52} className="object-contain" />
               </div>
             </div>
             <div className="space-y-1">
@@ -162,7 +161,7 @@ function LoginForm() {
                     className="h-12 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500 rounded-xl font-mono tracking-widest text-slate-100 placeholder-slate-600 pl-4 w-full"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 font-medium pl-1">Demo Sicil: <code className="bg-slate-950 px-1.5 py-0.5 rounded font-mono text-slate-400">SB5801</code> — <code className="bg-slate-950 px-1.5 py-0.5 rounded font-mono text-slate-400">SB5830</code></p>
+
               </div>
 
               {/* Şifre */}
@@ -178,7 +177,7 @@ function LoginForm() {
                     className="h-12 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500 rounded-xl text-slate-100 placeholder-slate-600 pl-4 w-full"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 font-medium pl-1">Demo Parola: <code className="bg-slate-950 px-1.5 py-0.5 rounded font-mono text-slate-400">1234</code></p>
+
               </div>
 
               {/* Buton */}
@@ -207,7 +206,7 @@ function LoginForm() {
           <div className="text-center space-y-4 pt-4">
             {/* Akıllı Şehir Geliştirici Bilgisi */}
             <div className="flex flex-col items-center justify-center gap-2">
-              <div className="relative w-36 h-12">
+              <div className="relative w-48 h-16">
                 <Image 
                   src="/logo-akilli-sehir.png" 
                   alt="Akıllı Şehir Logosu" 
