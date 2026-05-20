@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as turf from '@turf/turf'
-import { Layers, Building2, Map as MapIcon, Milestone } from 'lucide-react'
+import { Layers, Building2, Map as MapIcon, Milestone, Droplets } from 'lucide-react'
 import { getTriageInfo } from '@/lib/utils'
 
 
@@ -31,6 +31,9 @@ interface Hydrant {
   durum: string
   mahalle: string
   location?: any
+  kalite?: string | null
+  imalatci?: string | null
+  proje_adi?: string | null
 }
 
 interface MapProps {
@@ -41,9 +44,60 @@ interface MapProps {
   focusLocation: [number, number] | null
 }
 
+const parseWKBPoint = (wkbHex: string): [number, number] | null => {
+  if (!wkbHex || typeof wkbHex !== 'string') return null
+  const cleanHex = wkbHex.trim()
+  if (cleanHex.length < 42) return null
+  
+  const isLittleEndian = cleanHex.substring(0, 2) === '01'
+  const type = cleanHex.substring(2, 10)
+  
+  let coordsHex = ''
+  if (type === '01000020' || type === '20000001') {
+    // EWKB Point (with SRID)
+    coordsHex = cleanHex.substring(18)
+  } else if (type === '01000000' || type === '00000001') {
+    // Standard WKB Point
+    coordsHex = cleanHex.substring(10)
+  } else {
+    if (cleanHex.length === 50) {
+      coordsHex = cleanHex.substring(18)
+    } else if (cleanHex.length === 42) {
+      coordsHex = cleanHex.substring(10)
+    } else {
+      return null
+    }
+  }
+
+  if (coordsHex.length < 32) return null
+
+  const xHex = coordsHex.substring(0, 16)
+  const yHex = coordsHex.substring(16, 32)
+
+  const hexToDouble = (hexStr: string): number => {
+    const bytes = new Uint8Array(8)
+    for (let i = 0; i < 8; i++) {
+      const byteHex = hexStr.substring(i * 2, i * 2 + 2)
+      bytes[isLittleEndian ? i : 7 - i] = parseInt(byteHex, 16)
+    }
+    const view = new DataView(bytes.buffer)
+    return view.getFloat64(0, true)
+  }
+
+  const x = hexToDouble(xHex)
+  const y = hexToDouble(yHex)
+
+  return [x, y]
+}
+
 const parseLocation = (loc: any): [number, number] | null => {
   if (!loc) return null
   if (typeof loc === 'string') {
+    const trimmed = loc.trim()
+    if (/^[0-9a-fA-F]+$/.test(trimmed)) {
+      const parsed = parseWKBPoint(trimmed)
+      if (parsed) return parsed
+    }
     try {
       const parsed = JSON.parse(loc)
       if (parsed.coordinates) {
@@ -73,6 +127,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
   const [showNumarataj, setShowNumarataj] = useState(true)
   const [showMahalleler, setShowMahalleler] = useState(false)
   const [showSokaklar, setShowSokaklar] = useState(false)
+  const [showHidrantlar, setShowHidrantlar] = useState(true)
   const [binalarOpacity, setBinalarOpacity] = useState(0.3)
   const [mahallelerOpacity, setMahallelerOpacity] = useState(1.0)
 
@@ -457,54 +512,75 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
 
     hydrantElementsRef.current = []
 
-    // Hydrant markers (blue)
-    hydrants.forEach(hyd => {
-      const coords = parseLocation(hyd.location)
-      if (!coords) return
+    // Hydrant markers (durum-based green/red)
+    if (showHidrantlar) {
+      hydrants.forEach(hyd => {
+        const coords = parseLocation(hyd.location)
+        if (!coords) return
 
-      const el = document.createElement('div')
-      el.className = 'map-marker-hydrant map-marker-hydrant-pulse'
-      el.style.cssText = `
-        width: 32px; height: 32px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `
-      el.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 6px rgba(59,130,246,0.6));">
-          <circle cx="50" cy="50" r="42" fill="url(#hydrant-grad)" stroke="#ffffff" stroke-width="3"/>
-          <path d="M35 42 L35 70 C35 76 65 76 65 70 L65 42 Z" fill="#ffffff" opacity="0.95"/>
-          <path d="M30 32 H70 V42 H30 Z" fill="#ffffff"/>
-          <circle cx="50" cy="22" r="8" fill="#ffffff"/>
-          <path d="M50 48 C53 52 53 58 50 62 C47 58 47 52 50 48 Z" fill="#1d4ed8"/>
-          <defs>
-            <linearGradient id="hydrant-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#3b82f6" />
-              <stop offset="100%" stop-color="#1d4ed8" />
-            </linearGradient>
-          </defs>
-        </svg>
-      `
+        const isMevcut = hyd.durum === 'MEVCUT'
+        
+        const el = document.createElement('div')
+        el.className = `map-marker-hydrant ${isMevcut ? 'map-marker-hydrant-pulse-green' : 'map-marker-hydrant-pulse-red'}`
+        el.style.cssText = `
+          width: 32px; height: 32px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `
+        
+        const gradientId = `hydrant-grad-${hyd.id}`
+        
+        el.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: ${isMevcut ? 'drop-shadow(0 0 8px #22c55e)' : 'drop-shadow(0 0 10px #ef4444)'};">
+            <circle cx="50" cy="50" r="42" fill="url(#${gradientId})" stroke="#ffffff" stroke-width="3"/>
+            <path d="M35 42 L35 70 C35 76 65 76 65 70 L65 42 Z" fill="#ffffff" opacity="0.95"/>
+            <path d="M30 32 H70 V42 H30 Z" fill="#ffffff"/>
+            <circle cx="50" cy="22" r="8" fill="#ffffff"/>
+            <path d="M50 48 C53 52 53 58 50 62 C47 58 47 52 50 48 Z" fill="${isMevcut ? '#15803d' : '#b91c1c'}"/>
+            <defs>
+              <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="${isMevcut ? '#22c55e' : '#ef4444'}" />
+                <stop offset="100%" stop-color="${isMevcut ? '#15803d' : '#b91c1c'}" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `
 
+        const popup = new maplibregl.Popup({ offset: 16, maxWidth: '280px' }).setHTML(`
+          <div style="font-family:system-ui;padding:4px;color:#1e293b;line-height:1.5;">
+            <h3 style="font-weight:800;color:${isMevcut ? '#16a34a' : '#dc2626'};font-size:14px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${isMevcut ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${isMevcut ? '#22c55e' : '#ef4444'}"></span>
+              Yangın Hidrantı #${hyd.no}
+            </h3>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:12px;">
+              <span style="color:#64748b;font-weight:500;">Durum:</span>
+              <span style="font-weight:700;color:${isMevcut ? '#16a34a' : '#dc2626'}">${isMevcut ? 'MEVCUT (Çalışıyor)' : 'DEVRE_DIŞI (Arızalı)'}</span>
+              
+              <span style="color:#64748b;font-weight:500;">Kalite:</span>
+              <span style="font-weight:600;color:#0f172a;">${hyd.kalite || 'Belirtilmemiş'}</span>
+              
+              <span style="color:#64748b;font-weight:500;">İmalatçı:</span>
+              <span style="font-weight:600;color:#0f172a;">${hyd.imalatci || 'Sivas Belediyesi'}</span>
+              
+              ${hyd.proje_adi ? `
+              <span style="color:#64748b;font-weight:500;grid-column:1/3;margin-top:4px;">Konum Detayı:</span>
+              <span style="grid-column:1/3;color:#334155;background:#f8fafc;padding:6px;border-radius:4px;font-size:11px;line-height:1.4;border:1px solid #e2e8f0;word-break:break-word;">${hyd.proje_adi}</span>
+              ` : ''}
+            </div>
+          </div>
+        `)
 
-      const popup = new maplibregl.Popup({ offset: 16, maxWidth: '260px' }).setHTML(`
-        <div style="font-family:system-ui;padding:4px 0">
-          <h3 style="font-weight:700;color:#3b82f6;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px;margin-bottom:4px">Yangın Hidrantı #${hyd.no}</h3>
-          <p style="font-size:12px;margin:2px 0"><strong>Tip:</strong> ${hyd.tip}</p>
-          <p style="font-size:12px;margin:2px 0"><strong>Durum:</strong> ${hyd.durum}</p>
-          <p style="font-size:12px;margin:2px 0"><strong>Mahalle:</strong> ${hyd.mahalle || '-'}</p>
-        </div>
-      `)
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat(coords)
+          .setPopup(popup)
+          .addTo(map)
 
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat(coords)
-        .setPopup(popup)
-        .addTo(map)
-
-      markersRef.current.push(marker)
-      hydrantElementsRef.current.push({ el, coords })
-    })
+        markersRef.current.push(marker)
+        hydrantElementsRef.current.push({ el, coords })
+      })
+    }
 
     // Fixed Fire Station Marker
     const stationEl = document.createElement('div')
@@ -546,7 +622,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
 
     markersRef.current.push(stationMarker)
 
-  }, [incidents, hydrants])
+  }, [incidents, hydrants, showHidrantlar])
 
   // ─── Sync visibility of binalar & numarataj layers ───
   useEffect(() => {
@@ -802,6 +878,27 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
               />
             </button>
           </div>
+
+          {/* Yangın Hidrantları Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 select-none">
+              <Droplets className="w-4 h-4 text-slate-400" />
+              <span className="text-xs font-medium text-slate-200">Yangın Hidrantları</span>
+            </div>
+            <button
+              onClick={() => setShowHidrantlar(!showHidrantlar)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showHidrantlar ? 'bg-blue-500' : 'bg-slate-700'
+              }`}
+              type="button"
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showHidrantlar ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
       <style>{`
@@ -865,13 +962,21 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
         .triage-low-glow {
           animation: pulse-glow-green 2.5s infinite ease-in-out;
         }
-        @keyframes pulse-hydrant {
-          0% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5)); }
-          50% { transform: scale(1.04); filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8)); }
-          100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5)); }
+        @keyframes pulse-hydrant-green {
+          0% { transform: scale(1); filter: drop-shadow(0 0 4px #22c55e); }
+          50% { transform: scale(1.06); filter: drop-shadow(0 0 12px #22c55e); }
+          100% { transform: scale(1); filter: drop-shadow(0 0 4px #22c55e); }
         }
-        .map-marker-hydrant-pulse {
-          animation: pulse-hydrant 3s infinite ease-in-out;
+        @keyframes pulse-hydrant-red {
+          0% { transform: scale(1); filter: drop-shadow(0 0 5px #ef4444); }
+          50% { transform: scale(1.08); filter: drop-shadow(0 0 15px #ef4444); }
+          100% { transform: scale(1); filter: drop-shadow(0 0 5px #ef4444); }
+        }
+        .map-marker-hydrant-pulse-green {
+          animation: pulse-hydrant-green 2.5s infinite ease-in-out;
+        }
+        .map-marker-hydrant-pulse-red {
+          animation: pulse-hydrant-red 2s infinite ease-in-out;
         }
       `}</style>
     </div>
