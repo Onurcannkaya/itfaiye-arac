@@ -480,14 +480,13 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       const triage = getTriageInfo(inc.olay_turu)
       
       const el = document.createElement('div')
-      // Outer element is styled to be relative so maplibre-gl marker engine centers it correctly,
-      // and we avoid applying any CSS animations directly on this positioned element.
-      el.style.position = 'relative'
+      el.style.width = '34px'
+      el.style.height = '34px'
       
       const innerEl = document.createElement('div')
       innerEl.className = `map-marker-incident ${triage.glowClass}`
       innerEl.style.cssText = `
-        width: 34px; height: 34px;
+        width: 100%; height: 100%;
         background: ${triage.color};
         border: 2px solid #fff;
         border-radius: 50%;
@@ -535,12 +534,13 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
         const isMevcut = hyd.durum === 'MEVCUT'
         
         const el = document.createElement('div')
-        el.style.position = 'relative'
+        el.style.width = '32px'
+        el.style.height = '32px'
         
         const innerEl = document.createElement('div')
         innerEl.className = `map-marker-hydrant ${isMevcut ? 'map-marker-hydrant-pulse-green' : 'map-marker-hydrant-pulse-red'}`
         innerEl.style.cssText = `
-          width: 32px; height: 32px;
+          width: 100%; height: 100%;
           cursor: pointer;
           display: flex;
           align-items: center;
