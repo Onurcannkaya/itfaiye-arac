@@ -21,6 +21,7 @@ const PAGE_METADATA = [
   { id: 'envanter', title: 'Malzeme Envanteri', desc: 'QR kod üretimi, araç malzeme zimmetleri ve durum sayımları', icon: Combine, color: 'text-amber-500 bg-amber-500/10' },
   { id: 'raporlar', title: 'EK-16 Raporları', desc: 'Merkezi log sistemi, geçmiş denetimler ve sorun analizleri', icon: FileText, color: 'text-purple-500 bg-purple-500/10' },
   { id: 'egitimler', title: 'Eğitim & Faaliyetler', desc: 'Resmi imza sirkülü eğitim raporları, tatbikat ve ziyaret kayıtları', icon: GraduationCap, color: 'text-blue-500 bg-blue-500/10' },
+  { id: 'hizmet_basvurulari', title: 'Vatandaş Hizmetleri', desc: 'Baca temizliği, yangın önlem ruhsatları ve eğitim talepleri onay süreci', icon: Sparkles, color: 'text-indigo-500 bg-indigo-500/10' },
 ];
 
 const ROLES = [
