@@ -315,6 +315,7 @@ CREATE TABLE IF NOT EXISTS public.incidents (
   yarali_itfaiye INT DEFAULT 0,
   kurtarilan_hayvan INT DEFAULT 0,
   olen_hayvan INT DEFAULT 0,
+  status TEXT DEFAULT 'active',
   -- GIS
   location geometry(Point, 4326),
   created_at TIMESTAMPTZ DEFAULT NOW(),
