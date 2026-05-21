@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Badge } from "@/components/ui/Badge"
-import { Loader2, Wrench, Plus, UploadCloud, Camera, Image as ImageIcon, Search, Banknote, Gauge } from "lucide-react"
+import { Loader2, Wrench, Plus, UploadCloud, Camera, Image as ImageIcon, Search, Banknote, Gauge, Check } from "lucide-react"
+import { useAuthStore } from "@/lib/authStore"
 
 type Maintenance = any;
 type Vehicle = any;
@@ -15,6 +16,7 @@ type Personnel = any;
 const ISLEM_TURLERI = ['Periyodik Bakım', 'Arıza/Tamir', 'Yağ Değişimi', 'Lastik', 'Kaza/Hasar', 'Diğer']
 
 export default function AracBakimPage() {
+  const { user } = useAuthStore()
   const [maintenances, setMaintenances] = useState<Maintenance[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [personnel, setPersonnel] = useState<Personnel[]>([])
@@ -56,6 +58,17 @@ export default function AracBakimPage() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApprove = async (id: string) => {
+    try {
+      const { error } = await api.update('vehicle_maintenances', { durum: 'Onaylandı' }, { id })
+      if (error) throw error
+      fetchData()
+    } catch (err) {
+      console.error("Bakım onay hatası:", err)
+      alert("Bakım onaylanırken bir hata oluştu.")
     }
   }
 
@@ -141,6 +154,7 @@ export default function AracBakimPage() {
 
   const getStatusBadge = (durum: string) => {
     switch (durum) {
+      case 'Onaylandı': return <Badge className="bg-success hover:bg-success/90">Onaylandı</Badge>
       case 'Tamamlandı': return <Badge className="bg-success hover:bg-success/90">Tamamlandı</Badge>
       case 'Serviste': return <Badge className="bg-warning hover:bg-warning/90">Serviste</Badge>
       default: return <Badge variant="outline" className="bg-muted">Bekliyor</Badge>
@@ -311,6 +325,15 @@ export default function AracBakimPage() {
                       </div>
                     )}
                   </div>
+
+                  {((user?.rol === 'Admin' || user?.rol?.toLowerCase() === 'admin' || user?.unvan === 'Müdür' || user?.unvan?.toLowerCase() === 'müdür') && (!m.durum || m.durum === 'Bekliyor')) && (
+                    <Button 
+                      onClick={() => handleApprove(m.id)}
+                      className="mt-3 w-full bg-success hover:bg-success/90 text-white font-semibold flex items-center justify-center gap-2 border-none"
+                    >
+                      <Check className="w-4 h-4" /> Bakımı Onayla
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))
