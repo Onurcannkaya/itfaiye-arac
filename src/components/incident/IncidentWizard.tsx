@@ -213,31 +213,541 @@ export function IncidentWizard({
   }
 
   const handlePrint = () => {
-    if (!printRef.current) return
-    const printContents = printRef.current.innerHTML
+    // Helper formatters
+    const formatDate = (dateStr: string) => {
+      if (!dateStr) return '-'
+      try {
+        const d = new Date(dateStr)
+        if (isNaN(d.getTime())) return dateStr
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const year = d.getFullYear()
+        const hours = String(d.getHours()).padStart(2, '0')
+        const minutes = String(d.getMinutes()).padStart(2, '0')
+        return `${day}.${month}.${year} ${hours}:${minutes}`
+      } catch (e) {
+        return dateStr
+      }
+    }
+
+    const formatDateOnly = (dateStr: string) => {
+      if (!dateStr) return '-'
+      try {
+        const d = new Date(dateStr)
+        if (isNaN(d.getTime())) return dateStr
+        const day = String(d.getDate()).padStart(2, '0')
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const year = d.getFullYear()
+        return `${day}.${month}.${year}`
+      } catch (e) {
+        return dateStr
+      }
+    }
+
+    const formatTimeOnly = (dateStr: string) => {
+      if (!dateStr) return '-'
+      try {
+        const d = new Date(dateStr)
+        if (isNaN(d.getTime())) return dateStr
+        const hours = String(d.getHours()).padStart(2, '0')
+        const minutes = String(d.getMinutes()).padStart(2, '0')
+        return `${hours}:${minutes}`
+      } catch (e) {
+        return dateStr
+      }
+    }
+
+    const logoBelediye = `${window.location.origin}/logo-belediye.png`
+    const logoItfaiye = `${window.location.origin}/logo-itfaiye.png`
+
+    const personnelRows = selectedPersonnel.map((sicil, idx) => {
+      const p = personnelList.find(x => x.sicil_no === sicil)
+      return p ? `${idx + 1}. ${p.ad} ${p.soyad} (${p.unvan || 'İtfaiye Eri'} - Sicil: ${p.sicil_no})` : `${idx + 1}. Sicil: ${sicil}`
+    }).join('<br/>')
+
+    const vehicleRows = selectedVehicles.map((plaka, idx) => {
+      const v = vehicleList.find(x => x.plaka === plaka)
+      return v ? `${idx + 1}. ${v.plaka} (${v.arac_tipi || 'Arazöz'})` : `${idx + 1}. ${plaka}`
+    }).join('<br/>')
+
+    const ustAmirler = selectedPersonnel.map(sicil => {
+      const p = personnelList.find(x => x.sicil_no === sicil)
+      if (p && (
+        p.unvan?.toLowerCase().includes('amir') || 
+        p.unvan?.toLowerCase().includes('müdür') || 
+        p.unvan?.toLowerCase().includes('başkan') ||
+        p.unvan?.toLowerCase().includes('çavuş')
+      )) {
+        return `${p.ad} ${p.soyad} (${p.unvan})`
+      }
+      return null
+    }).filter(Boolean).join(', ') || 'Nöbetçi Ekip Amiri'
+
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
+
     printWindow.document.write(`
       <html>
         <head>
           <title>EK-16 Raporu - ${formData.mahalle}</title>
           <style>
-            body { font-family: system-ui, sans-serif; padding: 20mm; color: #000; font-size: 13px; }
-            h1, h2, h3, h4 { color: #000; }
-            input, select, textarea { border: none !important; border-bottom: 1px solid #000 !important; border-radius: 0 !important; background: transparent !important; padding: 0 !important; font-weight: bold; width: auto !important; appearance: none; -moz-appearance: none; -webkit-appearance: none; }
-            .hidden-print { display: none !important; }
-            .badge { border: 1px solid #000 !important; border-radius: 4px; padding: 2px 6px; display: inline-block; }
-            @media print {
-              body { padding: 0; }
-              @page { size: A4; margin: 15mm; }
+            body {
+              font-family: 'Times New Roman', Times, serif;
+              margin: 0;
+              padding: 0;
+              color: #000;
+              background-color: #fff;
+              font-size: 11px;
+              line-height: 1.3;
+            }
+
+            @page {
+              size: A4;
+              margin: 12mm 15mm 12mm 15mm;
+            }
+
+            .page {
+              width: 100%;
+              box-sizing: border-box;
+              page-break-after: always;
+              background: white;
+              position: relative;
+            }
+
+            .page:last-child {
+              page-break-after: avoid;
+            }
+
+            /* Header styles */
+            .header-table {
+              width: 100%;
+              border-collapse: collapse;
+              border: none;
+              margin-bottom: 10px;
+            }
+
+            .header-logo-cell {
+              width: 70px;
+              text-align: center;
+              vertical-align: middle;
+            }
+
+            .header-text-cell {
+              text-align: center;
+              vertical-align: middle;
+            }
+
+            .header-title-main {
+              font-size: 13px;
+              font-weight: bold;
+              letter-spacing: 0.5px;
+              margin: 0;
+            }
+
+            .header-subtitle {
+              font-size: 11px;
+              font-weight: bold;
+              margin: 2px 0;
+            }
+
+            .header-report-title {
+              font-size: 12px;
+              font-weight: bold;
+              margin-top: 5px;
+              text-decoration: underline;
+            }
+
+            /* Metadata columns under header */
+            .meta-table {
+              width: 100%;
+              border-collapse: collapse;
+              border: none;
+              margin-bottom: 8px;
+              font-size: 10px;
+            }
+
+            .meta-cell-left {
+              text-align: left;
+              width: 50%;
+              vertical-align: top;
+            }
+
+            .meta-cell-right {
+              text-align: right;
+              width: 50%;
+              vertical-align: top;
+            }
+
+            /* Main report table styling */
+            .report-table {
+              width: 100%;
+              border-collapse: collapse;
+              border: 2px solid #000;
+            }
+
+            .report-table th, .report-table td {
+              border: 1px solid #000;
+              padding: 4px 6px;
+              vertical-align: middle;
+            }
+
+            .label-cell {
+              background-color: #f2f2f2;
+              font-weight: bold;
+              width: 32%;
+              font-size: 10px;
+            }
+
+            .value-cell {
+              font-size: 10.5px;
+            }
+
+            /* Inner nested table styling */
+            .inner-table {
+              width: 100%;
+              border-collapse: collapse;
+              border: none;
+            }
+
+            .inner-table td {
+              border: none;
+              padding: 2px 4px;
+            }
+
+            .inner-table-grid {
+              width: 100%;
+              border-collapse: collapse;
+              border: none;
+              text-align: center;
+            }
+
+            .inner-table-grid th, .inner-table-grid td {
+              border: none;
+              border-bottom: 1px solid #000;
+              border-right: 1px solid #000;
+              padding: 3px;
+            }
+
+            .inner-table-grid th {
+              background-color: #f9f9f9;
+              font-weight: bold;
+              font-size: 9.5px;
+            }
+
+            .inner-table-grid tr:last-child td {
+              border-bottom: none;
+            }
+
+            .inner-table-grid td:last-child, .inner-table-grid th:last-child {
+              border-right: none;
+            }
+
+            /* Signature block */
+            .signature-section {
+              margin-top: 30px;
+              width: 100%;
+            }
+
+            .signature-table {
+              width: 100%;
+              border-collapse: collapse;
+              border: none;
+            }
+
+            .signature-cell {
+              width: 33.33%;
+              text-align: center;
+              vertical-align: top;
+              font-size: 11px;
+            }
+
+            .signature-line {
+              margin-top: 45px;
+              border-top: 1px dashed #000;
+              width: 75%;
+              margin-left: auto;
+              margin-right: auto;
             }
           </style>
         </head>
         <body>
-          <h2 style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:20px;">
-            İTFAİYE OLAY RAPORU (EK-16)
-          </h2>
-          ${printContents}
+          
+          <!-- 1. SAYFA -->
+          <div class="page">
+            <table class="header-table">
+              <tr>
+                <td class="header-logo-cell">
+                  <img src="${logoBelediye}" alt="Sivas Belediyesi" style="max-height: 52px; max-width: 52px; object-fit: contain;" />
+                </td>
+                <td class="header-text-cell">
+                  <div class="header-title-main">T.C.</div>
+                  <div class="header-title-main">SİVAS BELEDİYE BAŞKANLIĞI</div>
+                  <div class="header-subtitle">İTFAİYE MÜDÜRLÜĞÜ</div>
+                  <div class="header-report-title">İTFAİYE OLAY RAPORU (EK-16)</div>
+                </td>
+                <td class="header-logo-cell">
+                  <img src="${logoItfaiye}" alt="Sivas İtfaiyesi" style="max-height: 52px; max-width: 52px; object-fit: contain;" />
+                </td>
+              </tr>
+            </table>
+
+            <table class="meta-table">
+              <tr>
+                <td class="meta-cell-left">
+                  <div><strong>Sayı:</strong> SVS-İTF-${initialData?.id || 'YENİ'}</div>
+                  <div><strong>Konu:</strong> İtfaiye Olay Raporu (EK-16)</div>
+                </td>
+                <td class="meta-cell-right">
+                  <div><strong>İlçesi (Olay Yeri):</strong> Merkez / SİVAS</div>
+                  <div><strong>Kayıt Tarihi:</strong> ${formatDate(initialData?.ek16_kapatis_tarihi || new Date().toISOString())}</div>
+                  <div><strong>Bildirim No:</strong> ${initialData?.id || '-'}</div>
+                </td>
+              </tr>
+            </table>
+
+            <table class="report-table">
+              <tr>
+                <td class="label-cell">Olayı ihbar edenin telefonu/adresi</td>
+                <td class="value-cell">${formData.ihbar_eden_ad_soyad || '-'} / ${formData.ihbar_eden_tel || '-'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olay yerinin adresi</td>
+                <td class="value-cell"><strong>${formData.adres || '-'}</strong> - Mahalle: <strong>${formData.mahalle || '-'}</strong> / SİVAS</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olayın meydana geldiği tarih</td>
+                <td class="value-cell" style="padding: 0;">
+                  <table class="inner-table">
+                    <tr>
+                      <td style="width: 50%;">Tarih: <strong>${formatDateOnly(formData.ihbar_saati)}</strong></td>
+                      <td style="border-left: 1px solid #000;">Saat: <strong>${formatTimeOnly(formData.ihbar_saati)}</strong></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">İlk müdahale eden birim</td>
+                <td class="value-cell" style="padding: 0;">
+                  <table class="inner-table-grid">
+                    <tr>
+                      <th>Çıkış Saati</th>
+                      <th>Varış Saati</th>
+                      <th>Müdahale Ekipleri</th>
+                      <th>Personel Sayısı</th>
+                    </tr>
+                    <tr>
+                      <td>${formatTimeOnly(formData.cikis_saati)}</td>
+                      <td>${formatTimeOnly(formData.varis_saati)}</td>
+                      <td>${selectedVehicles.join(', ') || '-'}</td>
+                      <td>${selectedPersonnel.length} personel</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olayın sona eriş-dönüş tarih saati</td>
+                <td class="value-cell" style="padding: 0;">
+                  <table class="inner-table">
+                    <tr>
+                      <td style="width: 50%;">Sona Eriş: <strong>${formatDate(formData.donus_saati)}</strong></td>
+                      <td style="border-left: 1px solid #000;">Dönüş: <strong>${formatDate(formData.donus_saati)}</strong></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">Müdahale şekli</td>
+                <td class="value-cell">${formData.olay_turu} müdahale prosedürleri uygulanarak olaya müdahale edilmiş ve soğutma çalışması ile kontrol altına alınmıştır.</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Yardımcı birimler, araç, personel sayısı</td>
+                <td class="value-cell">${formData.bildirilen_kurumlar.join(', ') || 'Yardımcı kurum bildirilmedi.'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olaya müdahalede kullanılan madde ve miktarı</td>
+                <td class="value-cell">
+                  Su: <strong>${formData.kullanilan_su_ton || '0'} Ton</strong> | 
+                  Köpük: <strong>${formData.kullanilan_kopuk_litre || '0'} Litre</strong> | 
+                  KKT (Kuru Kimyevi Toz): <strong>${formData.kullanilan_kkt_kg || '0'} Kg</strong>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">Zarar gören bina ve eşyalar sigortalı mı?</td>
+                <td class="value-cell">${formData.sigorta_durumu ? 'Evet' : 'Hayır / Belirtilmemiş'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Şirketin adı, sigorta miktarı, poliçe no</td>
+                <td class="value-cell">${formData.sigorta_durumu || 'Sigorta bilgisi bulunmuyor / Sigortasız'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olaya müdahale eden araç plakaları</td>
+                <td class="value-cell"><strong>${selectedVehicles.join(', ') || '-'}</strong></td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olay yerini kullananların hukuki durumu</td>
+                <td class="value-cell">Mülk Sahibi / Kiracı</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olay yerini kullananların adları</td>
+                <td class="value-cell">${formData.ihbar_eden_ad_soyad || '-'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olayın olduğu yerin yasal sahipleri</td>
+                <td class="value-cell">${formData.ihbar_eden_ad_soyad || '-'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Varsa olayda zarar gören araç, gereç ve malzemenin durumu</td>
+                <td class="value-cell">Hasar Derecesi: <strong>${formData.hasar_durumu}</strong></td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olayda ölen veya yaralanan olmuş ise görevleri, ad ve soyadları</td>
+                <td class="value-cell" style="padding: 0;">
+                  <table class="inner-table-grid">
+                    <tr>
+                      <th>Kayıp / Yaralı Sınıfı</th>
+                      <th>Siviller (Halk)</th>
+                      <th>İtfaiye Personeli</th>
+                    </tr>
+                    <tr>
+                      <td><strong>Ölü / Vefat</strong></td>
+                      <td>${formData.olu_halk} kişi</td>
+                      <td>${formData.olu_itfaiye} personel</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Yaralı</strong></td>
+                      <td>${formData.yarali_halk} kişi</td>
+                      <td>${formData.yarali_itfaiye} personel</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Kurtarılan</strong></td>
+                      <td>${formData.kurtarilan_halk} kişi</td>
+                      <td>-</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olayda kurtarılan ve ölen hayvan sayısı</td>
+                <td class="value-cell" style="padding: 0;">
+                  <table class="inner-table">
+                    <tr>
+                      <td style="width: 50%;">Kurtarılan Hayvan: <strong>${formData.kurtarilan_hayvan}</strong></td>
+                      <td style="border-left: 1px solid #000;">Ölen Hayvan: <strong>${formData.olen_hayvan}</strong></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olaya katılan üst amirler</td>
+                <td class="value-cell">${ustAmirler}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olay yerinin kime teslim edildiği</td>
+                <td class="value-cell">${formData.olay_teslim_edilen_kisi || 'Mülk Sahibi / Emniyet Güçleri'}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olay yeri bina ise; yapı malzemesi, kat ve daire sayısı, kullanım amacı</td>
+                <td class="value-cell">Yapı Cinsi: <strong>${formData.bina_yapi_malzemesi}</strong> | Başlangıç Noktası: <strong>${formData.yangin_baslangic_yeri || 'Belirtilmemiş'}</strong></td>
+              </tr>
+              <tr>
+                <td class="label-cell">Olay yerinin kullanım amacı</td>
+                <td class="value-cell">Konut / Sosyal Donatı / Diğer</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Müdahaleden önce olayın durumu</td>
+                <td class="value-cell">Aktif yangın ve yoğun duman yayılımı mevcut durumdaydı.</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Yapılan çalışma ve hasar durumu</td>
+                <td class="value-cell">${formData.aciklama || 'Söndürme ve soğutma çalışması tamamlandı. Maddi hasar meydana geldi.'}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- 2. SAYFA -->
+          <div class="page" style="margin-top: 15mm;">
+            <table class="header-table" style="margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 5px;">
+              <tr>
+                <td style="text-align: left; font-weight: bold; font-size: 10px;">
+                  T.C. SİVAS BELEDİYESİ | İTFAİYE OLAY RAPORU (EK-16 DEVAMI)
+                </td>
+                <td style="text-align: right; font-weight: bold; font-size: 10px;">
+                  Bildirim No: ${initialData?.id || '-'} | Sayfa: 2 / 2
+                </td>
+              </tr>
+            </table>
+
+            <table class="report-table" style="margin-bottom: 20px;">
+              <tr>
+                <td class="label-cell" style="width: 32%; height: 80px;">Olayın oluş şekli ve çıkış sebebi</td>
+                <td class="value-cell" style="vertical-align: top; padding-top: 8px;">
+                  Çıkış Sebebi: <strong>${formData.cikis_sebebi}</strong>
+                  <p style="margin: 8px 0 0 0; font-size: 10.5px; line-height: 1.4;">
+                    ${formData.aciklama || 'Sivas İtfaiye Komuta Merkezi ihbarı üzerine ekipler sevk edilerek müdahalede bulunulmuş, maddi hasarlı / can kayıpsız şekilde olay kontrol altına alınmıştır.'}
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell" style="vertical-align: top; padding-top: 8px;">Olaya müdahale eden personel</td>
+                <td class="value-cell" style="line-height: 1.6; padding: 8px;">
+                  ${personnelRows || 'Müdahale personel kaydı bulunmuyor.'}
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell" style="vertical-align: top; padding-top: 8px;">Olaya katılan araç detayları</td>
+                <td class="value-cell" style="line-height: 1.6; padding: 8px;">
+                  ${vehicleRows || 'Müdahale araç kaydı bulunmuyor.'}
+                </td>
+              </tr>
+              <tr>
+                <td class="label-cell">Yazıcı</td>
+                <td class="value-cell">Sivas İtfaiye Komuta Merkezi Otomasyon Sistemi ve Nöbetçi Yazıcı Eri</td>
+              </tr>
+            </table>
+
+            <!-- Signature Section -->
+            <div class="signature-section">
+              <div style="text-align: center; font-weight: bold; margin-bottom: 25px; font-size: 11px; text-decoration: underline;">
+                İTFAİYE OLAY RAPORU İMZA SİRKÜSÜ
+              </div>
+              
+              <table class="signature-table">
+                <tr>
+                  <td class="signature-cell">
+                    <strong>Müdahale Eden Ekip Amiri</strong>
+                    <div style="font-size: 9px; margin-top: 4px; color: #444;">
+                      Ad Soyad / Unvan / İmza
+                    </div>
+                    <div class="signature-line"></div>
+                    <div style="font-size: 10px; margin-top: 10px; font-weight: bold;">
+                      ${ustAmirler.split(',')[0] || 'Ekip Amiri'}
+                    </div>
+                  </td>
+                  <td class="signature-cell">
+                    <strong>İncelendi</strong>
+                    <div style="font-size: 9px; margin-top: 4px; color: #444;">
+                      Nöbetçi Amir / İmza
+                    </div>
+                    <div class="signature-line"></div>
+                    <div style="font-size: 10px; margin-top: 10px; font-weight: bold;">
+                      Nöbetçi Amiri
+                    </div>
+                  </td>
+                  <td class="signature-cell">
+                    <strong>ONAY</strong>
+                    <div style="font-size: 9px; margin-top: 4px; color: #444;">
+                      İtfaiye Müdürü / İmza
+                    </div>
+                    <div class="signature-line"></div>
+                    <div style="font-size: 10px; margin-top: 8px; font-weight: bold;">
+                      .... / .... / 20...
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
         </body>
       </html>
     `)
