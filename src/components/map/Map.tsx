@@ -507,8 +507,9 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
         color: ${isPasif ? '#64748b' : 'white'};
       `
       innerEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: ${isPasif ? 'none' : 'drop-shadow(0 0 2px rgba(0,0,0,0.5))'};">
-          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: ${isPasif ? 'none' : 'drop-shadow(0 0 2px rgba(0,0,0,0.3))'};">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-1.38 0-2.4-1.07-2.6-2.47-1.5 2-2 4.14-1.65 6.3a6.5 6.5 0 0 0 12.89-.57c-.2-3.8-3-6.28-4.57-7.46.22 1.48-.1 2.94-1 4.03-.64.77-1.5 1.25-2.47 1.25z"/>
+          <path d="M5 16c-.37-.62-.5-1.56-.5-2.5 0-3 3-5 5-8a24.23 24.23 0 0 1 5 8c0 .94-.13 1.88-.5 2.5"/>
         </svg>
       `
       el.appendChild(innerEl)
