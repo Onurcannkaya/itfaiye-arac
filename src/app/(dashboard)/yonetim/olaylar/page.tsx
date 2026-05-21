@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { 
-  AlertCircle, FileText, Clock, Loader2, Plus, X
+  AlertCircle, FileText, Clock, Loader2, Plus, X, Trash2
 } from "lucide-react"
 import { IncidentWizard } from "@/components/incident/IncidentWizard"
 import { Incident } from "@/types"
@@ -57,6 +57,28 @@ export default function OlaylarPage() {
   const handleCancel = () => {
     setIsAdding(false)
     setEk16Incident(null)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Bu vaka kaydını kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) return
+    
+    try {
+      // Önce ilişkili yabancı anahtar tablolarını temizleyelim
+      await Promise.all([
+        api.remove('incident_personnel', { incident_id: id }),
+        api.remove('incident_vehicles', { incident_id: id }),
+        api.remove('incident_media', { incident_id: id })
+      ])
+
+      // Ardından ana vakayı silelim
+      const { error } = await api.remove('incidents', { id })
+      if (error) throw error
+      
+      setIncidents(prev => prev.filter(inc => inc.id !== id))
+    } catch (error) {
+      console.error(error)
+      alert("Silme işlemi sırasında bir hata oluştu.")
+    }
   }
 
   if (loading) {
@@ -156,19 +178,30 @@ export default function OlaylarPage() {
                       </div>
                     </div>
                   
-                  <div className="flex flex-row sm:flex-col gap-2 items-end sm:min-w-[150px]">
+                  <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end sm:min-w-[170px]">
                     {inc.status === 'closed' && (
                       <Badge className="bg-success/10 text-success border-none text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
                     )}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className={`w-full ${inc.status === 'closed' ? 'border-success/30 text-success hover:bg-success/10' : 'border-danger/30 text-danger hover:bg-danger/10'}`}
-                      onClick={() => setEk16Incident(inc)}
-                    >
-                      <FileText className="w-3.5 h-3.5 mr-1.5" />
-                      {inc.status === 'closed' ? 'EK-16 Yazdır/İncele' : 'EK-16 Raporunu Gör'}
-                    </Button>
+                    <div className="flex gap-2 w-full">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`flex-1 text-xs ${inc.status === 'closed' ? 'border-success/30 text-success hover:bg-success/10' : 'border-danger/30 text-danger hover:bg-danger/10'}`}
+                        onClick={() => setEk16Incident(inc)}
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1.5" />
+                        {inc.status === 'closed' ? 'EK-16 Raporu' : 'Raporu Gör'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="border-danger/30 text-danger hover:bg-danger/10 h-9 w-9 shrink-0"
+                        title="Vakayı Sil"
+                        onClick={() => handleDelete(inc.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
