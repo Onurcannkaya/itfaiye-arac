@@ -35,7 +35,13 @@ export default function VehicleDetailPage() {
       const found = (vehicles || []).find((v: any) => v.plaka.replace(/\s+/g, '-').toLowerCase() === idStr)
       setVehicle(found)
       if (found && Object.keys(found.bolmeler).length > 0) {
-        setActiveCompartment(Object.keys(found.bolmeler)[0])
+        const urlParams = new URLSearchParams(window.location.search)
+        const bolmeParam = urlParams.get("bolme")
+        if (bolmeParam && found.bolmeler[bolmeParam]) {
+          setActiveCompartment(bolmeParam)
+        } else {
+          setActiveCompartment(Object.keys(found.bolmeler)[0])
+        }
       }
       setLoading(false)
     }
