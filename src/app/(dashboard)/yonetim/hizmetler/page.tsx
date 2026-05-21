@@ -23,7 +23,9 @@ import {
   UserCheck,
   Building,
   Calendar,
-  HelpCircle
+  HelpCircle,
+  X,
+  FilePlus
 } from "lucide-react"
 
 // Strict TypeScript structure for Sivas Fire Department Citizen Service requests
@@ -64,8 +66,105 @@ export default function HizmetlerPage() {
   // Details Modal State
   const [selectedRequest, setSelectedRequest] = useState<CitizenRequest | null>(null)
 
+  // Create Modal State
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [newRequestForm, setNewRequestForm] = useState({
+    talep_turu: 'Baca Temizliği',
+    basvuran_ad_soyad: '',
+    basvuran_tc: '',
+    irtibat_tel: '',
+    adres: '',
+    // Baca detayları
+    baca_kat_sayisi: '1',
+    baca_daire_sayisi: '1',
+    baca_yakit_tipi: 'Doğalgaz',
+    baca_tipi: 'Standart Konut Bacası',
+    // İşyeri detayları
+    isyeri_faaliyet_konusu: '',
+    isyeri_alan_m2: '100',
+    isyeri_yangin_dolabi: 'Mevcut',
+    isyeri_acil_cikis: '1 Adet',
+    // Eğitim detayları
+    egitim_tarihi: new Date().toISOString().split('T')[0],
+    egitim_kisi_sayisi: '30',
+    egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi'
+  })
+
   // Detect Müdür / Admin role
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür'
+
+  const resetForm = () => {
+    setNewRequestForm({
+      talep_turu: 'Baca Temizliği',
+      basvuran_ad_soyad: '',
+      basvuran_tc: '',
+      irtibat_tel: '',
+      adres: '',
+      baca_kat_sayisi: '1',
+      baca_daire_sayisi: '1',
+      baca_yakit_tipi: 'Doğalgaz',
+      baca_tipi: 'Standart Konut Bacası',
+      isyeri_faaliyet_konusu: '',
+      isyeri_alan_m2: '100',
+      isyeri_yangin_dolabi: 'Mevcut',
+      isyeri_acil_cikis: '1 Adet',
+      egitim_tarihi: new Date().toISOString().split('T')[0],
+      egitim_kisi_sayisi: '30',
+      egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi'
+    })
+  }
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newRequestForm.basvuran_ad_soyad || !newRequestForm.irtibat_tel || !newRequestForm.adres) {
+      alert("Lütfen Ad Soyad, İrtibat Telefonu ve Adres alanlarını doldurun.")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const payload = {
+        talep_turu: newRequestForm.talep_turu,
+        basvuru_tarihi: new Date().toISOString(),
+        basvuran_tc: newRequestForm.basvuran_tc || '11111111111',
+        basvuran_ad_soyad: newRequestForm.basvuran_ad_soyad,
+        irtibat_tel: newRequestForm.irtibat_tel,
+        adres: newRequestForm.adres,
+        durum: 'Bekliyor' as const,
+        baca_detaylari: newRequestForm.talep_turu === 'Baca Temizliği' ? {
+          kat_sayisi: Number(newRequestForm.baca_kat_sayisi) || 1,
+          daire_sayisi: Number(newRequestForm.baca_daire_sayisi) || 1,
+          yakit_tipi: newRequestForm.baca_yakit_tipi,
+          baca_tipi: newRequestForm.baca_tipi
+        } : undefined,
+        isyeri_detaylari: newRequestForm.talep_turu === 'İtfaiye Uygunluk Raporu' ? {
+          faaliyet_konusu: newRequestForm.isyeri_faaliyet_konusu || 'Genel Ticari Faaliyet',
+          alan_m2: Number(newRequestForm.isyeri_alan_m2) || 100,
+          yangin_dolabi: newRequestForm.isyeri_yangin_dolabi,
+          acil_cikis: newRequestForm.isyeri_acil_cikis
+        } : newRequestForm.talep_turu === 'Eğitim Talebi' ? {
+          egitim_tarihi: newRequestForm.egitim_tarihi,
+          kisi_sayisi: Number(newRequestForm.egitim_kisi_sayisi) || 30,
+          egitim_turu: newRequestForm.egitim_turu
+        } : undefined
+      }
+
+      const seedResult = await api.insert('citizen_requests', [payload])
+      if (seedResult && !seedResult.error) {
+        setIsCreateOpen(false)
+        resetForm()
+        await fetchRequests()
+      } else {
+        alert("Başvuru eklenirken bir veritabanı hatası oluştu: " + (seedResult?.error || 'Bilinmeyen Hata'))
+      }
+    } catch (err) {
+      console.error('Create request error:', err)
+      alert("Sistemsel bir hata oluştu.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   useEffect(() => {
     fetchRequests()
@@ -232,20 +331,28 @@ export default function HizmetlerPage() {
       <div className="flex flex-col h-full space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
         
         {/* Sayfa Başlığı */}
-        <div className="flex items-center justify-between border-b border-border/50 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Vatandaş Hizmetleri ve Başvuru Yönetimi</h1>
             <p className="text-muted-foreground text-sm mt-1">Sivas İtfaiyesi Baca Temizliği, İtfaiye Uygunluk Raporu ve Eğitim Talepleri Resmi İş Akışı</p>
           </div>
-          {isMudur ? (
-            <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black px-3 py-1 text-xs">
-              Müdür Yetki Modu
-            </Badge>
-          ) : (
-            <Badge className="bg-zinc-800 border border-zinc-700 text-zinc-400 font-bold px-3 py-1 text-xs">
-              Salt Okunur (Read-Only)
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 hover:scale-[1.02] transition duration-150 shrink-0"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <FilePlus className="w-4 h-4" /> Yeni Başvuru Ekle
+            </Button>
+            {isMudur ? (
+              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black px-3 py-1 text-xs">
+                Müdür Yetki Modu
+              </Badge>
+            ) : (
+              <Badge className="bg-zinc-800 border border-zinc-700 text-zinc-400 font-bold px-3 py-1 text-xs">
+                Salt Okunur (Read-Only)
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* 1. Üst Özet KPI Kartları (Glassmorphic) */}
@@ -658,6 +765,291 @@ export default function HizmetlerPage() {
                 )}
 
               </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Create Modal */}
+        {isCreateOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-8">
+              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100">
+                    <FilePlus className="w-5 h-5 text-indigo-400" /> YENİ BAŞVURU OLUŞTURMA PANELİ
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Resmi Vatandaş Hizmet Girişi</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-zinc-400 hover:text-white"
+                  onClick={() => {
+                    setIsCreateOpen(false)
+                    resetForm()
+                  }}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </CardHeader>
+              
+              <form onSubmit={handleCreateRequest}>
+                <CardContent className="p-6 space-y-6 max-h-[65vh] overflow-y-auto">
+                  {/* Başvuru Türü Seçimi */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Hizmet / Talep Türü <span className="text-red-500">*</span></label>
+                    <select
+                      className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-semibold transition"
+                      value={newRequestForm.talep_turu}
+                      onChange={(e) => setNewRequestForm(prev => ({ ...prev, talep_turu: e.target.value }))}
+                    >
+                      <option value="Baca Temizliği">Baca Temizliği (Harç: ₺650)</option>
+                      <option value="İtfaiye Uygunluk Raporu">İtfaiye Uygunluk Raporu (Harç: ₺2450)</option>
+                      <option value="Eğitim Talebi">Eğitim Talebi (Harç: ₺1200)</option>
+                    </select>
+                  </div>
+
+                  {/* Genel Vatandaş Bilgileri */}
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-sm text-zinc-200 border-b border-zinc-900 pb-1.5 flex items-center gap-1.5">
+                      <User className="w-4 h-4 text-indigo-400" /> Vatandaş / Kurum Genel Bilgileri
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-400 block">T.C. Kimlik / Vergi No</label>
+                        <input
+                          type="text"
+                          maxLength={11}
+                          className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                          placeholder="11 Haneli T.C. veya Vergi No"
+                          value={newRequestForm.basvuran_tc}
+                          onChange={(e) => setNewRequestForm(prev => ({ ...prev, basvuran_tc: e.target.value }))}
+                        />
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-400 block">Ad Soyad / Kurum Adı <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          required
+                          className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                          placeholder="Örn: Ahmet Yılmaz veya Yıldız A.Ş."
+                          value={newRequestForm.basvuran_ad_soyad}
+                          onChange={(e) => setNewRequestForm(prev => ({ ...prev, basvuran_ad_soyad: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <label className="text-xs font-bold text-zinc-400 block">İrtibat Telefon Numarası <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          required
+                          className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                          placeholder="Örn: 0555 123 4567"
+                          value={newRequestForm.irtibat_tel}
+                          onChange={(e) => setNewRequestForm(prev => ({ ...prev, irtibat_tel: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <label className="text-xs font-bold text-zinc-400 block">Müdahale / Hizmet Adresi <span className="text-red-500">*</span></label>
+                        <textarea
+                          required
+                          rows={3}
+                          className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium resize-none"
+                          placeholder="Hizmetin ifa edileceği detaylı adres..."
+                          value={newRequestForm.adres}
+                          onChange={(e) => setNewRequestForm(prev => ({ ...prev, adres: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dinamik Teknik Bilgiler (Talep Türüne Göre) */}
+                  {newRequestForm.talep_turu === 'Baca Temizliği' && (
+                    <div className="space-y-4 bg-blue-500/5 p-4 rounded-xl border border-blue-500/10">
+                      <h3 className="font-bold text-sm text-blue-400 border-b border-blue-500/20 pb-1.5 flex items-center gap-1.5">
+                        <Brush className="w-4 h-4" /> Baca Temizlik Teknik Detayları
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Bina Kat Sayısı</label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            value={newRequestForm.baca_kat_sayisi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_kat_sayisi: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Daire Sayısı</label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            value={newRequestForm.baca_daire_sayisi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_daire_sayisi: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Yakıt Tipi</label>
+                          <select
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            value={newRequestForm.baca_yakit_tipi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_yakit_tipi: e.target.value }))}
+                          >
+                            <option value="Doğalgaz">Doğalgaz</option>
+                            <option value="Kömür / Odun">Kömür / Odun</option>
+                            <option value="LPG / Fuel-Oil">LPG / Fuel-Oil</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5 sm:col-span-3">
+                          <label className="text-xs font-bold text-zinc-400 block">Baca Türü / Açıklaması</label>
+                          <input
+                            type="text"
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            placeholder="Standart Konut Bacası, Restoran Davlumbaz Bacası vb."
+                            value={newRequestForm.baca_tipi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_tipi: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {newRequestForm.talep_turu === 'İtfaiye Uygunluk Raporu' && (
+                    <div className="space-y-4 bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/10">
+                      <h3 className="font-bold text-sm text-yellow-400 border-b border-yellow-500/20 pb-1.5 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4" /> İşyeri Yangın Güvenlik Detayları
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Faaliyet Konusu</label>
+                          <input
+                            type="text"
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            placeholder="Fırın, İmalathane, Kafe vb."
+                            value={newRequestForm.isyeri_faaliyet_konusu}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_faaliyet_konusu: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Kapalı Alan (m²)</label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            value={newRequestForm.isyeri_alan_m2}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_alan_m2: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Yangın Dolabı Durumu</label>
+                          <select
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            value={newRequestForm.isyeri_yangin_dolabi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_yangin_dolabi: e.target.value }))}
+                          >
+                            <option value="Mevcut">Mevcut</option>
+                            <option value="Mevcut Değil / Eksik">Mevcut Değil / Eksik</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Acil Çıkış Kapısı Sayısı</label>
+                          <input
+                            type="text"
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            placeholder="Örn: 2 Adet Yangın Kapısı"
+                            value={newRequestForm.isyeri_acil_cikis}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_acil_cikis: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {newRequestForm.talep_turu === 'Eğitim Talebi' && (
+                    <div className="space-y-4 bg-purple-500/5 p-4 rounded-xl border border-purple-500/10">
+                      <h3 className="font-bold text-sm text-purple-400 border-b border-purple-500/20 pb-1.5 flex items-center gap-1.5">
+                        <GraduationCap className="w-4 h-4" /> Eğitim / Tatbikat Teknik Detayları
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Planlanan Eğitim Tarihi</label>
+                          <input
+                            type="date"
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            value={newRequestForm.egitim_tarihi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, egitim_tarihi: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Tahmini Katılımcı Sayısı</label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            value={newRequestForm.egitim_kisi_sayisi}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, egitim_kisi_sayisi: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-400 block">Eğitim Kapsamı / Türü</label>
+                          <input
+                            type="text"
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            placeholder="Yangın Tahliye, SCBA vb."
+                            value={newRequestForm.egitim_turu}
+                            onChange={(e) => setNewRequestForm(prev => ({ ...prev, egitim_turu: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+
+                <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex items-center justify-end gap-3">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 rounded-xl text-xs"
+                    onClick={() => {
+                      setIsCreateOpen(false)
+                      resetForm()
+                    }}
+                  >
+                    Vazgeç
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Kaydediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5" /> Başvuruyu Kaydet
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
             </Card>
           </div>
         )}
