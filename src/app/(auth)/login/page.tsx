@@ -106,7 +106,7 @@ function LoginForm() {
         <div className="absolute top-1/4 right-0 w-80 h-80 bg-red-600/10 rounded-full filter blur-[100px] pointer-events-none z-0" />
         <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-amber-600/5 rounded-full filter blur-[100px] pointer-events-none z-0" />
 
-        <div className="w-full max-w-md space-y-8 z-10">
+        <div className="w-full max-w-sm mx-auto space-y-8 z-10">
           
           {/* Mobil Görünümde Başlık */}
           <div className="text-center lg:hidden space-y-4">
