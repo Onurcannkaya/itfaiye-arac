@@ -316,6 +316,11 @@ CREATE TABLE IF NOT EXISTS public.incidents (
   kurtarilan_hayvan INT DEFAULT 0,
   olen_hayvan INT DEFAULT 0,
   status TEXT DEFAULT 'active',
+  ek16_personel TEXT,
+  ek16_araclar TEXT,
+  ek16_cikis_nedeni TEXT,
+  ek16_hasar_aciklama TEXT,
+  ek16_kapatis_tarihi TIMESTAMPTZ,
   -- GIS
   location geometry(Point, 4326),
   created_at TIMESTAMPTZ DEFAULT NOW(),
