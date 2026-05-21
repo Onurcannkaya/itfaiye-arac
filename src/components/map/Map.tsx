@@ -508,8 +508,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
       `
       innerEl.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: ${isPasif ? 'none' : 'drop-shadow(0 0 2px rgba(0,0,0,0.3))'};">
-          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-1.38 0-2.4-1.07-2.6-2.47-1.5 2-2 4.14-1.65 6.3a6.5 6.5 0 0 0 12.89-.57c-.2-3.8-3-6.28-4.57-7.46.22 1.48-.1 2.94-1 4.03-.64.77-1.5 1.25-2.47 1.25z"/>
-          <path d="M5 16c-.37-.62-.5-1.56-.5-2.5 0-3 3-5 5-8a24.23 24.23 0 0 1 5 8c0 .94-.13 1.88-.5 2.5"/>
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
         </svg>
       `
       el.appendChild(innerEl)
@@ -818,7 +817,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-[#ef4444] border border-white flex items-center justify-center text-white relative shadow-[0_0_8px_rgba(239,68,68,0.8)]">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/>
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
               </svg>
             </div>
             <span>Kritik Müdahale (Ev/Bina)</span>
@@ -828,7 +827,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-[#eab308] border border-white flex items-center justify-center text-white relative shadow-[0_0_6px_rgba(234,179,8,0.8)]">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/>
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
               </svg>
             </div>
             <span>Orta Seviye (Araç/Kurtarma)</span>
@@ -838,7 +837,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-[#22c55e] border border-white flex items-center justify-center text-white relative shadow-[0_0_6px_rgba(34,197,94,0.8)]">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/>
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
               </svg>
             </div>
             <span>Düşük Seviye (Çöp/Ot)</span>
@@ -868,7 +867,7 @@ export default function Map({ incidents, hydrants, mode, onMapClick, focusLocati
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-white border border-slate-400 flex items-center justify-center text-slate-500 relative opacity-40">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c-2.2 0-4-1.8-4-4a8 8 0 0 1 15 2.5A8 8 0 0 1 12 22a8 8 0 0 1-7-1.5"/>
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
               </svg>
             </div>
             <span className="opacity-60">Biten / Pasif Vakalar (Opak)</span>
