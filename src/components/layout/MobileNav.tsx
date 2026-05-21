@@ -138,7 +138,7 @@ export function MobileNav() {
                 
                 return (
                   <div key={gIdx} className="space-y-2">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 px-3 block">
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2 mt-2">
                       {group.title}
                     </span>
                     <div className="grid grid-cols-1 gap-1">
@@ -151,13 +151,13 @@ export function MobileNav() {
                             href={item.href}
                             onClick={() => setMenuOpen(false)}
                             className={cn(
-                              "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 min-h-[48px] border-l-2 text-xs",
+                              "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 min-h-[48px] border-l-2 text-sm font-medium",
                               active
-                                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500 shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.15)] font-semibold"
-                                : "text-slate-400 border-transparent hover:bg-slate-900/50 hover:text-slate-200"
+                                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500 shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.15)] font-bold"
+                                : "text-slate-200 border-transparent hover:bg-slate-900/50 hover:text-white"
                             )}
                           >
-                            <Icon className="w-4 h-4" />
+                            <Icon className="w-5 h-5" />
                             <span>{item.label}</span>
                           </Link>
                         )

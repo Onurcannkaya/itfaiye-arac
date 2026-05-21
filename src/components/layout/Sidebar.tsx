@@ -92,7 +92,7 @@ export function Sidebar() {
 
           return (
             <div key={gIdx} className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-3 block mb-2">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2 mt-2">
                 {group.title}
               </span>
               <div className="space-y-1">
@@ -105,13 +105,13 @@ export function Sidebar() {
                       key={iIdx}
                       href={item.href}
                       className={cn(
-                        "flex items-center space-x-3 rounded-md px-3 py-2 text-xs font-medium transition-all duration-200 border-l-2",
+                        "flex items-center space-x-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 border-l-2",
                         active
-                          ? "bg-cyan-500/10 text-cyan-400 border-cyan-500 shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.15)] font-semibold"
-                          : "text-slate-400 border-transparent hover:bg-slate-900/50 hover:text-slate-200"
+                          ? "bg-cyan-500/10 text-cyan-400 border-cyan-500 shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.15)] font-bold"
+                          : "text-slate-200 border-transparent hover:bg-slate-900/50 hover:text-white"
                       )}
                     >
-                      <Icon size={16} />
+                      <Icon size={18} className={cn("transition-colors", active ? "text-cyan-400" : "text-slate-300")} />
                       <span>{item.label}</span>
                     </Link>
                   )
