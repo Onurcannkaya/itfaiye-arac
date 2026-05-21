@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import PageGuard from "@/components/PageGuard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
@@ -102,7 +103,8 @@ export default function LogsReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageGuard pageId="raporlar">
+      <div className="space-y-6">
       <div className="border-b border-border/50 pb-4">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Sistem Logları ve Raporlar</h1>
         <p className="text-muted-foreground mt-1 text-sm">Tüm araç kontrolleri ve envanter sayımlarının birleştirilmiş görünümü.</p>
@@ -254,5 +256,6 @@ export default function LogsReportsPage() {
         </CardContent>
       </Card>
     </div>
+    </PageGuard>
   )
 }

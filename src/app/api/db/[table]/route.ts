@@ -11,8 +11,72 @@ const ALLOWED_TABLES = [
   'incidents', 'incident_vehicles', 'incident_personnel', 'incident_media',
   'citizen_requests', 'activities_and_trainings', 'personnel_activities',
   'vehicle_maintenances', 'fire_hydrants', 'spatial_addresses',
-  'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks'
+  'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks',
+  'role_permissions'
 ];
+
+async function ensureRolePermissionsTableExists() {
+  try {
+    // Tablo oluştur
+    await query(`
+      CREATE TABLE IF NOT EXISTS role_permissions (
+        id SERIAL PRIMARY KEY,
+        rol TEXT NOT NULL,
+        sayfa_id TEXT NOT NULL,
+        izinli BOOLEAN NOT NULL DEFAULT true,
+        UNIQUE(rol, sayfa_id)
+      )
+    `);
+
+    // Tabloda veri var mı kontrol et
+    const countRes = await query('SELECT COUNT(*) as count FROM role_permissions');
+    const count = parseInt(countRes.rows[0]?.count || '0', 10);
+    
+    if (count === 0) {
+      // Seed verileri: 'Müdür', 'Çavuş', 'Santral', 'Er'
+      // 5 sayfa_id: 'harita', 'personel_yonetimi', 'arac_bakim', 'envanter', 'raporlar'
+      const defaultPermissions = [
+        // Müdür (Her şeye izinli)
+        { rol: 'Müdür', sayfa_id: 'harita', izinli: true },
+        { rol: 'Müdür', sayfa_id: 'personel_yonetimi', izinli: true },
+        { rol: 'Müdür', sayfa_id: 'arac_bakim', izinli: true },
+        { rol: 'Müdür', sayfa_id: 'envanter', izinli: true },
+        { rol: 'Müdür', sayfa_id: 'raporlar', izinli: true },
+
+        // Çavuş
+        { rol: 'Çavuş', sayfa_id: 'harita', izinli: true },
+        { rol: 'Çavuş', sayfa_id: 'personel_yonetimi', izinli: false },
+        { rol: 'Çavuş', sayfa_id: 'arac_bakim', izinli: true },
+        { rol: 'Çavuş', sayfa_id: 'envanter', izinli: true },
+        { rol: 'Çavuş', sayfa_id: 'raporlar', izinli: true },
+
+        // Santral
+        { rol: 'Santral', sayfa_id: 'harita', izinli: true },
+        { rol: 'Santral', sayfa_id: 'personel_yonetimi', izinli: false },
+        { rol: 'Santral', sayfa_id: 'arac_bakim', izinli: false },
+        { rol: 'Santral', sayfa_id: 'envanter', izinli: false },
+        { rol: 'Santral', sayfa_id: 'raporlar', izinli: true },
+
+        // Er
+        { rol: 'Er', sayfa_id: 'harita', izinli: true },
+        { rol: 'Er', sayfa_id: 'personel_yonetimi', izinli: false },
+        { rol: 'Er', sayfa_id: 'arac_bakim', izinli: false },
+        { rol: 'Er', sayfa_id: 'envanter', izinli: true },
+        { rol: 'Er', sayfa_id: 'raporlar', izinli: false }
+      ];
+
+      for (const p of defaultPermissions) {
+        await query(
+          'INSERT INTO role_permissions (rol, sayfa_id, izinli) VALUES ($1, $2, $3) ON CONFLICT (rol, sayfa_id) DO NOTHING',
+          [p.rol, p.sayfa_id, p.izinli]
+        );
+      }
+    }
+  } catch (err) {
+    console.error('ensureRolePermissionsTableExists hatası:', err);
+  }
+}
+
 
 function parseFilters(searchParams: URLSearchParams): Array<{ column: string; op: string; value: string }> {
   const filters: Array<{ column: string; op: string; value: string }> = [];
@@ -75,6 +139,9 @@ export async function GET(
     if (!ALLOWED_TABLES.includes(table)) {
       return NextResponse.json({ error: 'Geçersiz tablo adı.' }, { status: 400 });
     }
+    if (table === 'role_permissions') {
+      await ensureRolePermissionsTableExists();
+    }
 
     const { searchParams } = new URL(request.url);
     const select = searchParams.get('select') || '*';
@@ -135,6 +202,9 @@ export async function POST(
     if (!ALLOWED_TABLES.includes(table)) {
       return NextResponse.json({ error: 'Geçersiz tablo adı.' }, { status: 400 });
     }
+    if (table === 'role_permissions') {
+      await ensureRolePermissionsTableExists();
+    }
 
     const body = await request.json();
     const rows = Array.isArray(body.data) ? body.data : [body.data];
@@ -185,6 +255,9 @@ export async function PATCH(
     const { table } = await params;
     if (!ALLOWED_TABLES.includes(table)) {
       return NextResponse.json({ error: 'Geçersiz tablo adı.' }, { status: 400 });
+    }
+    if (table === 'role_permissions') {
+      await ensureRolePermissionsTableExists();
     }
 
     const body = await request.json();
@@ -238,6 +311,9 @@ export async function DELETE(
     const { table } = await params;
     if (!ALLOWED_TABLES.includes(table)) {
       return NextResponse.json({ error: 'Geçersiz tablo adı.' }, { status: 400 });
+    }
+    if (table === 'role_permissions') {
+      await ensureRolePermissionsTableExists();
     }
 
     const { searchParams } = new URL(request.url);

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Truck, ScanLine, Menu, X, Users, ListChecks, Wrench, Wind, FileText, Camera, History } from 'lucide-react'
+import { Home, Truck, ScanLine, Menu, X, Users, ListChecks, Wrench, Wind, FileText, Camera, History, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useAuthStore } from '@/lib/authStore'
@@ -59,6 +59,9 @@ export function MobileNav() {
               <>
                 <Link href="/bakim" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors min-h-[52px]", isActive('/bakim') ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
                   <Wrench className="w-5 h-5" /> <span className="font-medium">Bakım & Yakıt</span>
+                </Link>
+                <Link href="/yonetim/yetkiler" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors min-h-[52px]", isActive('/yonetim/yetkiler') ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
+                  <Shield className="w-5 h-5 text-primary" /> <span className="font-medium">Yetki & Rol Matrisi</span>
                 </Link>
                 <Link href="/yonetim/personel" onClick={() => setMenuOpen(false)} className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors min-h-[52px]", isActive('/yonetim/personel') ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
                   <Users className="w-5 h-5" /> <span className="font-medium">Personel Yönetimi</span>

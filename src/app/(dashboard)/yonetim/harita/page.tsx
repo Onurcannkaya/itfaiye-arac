@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import PageGuard from "@/components/PageGuard"
 import dynamic from "next/dynamic"
 import { api } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -221,7 +222,8 @@ export default function HaritaPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
+    <PageGuard pageId="harita">
+      <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
       {interactionMode === 'add_incident' && <div className="emergency-glow-overlay" />}
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 shrink-0 z-10 relative">
@@ -470,5 +472,6 @@ export default function HaritaPage() {
       )}
 
     </div>
+    </PageGuard>
   )
 }

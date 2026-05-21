@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import PageGuard from "@/components/PageGuard"
 import { QRCodeSVG } from "qrcode.react"
 import { api } from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
@@ -174,7 +175,8 @@ export default function EnvanterYonetimiPage() {
   const printCompartments = distinctCompartments.length > 0 ? distinctCompartments : Object.keys(COMPARTMENT_NAMES)
 
   return (
-    <div className="space-y-6">
+    <PageGuard pageId="envanter">
+      <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border/50 pb-4 print:hidden gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">QR & Envanter Yönetimi</h1>
@@ -352,5 +354,6 @@ export default function EnvanterYonetimiPage() {
       )}
 
     </div>
+    </PageGuard>
   )
 }

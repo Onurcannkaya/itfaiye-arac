@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import PageGuard from "@/components/PageGuard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
@@ -420,7 +421,8 @@ export default function PersonelYonetimPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+    <PageGuard pageId="personel_yonetimi">
+      <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Personel Yönetimi</h1>
@@ -1076,6 +1078,7 @@ export default function PersonelYonetimPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageGuard>
   )
 }
 

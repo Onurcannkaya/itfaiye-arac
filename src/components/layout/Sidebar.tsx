@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Home, Truck, Users, Wrench, FileText, ScanLine, Wind, ListChecks, BarChart3, GraduationCap, Map, Camera, History } from 'lucide-react'
+import { Home, Truck, Users, Wrench, FileText, ScanLine, Wind, ListChecks, BarChart3, GraduationCap, Map, Camera, History, Shield } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useAuthStore } from '@/lib/authStore'
 
@@ -86,6 +86,10 @@ export function Sidebar() {
             <Link href="/yonetim/olaylar" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
               <FileText size={20} />
               <span>Olay & Vaka Raporları</span>
+            </Link>
+            <Link href="/yonetim/yetkiler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+              <Shield size={20} className="text-primary" />
+              <span>Yetki & Rol Matrisi</span>
             </Link>
             <Link href="/yonetim/personel" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
               <Users size={20} />
