@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Home, Truck, Users, Wrench, FileText, ScanLine, Wind, ListChecks, BarChart3, GraduationCap, Map, Camera, History, Shield } from 'lucide-react'
+import { Home, Truck, Users, Wrench, Fuel, FileText, ScanLine, Wind, ListChecks, BarChart3, GraduationCap, Map, Camera, History, Shield } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useAuthStore } from '@/lib/authStore'
 
@@ -44,10 +44,6 @@ export function Sidebar() {
               <ScanLine size={20} className="opacity-0" />
               <span>Envanter Yönetimi</span>
             </Link>
-            <Link href="/bakim" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
-              <Wrench size={20} />
-              <span>Bakım & Yakıt</span>
-            </Link>
             <Link href="/scba" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-cyan-500/10 text-cyan-600 font-medium">
               <Wind size={20} />
               <span>SCBA Tüp Takibi</span>
@@ -71,9 +67,9 @@ export function Sidebar() {
               <BarChart3 size={20} />
               <span>Olay İstatistikleri</span>
             </Link>
-            <Link href="/yonetim/arac-bakim" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
-              <Wrench size={20} />
-              <span>Araç Bakım & Arıza</span>
+            <Link href="/yonetim/arac-bakim" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-orange-500/10 text-orange-500 hover:text-orange-400 font-medium">
+              <Fuel size={20} />
+              <span>🚒 Araç Bakım & Yakıt</span>
             </Link>
             <Link href="/yonetim/hizmetler" className="flex items-center space-x-3 rounded-md px-3 py-2 hover:bg-muted text-muted-foreground hover:text-foreground">
               <FileText size={20} />
