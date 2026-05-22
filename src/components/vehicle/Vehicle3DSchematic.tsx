@@ -31,10 +31,34 @@ export interface ThreeSceneProps {
   onSelect: (key: string) => void;
   vehicleType?: string;
   className?: string;
+  suKapasite?: number;
+  kopukKapasite?: number;
 }
 
+// Helper to match custom user-configured compartment names/keys with 3D model hotspots
+const matchHotspotToKey = (hotspot: string, keys: string[]): string | null => {
+  if (keys.includes(hotspot)) return hotspot;
+  
+  const normHotspot = hotspot.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const k of keys) {
+    const normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normK === normHotspot) return k;
+  }
+
+  const cleanHotspot = hotspot.replace('_kapak', '').replace('_ici', '').replace('_bolme', '');
+  const normCleanHotspot = cleanHotspot.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  for (const k of keys) {
+    const normCleanK = k.toLowerCase().replace('_kapak', '').replace('_ici', '').replace('_bolme', '').replace(/[^a-z0-9]/g, '');
+    if (normCleanK.includes(normCleanHotspot) || normCleanHotspot.includes(normCleanK)) {
+      return k;
+    }
+  }
+  return null;
+};
+
 // Tactical Icon Mapping for SVG overlay nodes
-const TACTICAL_ICONS: Record<string, React.ComponentType<any>> = {
+const TACTICAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   kabin_ici: Compass,
   arac_ici: Layers,
   sol_on_kapak: Zap,
@@ -57,7 +81,9 @@ export function Vehicle3DSchematic({
   activeCompartment,
   onSelect,
   vehicleType,
-  className
+  className,
+  suKapasite,
+  kopukKapasite
 }: ThreeSceneProps) {
   // Sol/Sağ profile selection
   const [profile, setProfile] = useState<"sol" | "sag">("sol")
@@ -67,9 +93,10 @@ export function Vehicle3DSchematic({
   // Listen and sync profile from active compartment selection
   useEffect(() => {
     if (!activeCompartment) return
-    if (activeCompartment.startsWith("sag_") || activeCompartment === "sag_dolap") {
+    const sc = activeCompartment.toLowerCase();
+    if (sc.startsWith("sag_") || sc.includes("sag") || sc === "sag_dolap") {
       setProfile("sag")
-    } else if (activeCompartment.startsWith("sol_") || activeCompartment === "sol_dolap") {
+    } else if (sc.startsWith("sol_") || sc.includes("sol") || sc === "sol_dolap") {
       setProfile("sol")
     }
   }, [activeCompartment])
@@ -83,30 +110,28 @@ export function Vehicle3DSchematic({
   }, [])
 
   // Helper to check if a compartment key is active or has issue
-  const getCompStatus = (key: string) => {
-    const isActive = activeCompartment === key
-    const isAvailable = compartmentKeys.includes(key)
-    return { isActive, isAvailable }
+  const getCompStatus = (hotspotKey: string) => {
+    const matchedUserKey = matchHotspotToKey(hotspotKey, compartmentKeys)
+    const isAvailable = matchedUserKey !== null
+    const isActive = activeCompartment !== null && matchedUserKey !== null && activeCompartment === matchedUserKey
+    return { isActive, isAvailable, matchedUserKey }
   }
 
   // Active compartment side name
   const sideLabel = profile === "sol" ? "SOL PROFİL (GARAJI)" : "SAĞ PROFİL (GARAJI)"
 
   // Handle Hotspot clicks
-  const handleHotspotClick = (key: string) => {
-    if (compartmentKeys.includes(key)) {
-      onSelect(key)
+  const handleHotspotClick = (hotspotKey: string) => {
+    const matched = matchHotspotToKey(hotspotKey, compartmentKeys)
+    if (matched) {
+      onSelect(matched)
     }
   }
 
   // Get active key based on profile for dynamic shutters
-  const getShutterKey = (position: "on" | "orta" | "arka") => {
-    return profile === "sol" ? `sol_${position}_kapak` : `sag_${position}_kapak`
-  }
-
-  const activeShutterOn = getShutterKey("on")
-  const activeShutterOrta = getShutterKey("orta")
-  const activeShutterArka = getShutterKey("arka")
+  const activeShutterOn = profile === "sol" ? "sol_on_kapak" : "sag_on_kapak"
+  const activeShutterOrta = profile === "sol" ? "sol_orta_kapak" : "sag_orta_kapak"
+  const activeShutterArka = profile === "sol" ? "sol_arka_kapak" : "sag_arka_kapak"
 
   const onStatus = getCompStatus(activeShutterOn)
   const ortaStatus = getCompStatus(activeShutterOrta)
@@ -211,33 +236,37 @@ export function Vehicle3DSchematic({
 
             {/* Fictional Neon Progress Bars for Military feel */}
             <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-slate-500 font-bold">
-                  <span>SU DEPOSU SEVİYESİ</span>
-                  <span className="text-cyan-400">8.500 LT (%85)</span>
+              {suKapasite !== undefined && suKapasite > 0 && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                    <span>SU DEPOSU SEVİYESİ</span>
+                    <span className="text-cyan-400">{(suKapasite * 0.85).toLocaleString("tr-TR")} LT (%85)</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded" style={{ width: "85%" }} />
+                  </div>
                 </div>
-                <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded" style={{ width: "85%" }} />
-                </div>
-              </div>
+              )}
 
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-slate-500 font-bold">
-                  <span>KÖPÜK TANKI KAPASİTESİ</span>
-                  <span className="text-emerald-400">1.200 LT (%92)</span>
+              {kopukKapasite !== undefined && kopukKapasite > 0 && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                    <span>KÖPÜK TANKI KAPASİTESİ</span>
+                    <span className="text-emerald-400">{(kopukKapasite * 0.92).toLocaleString("tr-TR")} LT (%92)</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded" style={{ width: "92%" }} />
+                  </div>
                 </div>
-                <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded" style={{ width: "92%" }} />
-                </div>
-              </div>
+              )}
 
               <div className="space-y-1">
                 <div className="flex justify-between text-[10px] text-slate-500 font-bold">
                   <span>SAYILAN BÖLME</span>
-                  <span className="text-yellow-500">{compartmentKeys.length} / 11 MÜHÜRLÜ</span>
+                  <span className="text-yellow-500">{compartmentKeys.length} BÖLME</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded" style={{ width: `${(compartmentKeys.length / 11) * 100}%` }} />
+                  <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded" style={{ width: "100%" }} />
                 </div>
               </div>
             </div>
@@ -476,179 +505,195 @@ export function Vehicle3DSchematic({
             {/* 2.5 INTERACTIVE HOTSPOT OVERLAYS (COMPARTMENTS) */}
             
             {/* A. ARAÇ ÜSTÜ HOTSPOT */}
-            <g
-              onClick={() => handleHotspotClick("arac_ustu")}
-              className={cn("cursor-pointer transition-all duration-300", ustuStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="145"
-                y="35"
-                width="320"
-                height="28"
-                rx="4"
-                fill={getColors(ustuStatus).fill}
-                stroke={getColors(ustuStatus).stroke}
-                strokeWidth={ustuStatus.isActive ? 2 : 1}
-                filter={getColors(ustuStatus).glow}
-              />
-              {/* Interactive Diagonal Strips when active */}
-              {ustuStatus.isActive && (
-                <g opacity="0.3">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <line key={i} x1={155 + i * 26} y1="35" x2={165 + i * 26} y2="63" stroke="#22c55e" strokeWidth="2" />
-                  ))}
-                </g>
-              )}
-            </g>
+            {ustuStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick("arac_ustu")}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="145"
+                  y="35"
+                  width="320"
+                  height="28"
+                  rx="4"
+                  fill={getColors(ustuStatus).fill}
+                  stroke={getColors(ustuStatus).stroke}
+                  strokeWidth={ustuStatus.isActive ? 2 : 1}
+                  filter={getColors(ustuStatus).glow}
+                />
+                {/* Interactive Diagonal Strips when active */}
+                {ustuStatus.isActive && (
+                  <g opacity="0.3">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <line key={i} x1={155 + i * 26} y1="35" x2={165 + i * 26} y2="63" stroke="#22c55e" strokeWidth="2" />
+                    ))}
+                  </g>
+                )}
+              </g>
+            )}
 
             {/* B. ARKA KAPAK (At the very rear shutter) */}
-            <g
-              onClick={() => handleHotspotClick("arka_kapak")}
-              className={cn("cursor-pointer transition-all duration-300", arkaKapakStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="45"
-                y="115"
-                width="30"
-                height="125"
-                rx="2"
-                fill={getColors(arkaKapakStatus).fill}
-                stroke={getColors(arkaKapakStatus).stroke}
-                strokeWidth={arkaKapakStatus.isActive ? 2 : 1}
-                filter={getColors(arkaKapakStatus).glow}
-              />
-              {/* Shutter doors texture */}
-              <rect x="47" y="117" width="26" height="121" fill="url(#shutter-pattern)" opacity="0.45" />
-            </g>
+            {arkaKapakStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick("arka_kapak")}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="45"
+                  y="115"
+                  width="30"
+                  height="125"
+                  rx="2"
+                  fill={getColors(arkaKapakStatus).fill}
+                  stroke={getColors(arkaKapakStatus).stroke}
+                  strokeWidth={arkaKapakStatus.isActive ? 2 : 1}
+                  filter={getColors(arkaKapakStatus).glow}
+                />
+                {/* Shutter doors texture */}
+                <rect x="47" y="117" width="26" height="121" fill="url(#shutter-pattern)" opacity="0.45" />
+              </g>
+            )}
 
             {/* C. ARKA BÖLME (Rear compartment gate) */}
-            <g
-              onClick={() => handleHotspotClick("arka_bolme")}
-              className={cn("cursor-pointer transition-all duration-300", arkaBolmeStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="85"
-                y="115"
-                width="50"
-                height="125"
-                rx="3"
-                fill={getColors(arkaBolmeStatus).fill}
-                stroke={getColors(arkaBolmeStatus).stroke}
-                strokeWidth={arkaBolmeStatus.isActive ? 2 : 1}
-                filter={getColors(arkaBolmeStatus).glow}
-              />
-              {/* Shutter doors texture */}
-              <rect x="88" y="118" width="44" height="119" fill="url(#shutter-pattern)" opacity="0.35" />
-            </g>
+            {arkaBolmeStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick("arka_bolme")}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="85"
+                  y="115"
+                  width="50"
+                  height="125"
+                  rx="3"
+                  fill={getColors(arkaBolmeStatus).fill}
+                  stroke={getColors(arkaBolmeStatus).stroke}
+                  strokeWidth={arkaBolmeStatus.isActive ? 2 : 1}
+                  filter={getColors(arkaBolmeStatus).glow}
+                />
+                {/* Shutter doors texture */}
+                <rect x="88" y="118" width="44" height="119" fill="url(#shutter-pattern)" opacity="0.35" />
+              </g>
+            )}
 
             {/* D. ARKA KAPAK (Sol/Sağ Arka Shutter) */}
-            <g
-              onClick={() => handleHotspotClick(activeShutterArka)}
-              className={cn("cursor-pointer transition-all duration-300", arkaStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="145"
-                y="115"
-                width="105"
-                height="125"
-                rx="3"
-                fill={getColors(arkaStatus).fill}
-                stroke={getColors(arkaStatus).stroke}
-                strokeWidth={arkaStatus.isActive ? 2.2 : 1}
-                filter={getColors(arkaStatus).glow}
-              />
-              {/* Roll Shutter Slats */}
-              <rect x="149" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
-              {/* Door locking mechanism line */}
-              <line x1="145" y1="178" x2="250" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
-              <circle cx="197" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
-            </g>
+            {arkaStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick(activeShutterArka)}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="145"
+                  y="115"
+                  width="105"
+                  height="125"
+                  rx="3"
+                  fill={getColors(arkaStatus).fill}
+                  stroke={getColors(arkaStatus).stroke}
+                  strokeWidth={arkaStatus.isActive ? 2.2 : 1}
+                  filter={getColors(arkaStatus).glow}
+                />
+                {/* Roll Shutter Slats */}
+                <rect x="149" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
+                {/* Door locking mechanism line */}
+                <line x1="145" y1="178" x2="250" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+                <circle cx="197" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
+              </g>
+            )}
 
             {/* E. ORTA KAPAK (Sol/Sağ Orta Shutter) */}
-            <g
-              onClick={() => handleHotspotClick(activeShutterOrta)}
-              className={cn("cursor-pointer transition-all duration-300", ortaStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="260"
-                y="115"
-                width="105"
-                height="125"
-                rx="3"
-                fill={getColors(ortaStatus).fill}
-                stroke={getColors(ortaStatus).stroke}
-                strokeWidth={ortaStatus.isActive ? 2.2 : 1}
-                filter={getColors(ortaStatus).glow}
-              />
-              {/* Roll Shutter Slats */}
-              <rect x="264" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
-              {/* Door locking mechanism line */}
-              <line x1="260" y1="178" x2="365" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
-              <circle cx="312" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
-            </g>
+            {ortaStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick(activeShutterOrta)}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="260"
+                  y="115"
+                  width="105"
+                  height="125"
+                  rx="3"
+                  fill={getColors(ortaStatus).fill}
+                  stroke={getColors(ortaStatus).stroke}
+                  strokeWidth={ortaStatus.isActive ? 2.2 : 1}
+                  filter={getColors(ortaStatus).glow}
+                />
+                {/* Roll Shutter Slats */}
+                <rect x="264" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
+                {/* Door locking mechanism line */}
+                <line x1="260" y1="178" x2="365" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+                <circle cx="312" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
+              </g>
+            )}
 
             {/* F. ÖN KAPAK (Sol/Sağ Ön Shutter) */}
-            <g
-              onClick={() => handleHotspotClick(activeShutterOn)}
-              className={cn("cursor-pointer transition-all duration-300", onStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="375"
-                y="115"
-                width="105"
-                height="125"
-                rx="3"
-                fill={getColors(onStatus).fill}
-                stroke={getColors(onStatus).stroke}
-                strokeWidth={onStatus.isActive ? 2.2 : 1}
-                filter={getColors(onStatus).glow}
-              />
-              {/* Roll Shutter Slats */}
-              <rect x="379" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
-              {/* Door locking mechanism line */}
-              <line x1="375" y1="178" x2="480" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
-              <circle cx="427" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
-            </g>
+            {onStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick(activeShutterOn)}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="375"
+                  y="115"
+                  width="105"
+                  height="125"
+                  rx="3"
+                  fill={getColors(onStatus).fill}
+                  stroke={getColors(onStatus).stroke}
+                  strokeWidth={onStatus.isActive ? 2.2 : 1}
+                  filter={getColors(onStatus).glow}
+                />
+                {/* Roll Shutter Slats */}
+                <rect x="379" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
+                {/* Door locking mechanism line */}
+                <line x1="375" y1="178" x2="480" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+                <circle cx="427" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
+              </g>
+            )}
 
             {/* G. KABİN İÇİ (Cabin Interior) */}
-            <g
-              onClick={() => handleHotspotClick("kabin_ici")}
-              className={cn("cursor-pointer transition-all duration-300", kabinStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="490"
-                y="115"
-                width="155"
-                height="125"
-                rx="5"
-                fill={getColors(kabinStatus).fill}
-                stroke={getColors(kabinStatus).stroke}
-                strokeWidth={kabinStatus.isActive ? 2 : 1}
-                filter={getColors(kabinStatus).glow}
-              />
-              {/* Steering wheel vector representation */}
-              <circle cx="610" cy="165" r="9" fill="none" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="2" />
-              <line x1="610" y1="156" x2="610" y2="174" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-              <line x1="601" y1="165" x2="619" y2="165" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-            </g>
+            {kabinStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick("kabin_ici")}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="490"
+                  y="115"
+                  width="155"
+                  height="125"
+                  rx="5"
+                  fill={getColors(kabinStatus).fill}
+                  stroke={getColors(kabinStatus).stroke}
+                  strokeWidth={kabinStatus.isActive ? 2 : 1}
+                  filter={getColors(kabinStatus).glow}
+                />
+                {/* Steering wheel vector representation */}
+                <circle cx="610" cy="165" r="9" fill="none" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="2" />
+                <line x1="610" y1="156" x2="610" y2="174" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
+                <line x1="601" y1="165" x2="619" y2="165" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
+              </g>
+            )}
 
             {/* H. ARAÇ İÇİ (Under chassis/interior) */}
-            <g
-              onClick={() => handleHotspotClick("arac_ici")}
-              className={cn("cursor-pointer transition-all duration-300", iciStatus.isAvailable ? "opacity-100" : "opacity-35")}
-            >
-              <rect
-                x="145"
-                y="247"
-                width="335"
-                height="8"
-                rx="1.5"
-                fill={getColors(iciStatus).fill}
-                stroke={getColors(iciStatus).stroke}
-                strokeWidth={iciStatus.isActive ? 1.5 : 1}
-                filter={getColors(iciStatus).glow}
-              />
-            </g>
+            {iciStatus.isAvailable && (
+              <g
+                onClick={() => handleHotspotClick("arac_ici")}
+                className="cursor-pointer transition-all duration-300"
+              >
+                <rect
+                  x="145"
+                  y="247"
+                  width="335"
+                  height="8"
+                  rx="1.5"
+                  fill={getColors(iciStatus).fill}
+                  stroke={getColors(iciStatus).stroke}
+                  strokeWidth={iciStatus.isActive ? 1.5 : 1}
+                  filter={getColors(iciStatus).glow}
+                />
+              </g>
+            )}
 
             {/* 2.6 PULSING NEON NODE TARGETS ON SELECTED COMPARTMENTS */}
             

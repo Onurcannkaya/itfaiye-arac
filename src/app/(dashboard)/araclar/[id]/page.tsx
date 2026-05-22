@@ -99,6 +99,25 @@ export default function VehicleDetailPage() {
   const [modalItem, setModalItem] = useState<InventoryItem | null>(null)
   const [isEditingList, setIsEditingList] = useState(false)
 
+  // Siber Taktik Araç Yapılandırma HUD States
+  const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false)
+  const [tempSuKapasite, setTempSuKapasite] = useState<number>(0)
+  const [tempKopukKapasite, setTempKopukKapasite] = useState<number>(0)
+  const [tempBolmeler, setTempBolmeler] = useState<Record<string, InventoryItem[]>>({})
+  const [newCompKey, setNewCompKey] = useState<string>("")
+  const [newCompPreset, setNewCompPreset] = useState<string>("custom")
+  const [renameInputs, setRenameInputs] = useState<Record<string, string>>({})
+  const [savingConfig, setSavingConfig] = useState(false)
+
+  // Sync temp states on vehicle load
+  useEffect(() => {
+    if (vehicle) {
+      setTempSuKapasite(vehicle.su_kapasite || 0)
+      setTempKopukKapasite(vehicle.kopuk_kapasite || 0)
+      setTempBolmeler(JSON.parse(JSON.stringify(vehicle.bolmeler || {})))
+    }
+  }, [vehicle])
+
   useEffect(() => {
     async function fetchVehicle() {
       try {
@@ -294,6 +313,137 @@ export default function VehicleDetailPage() {
     }, 400)
   }
 
+  // Renaming compartment key
+  const handleRenameChange = (oldKey: string, val: string) => {
+    setRenameInputs(prev => ({ ...prev, [oldKey]: val }))
+  }
+
+  const applyRename = (oldKey: string) => {
+    const newKey = renameInputs[oldKey]?.trim()
+    if (!newKey || newKey === oldKey) return
+
+    if (tempBolmeler[newKey]) {
+      alert(`"${newKey}" bölmesi zaten mevcut. Lütfen benzersiz bir isim girin.`)
+      return
+    }
+
+    const updated = { ...tempBolmeler }
+    updated[newKey] = updated[oldKey] || []
+    delete updated[oldKey]
+
+    setTempBolmeler(updated)
+
+    if (activeCompartment === oldKey) {
+      setActiveCompartment(newKey)
+    }
+
+    setRenameInputs(prev => {
+      const next = { ...prev }
+      delete next[oldKey]
+      return next
+    })
+  }
+
+  // Deleting compartment key
+  const handleDeleteCompartment = (key: string) => {
+    const itemsCount = tempBolmeler[key]?.length || 0
+    if (itemsCount > 0) {
+      const confirmDelete = window.confirm(`"${getCompartmentLabel(key)}" bölmesi içinde ${itemsCount} adet malzeme bulunmaktadır. Bu bölmeyi sildiğinizde İÇİNDEKİ TÜM MALZEMELER DE SİLİNECEKTİR. Emin misiniz?`)
+      if (!confirmDelete) return
+    } else {
+      const confirmDelete = window.confirm(`"${getCompartmentLabel(key)}" bölmesini silmek istediğinize emin misiniz?`)
+      if (!confirmDelete) return
+    }
+
+    const updated = { ...tempBolmeler }
+    delete updated[key]
+    setTempBolmeler(updated)
+
+    if (activeCompartment === key) {
+      const remainingKeys = Object.keys(updated)
+      setActiveCompartment(remainingKeys.length > 0 ? remainingKeys[0] : null)
+    }
+  }
+
+  // Adding new compartment key
+  const handleAddCompartment = () => {
+    let keyToAdd = ""
+    if (newCompPreset === "custom") {
+      keyToAdd = newCompKey.trim().toLowerCase().replace(/\s+/g, "_")
+    } else {
+      keyToAdd = newCompPreset
+    }
+
+    if (!keyToAdd) {
+      alert("Lütfen geçerli bir bölme ismi veya anahtarı girin.")
+      return
+    }
+
+    if (tempBolmeler[keyToAdd]) {
+      alert(`"${keyToAdd}" bölmesi zaten ekli.`)
+      return
+    }
+
+    const updated = { ...tempBolmeler, [keyToAdd]: [] }
+    setTempBolmeler(updated)
+    setNewCompKey("")
+    setNewCompPreset("custom")
+
+    setActiveCompartment(keyToAdd)
+  }
+
+  // Saving configuration
+  const handleSaveConfig = async () => {
+    if (!vehicle) return
+    setSavingConfig(true)
+    try {
+      const { error: updateErr } = await api.update('vehicles', {
+        su_kapasite: tempSuKapasite,
+        kopuk_kapasite: tempKopukKapasite,
+        bolmeler: tempBolmeler
+      }, { plaka: vehicle.plaka })
+
+      if (updateErr) {
+        throw updateErr
+      }
+
+      setVehicle(prev => {
+        if (!prev) return null
+        return {
+          ...prev,
+          su_kapasite: tempSuKapasite,
+          kopuk_kapasite: tempKopukKapasite,
+          bolmeler: tempBolmeler
+        }
+      })
+
+      await fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'vehicle_config_update',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: vehicle.plaka,
+          details: {
+            action: 'update_vehicle_configuration',
+            su_kapasite: tempSuKapasite,
+            kopuk_kapasite: tempKopukKapasite,
+            bolmeler_keys: Object.keys(tempBolmeler)
+          },
+        }),
+      }).catch(err => console.error('[AuditLog] Yapılandırma logu gönderilemedi:', err))
+
+      alert("Araç yapılandırması başarıyla güncellendi!")
+      setIsConfigPanelOpen(false)
+    } catch (err: any) {
+      console.error("Error saving configuration:", err)
+      alert("Hata oluştu: " + err.message)
+    } finally {
+      setSavingConfig(false)
+    }
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
       <div className="w-10 h-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
@@ -326,60 +476,126 @@ export default function VehicleDetailPage() {
   const renderTelemetryCards = () => {
     const kmStr = `${(vehicle.km || 0).toLocaleString("tr-TR")} km`
     const ptoStr = `${(vehicle.motorSaatiPTO || 0).toLocaleString("tr-TR")} sa`
+    const suCapacity = vehicle.su_kapasite || 0
+    const kopukCapacity = vehicle.kopuk_kapasite || 0
 
-    if (isArazoz) {
-      const isHizliMudahale = rawTipi.includes("HIZLI") || rawTipi.includes("MÜDAHALE")
-      const suCapacity = isHizliMudahale ? 3000 : 10000
-      const suVal = Math.round(suCapacity * 0.85) // 85% full
-      const kopukCapacity = isHizliMudahale ? 300 : 500
-      const kopukVal = Math.round(kopukCapacity * 0.90) // 90% full
+    // Dynamic calculations
+    const suVal = Math.round(suCapacity * 0.85) // 85% simulated
+    const kopukVal = Math.round(kopukCapacity * 0.90) // 90% simulated
 
+    // Taktik Malzeme HUD card percentage
+    const maxTaktikMalzeme = 150
+    const totalItemsCount = totalItems || 0
+    const taktikPercent = Math.min(Math.round((totalItemsCount / maxTaktikMalzeme) * 100), 100)
+
+    // Sorunlu Malzeme HUD card percentage
+    const issueItemsCount = issueItems || 0
+    const sorunPercent = totalItemsCount > 0 ? Math.min(Math.round((issueItemsCount / totalItemsCount) * 100), 100) : 0
+
+    const hasLiquidTanks = suCapacity > 0 || kopukCapacity > 0
+
+    if (isArazoz || hasLiquidTanks) {
       return (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 print:hidden">
-          {/* Su Seviyesi */}
-          <Card className="bg-slate-955/45 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-[0_0_15px_rgba(6,182,212,0.03)]">
-            <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
-              <div className="flex items-center gap-2">
-                <Droplet className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Su Tankı</span>
-              </div>
-              <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
-                  <span>{suVal.toLocaleString("tr-TR")} L</span>
-                  <span className="text-[10px] text-slate-500">/ {suCapacity.toLocaleString("tr-TR")} L</span>
+          {/* Su Seviyesi or Taktik Malzeme HUD Kartı */}
+          {suCapacity > 0 ? (
+            <Card className="bg-slate-955/45 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-[0_0_15px_rgba(6,182,212,0.03)]">
+              <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
+                <div className="flex items-center gap-2">
+                  <Droplet className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.4)] shrink-0" />
+                  <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Su Tankı</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-cyan-500/10">
-                  <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(34,211,238,0.6)]" style={{ width: "85%" }} />
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
+                    <span>{suVal.toLocaleString("tr-TR")} L</span>
+                    <span className="text-[10px] text-slate-500">/ {suCapacity.toLocaleString("tr-TR")} L</span>
+                  </div>
+                  <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-cyan-500/10">
+                    <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(34,211,238,0.6)]" style={{ width: "85%" }} />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-slate-955/45 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-[0_0_15px_rgba(6,182,212,0.03)]">
+              <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
+                <div className="flex items-center gap-2">
+                  <PackageSearch className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.4)] shrink-0" />
+                  <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Taktik Envanter</span>
+                </div>
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
+                    <span>{totalItemsCount} Malzeme</span>
+                    <span className="text-[10px] text-slate-500">/ {maxTaktikMalzeme} Max</span>
+                  </div>
+                  <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-cyan-500/10">
+                    <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(34,211,238,0.6)]" style={{ width: `${taktikPercent}%` }} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Köpük Tankı */}
-          <Card className="bg-slate-955/45 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-all shadow-[0_0_15px_rgba(245,158,11,0.03)]">
-            <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Köpük Tankı</span>
-              </div>
-              <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-amber-400">
-                  <span>{kopukVal.toLocaleString("tr-TR")} L</span>
-                  <span className="text-[10px] text-slate-500">/ {kopukCapacity.toLocaleString("tr-TR")} L</span>
+          {/* Köpük Tankı or Sorunlu Malzeme Sayacı */}
+          {kopukCapacity > 0 ? (
+            <Card className="bg-slate-955/45 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-all shadow-[0_0_15px_rgba(245,158,11,0.03)]">
+              <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
+                  <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Köpük Tankı</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-amber-500/10">
-                  <div className="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]" style={{ width: "90%" }} />
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-baseline justify-between text-xs font-mono font-bold text-amber-400">
+                    <span>{kopukVal.toLocaleString("tr-TR")} L</span>
+                    <span className="text-[10px] text-slate-500">/ {kopukCapacity.toLocaleString("tr-TR")} L</span>
+                  </div>
+                  <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-amber-500/10">
+                    <div className="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]" style={{ width: "90%" }} />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className={cn(
+              "backdrop-blur-md border transition-all h-full min-h-[92px]",
+              issueItemsCount > 0 
+                ? "bg-rose-950/20 border-rose-500/30 hover:border-rose-500/50 shadow-[0_0_15px_rgba(239,68,68,0.05)] animate-pulse" 
+                : "bg-slate-955/45 border-emerald-500/20 hover:border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.03)]"
+            )}>
+              <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
+                <div className="flex items-center gap-2">
+                  <Wrench className={cn("w-4 h-4 shrink-0", issueItemsCount > 0 ? "text-rose-400 animate-pulse" : "text-emerald-400")} />
+                  <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Sorunlu Malzeme</span>
+                </div>
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-baseline justify-between text-xs font-mono font-bold">
+                    <span className={issueItemsCount > 0 ? "text-rose-400" : "text-emerald-400"}>
+                      {issueItemsCount} Sorunlu
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      {issueItemsCount > 0 ? `%${sorunPercent} Hasar` : "Sıfır Hata"}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-white/5">
+                    <div 
+                      className={cn(
+                        "h-full rounded-full shadow-[0_0_8px]",
+                        issueItemsCount > 0 ? "bg-gradient-to-r from-rose-600 to-rose-400 shadow-rose-500/60" : "bg-emerald-500 shadow-emerald-500/60"
+                      )} 
+                      style={{ width: `${issueItemsCount > 0 ? sorunPercent : 100}%` }} 
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Yakıt Seviyesi */}
           <Card className="bg-slate-955/45 backdrop-blur-md border border-emerald-500/20 hover:border-emerald-500/40 transition-all shadow-[0_0_15px_rgba(16,185,129,0.03)]">
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(16,185,129,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Yakıt Durumu</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Yakıt Durumu</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-emerald-400">
@@ -412,7 +628,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Motor PTO</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Motor PTO</span>
               </div>
               <div className="mt-2 space-y-0.5">
                 <span className="block text-[9px] text-slate-500 font-mono uppercase">Çalışma Süresi</span>
@@ -432,7 +648,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-rose-400 drop-shadow-[0_0_4px_rgba(244,63,94,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Jeneratör</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Jeneratör</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-rose-400">
@@ -451,7 +667,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Ekipman Sağlığı</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Ekipman Sağlığı</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
@@ -470,7 +686,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(16,185,129,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Yakıt Durumu</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Yakıt Durumu</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-emerald-400">
@@ -503,7 +719,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Motor PTO</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Motor PTO</span>
               </div>
               <div className="mt-2 space-y-0.5">
                 <span className="block text-[9px] text-slate-500 font-mono uppercase">Çalışma Süresi</span>
@@ -523,7 +739,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Maximize className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Bom Kontrolü</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Bom Kontrolü</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
@@ -542,7 +758,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Hidrolik Sistem</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Hidrolik Sistem</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-amber-400">
@@ -561,7 +777,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(16,185,129,0.4)] shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Yakıt Durumu</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Yakıt Durumu</span>
               </div>
               <div className="mt-2 space-y-1">
                 <div className="flex items-baseline justify-between text-xs font-mono font-bold text-emerald-400">
@@ -580,7 +796,7 @@ export default function VehicleDetailPage() {
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Compass className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Odomotre</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Odomotre</span>
               </div>
               <div className="mt-2 space-y-0.5">
                 <span className="block text-[9px] text-slate-500 font-mono uppercase">Mevcut Kilometre</span>
@@ -590,11 +806,11 @@ export default function VehicleDetailPage() {
           </Card>
 
           {/* Motor Saati */}
-          <Card className="bg-slate-955/45 backdrop-blur-md border-slate-500/10 hover:border-slate-500/30 transition-all">
+          <Card className="bg-slate-955/45 backdrop-blur-md border border-slate-500/10 hover:border-slate-500/30 transition-all">
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Motor PTO</span>
+                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Motor PTO</span>
               </div>
               <div className="mt-2 space-y-0.5">
                 <span className="block text-[9px] text-slate-500 font-mono uppercase">Çalışma Süresi</span>
@@ -614,7 +830,7 @@ export default function VehicleDetailPage() {
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
             <div className="flex items-center gap-2">
               <Wrench className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] shrink-0" />
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Ekipman Sağlığı</span>
+              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Ekipman Sağlığı</span>
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
@@ -633,7 +849,7 @@ export default function VehicleDetailPage() {
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-rose-400 drop-shadow-[0_0_4px_rgba(244,63,94,0.4)] shrink-0" />
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Jeneratör</span>
+              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Jeneratör</span>
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline justify-between text-xs font-mono font-bold text-rose-400">
@@ -652,7 +868,7 @@ export default function VehicleDetailPage() {
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
             <div className="flex items-center gap-2">
               <Gauge className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(16,185,129,0.4)] shrink-0" />
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Yakıt Durumu</span>
+              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Yakıt Durumu</span>
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline justify-between text-xs font-mono font-bold text-emerald-400">
@@ -671,7 +887,7 @@ export default function VehicleDetailPage() {
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-slate-400 shrink-0" />
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Odomotre</span>
+              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Odomotre</span>
             </div>
             <div className="mt-2 space-y-0.5">
               <span className="block text-[9px] text-slate-500 font-mono uppercase">Mevcut Kilometre</span>
@@ -685,7 +901,7 @@ export default function VehicleDetailPage() {
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[92px]">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Motor PTO</span>
+              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Motor PTO</span>
             </div>
             <div className="mt-2 space-y-0.5">
               <span className="block text-[9px] text-slate-500 font-mono uppercase">Çalışma Süresi</span>
@@ -802,9 +1018,210 @@ export default function VehicleDetailPage() {
             activeCompartment={activeCompartment}
             onSelect={handleSelectCompartment}
             vehicleType={vehicle.aracTipi}
+            suKapasite={vehicle.su_kapasite}
+            kopukKapasite={vehicle.kopuk_kapasite}
           />
         </CardContent>
       </Card>
+
+      {/* Siber Taktik Araç Yapılandırma HUD */}
+      {!isEr && (
+        <Card className="bg-slate-955/45 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.05)] overflow-hidden transition-all duration-300 print:hidden">
+          <CardHeader className="pb-3 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2 font-mono text-cyan-400">
+              <Wrench className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] animate-pulse" />
+              <span>🔧 SİBER TAKTİK ARAÇ YAPILANDIRMA HUD</span>
+            </CardTitle>
+            <button
+              onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)}
+              className="px-4 py-1.5 text-xs font-bold border border-cyan-500/30 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono transition-all uppercase tracking-wider self-end sm:self-auto"
+            >
+              {isConfigPanelOpen ? "PANELİ KAPAT" : "PANELİ AÇ"}
+            </button>
+          </CardHeader>
+          
+          {isConfigPanelOpen && (
+            <CardContent className="pt-4 space-y-6 animate-in fade-in duration-200">
+              {/* Tank Kapasiteleri */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/30 border border-slate-800/80 rounded-xl p-4">
+                <div className="space-y-1">
+                  <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider font-bold">Su Tankı Kapasitesi (Litre)</label>
+                  <input
+                    type="number"
+                    className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-sm font-mono text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    value={tempSuKapasite}
+                    onChange={(e) => setTempSuKapasite(parseInt(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider font-bold">Köpük Tankı Kapasitesi (Litre)</label>
+                  <input
+                    type="number"
+                    className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-sm font-mono text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    value={tempKopukKapasite}
+                    onChange={(e) => setTempKopukKapasite(parseInt(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              {/* Yeni Bölme Ekleme */}
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 space-y-3">
+                <h3 className="text-xs font-bold font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Plus className="w-4 h-4 text-cyan-400" />
+                  Yeni Lojistik Bölme Entegrasyonu
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase font-bold">Şablon Seçin</label>
+                    <select
+                      value={newCompPreset}
+                      onChange={(e) => {
+                        setNewCompPreset(e.target.value)
+                        if (e.target.value !== "custom") {
+                          setNewCompKey(e.target.value)
+                        } else {
+                          setNewCompKey("")
+                        }
+                      }}
+                      className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="custom">-- Özel İsim (Kendin Tanımla) --</option>
+                      {Object.entries(COMPARTMENT_NAMES).map(([key, label]) => (
+                        <option key={key} value={key}>{label} ({key})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase font-bold">Bölme İsmi / Kodu</label>
+                    <input
+                      type="text"
+                      disabled={newCompPreset !== "custom"}
+                      placeholder={newCompPreset !== "custom" ? "Seçilen şablon ismi kullanılacak" : "Örn: Ön Bagaj, Tavan Sepeti"}
+                      value={newCompPreset !== "custom" ? getCompartmentLabel(newCompPreset) : newCompKey}
+                      onChange={(e) => setNewCompKey(e.target.value)}
+                      className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 disabled:opacity-50 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddCompartment}
+                    className="px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/40 text-cyan-300 font-bold rounded-lg text-xs font-mono tracking-wider transition-all h-[38px] flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.1)]"
+                  >
+                    <Plus className="w-4 h-4 text-cyan-400" />
+                    BÖLME EKLE
+                  </button>
+                </div>
+              </div>
+
+              {/* Mevcut Bölmeler Tablosu */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold font-mono text-cyan-400 uppercase tracking-widest">
+                  Mevcut Bölme Konfigürasyonu
+                </h3>
+                <div className="border border-cyan-500/10 rounded-xl overflow-hidden bg-slate-950/60 max-h-72 overflow-y-auto">
+                  <table className="w-full text-left border-collapse text-xs font-mono">
+                    <thead>
+                      <tr className="bg-slate-900/80 border-b border-cyan-500/10 text-slate-400 font-bold">
+                        <th className="p-3">Bölme / Kapak</th>
+                        <th className="p-3">Ekipman</th>
+                        <th className="p-3">İsim Değiştir (Siber Aktarım)</th>
+                        <th className="p-3 text-right">İşlemler</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-900">
+                      {Object.keys(tempBolmeler).map((key) => {
+                        const itemsCount = tempBolmeler[key]?.length || 0;
+                        const renameVal = renameInputs[key] ?? getCompartmentLabel(key);
+                        return (
+                          <tr key={key} className="hover:bg-cyan-500/[0.02] transition-colors">
+                            <td className="p-3 font-bold text-slate-200">
+                              <span className="block text-[10px] text-slate-500">{key}</span>
+                              <span>{getCompartmentLabel(key)}</span>
+                            </td>
+                            <td className="p-3">
+                              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-bold">
+                                {itemsCount} Parça
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1.5 max-w-[240px]">
+                                <input
+                                  type="text"
+                                  value={renameVal}
+                                  onChange={(e) => handleRenameChange(key, e.target.value)}
+                                  className="bg-slate-900 border border-cyan-500/25 rounded-lg px-2.5 py-1 text-xs text-slate-300 w-full focus:outline-none focus:border-cyan-500/50 font-mono"
+                                />
+                                <button
+                                  onClick={() => applyRename(key)}
+                                  disabled={renameVal.trim() === getCompartmentLabel(key) || !renameVal.trim()}
+                                  className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 rounded-lg text-[10px] font-bold hover:bg-emerald-500/30 transition-colors disabled:opacity-30 shrink-0"
+                                >
+                                  Uygula
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3 text-right">
+                              <button
+                                onClick={() => handleDeleteCompartment(key)}
+                                className="p-2 bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 rounded-lg hover:text-rose-300 transition-colors"
+                                title="Bölmeyi Tamamen Sil"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {Object.keys(tempBolmeler).length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="p-4 text-center text-slate-500 italic">
+                            Hiç tanımlı bölme bulunmamaktadır.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Kaydetme Butonları */}
+              <div className="flex items-center justify-end gap-3 border-t border-cyan-500/10 pt-4">
+                <button
+                  onClick={() => {
+                    if (window.confirm("Yaptığınız tüm değişiklikler sıfırlanacaktır. Emin misiniz?")) {
+                      setTempSuKapasite(vehicle.su_kapasite || 0)
+                      setTempKopukKapasite(vehicle.kopuk_kapasite || 0)
+                      setTempBolmeler(JSON.parse(JSON.stringify(vehicle.bolmeler || {})))
+                      setIsConfigPanelOpen(false)
+                    }
+                  }}
+                  className="px-4 py-2 border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-400 font-bold rounded-lg text-xs font-mono tracking-wider transition-all"
+                >
+                  İPTAL ET / SIFIRLA
+                </button>
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={savingConfig}
+                  className="px-5 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-slate-100 font-bold rounded-lg text-xs font-mono tracking-wider transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] disabled:opacity-50 flex items-center gap-2"
+                >
+                  {savingConfig ? (
+                    <>
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      MÜHÜRLENİYOR...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-cyan-200" />
+                      YAPILANDIRMAYI MÜHÜRLE
+                    </>
+                  )}
+                </button>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
         {/* Bölme Listesi */}

@@ -22,6 +22,8 @@ export interface Vehicle {
   istasyon?: string;
   yil?: number;
   model?: string;
+  su_kapasite?: number;
+  kopuk_kapasite?: number;
 }
 
 
