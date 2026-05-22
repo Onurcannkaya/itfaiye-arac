@@ -12,7 +12,7 @@ const ALLOWED_TABLES = [
   'citizen_requests', 'activities_and_trainings', 'personnel_activities',
   'vehicle_maintenances', 'fire_hydrants', 'spatial_addresses',
   'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks',
-  'role_permissions', 'duty_logs'
+  'role_permissions', 'duty_logs', 'arac_bakim_gecmisi'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -117,8 +117,30 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS istasyon TEXT;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS yil INTEGER;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS model TEXT;`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS su_kapasite INTEGER DEFAULT 0;`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS kopuk_kapasite INTEGER DEFAULT 0;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
+  }
+}
+
+async function ensureAracBakimGecmisiTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.arac_bakim_gecmisi (
+        id SERIAL PRIMARY KEY,
+        plaka VARCHAR(15) NOT NULL,
+        tarih DATE NOT NULL,
+        tip VARCHAR(50) NOT NULL, -- 'tamir' veya 'yag_bakimi'
+        aciklama TEXT NOT NULL,
+        maliyet NUMERIC(10, 2) DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_plaka ON public.arac_bakim_gecmisi(plaka)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_tarih ON public.arac_bakim_gecmisi(tarih DESC)`);
+  } catch (err) {
+    console.error('ensureAracBakimGecmisiTableExists hatası:', err);
   }
 }
 
@@ -229,6 +251,9 @@ export async function GET(
       await ensureVehicleColumnsExist();
       await autoSeedVehiclesIfEmpty();
     }
+    if (table === 'arac_bakim_gecmisi') {
+      await ensureAracBakimGecmisiTableExists();
+    }
 
     const { searchParams } = new URL(request.url);
     const select = searchParams.get('select') || '*';
@@ -298,6 +323,9 @@ export async function POST(
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
     }
+    if (table === 'arac_bakim_gecmisi') {
+      await ensureAracBakimGecmisiTableExists();
+    }
 
     const body = await request.json();
     const rows = Array.isArray(body.data) ? body.data : [body.data];
@@ -358,6 +386,9 @@ export async function PATCH(
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
     }
+    if (table === 'arac_bakim_gecmisi') {
+      await ensureAracBakimGecmisiTableExists();
+    }
 
     const body = await request.json();
     const { data, filters } = body;
@@ -416,6 +447,9 @@ export async function DELETE(
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
+    }
+    if (table === 'arac_bakim_gecmisi') {
+      await ensureAracBakimGecmisiTableExists();
     }
 
     const { searchParams } = new URL(request.url);

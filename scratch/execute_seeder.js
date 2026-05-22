@@ -1,13 +1,61 @@
-import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import { hashPassword } from "@/lib/auth";
-import { mockPersonnel } from "@/lib/data";
-import * as xlsx from "xlsx";
-import path from "path";
-import fs from "fs";
+const { Pool } = require('pg');
+const xlsx = require('xlsx');
+const path = require('path');
+const fs = require('fs');
 
-// Prepopulated default compartments based on vehicle types
-function getPresetCompartments(type: string) {
+// Load env variables manually (since dotenv might not be installed)
+const envPath = path.join(__dirname, '..', '.env.local');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const parts = trimmed.split('=');
+    if (parts.length >= 2) {
+      const key = parts[0].trim();
+      const val = parts.slice(1).join('=').trim().replace(/^['"]|['"]$/g, ''); // remove quotes
+      process.env[key] = val;
+    }
+  });
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+async function query(text, params) {
+  return await pool.query(text, params);
+}
+
+// 24 Real Vehicles definition for Sivas Fire Dept
+const REAL_VEHICLES = [
+  { plaka: "58 AEL 289", arac_tipi: "Arazöz", marka: "IVECO", model: "Iveco Eurocargo", yil: 2020, su_kapasite: 6000, kopuk_kapasite: 500, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AP 614", arac_tipi: "Merdivenli", marka: "FORD", model: "Ford Cargo Merdiven", yil: 2015, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Esentepe Şubesi" },
+  { plaka: "58 FR 021", arac_tipi: "Tanker", marka: "BMC", model: "BMC Fatih Tanker", yil: 2016, su_kapasite: 18000, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 FP 968", arac_tipi: "Arazöz", marka: "BMC", model: "BMC Profesyonel Arazöz", yil: 2014, su_kapasite: 8000, kopuk_kapasite: 800, istasyon: "Fatih İstasyonu" },
+  { plaka: "58 NN 694", arac_tipi: "Lojistik", marka: "FIAT", model: "Fiat Doblo", yil: 2018, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 FR 872", arac_tipi: "Arazöz", marka: "HINO", model: "Hino Arazöz", yil: 2008, su_kapasite: 4000, kopuk_kapasite: 300, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 TU 817", arac_tipi: "Merdivenli", marka: "FORD", model: "Ford Platform Merdivenli", yil: 2019, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Kılavuz İstasyonu" },
+  { plaka: "58 TL 737", arac_tipi: "Lojistik", marka: "FORD", model: "Ford Transit Klavuz", yil: 2012, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "34 UP 2541", arac_tipi: "Kurtarma", marka: "MERCEDES", model: "Mercedes Sprinter Kurtarma", yil: 2017, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 ACT 367", arac_tipi: "Arazöz", marka: "FORD", model: "Ford Arazöz", yil: 2021, su_kapasite: 6000, kopuk_kapasite: 500, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 ACU 765", arac_tipi: "Arazöz", marka: "MAN", model: "MAN Arazöz", yil: 2018, su_kapasite: 10000, kopuk_kapasite: 1000, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AP 601", arac_tipi: "Merdivenli", marka: "FORD", model: "Ford Cargo Merdiven", yil: 2010, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AY 164", arac_tipi: "Antika", marka: "FORD", model: "Antika Merdiven", yil: 1960, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AC 113", arac_tipi: "Antika", marka: "DODGE", model: "Antika Dodge 1936", yil: 1936, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 DK 650", arac_tipi: "Merdivenli", marka: "MERCEDES", model: "Organize Sanayi Merdivenli", yil: 2015, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Organize İstasyonu" },
+  { plaka: "58 TH 256", arac_tipi: "Kurtarma", marka: "IVECO", model: "Iveco Daily Hızlı Müdahale", yil: 2022, su_kapasite: 1000, kopuk_kapasite: 100, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 TH 257", arac_tipi: "Kurtarma", marka: "IVECO", model: "Iveco Arama Kurtarma", yil: 2022, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AF 240", arac_tipi: "Tanker", marka: "BMC", model: "BMC Organize Tanker", yil: 2013, su_kapasite: 15000, kopuk_kapasite: 0, istasyon: "Organize İstasyonu" },
+  { plaka: "58 NC 182", arac_tipi: "Kurtarma", marka: "MERCEDES", model: "Mercedes 8 Numara Arazöz", yil: 2005, su_kapasite: 3000, kopuk_kapasite: 200, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 NC 184", arac_tipi: "Merdivenli", marka: "MERCEDES", model: "Mercedes 54 Metre Dev Merdiven", yil: 2012, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 TD 315", arac_tipi: "Lojistik", marka: "HYUNDAI", model: "Hyundai Accent Lojistik", yil: 2011, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AGF 355", arac_tipi: "Arazöz", marka: "RENAULT", model: "Renault Midlum Arazöz", yil: 2020, su_kapasite: 7000, kopuk_kapasite: 600, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 AEH 221", arac_tipi: "Merdivenli", marka: "MAN", model: "MAN 42m Merdivenli", yil: 2016, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
+  { plaka: "58 HD 458", arac_tipi: "Tanker", marka: "MERCEDES", model: "Mercedes Actros 22 Ton Tanker", yil: 2018, su_kapasite: 22000, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" }
+];
+
+function getPresetCompartments(type) {
   switch (type) {
     case "Arazöz":
       return {
@@ -92,8 +140,6 @@ function getPresetCompartments(type: string) {
           { malzeme: "Duba", adet: 2, durum: "Tam" }
         ]
       };
-    case "Lojistik":
-    case "Tanker":
     default:
       return {
         kabin_ici: [
@@ -109,36 +155,7 @@ function getPresetCompartments(type: string) {
   }
 }
 
-// 24 Real Vehicles definition for Sivas Fire Dept
-const REAL_VEHICLES = [
-  { plaka: "58 AEL 289", arac_tipi: "Arazöz", marka: "IVECO", model: "Iveco Eurocargo", yil: 2020, su_kapasite: 6000, kopuk_kapasite: 500, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AP 614", arac_tipi: "Merdivenli", marka: "FORD", model: "Ford Cargo Merdiven", yil: 2015, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Esentepe Şubesi" },
-  { plaka: "58 FR 021", arac_tipi: "Tanker", marka: "BMC", model: "BMC Fatih Tanker", yil: 2016, su_kapasite: 18000, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 FP 968", arac_tipi: "Arazöz", marka: "BMC", model: "BMC Profesyonel Arazöz", yil: 2014, su_kapasite: 8000, kopuk_kapasite: 800, istasyon: "Fatih İstasyonu" },
-  { plaka: "58 NN 694", arac_tipi: "Lojistik", marka: "FIAT", model: "Fiat Doblo", yil: 2018, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 FR 872", arac_tipi: "Arazöz", marka: "HINO", model: "Hino Arazöz", yil: 2008, su_kapasite: 4000, kopuk_kapasite: 300, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 TU 817", arac_tipi: "Merdivenli", marka: "FORD", model: "Ford Platform Merdivenli", yil: 2019, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Kılavuz İstasyonu" },
-  { plaka: "58 TL 737", arac_tipi: "Lojistik", marka: "FORD", model: "Ford Transit Klavuz", yil: 2012, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "34 UP 2541", arac_tipi: "Kurtarma", marka: "MERCEDES", model: "Mercedes Sprinter Kurtarma", yil: 2017, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 ACT 367", arac_tipi: "Arazöz", marka: "FORD", model: "Ford Arazöz", yil: 2021, su_kapasite: 6000, kopuk_kapasite: 500, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 ACU 765", arac_tipi: "Arazöz", marka: "MAN", model: "MAN Arazöz", yil: 2018, su_kapasite: 10000, kopuk_kapasite: 1000, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AP 601", arac_tipi: "Merdivenli", marka: "FORD", model: "Ford Cargo Merdiven", yil: 2010, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AY 164", arac_tipi: "Antika", marka: "FORD", model: "Antika Merdiven", yil: 1960, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AC 113", arac_tipi: "Antika", marka: "DODGE", model: "Antika Dodge 1936", yil: 1936, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 DK 650", arac_tipi: "Merdivenli", marka: "MERCEDES", model: "Organize Sanayi Merdivenli", yil: 2015, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Organize İstasyonu" },
-  { plaka: "58 TH 256", arac_tipi: "Kurtarma", marka: "IVECO", model: "Iveco Daily Hızlı Müdahale", yil: 2022, su_kapasite: 1000, kopuk_kapasite: 100, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 TH 257", arac_tipi: "Kurtarma", marka: "IVECO", model: "Iveco Arama Kurtarma", yil: 2022, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AF 240", arac_tipi: "Tanker", marka: "BMC", model: "BMC Organize Tanker", yil: 2013, su_kapasite: 15000, kopuk_kapasite: 0, istasyon: "Organize İstasyonu" },
-  { plaka: "58 NC 182", arac_tipi: "Kurtarma", marka: "MERCEDES", model: "Mercedes 8 Numara Arazöz", yil: 2005, su_kapasite: 3000, kopuk_kapasite: 200, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 NC 184", arac_tipi: "Merdivenli", marka: "MERCEDES", model: "Mercedes 54 Metre Dev Merdiven", yil: 2012, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 TD 315", arac_tipi: "Lojistik", marka: "HYUNDAI", model: "Hyundai Accent Lojistik", yil: 2011, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AGF 355", arac_tipi: "Arazöz", marka: "RENAULT", model: "Renault Midlum Arazöz", yil: 2020, su_kapasite: 7000, kopuk_kapasite: 600, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 AEH 221", arac_tipi: "Merdivenli", marka: "MAN", model: "MAN 42m Merdivenli", yil: 2016, su_kapasite: 0, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" },
-  { plaka: "58 HD 458", arac_tipi: "Tanker", marka: "MERCEDES", model: "Mercedes Actros 22 Ton Tanker", yil: 2018, su_kapasite: 22000, kopuk_kapasite: 0, istasyon: "Merkez İstasyonu" }
-];
-
-// Akıllı plaka eşleştirme
-function extractPlate(str: string): string | null {
+function extractPlate(str) {
   if (!str) return null;
   let s = str.replace(/ı/gi, 'i').replace(/ş/gi, 's').replace(/ğ/gi, 'g').replace(/ç/gi, 'c').replace(/ö/gi, 'o').replace(/ü/gi, 'u').toUpperCase();
   
@@ -156,7 +173,7 @@ function extractPlate(str: string): string | null {
   return null;
 }
 
-function parseDate(str: string): string | null {
+function parseDate(str) {
   if (!str) return null;
   const match = str.match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
   if (match) {
@@ -165,33 +182,16 @@ function parseDate(str: string): string | null {
   return null;
 }
 
-export async function GET() {
+async function executeSeeder() {
+  console.log('[SEEDER] Başlatılıyor...');
   try {
-    const logs: string[] = [];
-    const defaultPasswordHash = await hashPassword("1234");
-
-    // 1. Seed Personel
-    for (const p of mockPersonnel) {
-      try {
-        await query(
-          `INSERT INTO personnel (sicil_no, ad, soyad, unvan, rol, aktif, view_only, can_approve, can_print, password_hash)
-           VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9)
-           ON CONFLICT (sicil_no) DO UPDATE SET ad = $2, soyad = $3, unvan = $4, rol = $5, password_hash = $9`,
-          [p.sicil_no, p.ad, p.soyad, p.unvan, p.rol, p.rol === 'User', p.rol === 'Shift_Leader' || p.rol === 'Admin', p.rol !== 'User', defaultPasswordHash]
-        );
-      } catch (err: any) {
-        logs.push(`✗ Personel ${p.sicil_no}: ${err.message}`);
-      }
-    }
-    logs.push(`✓ Personeller sisteme başarıyla mühürlendi.`);
-
-    // 2. Tabloları Hazırla
+    // 1. Create table structure if not exists
     await query(`
       CREATE TABLE IF NOT EXISTS public.arac_bakim_gecmisi (
         id SERIAL PRIMARY KEY,
         plaka VARCHAR(15) NOT NULL,
         tarih DATE NOT NULL,
-        tip VARCHAR(50) NOT NULL, -- 'tamir' veya 'yag_bakimi'
+        tip VARCHAR(50) NOT NULL,
         aciklama TEXT NOT NULL,
         maliyet NUMERIC(10, 2) DEFAULT 0,
         created_at TIMESTAMPTZ DEFAULT NOW()
@@ -199,55 +199,56 @@ export async function GET() {
     `);
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_plaka ON public.arac_bakim_gecmisi(plaka)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_tarih ON public.arac_bakim_gecmisi(tarih DESC)`);
-    logs.push("✓ arac_bakim_gecmisi tablosu ve indeksler oluşturuldu.");
-
-    // Sil eski kayıtları (Seeding temizliği)
     await query(`TRUNCATE TABLE public.arac_bakim_gecmisi RESTART IDENTITY`);
+    console.log('[SEEDER] arac_bakim_gecmisi tablosu hazırlandı.');
 
-    // 3. 24 Gerçek İtfaiye Aracını Seed et
+    // 2. Ensure su_kapasite & kopuk_kapasite exist
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS su_kapasite INTEGER DEFAULT 0`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS kopuk_kapasite INTEGER DEFAULT 0`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS marka VARCHAR`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS model VARCHAR`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS istasyon VARCHAR`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS yil INTEGER`);
+
+    // 3. Seed vehicles
     for (const v of REAL_VEHICLES) {
-      try {
-        const presetCompartments = getPresetCompartments(v.arac_tipi);
-        await query(
-          `INSERT INTO vehicles (plaka, arac_tipi, marka, model, yil, su_kapasite, kopuk_kapasite, istasyon, durum, bolmeler, km, "motorSaatiPTO")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'aktif', $9, $10, $11)
-           ON CONFLICT (plaka) DO UPDATE SET 
-             arac_tipi = $2, marka = $3, model = $4, yil = $5, 
-             su_kapasite = $6, kopuk_kapasite = $7, istasyon = $8,
-             bolmeler = $9`,
-          [
-            v.plaka,
-            v.arac_tipi,
-            v.marka,
-            v.model,
-            v.yil,
-            v.su_kapasite,
-            v.kopuk_kapasite,
-            v.istasyon,
-            JSON.stringify(presetCompartments),
-            v.yil > 2018 ? 24000 : 124000, // Gerçekçi KM
-            v.yil > 2018 ? 450 : 2100 // Gerçekçi PTO
-          ]
-        );
-      } catch (err: any) {
-        logs.push(`✗ Araç (${v.plaka}) hatası: ${err.message}`);
-      }
+      const presetCompartments = getPresetCompartments(v.arac_tipi);
+      await query(
+        `INSERT INTO vehicles (plaka, arac_tipi, marka, model, yil, su_kapasite, kopuk_kapasite, istasyon, durum, bolmeler, km, "motorSaatiPTO")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'aktif', $9, $10, $11)
+         ON CONFLICT (plaka) DO UPDATE SET 
+           arac_tipi = $2, marka = $3, model = $4, yil = $5, 
+           su_kapasite = $6, kopuk_kapasite = $7, istasyon = $8,
+           bolmeler = $9`,
+        [
+          v.plaka,
+          v.arac_tipi,
+          v.marka,
+          v.model,
+          v.yil,
+          v.su_kapasite,
+          v.kopuk_kapasite,
+          v.istasyon,
+          JSON.stringify(presetCompartments),
+          v.yil > 2018 ? 24000 : 124000,
+          v.yil > 2018 ? 450 : 2100
+        ]
+      );
     }
-    logs.push(`✓ 24 adet gerçek Sivas İtfaiye taktik aracı veritabanına mühürlendi.`);
+    console.log(`[SEEDER] ${REAL_VEHICLES.length} adet araç seed edildi.`);
 
-    // 4. Excel dosyalarını parsa başla!
-    const rootDir = process.cwd();
+    // 4. Seeding Excel files
+    const rootDir = path.join(__dirname, '..');
     const tamirPath = path.join(rootDir, "public", "data", "arac_tamir_takip.xlsx");
     const yagPath = path.join(rootDir, "public", "data", "yag_bakım_takip.xlsx");
 
     let totalTamirLogs = 0;
     let totalYagLogs = 0;
 
-    // 4.1. ARAC TAMİR TAKİP PARSER
     if (fs.existsSync(tamirPath)) {
       const tamirWb = xlsx.readFile(tamirPath);
       const tamirSheet = tamirWb.Sheets[tamirWb.SheetNames[0]];
-      const tamirRange = xlsx.utils.decode_range(tamirSheet['!ref'] || "A1");
+      const tamirRange = xlsx.utils.decode_range(tamirSheet['!ref']);
 
       for (let c = 0; c <= tamirRange.e.c; c++) {
         const headerVal = tamirSheet[xlsx.utils.encode_cell({ r: 0, c })]?.v;
@@ -262,8 +263,7 @@ export async function GET() {
           const txt = String(cellVal).trim();
           if (!txt || txt === '(empty)') continue;
 
-          const date = parseDate(txt) || "2024-07-10"; // regex fallback
-          // Temiz açıklama: baştaki tarihi atalım
+          const date = parseDate(txt) || "2024-07-10";
           const cleanedText = txt.replace(/^\d{2}[./-]\d{2}[./-]\d{4}\s*/, '').trim();
 
           await query(
@@ -274,16 +274,13 @@ export async function GET() {
           totalTamirLogs++;
         }
       }
-      logs.push(`✓ Tamir takip dosyasından ${totalTamirLogs} adet log seed edildi.`);
-    } else {
-      logs.push(`⚠ Uyarı: arac_tamir_takip.xlsx bulunamadı!`);
+      console.log(`[SEEDER] Tamir takip dosyasından ${totalTamirLogs} adet log seed edildi.`);
     }
 
-    // 4.2. YAĞ BAKIM TAKİP PARSER
     if (fs.existsSync(yagPath)) {
       const yagWb = xlsx.readFile(yagPath);
       const yagSheet = yagWb.Sheets[yagWb.SheetNames[0]];
-      const yagRange = xlsx.utils.decode_range(yagSheet['!ref'] || "A1");
+      const yagRange = xlsx.utils.decode_range(yagSheet['!ref']);
 
       for (let c = 0; c <= yagRange.e.c; c++) {
         const headerVal = yagSheet[xlsx.utils.encode_cell({ r: 0, c })]?.v;
@@ -291,7 +288,6 @@ export async function GET() {
         const plate = extractPlate(String(headerVal));
         if (!plate) continue;
 
-        // Row 1 is baseline oil maintenance info
         const baselineVal = yagSheet[xlsx.utils.encode_cell({ r: 1, c })]?.v;
         if (baselineVal) {
           const txt = String(baselineVal).trim();
@@ -306,7 +302,6 @@ export async function GET() {
           }
         }
 
-        // Rows 2 to 9 are follow-up logs with multiple entries
         for (let r = 2; r <= yagRange.e.r; r++) {
           const cellVal = yagSheet[xlsx.utils.encode_cell({ r, c })]?.v;
           if (!cellVal) continue;
@@ -314,7 +309,6 @@ export async function GET() {
           const txt = String(cellVal).trim();
           if (!txt || txt === '(empty)') continue;
 
-          // Split cell into multiple logs by dates using regex
           const dateRegex = /(\d{2})[./-](\d{2})[./-](\d{4})/g;
           const matches = [];
           let match;
@@ -357,12 +351,10 @@ export async function GET() {
           }
         }
       }
-      logs.push(`✓ Yağ bakım dosyasından ${totalYagLogs} adet log seed edildi.`);
-    } else {
-      logs.push(`⚠ Uyarı: yag_bakım_takip.xlsx bulunamadı!`);
+      console.log(`[SEEDER] Yağ bakım dosyasından ${totalYagLogs} adet log seed edildi.`);
     }
 
-    // 5. Update vehicle KM and PTO using the highest records in our maintenance database
+    // Update vehicle KM and PTO using the highest records in our maintenance database
     await query(`
       UPDATE vehicles v
       SET km = COALESCE((
@@ -372,14 +364,12 @@ export async function GET() {
       ), v.km)
     `);
 
-    return NextResponse.json({
-      success: true,
-      message: `Seed işlemi tamamlandı! Toplam ${REAL_VEHICLES.length} araç, ${totalTamirLogs} tamir logu, ${totalYagLogs} yağ logu başarıyla belediye yerel veritabanına enjekte edildi.`,
-      logs
-    });
-
-  } catch (error: any) {
-    console.error("Seed hatası:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.log('[SEEDER] Seed işlemi BAŞARIYLA TAMAMLANDI!');
+  } catch (err) {
+    console.error('[SEEDER] Hata oluştu:', err);
+  } finally {
+    await pool.end();
   }
 }
+
+executeSeeder();
