@@ -38,9 +38,14 @@ function LoginForm() {
       if (result.success) {
         if (result.token) {
           localStorage.setItem('auth_token', result.token)
+          // Set cookie explicitly (non-httpOnly fallback for client-side reads)
           document.cookie = `itfaiye_token=${result.token}; path=/; max-age=86400; SameSite=Lax`
         }
-        window.location.href = '/yonetim'
+        // Small delay to ensure cookie is persisted before navigation
+        await new Promise(r => setTimeout(r, 200))
+        
+        const redirectTarget = searchParams.get("redirect") || '/yonetim'
+        window.location.replace(redirectTarget)
       } else {
         setError(result.error || "Giriş başarısız.")
       }
