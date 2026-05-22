@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "next-themes";
-import Script from "next/script";
+import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -38,23 +38,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
         </ThemeProvider>
-        <Script
-          id="register-sw"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    console.log('[SW] Registered:', reg.scope);
-                  }).catch(function(err) {
-                    console.log('[SW] Registration failed:', err);
-                  });
-                });
-              }
-            `,
-          }}
-        />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

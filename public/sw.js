@@ -39,14 +39,13 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ---- FETCH (Cache-first with network fallback) ----
+// ---- FETCH (Network-First for Dynamic JS/CSS, Cache-First for static media) ----
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests and Supabase API calls
+  // Skip non-GET requests
   if (request.method !== 'GET') return;
-  if (url.hostname.includes('supabase')) return;
   if (url.pathname.startsWith('/api/')) return;
 
   // For navigation requests: network-first
@@ -63,12 +62,34 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For static assets: cache-first
-  if (url.pathname.startsWith('/_next/static/') || 
-      url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|woff2?)$/)) {
+  // Bypass cache completely for localhost/development on hot-module-reload chunks
+  const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+
+  // For Next.js dynamic JS/CSS chunks: Network-First to avoid stale client-side module crashes
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.match(/\.(js|css)$/)) {
+    if (isLocal) {
+      // Dev mode: direct network fetch to ensure live reloading works perfectly
+      event.respondWith(fetch(request));
+      return;
+    }
+    
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // For images, fonts, static assets: Cache-First
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|webp|gif|ico|woff2?)$/)) {
     event.respondWith(
       caches.match(request).then((cached) => {
-        if (cached) return cached;
+        if (cached && !isLocal) return cached;
         return fetch(request).then((response) => {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
