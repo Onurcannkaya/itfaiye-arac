@@ -194,9 +194,11 @@ export async function GET() {
         tip VARCHAR(50) NOT NULL, -- 'tamir' veya 'yag_bakimi'
         aciklama TEXT NOT NULL,
         maliyet NUMERIC(10, 2) DEFAULT 0,
+        durum VARCHAR(20) DEFAULT 'Onaylandı',
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await query(`ALTER TABLE public.arac_bakim_gecmisi ADD COLUMN IF NOT EXISTS durum VARCHAR(20) DEFAULT 'Onaylandı'`);
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_plaka ON public.arac_bakim_gecmisi(plaka)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_tarih ON public.arac_bakim_gecmisi(tarih DESC)`);
     logs.push("✓ arac_bakim_gecmisi tablosu ve indeksler oluşturuldu.");

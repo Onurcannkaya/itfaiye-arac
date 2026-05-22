@@ -132,3 +132,20 @@ export interface ShiftState {
   coords: { lat: number; lng: number } | null;
   message: string;
 }
+
+export interface AracBakimGecmisi {
+  id: number;
+  plaka: string;
+  tarih: string;
+  tip: 'tamir' | 'yag_bakimi';
+  aciklama: string;
+  maliyet: number;
+  durum?: 'Onaylandı' | 'Bekliyor' | string;
+  created_at?: string;
+}
+
+export interface BakimDashboardResponse {
+  vehicles: Vehicle[];
+  logs: AracBakimGecmisi[];
+  fuelLogs: FuelLog[];
+}
