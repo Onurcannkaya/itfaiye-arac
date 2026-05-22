@@ -7,6 +7,7 @@ import {
   LayoutDashboard, 
   Map, 
   Truck, 
+  Camera, 
   ScanLine, 
   Wrench, 
   Wind, 
@@ -48,6 +49,7 @@ export function Sidebar() {
       title: "FİLO & LOJİSTİK YÖNETİMİ",
       items: [
         { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: !isEr, matchStart: '/arac/' },
+        { href: "/yonetim/tarayici", label: "QR Araç Tara", icon: Camera, visible: true },
         { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: !isEr },
         { href: "/barkod", label: "Barkod Oku", icon: ScanLine, visible: true },
         { href: "/yonetim/arac-bakim", label: "Araç Bakım & Yakıt", icon: Wrench, visible: !isEr },
