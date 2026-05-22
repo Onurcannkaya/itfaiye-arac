@@ -136,9 +136,9 @@ export function VehicleEditModal({ isOpen, onClose, vehicle, onSuccess }: Vehicl
           </div>
 
           <div className="border-t border-border/50 pt-4 mt-2">
-            <p className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <div className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
               <Badge variant="warning" className="px-1.5 py-0">Önemli</Badge> Belge Geçerlilik Tarihleri
-            </p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground">Sigorta Bitiş</label>
