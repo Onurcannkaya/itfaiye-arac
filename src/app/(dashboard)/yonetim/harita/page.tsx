@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Loader2, Map as MapIcon, Flame, Droplets, Target, Search, Plus, MapPin, X, Sparkles } from "lucide-react"
-import { RouteAnalysisPanel } from "@/components/ai/RouteAnalysisPanel"
 import { useAuthStore } from "@/lib/authStore"
 
 const Map = dynamic(() => import("@/components/map/Map"), { 
@@ -356,8 +355,6 @@ export default function HaritaPage() {
           </div>
 
           {/* Harita Katman ve Bilgi Kontrolü */}
-          {/* AI Rota Analizi Paneli */}
-          <RouteAnalysisPanel stationLocation="Sivas İtfaiye Müdürlüğü, Merkez" />
 
           <div className="absolute bottom-20 right-4 z-[400] flex-col gap-2 pointer-events-none hidden sm:flex">
             <div className="bg-background/90 backdrop-blur-md border shadow-lg rounded-xl p-3 space-y-2 w-48 pointer-events-auto">
