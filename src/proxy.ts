@@ -121,11 +121,20 @@ async function verifyTokenEdge(token: string | undefined): Promise<JWTPayload | 
   return payload;
 }
 
+function getRedirectUrl(targetPath: string, request: NextRequest): URL {
+  const url = new URL(targetPath, request.url);
+  const proto = request.headers.get("x-forwarded-proto");
+  if (proto === "https") {
+    url.protocol = "https:";
+  }
+  return url;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't need auth
-  const publicPaths = ["/login", "/api/seed", "/api/setup", "/api/auth/login", "/api/auth/logout", "/api/db/", "/api/upload"];
+  const publicPaths = ["/login", "/api/seed", "/api/setup", "/api/auth/login", "/api/auth/logout", "/api/db/", "/api/upload", "/api/citizen-requests"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   // JWT token kontrolü
@@ -138,7 +147,7 @@ export async function proxy(request: NextRequest) {
 
   // Eğer kullanıcı giriş yapmışsa ve login sayfasına girmeye çalışıyorsa yonetim'e yönlendir
   if (pathname === "/login" && session) {
-    return NextResponse.redirect(new URL("/yonetim", request.url));
+    return NextResponse.redirect(getRedirectUrl("/yonetim", request));
   }
 
   // Static files, public routes
@@ -146,9 +155,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  // Giriş yapılmamışsa login sayfasına yönlendir
-  if (!session) {
-    const loginUrl = new URL("/login", request.url);
+  // Giriş yapılmamışsa veya geçerli bir rolü yoksa login sayfasına yönlendir (katı kontrol)
+  if (!session || !session.rol) {
+    const loginUrl = getRedirectUrl("/login", request);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -157,7 +166,7 @@ export async function proxy(request: NextRequest) {
   const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
   if (isAdminPath) {
     if (session.rol !== "Admin" && session.rol !== "Editor" && session.rol !== "Shift_Leader") {
-      const dashUrl = new URL("/", request.url);
+      const dashUrl = getRedirectUrl("/", request);
       dashUrl.searchParams.set("unauthorized", "1");
       return NextResponse.redirect(dashUrl);
     }

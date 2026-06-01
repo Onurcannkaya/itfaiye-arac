@@ -104,7 +104,7 @@ export class AuthError extends Error {
 export const COOKIE_CONFIG = {
   name: COOKIE_NAME,
   httpOnly: true,
-  secure: false, // Yerel intranet sunucusu (10.0.0.x) üzerinden HTTP ile bağlandığımız için 'secure' parametresi şimdilik false olmalıdır.
+  secure: true, // Canlı HTTPS ortamı ve kurumsal WAF uyumluluğu için true olmalıdır.
   sameSite: 'lax' as const,
   path: '/',
   maxAge: 60 * 60 * 24, // 24 saat
