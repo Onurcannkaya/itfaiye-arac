@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as turf from '@turf/turf'
-import { Layers, Building2, Map as MapIcon, Milestone, Droplets } from 'lucide-react'
+import { Layers, Building2, Map as MapIcon, Milestone, Droplets, X } from 'lucide-react'
 import { getTriageInfo } from '@/lib/utils'
 import { Vehicle } from '@/types'
 
@@ -140,6 +140,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
   const [showPasifVakalar, setShowPasifVakalar] = useState(false)
   const [binalarOpacity, setBinalarOpacity] = useState(0.3)
   const [mahallelerOpacity, setMahallelerOpacity] = useState(1.0)
+  const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
 
   useEffect(() => {
     onMapClickRef.current = onMapClick
@@ -1032,7 +1033,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       />
 
       {/* Taktiksel Harita Lejantı Panel */}
-      <div className="absolute bottom-4 left-4 z-10 bg-slate-950/85 backdrop-blur-md border border-white/10 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300 text-xs text-slate-200">
+      <div className="hidden sm:block absolute bottom-20 sm:bottom-4 left-4 z-10 bg-slate-950/85 backdrop-blur-md border border-white/10 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300 text-xs text-slate-200">
         <div className="font-semibold text-slate-100 mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
           <span>Taktiksel Harita Lejantı</span>
@@ -1100,8 +1101,8 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
         </div>
       </div>
       
-      {/* Sleek Floating Control Panel for Sivas Kent Rehberi */}
-      <div className="absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 rounded-xl p-4 w-64 shadow-2xl transition-all duration-300">
+      {/* Sleek Floating Control Panel for Sivas Kent Rehberi (Desktop Only) */}
+      <div className="hidden md:block absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 rounded-xl p-4 w-64 shadow-2xl transition-all duration-300">
         <div className="flex items-center gap-2 mb-3 text-slate-100 font-semibold text-sm">
           <Layers className="w-4 h-4 text-blue-400" />
           <span>Akıllı Şehir Katmanları</span>
@@ -1271,6 +1272,204 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           </div>
         </div>
       </div>
+
+      {/* Mobile Layer Control Trigger Button (Hitbox: min 44px - Above 80px bottom safe zone) */}
+      <button
+        onClick={() => setIsLayerDrawerOpen(true)}
+        className="md:hidden fixed right-4 bottom-28 z-[450] w-12 h-12 rounded-full bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 text-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)] active:scale-95 transition-all min-h-[44px] min-w-[44px] cursor-pointer"
+        title="Katman Yönetimi"
+      >
+        <Layers className="w-5 h-5 animate-pulse" />
+      </button>
+
+      {/* Mobile Collapsible Layer Drawer */}
+      {isLayerDrawerOpen && (
+        <div className="md:hidden fixed inset-0 z-[1000] bg-black/75 backdrop-blur-sm transition-opacity duration-300 flex items-end">
+          <div className="w-full max-h-[60vh] overflow-y-auto bg-slate-950/95 border-t border-cyan-500/35 rounded-t-2xl p-5 space-y-4 animate-in slide-in-from-bottom duration-300 relative box-border pb-12">
+            
+            {/* Drawer Close Button */}
+            <button
+              onClick={() => setIsLayerDrawerOpen(false)}
+              className="absolute top-4 right-4 rounded-xl p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-500 hover:border-red-500/30 transition-all cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              title="Kapat"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-2 text-slate-100 font-bold text-base">
+              <Layers className="w-5 h-5 text-cyan-400" />
+              <span>Akıllı Şehir Katmanları</span>
+            </div>
+            
+            <div className="h-px bg-slate-800/60 my-2" />
+            
+            <div className="space-y-4 pt-2">
+              {/* Binalar Katmanı Toggle */}
+              <div className="flex items-center justify-between whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-5 h-5 text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-200">Binalar (Vektör)</span>
+                </div>
+                <button
+                  onClick={() => setShowBinalar(!showBinalar)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] items-center ${
+                    showBinalar ? 'bg-cyan-500' : 'bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      showBinalar ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {showBinalar && (
+                <div className="pl-8 pr-2 py-1 space-y-2 transition-all duration-300 animate-in slide-in-from-top-1">
+                  <div className="flex justify-between text-[11px] text-slate-400">
+                    <span>Bina Opaklığı</span>
+                    <span>{Math.round(binalarOpacity * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={binalarOpacity}
+                    onChange={(e) => setBinalarOpacity(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 min-h-[44px]"
+                  />
+                </div>
+              )}
+
+              {/* Numarataj Katmanı Toggle */}
+              <div className="flex items-center justify-between whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 font-bold text-sm w-5 text-center">#</span>
+                  <span className="text-sm font-semibold text-slate-200">Numarataj</span>
+                </div>
+                <button
+                  onClick={() => setShowNumarataj(!showNumarataj)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] items-center ${
+                    showNumarataj ? 'bg-cyan-500' : 'bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      showNumarataj ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Mahalle Sınırları Toggle */}
+              <div className="flex items-center justify-between whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <MapIcon className="w-5 h-5 text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-200">Mahalle Sınırları</span>
+                </div>
+                <button
+                  onClick={() => setShowMahalleler(!showMahalleler)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] items-center ${
+                    showMahalleler ? 'bg-cyan-500' : 'bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      showMahalleler ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {showMahalleler && (
+                <div className="pl-8 pr-2 py-1 space-y-2 transition-all duration-300 animate-in slide-in-from-top-1">
+                  <div className="flex justify-between text-[11px] text-slate-400">
+                    <span>Mahalle Sınır Opaklığı</span>
+                    <span>{Math.round(mahallelerOpacity * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={mahallelerOpacity}
+                    onChange={(e) => setMahallelerOpacity(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 min-h-[44px]"
+                  />
+                </div>
+              )}
+
+              {/* Sokak Aksları Toggle */}
+              <div className="flex items-center justify-between whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <Milestone className="w-5 h-5 text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-200">Sokak Aksları</span>
+                </div>
+                <button
+                  onClick={() => setShowSokaklar(!showSokaklar)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] items-center ${
+                    showSokaklar ? 'bg-cyan-500' : 'bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      showSokaklar ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Yangın Hidrantları Toggle */}
+              <div className="flex items-center justify-between whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <Droplets className="w-5 h-5 text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-200">Yangın Hidrantları</span>
+                </div>
+                <button
+                  onClick={() => setShowHidrantlar(!showHidrantlar)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] items-center ${
+                    showHidrantlar ? 'bg-cyan-500' : 'bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      showHidrantlar ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Biten/Pasif Vakalar Toggle */}
+              <div className="flex items-center justify-between whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <span className="w-5 h-5 rounded-full bg-slate-400/20 flex items-center justify-center text-[10px] text-slate-300 font-bold border border-slate-500/30">✓</span>
+                  <span className="text-sm font-semibold text-slate-200">Biten/Pasif Vakalar</span>
+                </div>
+                <button
+                  onClick={() => setShowPasifVakalar(!showPasifVakalar)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] items-center ${
+                    showPasifVakalar ? 'bg-cyan-500' : 'bg-slate-700'
+                  }`}
+                  type="button"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      showPasifVakalar ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
       <style>{`
         /* MapLibre Premium Glassmorphic Dark Theme Popup Overrides */
         .maplibregl-popup-content {

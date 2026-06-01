@@ -75,7 +75,7 @@ export function RouteAnalysisPanel({ incidentLocation, stationLocation }: RouteA
   }
 
   return (
-    <div className="absolute bottom-4 right-4 z-[500] w-[360px] max-w-[calc(100vw-2rem)]">
+    <div className="absolute bottom-24 sm:bottom-4 right-4 z-[500] w-[360px] max-w-[calc(100vw-2rem)]">
       {/* Toggle Button */}
       {!isOpen && (
         <Button

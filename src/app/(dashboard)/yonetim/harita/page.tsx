@@ -264,10 +264,10 @@ export default function HaritaPage() {
           <p className="text-muted-foreground text-xs sm:text-sm hidden sm:block">İnteraktif mekansal analiz ve saha yönetimi</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-nowrap overflow-x-auto gap-2 w-full px-4 sm:px-0 sm:w-auto sm:flex-wrap sm:overflow-visible scrollbar-none shrink-0 pb-2 sm:pb-0">
           <Button 
             variant={interactionMode === 'add_incident' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm ${interactionMode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
             onClick={() => setInteractionMode(interactionMode === 'add_incident' ? 'idle' : 'add_incident')}
           >
             <Flame className="w-4 h-4 mr-1 sm:mr-2" /> 
@@ -276,7 +276,7 @@ export default function HaritaPage() {
           
           <Button 
             variant={interactionMode === 'add_hydrant' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm ${interactionMode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}`}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}`}
             onClick={() => setInteractionMode(interactionMode === 'add_hydrant' ? 'idle' : 'add_hydrant')}
           >
             <Droplets className="w-4 h-4 mr-1 sm:mr-2" /> 
@@ -284,7 +284,7 @@ export default function HaritaPage() {
           </Button>
 
           {interactionMode !== 'idle' && (
-            <Button variant="ghost" size="icon" onClick={() => setInteractionMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px]" title="İşlemi İptal Et">
+            <Button variant="ghost" size="icon" onClick={() => setInteractionMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px] whitespace-nowrap" title="İşlemi İptal Et">
               <X className="w-5 h-5" />
             </Button>
           )}
@@ -295,7 +295,7 @@ export default function HaritaPage() {
         <CardContent className="p-0 h-full w-full relative">
           
           {/* Arama Çubuğu (Search Engine) */}
-          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[400] w-full max-w-md px-3 sm:px-4">
+          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[400] w-[calc(100%-2rem)] mx-4 my-2 sm:w-full sm:max-w-md sm:mx-0 sm:my-0 sm:px-4">
             <form onSubmit={handleSearch} className="relative bg-background rounded-full shadow-lg border flex items-center overflow-hidden">
               <Search className="w-5 h-5 text-muted-foreground ml-4 shrink-0" />
               <input 
