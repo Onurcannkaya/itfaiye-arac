@@ -740,7 +740,7 @@ export default function AracBakimPage() {
                   Arama kriterlerinize veya seçili filtreye uygun onaylı bakım kaydı bulunamadı.
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
+                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[900px] border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
@@ -827,7 +827,7 @@ export default function AracBakimPage() {
                   Arama kriterlerinize veya seçili filtreye uygun yakıt kaydı bulunamadı.
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
+                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[900px] border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
@@ -913,7 +913,7 @@ export default function AracBakimPage() {
                   Henüz yağ veya antifriz sarfiyatına dair veri kaydı bulunmamaktadır.
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
+                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[700px] border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
@@ -999,7 +999,7 @@ export default function AracBakimPage() {
                   <p className="text-xs text-slate-500 mt-1">Bekleyen yetkilendirme isteği bulunmamaktadır.</p>
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
+                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[800px] border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">

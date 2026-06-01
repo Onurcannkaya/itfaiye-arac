@@ -245,7 +245,7 @@ export default function EnvanterYonetimiPage() {
                Yeni Ekipman Ekle
             </Button>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="p-0 w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
              <table className="w-full text-sm">
                 <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
                   <tr>

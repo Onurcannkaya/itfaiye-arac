@@ -31,15 +31,15 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
         </Button>
       </div>
 
-      <div className="overflow-x-auto w-full">
+      <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-t-md">
             <tr>
-              <th className="px-4 py-3 rounded-tl-md">Sicil No</th>
-              <th className="px-4 py-3">Ad Soyad</th>
-              <th className="px-4 py-3 min-w-[120px]">Unvan</th>
-              <th className="px-4 py-3">Durum</th>
-              <th className="px-4 py-3 rounded-tr-md text-right min-w-[100px]">Rol</th>
+              <th className="px-4 py-3 rounded-tl-md whitespace-nowrap">Sicil No</th>
+              <th className="px-4 py-3 whitespace-nowrap">Ad Soyad</th>
+              <th className="px-4 py-3 min-w-[120px] whitespace-nowrap">Unvan</th>
+              <th className="px-4 py-3 whitespace-nowrap">Durum</th>
+              <th className="px-4 py-3 rounded-tr-md text-right min-w-[100px] whitespace-nowrap">Rol</th>
             </tr>
           </thead>
           <tbody>

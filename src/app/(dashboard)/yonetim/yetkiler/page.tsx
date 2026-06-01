@@ -188,7 +188,7 @@ export default function YetkilerPage() {
           </div>
         </CardHeader>
         
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="p-0 w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
           <table className="w-full min-w-[900px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-zinc-900 bg-zinc-950/40">

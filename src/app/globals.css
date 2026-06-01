@@ -265,7 +265,7 @@ img, video, svg {
   h3 { font-size: 1rem !important; }
   
   /* Ensure body text is readable on small screens */
-  p, span, li, td, th, label, div {
+  p, span, li, label, div {
     word-break: break-word;
     overflow-wrap: break-word;
   }
@@ -286,12 +286,11 @@ img, video, svg {
     font-size: 1.5rem !important;
   }
 
-  /* Table cells — prevent text cutoff */
+  /* Table cells — prevent text cutoff and dikey harf kırılması */
   table th, table td {
     padding: 0.5rem 0.625rem !important;
     font-size: 0.75rem !important;
-    white-space: normal !important;
-    word-break: break-word !important;
+    white-space: nowrap !important;
   }
   
   /* Ensure overflow scroll is smooth on touch */
@@ -415,4 +414,41 @@ img, video, svg {
   pointer-events: none;
   z-index: 50;
   animation: emergency-glow 3s infinite ease-in-out;
+}
+
+/* ===== MOBİL SİBER ZIRH TABLO VE METİN KURALLARI (Phase 26.3) ===== */
+/* Projedeki tüm <table> yapılarının th ve td hücrelerine kırılma engelleyici enjeksiyon */
+table th, 
+table td {
+  white-space: nowrap !important;
+}
+
+/* Tablo içindeki durum rozetlerinin (badge) ve butonların esneyip büzüşmesini engelleyen sabitleme */
+.badge, 
+[class*="badge"],
+[class*="rounded-full"][class*="px-"] {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* Tablo kapsayıcılarına otomatik veya manuel kaydırma zırhı (overflow-x-auto) */
+div:has(> table),
+.table-responsive,
+.overflow-x-auto {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  box-sizing: border-box !important;
+}
+
+/* Dokunma hitbox'larını minimum 44px'e sabitle (Erişilebilirlik ve saha kullanımı için) */
+button, 
+[role="button"], 
+a, 
+select, 
+input, 
+textarea, 
+.touch-target {
+  min-height: 44px !important;
 }

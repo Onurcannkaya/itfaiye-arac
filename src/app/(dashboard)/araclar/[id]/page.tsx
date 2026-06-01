@@ -997,7 +997,7 @@ export default function VehicleDetailPage() {
                 <h3 className="text-xs font-bold font-mono text-cyan-400 uppercase tracking-widest">
                   Mevcut Bölme Konfigürasyonu
                 </h3>
-                <div className="w-full overflow-x-auto border border-cyan-500/10 rounded-xl bg-slate-950/60 max-h-72 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border border border-cyan-500/10 rounded-xl bg-slate-950/60 max-h-72" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="w-full text-left border-collapse text-xs font-mono">
                     <thead>
                       <tr className="bg-slate-900/80 border-b border-cyan-500/10 text-slate-400 font-bold">
