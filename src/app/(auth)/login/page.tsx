@@ -149,43 +149,43 @@ function LoginForm() {
             src="/login_bg_sivas_itfaiye.jpg" 
             alt="Sivas İtfaiye Filosu" 
             fill 
-            className="object-cover object-center filter brightness-30 contrast-110"
+            className="object-cover object-center filter brightness-50 contrast-110 transition-all duration-700"
             priority 
           />
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[0.5px] transition-colors duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-950/30" />
         </div>
 
         {/* Üst Logolar */}
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1 shadow-[0_0_15px_rgba(255,255,255,0.08)]">
-            <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={38} height={38} className="object-contain" />
+          <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1.5 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
+            <Image src="/logo-belediye.png" alt="Sivas Belediyesi" width={48} height={48} className="object-contain w-10 h-10 lg:w-12 lg:h-12" />
           </div>
-          <div className="w-14 h-14 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1 shadow-[0_0_15px_rgba(255,255,255,0.08)]">
-            <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={38} height={38} className="object-contain" />
+          <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-full overflow-hidden bg-white/95 flex items-center justify-center p-1.5 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
+            <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={48} height={48} className="object-contain w-10 h-10 lg:w-12 lg:h-12" />
           </div>
-          <div className="h-5 w-px bg-white/20" />
-          <span className="text-xs font-bold tracking-widest text-slate-200 uppercase">SİVAS BELEDİYESİ</span>
+          <div className="h-6 w-px bg-white/20" />
+          <span className="text-xs lg:text-lg xl:text-xl font-black tracking-widest text-slate-200 uppercase transition-all duration-300">SİVAS BELEDİYESİ</span>
         </div>
 
         {/* Alt Tipografi */}
-        <div className="relative z-10 max-w-2xl mt-auto">
+        <div className="relative z-10 max-w-3xl mt-auto">
           <div className="space-y-4">
-            <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-none text-white drop-shadow-md">
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-none text-white drop-shadow-lg transition-all duration-300">
               Sivas İtfaiyesi<br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-amber-500">Bilgi Yönetim Sistemi</span>
             </h1>
-            <p className="text-sm text-slate-300 font-medium leading-relaxed max-w-xl">
+            <p className="text-sm lg:text-base xl:text-lg text-slate-300 font-semibold leading-relaxed max-w-2xl transition-all duration-300">
               Canlı komuta kontrol haritası, akıllı araç envanteri, solunum uzmanlığı takipleri ve anlık postane devirlerini yöneten merkezi otomasyon portali.
             </p>
           </div>
         </div>
 
         {/* En Alt Bilgi */}
-        <div className="relative z-10 mt-12 flex justify-between items-center text-xs text-slate-500 border-t border-white/5 pt-6">
-          <span className="font-semibold">Sivas İtfaiye Komuta Merkez</span>
-          <span>© 2026 Tüm Hakları Saklıdır</span>
+        <div className="relative z-10 mt-12 flex justify-between items-center text-xs text-slate-400 border-t border-white/5 pt-6">
+          <span className="font-bold">Sivas İtfaiye Komuta Merkez</span>
+          <span className="font-semibold">© 2026 Tüm Hakları Saklıdır</span>
         </div>
       </div>
 
@@ -214,9 +214,9 @@ function LoginForm() {
           </div>
 
           {/* Masaüstü Başlık */}
-          <div className="hidden lg:block space-y-1">
-            <h2 className="text-2xl font-black tracking-tight text-white">Personel Girişi</h2>
-            <p className="text-xs text-slate-400 font-medium">Devam etmek için sicil bilginizle oturum açın.</p>
+          <div className="hidden lg:block space-y-2">
+            <h2 className="text-2xl lg:text-3xl font-black tracking-tight text-white transition-all duration-300">Personel Girişi</h2>
+            <p className="text-xs lg:text-sm text-slate-400 font-semibold transition-all duration-300">Devam etmek için sicil bilginizle oturum açın.</p>
           </div>
 
           {/* Cam Morfolojili Form Kartı */}
@@ -237,26 +237,26 @@ function LoginForm() {
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sicil Numarası</label>
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-black text-slate-300 uppercase tracking-widest transition-all">Sicil Numarası</label>
                 <Input 
                   placeholder="Sicil Numaranız (Örn: SBXXXX)" 
                   value={sicilNo}
                   onChange={(e) => setSicilNo(e.target.value)}
                   required
-                  className="h-11 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-xl font-mono tracking-widest text-slate-100 placeholder-slate-600 pl-4 w-full text-sm"
+                  className="h-11 lg:h-12 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-xl font-mono tracking-widest text-slate-100 lg:text-base font-semibold placeholder-slate-600 lg:placeholder-slate-400 pl-4 w-full text-sm transition-all"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giriş Parolası</label>
+              <div className="space-y-2">
+                <label className="text-[10px] lg:text-xs font-black text-slate-300 uppercase tracking-widest transition-all">Giriş Parolası</label>
                 <Input 
                   type="password" 
                   placeholder="••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-11 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-xl text-slate-100 placeholder-slate-600 pl-4 w-full text-sm"
+                  className="h-11 lg:h-12 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-xl text-slate-100 lg:text-base font-semibold placeholder-slate-600 lg:placeholder-slate-400 pl-4 w-full text-sm transition-all"
                 />
               </div>
 
@@ -293,8 +293,8 @@ function LoginForm() {
           </div>
 
           {/* Belediye Akıllı Şehir Künyesi */}
-          <div className="text-center space-y-2 pt-2">
-            <div className="relative w-40 h-10 mx-auto opacity-80">
+          <div className="text-center space-y-2 pt-2 lg:pt-4">
+            <div className="relative w-40 lg:w-48 h-10 lg:h-12 mx-auto opacity-95 lg:opacity-100 transition-all duration-200">
               <Image 
                 src="/logo-akilli-sehir.png" 
                 alt="Akıllı Şehir Logosu" 
@@ -302,8 +302,8 @@ function LoginForm() {
                 className="object-contain"
               />
             </div>
-            <p className="text-[10px] text-slate-500 max-w-[280px] mx-auto leading-relaxed">
-              Sivas Belediyesi Akıllı Şehir ve Kent Bilgi Sistemleri Müdürlüğü Hizmet Altyapısı.
+            <p className="text-[10px] lg:text-xs text-slate-500 lg:text-slate-400 font-semibold max-w-[280px] lg:max-w-xs mx-auto leading-relaxed transition-colors duration-200">
+              Sivas Belediyesi Akıllı Şehir ve Kent Bilgi Sistemleri Müdürlüğü tarafından geliştirilmiştir.
             </p>
           </div>
         </div>
