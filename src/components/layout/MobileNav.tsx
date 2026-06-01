@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { 
   Home, 
   Truck, 
-  ScanLine, 
   Menu, 
   X, 
   Users, 
@@ -67,7 +66,6 @@ export function MobileNav() {
         { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: !isEr, matchStart: '/arac/' },
         { href: "/yonetim/tarayici", label: "QR Araç Tara", icon: Camera, visible: true },
         { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: !isEr },
-        { href: "/barkod", label: "Barkod Oku", icon: ScanLine, visible: true },
         { href: "/yonetim/arac-bakim", label: "Araç Bakım & Yakıt", icon: Wrench, visible: !isEr },
         { href: "/scba", label: "SCBA Tüp Takibi", icon: Wind, visible: !isEr },
       ]
@@ -181,24 +179,24 @@ export function MobileNav() {
         {navLink("/", <Home size={22} />, "Ana Sayfa")}
         {!isEr && navLink("/araclar", <Truck size={22} />, "Filo")}
         
-        {/* ★ Barkod Tarayıcı — Ortada Belirgin Yüzen Buton */}
+        {/* ★ QR Tarayıcı — Ortada Belirgin Yüzen Buton */}
         <Link
-          href="/barkod"
+          href="/yonetim/tarayici"
           onClick={() => setMenuOpen(false)}
           className="flex flex-col items-center justify-center relative -mt-5"
         >
           <div className={cn(
             "w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95",
-            isActive('/barkod')
+            isActive('/yonetim/tarayici')
               ? "bg-cyan-500 text-slate-950 ring-4 ring-cyan-500/20 shadow-cyan-500/30"
               : "bg-cyan-500/90 text-slate-950 hover:bg-cyan-500 shadow-cyan-500/20"
           )}>
-            <ScanLine size={26} />
+            <Camera size={26} />
           </div>
           <span className={cn(
             "text-[10px] mt-1 font-bold leading-none",
-            isActive('/barkod') ? "text-cyan-400" : "text-slate-400"
-          )}>Barkod</span>
+            isActive('/yonetim/tarayici') ? "text-cyan-400" : "text-slate-400"
+          )}>QR Tara</span>
         </Link>
 
         {!isEr && navLink("/envanter-yonetimi", <Combine size={22} />, "Envanter")}

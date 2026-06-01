@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { Bell, LogOut, ScanLine, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check } from 'lucide-react'
+import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
@@ -215,7 +215,7 @@ export function Topbar() {
             type: 'info',
             time: 'Vardiya Görevi',
             read: false,
-            actionUrl: '/barkod'
+            actionUrl: '/yonetim/tarayici'
           })
           items.push({
             id: 'task-er-2',
@@ -352,11 +352,11 @@ export function Topbar() {
         
         {/* Desktop Quick Scan Button */}
         <Link 
-          href="/barkod" 
+          href="/yonetim/tarayici" 
           className="hidden md:flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full transition-colors mr-2"
         >
-          <ScanLine size={18} />
-          <span className="text-sm font-bold">Barkod Oku</span>
+          <Camera size={18} />
+          <span className="text-sm font-bold">QR Araç Tara</span>
         </Link>
         
         <GeofenceButton />
