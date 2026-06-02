@@ -416,6 +416,23 @@ export async function PATCH(
     const sql = `UPDATE ${table} SET ${setClauses.join(', ')} ${whereStr} RETURNING *`;
 
     const result = await query(sql, values);
+
+    // 6. Dynamic Server-Side Audit Log hooks for fire_hydrants status update
+    if (table === 'fire_hydrants' && result.rows[0]) {
+      const row = result.rows[0];
+      await query(
+        `INSERT INTO audit_logs (action_type, actor_sicil_no, actor_name, target, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          'hydrant_status_change',
+          session.sicilNo,
+          `${session.ad} ${session.soyad}`,
+          String(row.id || row.no || ''),
+          JSON.stringify({ id: row.id, no: row.no, newStatus: row.durum, tarih: new Date().toISOString() })
+        ]
+      ).catch(err => console.error('[Server AuditLog] Hidrant log yazma hatası:', err));
+    }
+
     return NextResponse.json({ data: result.rows, error: null });
   } catch (error: any) {
     console.error(`[db/PATCH] Hata:`, error);

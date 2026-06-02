@@ -195,20 +195,6 @@ export default function HaritaPage() {
       
       // Update state locally immediately
       setHydrants(prev => prev.map(hyd => hyd.id === id ? { ...hyd, durum: newStatus } : hyd))
-      
-      // Log event to audit logs
-      fetch('/api/audit-log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action_type: 'hydrant_status_change',
-          actor_sicil_no: user?.sicilNo || 'unknown',
-          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
-          target: id,
-          details: { id, newStatus },
-        }),
-      }).catch(err => console.error('[AuditLog] Hidrant logu gönderilemedi:', err))
-
     } catch (error) {
       console.error("Hidrant durumu güncellenirken hata oluştu:", error)
       alert("Hidrant durumu güncellenemedi.")

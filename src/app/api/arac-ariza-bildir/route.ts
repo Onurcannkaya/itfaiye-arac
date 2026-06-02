@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Session verification guard
+    const session = getSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Oturum bulunamadı. Lütfen giriş yapın.' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { plaka, aciklama, durum } = body;
 
@@ -20,6 +27,19 @@ export async function POST(request: NextRequest) {
        VALUES ($1, NOW(), 'tamir', $2, 0, $3)`,
       [plaka.toUpperCase().trim(), finalDesc, finalStatus]
     );
+
+    // 2. Server-side parameterized audit logging
+    await query(
+      `INSERT INTO public.audit_logs (action_type, actor_sicil_no, actor_name, target, details)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        'arac_ariza_bildirim',
+        session.sicilNo,
+        `${session.ad} ${session.soyad}`,
+        plaka.toUpperCase().trim(),
+        JSON.stringify({ aciklama: finalDesc, durum: finalStatus, tarih: new Date().toISOString() })
+      ]
+    ).catch(err => console.error('[Server AuditLog] Arıza bildirim log yazma hatası:', err));
 
     return NextResponse.json({ success: true, message: 'Arıza kaydı başarıyla belediye yerel veritabanına mühürlendi.' });
   } catch (err: unknown) {

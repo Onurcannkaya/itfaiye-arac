@@ -118,6 +118,19 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // 4. Sunucu taraflı parametrik audit logging (official decision trail)
+      await query(
+        `INSERT INTO public.audit_logs (action_type, actor_sicil_no, actor_name, target, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          'hizmet_basvuru_karar',
+          session.sicilNo,
+          `${session.ad} ${session.soyad}`,
+          String(id),
+          JSON.stringify({ durum, islem_yapan_amir, atanan_ekip, red_gerekcesi })
+        ]
+      );
+
       await query('COMMIT');
       return NextResponse.json({ success: true, message: 'Başvuru durumu başarıyla güncellendi.' });
     } catch (innerErr: unknown) {
