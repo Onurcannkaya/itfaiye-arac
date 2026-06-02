@@ -9,11 +9,8 @@ import {
   AlertCircle, FileText, Clock, Loader2, Plus, X, Trash2
 } from "lucide-react"
 import { IncidentWizard } from "@/components/incident/IncidentWizard"
-import { Incident } from "@/types"
+import { Incident, Personnel, Vehicle } from "@/types"
 import { getTriageInfo } from "@/lib/utils"
-
-type Personnel = any;
-type Vehicle = any;
 
 export default function OlaylarPage() {
   const [incidents, setIncidents] = useState<Incident[]>([])
@@ -86,7 +83,7 @@ export default function OlaylarPage() {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto pb-12">
+    <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto pb-[120px] md:pb-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -148,7 +145,7 @@ export default function OlaylarPage() {
               const triage = getTriageInfo(inc.olay_turu)
               return (
                 <Card key={inc.id} className="hover:border-primary/50 transition-colors">
-                  <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardContent className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
                       <div 
                         className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border"
@@ -178,7 +175,8 @@ export default function OlaylarPage() {
                       </div>
                     </div>
                   
-                  <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end sm:min-w-[170px]">
+                  {/* Desktop Action Area */}
+                  <div className="hidden md:flex md:flex-col gap-2 items-end md:min-w-[170px]">
                     {inc.status === 'closed' && (
                       <Badge className="bg-success/10 text-success border-none text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
                     )}
@@ -203,9 +201,71 @@ export default function OlaylarPage() {
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )})
+
+                  {/* Mobile Action Area */}
+                  <div className="flex md:hidden flex-col gap-3 w-full border-t border-border/50 pt-4 mt-3 animate-in slide-in-from-bottom-2 duration-200">
+                    {inc.status === 'closed' ? (
+                      <div className="flex flex-col gap-2.5 w-full">
+                        {/* Status & Delete Row */}
+                        <div className="flex items-center justify-between w-full">
+                          <Badge className="bg-success/10 text-success border-none text-[11px] font-bold px-3 py-1">KAPALI</Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-danger/30 text-danger hover:bg-danger/10 text-[11px] px-3 py-1 gap-1.5 h-8 font-medium"
+                            onClick={() => handleDelete(inc.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Vakayı Sil
+                          </Button>
+                        </div>
+                        
+                        {/* Upper Button: Raporu Gör */}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full text-xs border-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/10 h-10 gap-1.5"
+                          onClick={() => setEk16Incident(inc)}
+                        >
+                          <FileText className="w-4 h-4 text-sky-500" /> Raporu Gör
+                        </Button>
+                        
+                        {/* Lower Button: EK-16 Raporu */}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full text-xs border-success/30 text-success hover:bg-success/10 h-10 gap-1.5 font-semibold bg-success/5"
+                          onClick={() => setEk16Incident(inc)}
+                        >
+                          <FileText className="w-4 h-4" /> EK-16 Raporu
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 w-full">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 text-xs border-danger/30 text-danger hover:bg-danger/10 h-10 gap-1.5"
+                          onClick={() => setEk16Incident(inc)}
+                        >
+                          <FileText className="w-4 h-4" /> Raporu Gör
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="border-danger/30 text-danger hover:bg-danger/10 h-10 w-10 shrink-0"
+                          title="Vakayı Sil"
+                          onClick={() => handleDelete(inc.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  </CardContent>
+                </Card>
+              )
+            })
           )}
         </div>
       )}
