@@ -239,9 +239,7 @@ export default function YetkilerPage() {
                                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 !min-h-[24px] !min-w-[44px] ${isAllowed ? 'bg-emerald-500' : 'bg-red-500/30'}`}
                               >
                                 <span className="sr-only">Toggle</span>
-                                <span className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${isAllowed ? 'translate-x-5' : 'translate-x-0'}`}>
-                                  {isUpdating ? <Loader2 className="w-3 h-3 text-zinc-600 animate-spin" /> : isAllowed ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" /> : <div className="w-1.5 h-1.5 rounded-full bg-red-400" />}
-                                </span>
+                                <span className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${isAllowed ? 'translate-x-5' : 'translate-x-0'}`}></span>
                               </button>
                               <div className="flex items-center gap-1.5">
                                 {isAllowed ? (
