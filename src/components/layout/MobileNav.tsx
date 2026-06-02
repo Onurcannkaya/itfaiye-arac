@@ -116,7 +116,7 @@ export function MobileNav() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setMenuOpen(false)} />
           
           {/* Drawer Sheet */}
-          <div className="relative z-50 bg-slate-950/95 border-t border-slate-900 rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[80vh] overflow-y-auto space-y-6 animate-in slide-in-from-bottom duration-300">
+          <div className="relative z-50 bg-slate-950/95 border-t border-slate-900 rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-hidden flex flex-col space-y-4 animate-in slide-in-from-bottom duration-300">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-slate-900 pb-3">
               <div className="flex items-center space-x-2">
@@ -137,7 +137,7 @@ export function MobileNav() {
             </div>
             
             {/* Group Lists */}
-            <div className="space-y-6">
+            <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pb-32 flex-1">
               {groups.map((group, gIdx) => {
                 const visibleItems = group.items.filter(item => item.visible)
                 if (visibleItems.length === 0) return null
@@ -172,6 +172,9 @@ export function MobileNav() {
                   </div>
                 )
               })}
+
+              {/* Menü Alt Bar Taşma Kalkanı */}
+              <div className="h-28 w-full block pointer-events-none clear-both" aria-hidden="true" />
             </div>
           </div>
         </div>
