@@ -20,12 +20,14 @@ import {
   ShieldCheck,
   GraduationCap,
   CreditCard,
-  UserCheck,
   Building,
   Calendar,
   HelpCircle,
   X,
-  FilePlus
+  FilePlus,
+  AlertTriangle,
+  Send,
+  UserCheck
 } from "lucide-react"
 
 // Strict TypeScript structure for Sivas Fire Department Citizen Service requests
@@ -52,9 +54,13 @@ interface CitizenRequest {
     egitim_tarihi?: string;
     egitim_turu?: string;
   };
-  durum: 'Bekliyor' | 'Ekip Atandı' | 'Ödeme Bekliyor' | 'Onaylandı' | 'Reddedildi';
+  durum: string;
   created_at: string;
   updated_at?: string;
+  islem_yapan_amir?: string;
+  atanan_ekip?: string;
+  islem_tarihi?: string;
+  red_gerekcesi?: string;
 }
 
 export default function HizmetlerPage() {
@@ -63,8 +69,13 @@ export default function HizmetlerPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
 
-  // Details Modal State
+  // Details & Action Modal State
   const [selectedRequest, setSelectedRequest] = useState<CitizenRequest | null>(null)
+  
+  // Tactical action states inside modal
+  const [tacticalMode, setTacticalMode] = useState<'NONE' | 'RED' | 'EKIP'>('NONE')
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [selectedCrew, setSelectedCrew] = useState('Merkez İstasyonu A Grubu')
 
   // Create Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -93,6 +104,13 @@ export default function HizmetlerPage() {
 
   // Detect Müdür / Admin role
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür'
+
+  // Reset tactical menu when selectedRequest changes
+  useEffect(() => {
+    setTacticalMode('NONE')
+    setRejectionReason('')
+    setSelectedCrew('Merkez İstasyonu A Grubu')
+  }, [selectedRequest])
 
   const resetForm = () => {
     setNewRequestForm({
@@ -131,7 +149,7 @@ export default function HizmetlerPage() {
         basvuran_ad_soyad: newRequestForm.basvuran_ad_soyad,
         irtibat_tel: newRequestForm.irtibat_tel,
         adres: newRequestForm.adres,
-        durum: 'Bekliyor' as const,
+        durum: 'BEKLEMEDE' as const,
         baca_detaylari: newRequestForm.talep_turu === 'Baca Temizliği' ? {
           kat_sayisi: Number(newRequestForm.baca_kat_sayisi) || 1,
           daire_sayisi: Number(newRequestForm.baca_daire_sayisi) || 1,
@@ -187,19 +205,55 @@ export default function HizmetlerPage() {
     }
   }
 
-  const updateStatus = async (id: string, newStatus: string) => {
+  // Handle tactical amir action via the new transaction-safe api route
+  const handleTacticalAction = async (
+    id: string, 
+    newStatus: 'ONAYLANDI' | 'REDDEDİLDİ' | 'EKİP_ATANDI',
+    extra?: { crew?: string; reason?: string }
+  ) => {
     setUpdating(id)
     try {
-      const { error } = await api.update('citizen_requests', { durum: newStatus }, { id: id })
+      const res = await fetch('/api/hizmet-onay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          durum: newStatus,
+          islem_yapan_amir: user ? `${user.ad} ${user.soyad} (${user.sicilNo})` : 'Bilinmeyen Amir',
+          atanan_ekip: extra?.crew || null,
+          red_gerekcesi: extra?.reason || null
+        })
+      });
+      const data = await res.json();
       
-      if (!error) {
-        setRequests(prev => prev.map(req => req.id === id ? { ...req, durum: newStatus as CitizenRequest['durum'] } : req))
-        if (selectedRequest && selectedRequest.id === id) {
-          setSelectedRequest(prev => prev ? { ...prev, durum: newStatus as CitizenRequest['durum'] } : null)
-        }
+      if (data.success) {
+        // 1. Refetch completely to update all dashboard statistics & counters
+        await fetchRequests();
+        
+        // 2. Synchronize selectedRequest to immediately mirror updates inside modal
+        setSelectedRequest(prev => {
+          if (prev && prev.id === id) {
+            return {
+              ...prev,
+              durum: newStatus,
+              islem_yapan_amir: user ? `${user.ad} ${user.soyad} (${user.sicilNo})` : 'Bilinmeyen Amir',
+              atanan_ekip: extra?.crew || undefined,
+              red_gerekcesi: extra?.reason || undefined,
+              islem_tarihi: new Date().toISOString()
+            };
+          }
+          return prev;
+        });
+
+        // 3. Reset sub-actions
+        setTacticalMode('NONE');
+        setRejectionReason('');
+      } else {
+        alert('İşlem başarısız: ' + (data.error || 'Bilinmeyen Hata'));
       }
     } catch (err) {
-      console.error('Update status error:', err)
+      console.error('Tactical action error:', err)
+      alert('Sistem bağlantı hatası oluştu.')
     } finally {
       setUpdating(null)
     }
@@ -212,61 +266,70 @@ export default function HizmetlerPage() {
   
   // Total simulated revenue based on approved applications
   const revenue = requests
-    .filter(r => r.durum === 'Onaylandı')
+    .filter(r => {
+      const d = r.durum ? r.durum.toUpperCase() : '';
+      return d === 'ONAYLANDI' || d === 'ONAYLANDI';
+    })
     .reduce((sum, r) => {
       if (r.talep_turu.includes('Baca')) return sum + 650
       if (r.talep_turu.includes('Eğitim')) return sum + 1200
       return sum + 2450 // İtfaiye Uygunluk Raporu / Ruhsat
     }, 0)
 
-  // Simulated Assigned Crew
+  // Assigned Crew mapping
   const getGorevliEkip = (req: CitizenRequest) => {
-    if (req.durum === 'Bekliyor') return 'Atanmadı'
+    if (req.atanan_ekip) return req.atanan_ekip;
+    const d = req.durum ? req.durum.toUpperCase() : 'BEKLEMEDE';
+    if (d === 'BEKLEMEDE' || d === 'BEKLIYOR') return 'Atanmadı'
     if (req.talep_turu.includes('Baca')) return 'B-Grubu Baca Ekibi'
     if (req.talep_turu.includes('Eğitim')) return 'Eğitim & Önleme Şefliği'
     return '1. Grup Denetim Ekibi'
   }
 
-  // Simulated Fees and payment statuses
+  // Fees and payment statuses
   const getHarcDurumu = (req: CitizenRequest) => {
     let fee = 2450
     if (req.talep_turu.includes('Baca')) fee = 650
     else if (req.talep_turu.includes('Eğitim')) fee = 1200
 
-    if (req.durum === 'Bekliyor') {
+    const d = req.durum ? req.durum.toUpperCase() : 'BEKLEMEDE';
+    if (d === 'BEKLEMEDE' || d === 'BEKLIYOR') {
       return { text: `Hesaplanmadı (₺${fee})`, color: 'text-slate-400 bg-slate-900/40 border-white/5' }
     }
-    if (req.durum === 'Ekip Atandı') {
+    if (d === 'EKİP ATANDI' || d === 'EKİP_ATANDI') {
       return { text: `Hesaplandı (₺${fee})`, color: 'text-blue-400 bg-blue-950/40 border-blue-500/30' }
     }
-    if (req.durum === 'Ödeme Bekliyor') {
-      return { text: `Ödeme Bekliyor (₺${fee})`, color: 'text-amber-400 bg-amber-950/40 border-amber-500/30' }
-    }
-    if (req.durum === 'Onaylandı') {
+    if (d === 'ONAYLANDI') {
       return { text: `Ödendi (₺${fee})`, color: 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' }
+    }
+    if (d === 'REDDEDİLDİ') {
+      return { text: `Red/İptal`, color: 'text-red-400 bg-red-950/40 border-red-500/30' }
     }
     return { text: `Muaf`, color: 'text-slate-400 bg-slate-900/40' }
   }
 
   // Tactical badge render mapping
   const getStatusBadge = (durum: string) => {
-    switch (durum) {
-      case 'Onaylandı': 
-        return <Badge className="bg-green-950/40 border border-green-500/30 text-green-400 font-semibold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
-      case 'Ödeme Bekliyor': 
-        return <Badge className="bg-amber-950/40 border border-amber-500/30 text-amber-400 font-semibold px-2.5 py-1 rounded-lg">Ödeme Bekliyor</Badge>
-      case 'Ekip Atandı': 
-        return <Badge className="bg-blue-950/40 border border-blue-500/30 text-blue-400 font-semibold px-2.5 py-1 rounded-lg">Ekip Atandı</Badge>
-      case 'Bekliyor':
+    const d = durum ? durum.toUpperCase() : 'BEKLEMEDE';
+    switch (d) {
+      case 'ONAYLANDI': 
+        return <Badge className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-bold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
+      case 'EKİP ATANDI': 
+      case 'EKİP_ATANDI':
+        return <Badge className="bg-blue-950/40 border border-blue-500/30 text-blue-400 font-bold px-2.5 py-1 rounded-lg">Ekip Atandı</Badge>
+      case 'REDDEDİLDİ':
+        return <Badge className="bg-red-950/40 border border-red-500/30 text-red-400 font-bold px-2.5 py-1 rounded-lg">Reddedildi</Badge>
+      case 'BEKLIYOR':
+      case 'BEKLEMEDE':
       default: 
-        return <Badge className="bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-lg">Bekliyor</Badge>
+        return <Badge className="bg-slate-800 border border-slate-700 text-slate-300 font-bold px-2.5 py-1 rounded-lg">Bekliyor</Badge>
     }
   }
 
   if (loading) {
     return (
       <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2 min-h-[50vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" /> 
+        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" /> 
         <span className="text-muted-foreground font-semibold">Vatandaş Hizmetleri Yükleniyor...</span>
       </div>
     )
@@ -387,7 +450,7 @@ export default function HizmetlerPage() {
               </span>
             </div>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="p-0 overflow-x-auto scrollbar-thin">
             {requests.length === 0 ? (
               <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
                 Sistemde henüz bir hizmet başvurusu bulunmamaktadır.
@@ -410,7 +473,7 @@ export default function HizmetlerPage() {
                     const feeObj = getHarcDurumu(req)
                     return (
                       <tr key={req.id} className="hover:bg-zinc-900/30 transition duration-150 group">
-                        <td className="p-4 align-middle">
+                        <td className="p-4 align-middle whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:scale-105 transition shrink-0">
                               <User className="w-4 h-4" />
@@ -422,7 +485,7 @@ export default function HizmetlerPage() {
                           </div>
                         </td>
                         
-                        <td className="p-4 align-middle">
+                        <td className="p-4 align-middle whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <div className={`p-1.5 rounded-md ${
                               req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' :
@@ -437,60 +500,43 @@ export default function HizmetlerPage() {
                           </div>
                         </td>
 
-                        <td className="p-4 align-middle text-zinc-400 font-medium">
+                        <td className="p-4 align-middle text-zinc-400 font-medium whitespace-nowrap">
                           <div className="flex items-center gap-1.5 text-xs">
                             <Calendar className="w-3.5 h-3.5 text-zinc-600" />
                             {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </div>
                         </td>
 
-                        <td className="p-4 align-middle font-bold text-xs text-zinc-400">
-                          <span className={req.durum === 'Bekliyor' ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
+                        <td className="p-4 align-middle font-bold text-xs text-zinc-400 whitespace-nowrap">
+                          <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
                             {getGorevliEkip(req)}
                           </span>
                         </td>
 
-                        <td className="p-4 align-middle">
+                        <td className="p-4 align-middle whitespace-nowrap">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${feeObj.color}`}>
                             {feeObj.text}
                           </span>
                         </td>
 
-                        <td className="p-4 align-middle">
+                        <td className="p-4 align-middle whitespace-nowrap">
                           {getStatusBadge(req.durum)}
                         </td>
 
-                        <td className="p-4 align-middle text-right">
+                        <td className="p-4 align-middle text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
-                            {/* 4. Müdür Yetkili Dinamik Aksiyonlar */}
-                            {isMudur && req.durum === 'Bekliyor' && (
-                              <Button 
-                                size="sm" 
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-2.5 py-1.5 h-8 rounded-lg flex items-center gap-1 shadow-md hover:scale-[1.02] transition"
-                                onClick={() => updateStatus(req.id, 'Ekip Atandı')}
-                                disabled={updating === req.id}
-                              >
-                                <UserCheck className="w-3.5 h-3.5" /> Ekip Ata
-                              </Button>
-                            )}
-                            {isMudur && req.durum === 'Ödeme Bekliyor' && (
-                              <Button 
-                                size="sm" 
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-2.5 py-1.5 h-8 rounded-lg flex items-center gap-1 shadow-md hover:scale-[1.02] transition"
-                                onClick={() => updateStatus(req.id, 'Onaylandı')}
-                                disabled={updating === req.id}
-                              >
-                                <CheckCircle className="w-3.5 h-3.5" /> Raporu Onayla
-                              </Button>
-                            )}
-                            
+                            {/* Neon Cyber HUD Action Trigger Button (min 44px height hitbox) */}
                             <Button 
-                              variant="outline" 
                               size="sm" 
-                              className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-3 py-1.5 rounded-lg text-xs"
+                              className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-[1.02] transition duration-150 border border-cyan-400/20 whitespace-nowrap"
                               onClick={() => setSelectedRequest(req)}
+                              disabled={updating === req.id}
                             >
-                              Detayları Gör
+                              {updating === req.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <>🔍 İncele / İşlem Yap</>
+                              )}
                             </Button>
                           </div>
                         </td>
@@ -503,213 +549,286 @@ export default function HizmetlerPage() {
           </CardContent>
         </Card>
 
-        {/* Details Modal */}
+        {/* Premium Amir Taktik Operasyon Modalı */}
         {selectedRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
-              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <Card className="w-full max-w-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
+              <CardHeader className="bg-slate-900/40 border-b border-slate-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100">
-                    <Info className="w-5 h-5 text-indigo-400" /> BAŞVURU DETAY PANELİ
+                  <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100 uppercase tracking-wider">
+                    <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                    {isMudur ? "AMİR TAKTİK OPERASYON PANELİ" : "BAŞVURU DETAY PANELİ"}
                   </CardTitle>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Kayıt ID: <span className="font-mono text-zinc-400">{selectedRequest.id}</span>
+                  <p className="text-xs text-zinc-500 mt-1 font-mono">
+                    Takip Kodu / ID: <span className="text-cyan-400">{selectedRequest.basvuran_tc || selectedRequest.id}</span>
                   </p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-white"
+                  className="text-zinc-400 hover:text-white rounded-lg h-9 w-9 p-0 flex items-center justify-center"
                   onClick={() => setSelectedRequest(null)}
                 >
-                  Kapat
+                  <X className="w-5 h-5" />
                 </Button>
               </CardHeader>
               
-              <CardContent className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-                {/* Genel Durum Bilgilendirmesi */}
-                <div className="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+              <CardContent className="p-6 space-y-6 max-h-[75vh] overflow-y-auto scrollbar-thin">
+                {/* 1. Üst Canlı Durum ve Bilgiler */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800/60 shadow-inner">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 block">Mevcut İşlem Durumu</span>
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider block font-bold">Mevcut İşlem Durumu</span>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(selectedRequest.durum)}
-                      <span className="text-xs text-zinc-400 font-medium">
-                        Görevli: {getGorevliEkip(selectedRequest)}
-                      </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs text-zinc-500 block">Harç Hesap Tipi</span>
-                    <span className="text-sm font-black text-emerald-400">
+                  <div className="space-y-1 sm:text-right">
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider block font-bold">Vezne / Harç Durumu</span>
+                    <span className="text-xs font-black inline-flex items-center px-2 py-0.5 rounded border border-emerald-500/20 text-emerald-400 bg-emerald-950/20">
                       {getHarcDurumu(selectedRequest).text}
                     </span>
                   </div>
+                  {selectedRequest.islem_yapan_amir && (
+                    <div className="col-span-1 sm:col-span-2 border-t border-slate-800/40 pt-2 mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-zinc-500 font-medium block">Onaylayan/İşlem Yapan Amir</span>
+                        <span className="text-zinc-300 font-bold flex items-center gap-1.5 mt-0.5">
+                          <User className="w-3.5 h-3.5 text-indigo-400" /> {selectedRequest.islem_yapan_amir}
+                        </span>
+                      </div>
+                      <div className="sm:text-right">
+                        <span className="text-zinc-500 font-medium block">İşlem Zaman Damgası</span>
+                        <span className="text-zinc-300 font-mono font-bold block mt-0.5">
+                          {selectedRequest.islem_tarihi ? new Date(selectedRequest.islem_tarihi).toLocaleString('tr-TR') : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Vatandaş Bilgileri */}
+                {/* 2. Vatandaş Bilgileri */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-sm text-zinc-200 border-b border-zinc-800 pb-1.5 flex items-center gap-1.5">
+                  <h3 className="font-extrabold text-xs uppercase tracking-wider text-zinc-400 border-b border-slate-900 pb-1.5 flex items-center gap-1.5">
                     <User className="w-4 h-4 text-indigo-400" /> Vatandaş / Başvuran Bilgileri
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-900/20 p-4 rounded-xl border border-slate-900/60">
                     <div>
-                      <span className="text-zinc-500 block text-xs">T.C. / Vergi Numarası</span>
-                      <span className="font-bold text-zinc-300">{selectedRequest.basvuran_tc || '-'}</span>
+                      <span className="text-zinc-500 block text-xs">Kimlik / Takip Kodu</span>
+                      <span className="font-bold text-zinc-300 font-mono">{selectedRequest.basvuran_tc || '-'}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-xs">Ad Soyad / Ticari Unvan</span>
-                      <span className="font-bold text-zinc-300">{selectedRequest.basvuran_ad_soyad}</span>
+                      <span className="text-zinc-500 block text-xs">Ad Soyad / Unvan</span>
+                      <span className="font-bold text-zinc-200">{selectedRequest.basvuran_ad_soyad}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500 block text-xs">İrtibat Numarası</span>
-                      <span className="font-bold text-zinc-300 flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-zinc-500" /> {selectedRequest.irtibat_tel}</span>
+                      <span className="font-bold text-zinc-300 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3.5 h-3.5 text-zinc-500" /> {selectedRequest.irtibat_tel}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-xs">Başvuru Oluşturma Tarihi</span>
-                      <span className="font-bold text-zinc-300">{new Date(selectedRequest.basvuru_tarihi).toLocaleString('tr-TR')}</span>
+                      <span className="text-zinc-500 block text-xs">Oluşturma Tarihi</span>
+                      <span className="font-bold text-zinc-300 font-mono">
+                        {new Date(selectedRequest.basvuru_tarihi).toLocaleString('tr-TR')}
+                      </span>
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <span className="text-zinc-500 block text-xs">Açık Müdahale / Hizmet Adresi</span>
-                      <span className="font-bold text-zinc-300 flex items-start gap-1 mt-0.5"><MapPin className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" /> {selectedRequest.adres}</span>
+                      <span className="text-zinc-500 block text-xs">Müdahale / Hizmet Adresi</span>
+                      <span className="font-semibold text-zinc-300 flex items-start gap-1.5 mt-1 leading-relaxed">
+                        <MapPin className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" /> 
+                        {selectedRequest.adres}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* JSONB Detayları */}
+                {/* 3. Teknik JSONB Detayları */}
                 {selectedRequest.talep_turu === 'Baca Temizliği' && selectedRequest.baca_detaylari && (
-                  <div className="space-y-3 bg-blue-500/5 p-4 rounded-xl border border-blue-500/10">
-                    <h3 className="font-bold text-sm text-blue-400 border-b border-blue-500/20 pb-1.5 flex items-center gap-1.5">
-                      <Brush className="w-4 h-4" /> Baca Temizlik İşlemi Teknik Detayları
+                  <div className="space-y-3 bg-blue-950/20 p-4 rounded-xl border border-blue-950/40">
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-blue-400 border-b border-blue-500/20 pb-1.5 flex items-center gap-1.5">
+                      <Brush className="w-4 h-4" /> Baca Temizlik Teknik Detayları
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                       {Object.entries(selectedRequest.baca_detaylari).map(([key, val]) => (
-                        <div key={key} className="bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/80">
-                          <span className="text-zinc-500 block text-xs capitalize">{key.replace('_', ' ')}</span>
-                          <span className="font-bold text-zinc-300">{String(val)}</span>
+                        <div key={key} className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-900">
+                          <span className="text-zinc-500 block text-[10px] uppercase tracking-wide font-bold">{key.replace('_', ' ')}</span>
+                          <span className="font-bold text-zinc-300 mt-0.5 block">{String(val)}</span>
                         </div>
                       ))}
-                      {Object.keys(selectedRequest.baca_detaylari).length === 0 && (
-                        <span className="text-muted-foreground text-xs col-span-3">Detaylı baca verisi girilmemiş.</span>
-                      )}
                     </div>
                   </div>
                 )}
 
                 {selectedRequest.talep_turu === 'İtfaiye Uygunluk Raporu' && selectedRequest.isyeri_detaylari && (
-                  <div className="space-y-3 bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/10">
-                    <h3 className="font-bold text-sm text-yellow-400 border-b border-yellow-500/20 pb-1.5 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4" /> İşyeri Yangın Güvenlik & Faaliyet Detayları
+                  <div className="space-y-3 bg-yellow-950/20 p-4 rounded-xl border border-yellow-950/40">
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-yellow-400 border-b border-yellow-500/20 pb-1.5 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4" /> İşyeri Yangın Güvenlik Detayları
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                       {Object.entries(selectedRequest.isyeri_detaylari).map(([key, val]) => (
-                        <div key={key} className="bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/80">
-                          <span className="text-zinc-500 block text-xs capitalize">{key.replace('_', ' ')}</span>
-                          <span className="font-bold text-zinc-300">{String(val)}</span>
+                        <div key={key} className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-900">
+                          <span className="text-zinc-500 block text-[10px] uppercase tracking-wide font-bold">{key.replace('_', ' ')}</span>
+                          <span className="font-bold text-zinc-300 mt-0.5 block">{String(val)}</span>
                         </div>
                       ))}
-                      {Object.keys(selectedRequest.isyeri_detaylari).length === 0 && (
-                        <span className="text-muted-foreground text-xs col-span-3">Detaylı işyeri yangın önlem verisi girilmemiş.</span>
-                      )}
                     </div>
                   </div>
                 )}
 
                 {selectedRequest.talep_turu === 'Eğitim Talebi' && selectedRequest.isyeri_detaylari && (
-                  <div className="space-y-3 bg-purple-500/5 p-4 rounded-xl border border-purple-500/10">
-                    <h3 className="font-bold text-sm text-purple-400 border-b border-purple-500/20 pb-1.5 flex items-center gap-1.5">
+                  <div className="space-y-3 bg-purple-950/20 p-4 rounded-xl border border-purple-950/40">
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-purple-400 border-b border-purple-500/20 pb-1.5 flex items-center gap-1.5">
                       <GraduationCap className="w-4 h-4" /> Eğitim ve Tatbikat Organizasyon Detayları
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                       {Object.entries(selectedRequest.isyeri_detaylari).map(([key, val]) => (
-                        <div key={key} className="bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/80">
-                          <span className="text-zinc-500 block text-xs capitalize">{key.replace('_', ' ')}</span>
-                          <span className="font-bold text-zinc-300">{String(val)}</span>
+                        <div key={key} className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-900">
+                          <span className="text-zinc-500 block text-[10px] uppercase tracking-wide font-bold">{key.replace('_', ' ')}</span>
+                          <span className="font-bold text-zinc-300 mt-0.5 block">{String(val)}</span>
                         </div>
                       ))}
-                      {Object.keys(selectedRequest.isyeri_detaylari).length === 0 && (
-                        <span className="text-muted-foreground text-xs col-span-3">Detaylı eğitim planlama verisi girilmemiş.</span>
-                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Müdür İşlem Güncelleme Alanı */}
+                {/* 4. İşlem Geçmişi (Eğer atanmış veya reddedilmişse) */}
+                {selectedRequest.durum === 'REDDEDİLDİ' && selectedRequest.red_gerekcesi && (
+                  <div className="bg-red-950/20 p-4 rounded-xl border border-red-500/20 flex items-start gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 text-sm">
+                      <span className="font-bold text-red-400 uppercase tracking-wide text-xs">Talebin Red Gerekçesi</span>
+                      <p className="text-zinc-300 leading-relaxed font-medium">{selectedRequest.red_gerekcesi}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedRequest.atanan_ekip && (
+                  <div className="bg-blue-950/20 p-4 rounded-xl border border-blue-500/20 flex items-start gap-2.5">
+                    <UserCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 text-sm">
+                      <span className="font-bold text-blue-400 uppercase tracking-wide text-xs">Müdahale Edecek İstasyon / Ekip</span>
+                      <p className="text-zinc-300 leading-relaxed font-bold">{selectedRequest.atanan_ekip}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Müdür Siber Operasyon Menüsü */}
                 {isMudur ? (
-                  <div className="space-y-3 pt-5 border-t border-zinc-900">
-                    <h3 className="font-bold text-sm text-indigo-100 flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-indigo-400" /> Müdür Hızlı Operasyon Menüsü
+                  <div className="space-y-3 pt-5 border-t border-slate-900">
+                    <h3 className="font-black text-xs uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-cyan-400" /> SİBER OPERASYONEL AKSİYON KONTROLLERİ
                     </h3>
-                    <div className="flex flex-wrap items-center gap-2 bg-zinc-900/20 p-3 rounded-xl border border-zinc-900">
+                    
+                    <div className="flex flex-wrap items-center gap-2 bg-slate-900/30 p-3.5 rounded-xl border border-slate-800/80">
+                      
+                      {/* Onayla Button */}
                       <Button 
-                        variant={selectedRequest.durum === 'Bekliyor' ? 'default' : 'outline'} 
                         size="sm" 
-                        className={`font-semibold rounded-lg text-xs ${selectedRequest.durum === 'Bekliyor' ? 'bg-slate-800 text-white border-zinc-700' : 'border-zinc-800'}`}
-                        onClick={() => updateStatus(selectedRequest.id, 'Bekliyor')}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-lg flex items-center gap-1 hover:scale-[1.02] transition"
+                        onClick={() => handleTacticalAction(selectedRequest.id, 'ONAYLANDI')}
                         disabled={updating === selectedRequest.id}
                       >
-                        Bekliyor Yap
+                        🟢 ONAYLA
                       </Button>
                       
+                      {/* Reddet Trigger Button */}
                       <Button 
-                        variant={selectedRequest.durum === 'Ekip Atandı' ? 'default' : 'outline'} 
+                        variant="outline"
                         size="sm" 
-                        className={`font-semibold rounded-lg text-xs ${selectedRequest.durum === 'Ekip Atandı' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-zinc-800'}`}
-                        onClick={() => updateStatus(selectedRequest.id, 'Ekip Atandı')}
+                        className={`border-red-900/50 text-red-400 hover:text-white hover:bg-red-950/50 font-bold text-xs px-3.5 py-2 h-9 rounded-lg flex items-center gap-1 ${
+                          tacticalMode === 'RED' ? 'bg-red-950/80 text-white' : ''
+                        }`}
+                        onClick={() => setTacticalMode(prev => prev === 'RED' ? 'NONE' : 'RED')}
                         disabled={updating === selectedRequest.id}
                       >
-                        Ekip Atandı Yap
+                        🔴 REDDET
                       </Button>
                       
+                      {/* Ekibe Ata Trigger Button */}
                       <Button 
-                        variant={selectedRequest.durum === 'Ödeme Bekliyor' ? 'default' : 'outline'} 
+                        variant="outline"
                         size="sm" 
-                        className={`font-semibold rounded-lg text-xs ${selectedRequest.durum === 'Ödeme Bekliyor' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'border-zinc-800'}`}
-                        onClick={() => updateStatus(selectedRequest.id, 'Ödeme Bekliyor')}
+                        className={`border-blue-900/50 text-blue-400 hover:text-white hover:bg-blue-950/50 font-bold text-xs px-3.5 py-2 h-9 rounded-lg flex items-center gap-1 ${
+                          tacticalMode === 'EKIP' ? 'bg-blue-950/80 text-white' : ''
+                        }`}
+                        onClick={() => setTacticalMode(prev => prev === 'EKIP' ? 'NONE' : 'EKIP')}
                         disabled={updating === selectedRequest.id}
                       >
-                        Ödeme Bekliyor Yap
-                      </Button>
-                      
-                      <Button 
-                        variant={selectedRequest.durum === 'Onaylandı' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`font-semibold rounded-lg text-xs ${selectedRequest.durum === 'Onaylandı' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-zinc-800'}`}
-                        onClick={() => updateStatus(selectedRequest.id, 'Onaylandı')}
-                        disabled={updating === selectedRequest.id}
-                      >
-                        Raporu Onayla & Kapat
+                        🔵 EKİBE ATA
                       </Button>
 
-                      <Button 
-                        variant={selectedRequest.durum === 'Reddedildi' ? 'default' : 'outline'} 
-                        size="sm" 
-                        className={`font-semibold rounded-lg text-xs ${selectedRequest.durum === 'Reddedildi' ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-zinc-800'}`}
-                        onClick={() => updateStatus(selectedRequest.id, 'Reddedildi')}
-                        disabled={updating === selectedRequest.id}
-                      >
-                        Talebi Reddet
-                      </Button>
-                      
                       {updating === selectedRequest.id && (
-                        <div className="flex items-center gap-1 text-xs text-zinc-500 font-bold ml-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> Güncelleniyor...
+                        <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-bold ml-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Güncelleniyor...
                         </div>
                       )}
                     </div>
+
+                    {/* Sub-Action: Rejection Form */}
+                    {tacticalMode === 'RED' && (
+                      <div className="p-4 rounded-xl border border-red-500/20 bg-red-950/10 space-y-3 animate-in slide-in-from-top duration-200">
+                        <label className="text-xs font-bold text-red-400 uppercase tracking-wide block">Talebi Red Gerekçesi Giriniz</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            required
+                            className="flex-1 bg-slate-900 border border-slate-800 text-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-red-500 font-medium"
+                            placeholder="Gerekçenizi yazın amirim..."
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                          />
+                          <Button
+                            size="sm"
+                            className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold h-9"
+                            disabled={!rejectionReason || updating === selectedRequest.id}
+                            onClick={() => handleTacticalAction(selectedRequest.id, 'REDDEDİLDİ', { reason: rejectionReason })}
+                          >
+                            <Send className="w-3.5 h-3.5 mr-1" /> Reddet
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sub-Action: Crew Assignment Dropdown */}
+                    {tacticalMode === 'EKIP' && (
+                      <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-950/10 space-y-3 animate-in slide-in-from-top duration-200">
+                        <label className="text-xs font-bold text-blue-400 uppercase tracking-wide block">Görevlendirilecek Aktif İtfaiye İstasyonu / Ekibi</label>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <select
+                            className="bg-slate-950 border border-slate-800 text-zinc-300 rounded-lg px-3.5 py-2 text-xs focus:outline-none focus:border-blue-500 font-semibold h-9 min-w-[200px]"
+                            value={selectedCrew}
+                            onChange={(e) => setSelectedCrew(e.target.value)}
+                          >
+                            <option value="Merkez İstasyonu A Grubu">Merkez İstasyonu A Grubu</option>
+                            <option value="Merkez İstasyonu B Grubu">Merkez İstasyonu B Grubu</option>
+                            <option value="Esentepe Müfrezesi A Grubu">Esentepe Müfrezesi A Grubu</option>
+                            <option value="Esentepe Müfrezesi B Grubu">Esentepe Müfrezesi B Grubu</option>
+                            <option value="Organize Sanayi Müfrezesi">Organize Sanayi Müfrezesi</option>
+                          </select>
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold h-9"
+                            disabled={updating === selectedRequest.id}
+                            onClick={() => handleTacticalAction(selectedRequest.id, 'EKİP_ATANDI', { crew: selectedCrew })}
+                          >
+                            <Send className="w-3.5 h-3.5 mr-1" /> Atamayı Kesinleştir
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="pt-4 border-t border-zinc-900 bg-zinc-950/20 p-4 rounded-xl flex items-start gap-2.5 border border-zinc-900">
+                  <div className="pt-4 border-t border-slate-900 bg-slate-900/10 p-4 rounded-xl flex items-start gap-2.5 border border-slate-800">
                     <HelpCircle className="w-5 h-5 text-zinc-500 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
                       <span className="text-xs font-bold text-zinc-400">Salt Okunur Bilgi Modu</span>
                       <p className="text-[11px] text-zinc-500 leading-relaxed">
-                        Müdür / İbrahim Alaçam dışındaki personel yetki seviyeleri sadece başvuru detaylarını görüntüleyebilir. 
-                        Herhangi bir onaylama, ekip atama veya harç durumu değişikliği yetkiniz bulunmamaktadır.
+                        Müdür yetki seviyesi dışındaki personel seviyeleri sadece başvuru detaylarını görüntüleyebilir. 
+                        Herhangi bir onaylama, gerekçeli reddetme veya ekip atama yetkiniz bulunmamaktadır.
                       </p>
                     </div>
                   </div>
                 )}
-
               </CardContent>
             </Card>
           </div>
@@ -740,7 +859,7 @@ export default function HizmetlerPage() {
               </CardHeader>
               
               <form onSubmit={handleCreateRequest}>
-                <CardContent className="p-6 space-y-6 max-h-[65vh] overflow-y-auto">
+                <CardContent className="p-6 space-y-6 max-h-[65vh] overflow-y-auto scrollbar-thin">
                   {/* Başvuru Türü Seçimi */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Hizmet / Talep Türü <span className="text-red-500">*</span></label>

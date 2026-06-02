@@ -9,6 +9,11 @@ interface BacaRow {
   adres: string;
   bina_tipi: string;
   created_at: string;
+  durum?: string;
+  islem_yapan_amir?: string;
+  atanan_ekip?: string;
+  islem_tarihi?: string;
+  red_gerekcesi?: string;
 }
 
 interface YanginRow {
@@ -20,6 +25,11 @@ interface YanginRow {
   bina_tipi: string;
   isyeri_adi_turu: string;
   created_at: string;
+  durum?: string;
+  islem_yapan_amir?: string;
+  atanan_ekip?: string;
+  islem_tarihi?: string;
+  red_gerekcesi?: string;
 }
 
 interface CitizenRequestRow {
@@ -30,13 +40,18 @@ interface CitizenRequestRow {
   basvuran_ad_soyad: string;
   irtibat_tel: string;
   adres: string;
-  durum: 'Bekliyor' | 'Ekip Atandı' | 'Ödeme Bekliyor' | 'Onaylandı' | 'Reddedildi';
+  durum: string;
   created_at: string;
   baca_detaylari?: Record<string, unknown>;
   isyeri_detaylari?: Record<string, unknown>;
+  islem_yapan_amir?: string;
+  atanan_ekip?: string;
+  islem_tarihi?: string;
+  red_gerekcesi?: string;
 }
 
 async function ensureTablesExist(): Promise<void> {
+  // 1. Core tables
   await query(`
     CREATE TABLE IF NOT EXISTS public.baca_temizlik_basvurulari (
       id SERIAL PRIMARY KEY,
@@ -61,6 +76,16 @@ async function ensureTablesExist(): Promise<void> {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  // 2. Dynamically inject control columns to all three tables
+  const tables = ['baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'citizen_requests'];
+  for (const table of tables) {
+    await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS durum VARCHAR(50) DEFAULT 'BEKLEMEDE'`);
+    await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS islem_yapan_amir VARCHAR(150)`);
+    await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS atanan_ekip VARCHAR(150)`);
+    await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS islem_tarihi TIMESTAMPTZ`);
+    await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS red_gerekcesi TEXT`);
+  }
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -74,7 +99,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const rawBacaCount = bacaCountRes ? parseInt(bacaCountRes.count, 10) : 0;
     const rawYanginCount = yanginCountRes ? parseInt(yanginCountRes.count, 10) : 0;
 
-    // 2. Fetch all records from public.citizen_requests
+    // 2. Fetch all records from all tables
     const citizenRequests = await queryMany<CitizenRequestRow>('SELECT * FROM public.citizen_requests');
     const bacaRequests = await queryMany<BacaRow>('SELECT * FROM public.baca_temizlik_basvurulari');
     const yanginRequests = await queryMany<YanginRow>('SELECT * FROM public.yangin_rapor_basvurulari');
@@ -94,12 +119,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         adres: req.adres,
         baca_detaylari: req.baca_detaylari || undefined,
         isyeri_detaylari: req.isyeri_detaylari || undefined,
-        durum: req.durum || 'Bekliyor',
-        created_at: req.created_at
+        durum: req.durum || 'BEKLEMEDE',
+        created_at: req.created_at,
+        islem_yapan_amir: req.islem_yapan_amir || undefined,
+        atanan_ekip: req.atanan_ekip || undefined,
+        islem_tarihi: req.islem_tarihi || undefined,
+        red_gerekcesi: req.red_gerekcesi || undefined
       });
     });
 
-    // Map and append baca_temizlik_basvurulari
+    // Map and append baca_temizlik_basvurulari if they don't already exist in unified list
     bacaRequests.forEach((req) => {
       const exists = unifiedRequests.some(r => r.basvuran_tc === req.takip_kodu);
       if (!exists) {
@@ -117,13 +146,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             yakit_tipi: 'Doğalgaz',
             baca_tipi: req.bina_tipi
           },
-          durum: 'Bekliyor',
-          created_at: req.created_at
+          durum: req.durum || 'BEKLEMEDE',
+          created_at: req.created_at,
+          islem_yapan_amir: req.islem_yapan_amir || undefined,
+          atanan_ekip: req.atanan_ekip || undefined,
+          islem_tarihi: req.islem_tarihi || undefined,
+          red_gerekcesi: req.red_gerekcesi || undefined
         });
+      } else {
+        // If it exists, make sure we sync the extra details if they were updated in special table
+        const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.takip_kodu);
+        if (index !== -1) {
+          unifiedRequests[index].durum = req.durum || unifiedRequests[index].durum;
+          unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
+          unifiedRequests[index].atanan_ekip = req.atanan_ekip || unifiedRequests[index].atanan_ekip;
+          unifiedRequests[index].islem_tarihi = req.islem_tarihi || unifiedRequests[index].islem_tarihi;
+          unifiedRequests[index].red_gerekcesi = req.red_gerekcesi || unifiedRequests[index].red_gerekcesi;
+        }
       }
     });
 
-    // Map and append yangin_rapor_basvurulari
+    // Map and append yangin_rapor_basvurulari if they don't already exist in unified list
     yanginRequests.forEach((req) => {
       const exists = unifiedRequests.some(r => r.basvuran_tc === req.takip_kodu);
       if (!exists) {
@@ -142,9 +185,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             acil_cikis: '1 Adet',
             bina_tipi: req.bina_tipi
           },
-          durum: 'Bekliyor',
-          created_at: req.created_at
+          durum: req.durum || 'BEKLEMEDE',
+          created_at: req.created_at,
+          islem_yapan_amir: req.islem_yapan_amir || undefined,
+          atanan_ekip: req.atanan_ekip || undefined,
+          islem_tarihi: req.islem_tarihi || undefined,
+          red_gerekcesi: req.red_gerekcesi || undefined
         });
+      } else {
+        // If it exists, make sure we sync the extra details if they were updated in special table
+        const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.takip_kodu);
+        if (index !== -1) {
+          unifiedRequests[index].durum = req.durum || unifiedRequests[index].durum;
+          unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
+          unifiedRequests[index].atanan_ekip = req.atanan_ekip || unifiedRequests[index].atanan_ekip;
+          unifiedRequests[index].islem_tarihi = req.islem_tarihi || unifiedRequests[index].islem_tarihi;
+          unifiedRequests[index].red_gerekcesi = req.red_gerekcesi || unifiedRequests[index].red_gerekcesi;
+        }
       }
     });
 
@@ -158,7 +215,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Total simulated revenue based on approved applications
     const revenue = unifiedRequests
-      .filter(r => r.durum === 'Onaylandı')
+      .filter(r => r.durum === 'Onaylandı' || r.durum === 'ONAYLANDI')
       .reduce((sum, r) => {
         if (r.talep_turu.includes('Baca')) return sum + 650;
         if (r.talep_turu.includes('Eğitim')) return sum + 1200;

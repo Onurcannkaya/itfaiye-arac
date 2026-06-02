@@ -47,6 +47,15 @@ async function ensureTablesExist() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+
+    const tables = ['baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'citizen_requests'];
+    for (const table of tables) {
+      await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS durum VARCHAR(50) DEFAULT 'BEKLEMEDE'`);
+      await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS islem_yapan_amir VARCHAR(150)`);
+      await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS atanan_ekip VARCHAR(150)`);
+      await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS islem_tarihi TIMESTAMPTZ`);
+      await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS red_gerekcesi TEXT`);
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[citizen-requests] Tablo oluşturma hatası:', msg);

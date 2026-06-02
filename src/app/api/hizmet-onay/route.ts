@@ -1,0 +1,119 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, durum, islem_yapan_amir, atanan_ekip, red_gerekcesi } = body;
+
+    if (!id || !durum) {
+      return NextResponse.json({ success: false, error: 'ID ve Durum alanları zorunludur.' }, { status: 400 });
+    }
+
+    // Begin PostgreSQL transaction
+    await query('BEGIN');
+
+    try {
+      if (typeof id === 'string' && id.startsWith('baca-')) {
+        // Special table ID
+        const serialId = parseInt(id.split('-')[1], 10);
+        
+        // 1. Fetch tracking code from special table
+        const row = await query<{ takip_kodu: string }>('SELECT takip_kodu FROM public.baca_temizlik_basvurulari WHERE id = $1', [serialId]);
+        if (row.rows.length === 0) {
+          throw new Error('Baca temizliği başvurusu bulunamadı.');
+        }
+        const trackingCode = row.rows[0].takip_kodu;
+
+        // 2. Update special table
+        await query(
+          `UPDATE public.baca_temizlik_basvurulari 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE id = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, serialId]
+        );
+
+        // 3. Update main table
+        await query(
+          `UPDATE public.citizen_requests 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE basvuran_tc = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+        );
+
+      } else if (typeof id === 'string' && id.startsWith('yangin-')) {
+        // Special table ID
+        const serialId = parseInt(id.split('-')[1], 10);
+        
+        // 1. Fetch tracking code from special table
+        const row = await query<{ takip_kodu: string }>('SELECT takip_kodu FROM public.yangin_rapor_basvurulari WHERE id = $1', [serialId]);
+        if (row.rows.length === 0) {
+          throw new Error('İtfaiye uygunluk raporu başvurusu bulunamadı.');
+        }
+        const trackingCode = row.rows[0].takip_kodu;
+
+        // 2. Update special table
+        await query(
+          `UPDATE public.yangin_rapor_basvurulari 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE id = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, serialId]
+        );
+
+        // 3. Update main table
+        await query(
+          `UPDATE public.citizen_requests 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE basvuran_tc = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+        );
+
+      } else {
+        // UUID - Direct table ID (citizen_requests)
+        // 1. Fetch tracking code (basvuran_tc) from citizen_requests
+        const row = await query<{ basvuran_tc: string }>('SELECT basvuran_tc FROM public.citizen_requests WHERE id = $1', [id]);
+        if (row.rows.length === 0) {
+          throw new Error('Vatandaş başvurusu bulunamadı.');
+        }
+        const trackingCode = row.rows[0].basvuran_tc;
+
+        // 2. Update main table
+        await query(
+          `UPDATE public.citizen_requests 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE id = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, id]
+        );
+
+        // 3. If trackingCode corresponds to a special table, update that as well
+        if (trackingCode) {
+          if (trackingCode.startsWith('SVS-BACA-')) {
+            await query(
+              `UPDATE public.baca_temizlik_basvurulari 
+               SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+               WHERE takip_kodu = $5`,
+              [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+            );
+          } else if (trackingCode.startsWith('SVS-YANGIN-')) {
+            await query(
+              `UPDATE public.yangin_rapor_basvurulari 
+               SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+               WHERE takip_kodu = $5`,
+              [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+            );
+          }
+        }
+      }
+
+      await query('COMMIT');
+      return NextResponse.json({ success: true, message: 'Başvuru durumu başarıyla güncellendi.' });
+    } catch (innerErr: unknown) {
+      await query('ROLLBACK');
+      throw innerErr;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[hizmet-onay/POST] Hata:', msg);
+    return NextResponse.json({ success: false, error: 'Sunucu hatası oluştu: ' + msg }, { status: 500 });
+  }
+}
