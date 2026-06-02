@@ -86,6 +86,31 @@ export async function POST(request: NextRequest) {
         [trackingCode, ad_soyad.trim(), telefon.trim(), adres.trim(), bina_tipi.trim()]
       );
 
+      // Ayrıca public.citizen_requests tablosuna da kaydet
+      try {
+        await query(
+          `INSERT INTO public.citizen_requests (talep_turu, basvuru_tarihi, basvuran_tc, basvuran_ad_soyad, irtibat_tel, adres, durum, baca_detaylari)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            'Baca Temizliği',
+            new Date().toISOString(),
+            trackingCode,
+            ad_soyad.trim(),
+            telefon.trim(),
+            adres.trim(),
+            'Bekliyor',
+            JSON.stringify({
+              kat_sayisi: 1,
+              daire_sayisi: 1,
+              yakit_tipi: 'Doğalgaz',
+              baca_tipi: bina_tipi.trim()
+            })
+          ]
+        );
+      } catch (err) {
+        console.error('[citizen-requests] citizen_requests tablosuna kaydedilemedi:', err);
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Baca temizliği başvurunuz başarıyla alınmıştır.',
@@ -117,6 +142,32 @@ export async function POST(request: NextRequest) {
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [trackingCode, ad_soyad.trim(), telefon.trim(), adres.trim(), bina_tipi.trim(), isyeri_adi_turu.trim()]
       );
+
+      // Ayrıca public.citizen_requests tablosuna da kaydet
+      try {
+        await query(
+          `INSERT INTO public.citizen_requests (talep_turu, basvuru_tarihi, basvuran_tc, basvuran_ad_soyad, irtibat_tel, adres, durum, isyeri_detaylari)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            'İtfaiye Uygunluk Raporu',
+            new Date().toISOString(),
+            trackingCode,
+            ad_soyad.trim(),
+            telefon.trim(),
+            adres.trim(),
+            'Bekliyor',
+            JSON.stringify({
+              faaliyet_konusu: isyeri_adi_turu.trim(),
+              alan_m2: 100,
+              yangin_dolabi: 'Mevcut',
+              acil_cikis: '1 Adet',
+              bina_tipi: bina_tipi.trim()
+            })
+          ]
+        );
+      } catch (err) {
+        console.error('[citizen-requests] citizen_requests tablosuna kaydedilemedi:', err);
+      }
 
       return NextResponse.json({
         success: true,

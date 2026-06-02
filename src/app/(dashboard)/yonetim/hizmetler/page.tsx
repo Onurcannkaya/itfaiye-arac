@@ -173,66 +173,12 @@ export default function HizmetlerPage() {
   const fetchRequests = async () => {
     setLoading(true)
     try {
-      const { data, error } = await api
-        .from('citizen_requests')
-        .select('*')
-        .order('basvuru_tarihi', { ascending: false })
-      
-      if (data && data.length > 0) {
-        setRequests(data as CitizenRequest[])
-      } else if (data && data.length === 0) {
-        // Auto-seeding: populate realistic test data if database is empty
-        const mockRequests = [
-          {
-            talep_turu: 'Baca Temizliği',
-            basvuru_tarihi: new Date(Date.now() - 24 * 60 * 60 * 1000 * 2).toISOString(), // 2 days ago
-            basvuran_tc: '12345678901',
-            basvuran_ad_soyad: 'Ahmet Yılmaz (Kat Malikleri Birliği)',
-            irtibat_tel: '0532 555 1234',
-            adres: 'Atatürk Caddesi, Huzur Apartmanı No: 12, Sivas Merkez',
-            baca_detaylari: { kat_sayisi: 4, daire_sayisi: 8, yakit_tipi: 'Doğalgaz' },
-            durum: 'Bekliyor'
-          },
-          {
-            talep_turu: 'İtfaiye Uygunluk Raporu',
-            basvuru_tarihi: new Date(Date.now() - 24 * 60 * 60 * 1000 * 5).toISOString(), // 5 days ago
-            basvuran_tc: '98765432100',
-            basvuran_ad_soyad: 'Sivas Yıldız Gıda ve Unlu Mamüller San. Tic. Ltd. Şti.',
-            irtibat_tel: '0346 221 4567',
-            adres: 'Organize Sanayi Bölgesi, 3. Cadde, No: 8, Sivas',
-            isyeri_detaylari: { faaliyet_konusu: 'Fırın & Unlu Mamüller', alan_m2: 320, yangin_dolabi: 'Mevcut', acil_cikis: '2 Adet' },
-            durum: 'Ödeme Bekliyor'
-          },
-          {
-            talep_turu: 'Eğitim Talebi',
-            basvuru_tarihi: new Date(Date.now() - 24 * 60 * 60 * 1000 * 1).toISOString(), // 1 day ago
-            basvuran_tc: '11122233344',
-            basvuran_ad_soyad: 'Sivas Cumhuriyet Anadolu Lisesi (Müdürlük)',
-            irtibat_tel: '0544 654 3210',
-            adres: 'Yenişehir Mahallesi, Okul Yolu Sokak, No: 3, Sivas',
-            isyeri_detaylari: { egitim_tarihi: '2026-05-25', kisi_sayisi: 150, egitim_turu: 'Yangın Tahliye ve Temiz Hava Cihazı Kullanımı' },
-            durum: 'Ekip Atandı'
-          },
-          {
-            talep_turu: 'Baca Temizliği',
-            basvuru_tarihi: new Date(Date.now() - 24 * 60 * 60 * 1000 * 10).toISOString(), // 10 days ago
-            basvuran_tc: '55566677788',
-            basvuran_ad_soyad: 'Mehmet Özdemir (Köşk Lokantası)',
-            irtibat_tel: '0535 987 6543',
-            adres: 'Çarşı Mahallesi, İstasyon Caddesi, No: 45, Sivas Merkez',
-            baca_detaylari: { kat_sayisi: 1, baca_tipi: 'Endüstriyel Davlumbaz Bacanın Temizliği', yakit_tipi: 'Kömür / Odun' },
-            durum: 'Onaylandı'
-          }
-        ]
-        
-        const seedResult = await api.insert('citizen_requests', mockRequests)
-        if (seedResult && !seedResult.error) {
-          const { data: refetched } = await api
-            .from('citizen_requests')
-            .select('*')
-            .order('basvuru_tarihi', { ascending: false })
-          if (refetched) setRequests(refetched as CitizenRequest[])
-        }
+      const res = await fetch('/api/hizmet-yonetimi')
+      const json = await res.json()
+      if (json.success && json.requests) {
+        setRequests(json.requests as CitizenRequest[])
+      } else {
+        console.error('Fetch requests error:', json.error)
       }
     } catch (err) {
       console.error('Fetch requests error:', err)
@@ -328,7 +274,7 @@ export default function HizmetlerPage() {
 
   return (
     <PageGuard pageId="hizmet_basvurulari">
-      <div className="flex flex-col h-full space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+      <div className="flex flex-col min-h-screen overflow-y-auto space-y-6 max-w-7xl mx-auto pb-24 animate-in fade-in duration-300">
         
         {/* Sayfa Başlığı */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
