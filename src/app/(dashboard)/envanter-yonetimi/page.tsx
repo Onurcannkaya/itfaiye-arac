@@ -394,8 +394,8 @@ export default function EnvanterYonetimiPage() {
               ))}
             </div>
           </CardContent>
-          <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex justify-end items-center gap-3 rounded-b-2xl md:relative sticky bottom-0 z-40"
-               style={{ bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))' }}>
+          <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 rounded-b-2xl"
+          >
              {saveSuccess && (
                <span className="text-xs font-mono font-bold text-emerald-400 animate-in fade-in duration-200 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25">
                  ✓ KOD MÜHÜRLENDİ & VERİTABANINA YAZILDI
@@ -404,7 +404,7 @@ export default function EnvanterYonetimiPage() {
              <Button 
                onClick={saveInventoryToDB} 
                disabled={isSaving} 
-               className="font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] border border-emerald-500/30 px-5"
+               className="font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] border border-emerald-500/30 px-5 w-full sm:w-auto min-h-[44px]"
              >
                {isSaving ? "Şifreleniyor..." : <><Save className="w-4 h-4 mr-2"/> Taktik Kaydet</>}
              </Button>
