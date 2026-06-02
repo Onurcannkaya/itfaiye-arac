@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import PageGuard from "@/components/PageGuard"
 import dynamic from "next/dynamic"
 import { api } from "@/lib/api"
@@ -129,6 +129,13 @@ export default function HaritaPage() {
   // Hydrant Form
   const [hydrantForm, setHydrantForm] = useState({ no: "", tip: "Yer üstü", durum: "Aktif", mahalle: "" })
 
+  // ─── İnteraktif Adres Arama (Geocoding) State ─────────
+  const [incidentSearchQuery, setIncidentSearchQuery] = useState("")
+  const [incidentSearchResults, setIncidentSearchResults] = useState<NominatimResult[]>([])
+  const [isIncidentSearching, setIsIncidentSearching] = useState(false)
+  const [hasIncidentSearched, setHasIncidentSearched] = useState(false)
+  const incidentSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     fetchData()
 
@@ -249,6 +256,69 @@ export default function HaritaPage() {
       setSearchResults([])
       setHasSearched(false)
       setSearchQuery(result.display_name)
+    }
+  }
+
+  // ─── İnteraktif Adres Arama (Geocoding) - İhbar Formu İçi ────────
+  const handleIncidentSearch = async (query: string) => {
+    if (!query.trim() || query.trim().length < 3) {
+      setIncidentSearchResults([])
+      setHasIncidentSearched(false)
+      return
+    }
+    
+    setIsIncidentSearching(true)
+    setHasIncidentSearched(false)
+    try {
+      const searchTerm = encodeURIComponent(`${query.trim()} Sivas`)
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${searchTerm}&addressdetails=1&limit=5`
+      const response = await fetch(url, {
+        headers: {
+          'Accept-Language': 'tr-TR',
+          'User-Agent': 'SivasItfaiyeKomuta/1.0'
+        }
+      })
+      if (!response.ok) throw new Error(`Nominatim API hatası: ${response.status}`)
+      const data: NominatimResult[] = await response.json()
+      setIncidentSearchResults(data || [])
+      setHasIncidentSearched(true)
+    } catch (error) {
+      console.error('[Geocoding] İhbar arama hatası:', error)
+      setIncidentSearchResults([])
+      setHasIncidentSearched(true)
+    } finally {
+      setIsIncidentSearching(false)
+    }
+  }
+
+  const handleIncidentSearchInput = (value: string) => {
+    setIncidentSearchQuery(value)
+    setHasIncidentSearched(false)
+    
+    // Debounce: 400ms sonra otomatik arama tetikle
+    if (incidentSearchTimerRef.current) {
+      clearTimeout(incidentSearchTimerRef.current)
+    }
+    incidentSearchTimerRef.current = setTimeout(() => {
+      handleIncidentSearch(value)
+    }, 400)
+  }
+
+  const handleIncidentSelectAddress = (result: NominatimResult) => {
+    const lat = parseFloat(result.lat)
+    const lon = parseFloat(result.lon)
+    if (!isNaN(lat) && !isNaN(lon)) {
+      // 1. Harita kamerasını sinematik flyTo ile odakla
+      setFocusLocation([lat, lon])
+      // 2. Koordinatları formun lat/lng alanına yaz
+      setClickedCoords({ lat, lng: lon })
+      // 3. Adres alanını otomatik doldur
+      setIncidentForm(prev => ({ ...prev, adres: result.display_name }))
+      setHasFetchedAddress(true)
+      // 4. Arama sonuçlarını temizle
+      setIncidentSearchResults([])
+      setHasIncidentSearched(false)
+      setIncidentSearchQuery(result.display_name.split(',')[0] || '')
     }
   }
 
@@ -478,6 +548,60 @@ export default function HaritaPage() {
               <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px]"><X className="w-4 h-4" /></Button>
             </div>
             <form onSubmit={handleSaveIncident} className="p-4 sm:p-6 space-y-4">
+              {/* ─── İnteraktif Adres Arama Motoru (Geocoding) ─────── */}
+              <div className="space-y-2 relative">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <Search className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Adres veya Önemli Yer Ara</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400/70 pointer-events-none">
+                    {isIncidentSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-base">🔍</span>}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Adres veya Önemli Yer Ara..."
+                    value={incidentSearchQuery}
+                    onChange={(e) => handleIncidentSearchInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleIncidentSearch(incidentSearchQuery); } }}
+                    className="w-full h-11 rounded-xl border border-cyan-500/30 bg-slate-950/60 backdrop-blur-sm pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/60 transition-all shadow-[0_0_12px_rgba(6,182,212,0.08)]"
+                  />
+                </div>
+
+                {/* Geocoding Sonuç Dropdown */}
+                {!isIncidentSearching && incidentSearchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-slate-950/95 backdrop-blur-xl border border-cyan-500/20 rounded-xl shadow-[0_8px_32px_rgba(6,182,212,0.15)] max-h-52 overflow-y-auto">
+                    <div className="px-3 py-1.5 border-b border-slate-800/60 flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400/80">Bulunan Adresler ({incidentSearchResults.length})</span>
+                      <button type="button" onClick={() => { setIncidentSearchResults([]); setHasIncidentSearched(false); }} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">Kapat</button>
+                    </div>
+                    {incidentSearchResults.map(res => (
+                      <button
+                        key={res.place_id}
+                        type="button"
+                        className="w-full text-left px-3 py-2.5 hover:bg-cyan-500/10 border-b border-slate-800/30 last:border-0 transition-colors flex items-start gap-2 min-h-[44px]"
+                        onClick={() => handleIncidentSelectAddress(res)}
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                        <span className="text-xs text-slate-200 leading-snug line-clamp-2">{res.display_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Sonuç bulunamadı */}
+                {!isIncidentSearching && hasIncidentSearched && incidentSearchResults.length === 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-slate-950/95 backdrop-blur-xl border border-slate-700/40 rounded-xl shadow-lg">
+                    <div className="flex items-center justify-center gap-2 px-4 py-3">
+                      <Search className="w-4 h-4 text-slate-600" />
+                      <span className="text-xs text-slate-500">Sonuç bulunamadı — farklı bir adres deneyin</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-px bg-gradient-to-r from-cyan-500/20 via-slate-800/40 to-transparent" />
+
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Olay Türü</label>
                 <select name="olay_turu" value={incidentForm.olay_turu} onChange={(e) => setIncidentForm({...incidentForm, olay_turu: e.target.value})} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
