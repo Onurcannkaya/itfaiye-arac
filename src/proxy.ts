@@ -12,7 +12,7 @@ export interface JWTPayload {
   exp?: number;
 }
 
-function getUserRole(session: any): 'MUDUR' | 'AMIR' | 'ER' {
+function getUserRole(session: JWTPayload | null | undefined): 'MUDUR' | 'AMIR' | 'ER' {
   if (!session) return 'ER';
   const rol = session.rol || '';
   const unvan = session.unvan || '';
