@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as turf from '@turf/turf'
@@ -119,6 +119,86 @@ const parseLocation = (loc: any): [number, number] | null => {
   return null
 }
 
+interface ClusterItem<T> {
+  id: string
+  coords: [number, number]
+  isCluster: boolean
+  pointCount: number
+  points: T[]
+}
+
+function computeClusters<T extends { id: string }>(
+  points: { id: string; coords: [number, number]; data: T }[],
+  zoom: number,
+  prefix: string
+): ClusterItem<T>[] {
+  // If zoom is close enough, do not cluster
+  if (zoom >= 14.5) {
+    return points.map(p => ({
+      id: p.id,
+      coords: p.coords,
+      isCluster: false,
+      pointCount: 1,
+      points: [p.data]
+    }))
+  }
+
+  // Calculate cluster radius in degrees based on zoom
+  // Lower zoom = larger radius
+  const radius = 0.08 / Math.pow(2.2, zoom - 10)
+
+  const clusters: ClusterItem<T>[] = []
+  const visited = new Set<string>()
+
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i]
+    if (visited.has(p1.id)) continue
+
+    visited.add(p1.id)
+    const clusterPoints = [p1]
+
+    for (let j = i + 1; j < points.length; j++) {
+      const p2 = points[j]
+      if (visited.has(p2.id)) continue
+
+      const dx = p1.coords[0] - p2.coords[0]
+      const dy = p1.coords[1] - p2.coords[1]
+      const dist = Math.sqrt(dx * dx + dy * dy)
+
+      if (dist < radius) {
+        visited.add(p2.id)
+        clusterPoints.push(p2)
+      }
+    }
+
+    if (clusterPoints.length > 1) {
+      let sumLng = 0
+      let sumLat = 0
+      clusterPoints.forEach(cp => {
+        sumLng += cp.coords[0]
+        sumLat += cp.coords[1]
+      })
+      clusters.push({
+        id: `cluster-${prefix}-${p1.id}`,
+        coords: [sumLng / clusterPoints.length, sumLat / clusterPoints.length],
+        isCluster: true,
+        pointCount: clusterPoints.length,
+        points: clusterPoints.map(cp => cp.data)
+      })
+    } else {
+      clusters.push({
+        id: p1.id,
+        coords: p1.coords,
+        isCluster: false,
+        pointCount: 1,
+        points: [p1.data]
+      })
+    }
+  }
+
+  return clusters
+}
+
 export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, focusLocation, onUpdateHydrantStatus }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -141,6 +221,57 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
   const [binalarOpacity, setBinalarOpacity] = useState(0.3)
   const [mahallelerOpacity, setMahallelerOpacity] = useState(1.0)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
+
+  // HUD Filter States
+  const [onlyActiveIncidents, setOnlyActiveIncidents] = useState(false)
+  const [onlyArizaliHydrants, setOnlyArizaliHydrants] = useState(false)
+  const [showFilo, setShowFilo] = useState(true)
+  const [zoomLevel, setZoomLevel] = useState(14)
+
+  // ─── Filtered Data using Memoization ────────────────
+  const filteredIncidents = useMemo(() => {
+    return incidents.filter(inc => {
+      const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
+      
+      // If "Sadece Aktif Vakalar" is active, we only keep active incidents (not isPasif)
+      if (onlyActiveIncidents) {
+        return !isPasif;
+      }
+      
+      // Otherwise, follow general showPasifVakalar
+      if (isPasif && !showPasifVakalar) {
+        return false;
+      }
+      return true;
+    });
+  }, [incidents, onlyActiveIncidents, showPasifVakalar]);
+
+  const filteredHydrants = useMemo(() => {
+    // If "Sadece Aktif Vakalar" is active, all hydrants are hidden
+    if (onlyActiveIncidents) {
+      return [];
+    }
+    
+    return hydrants.filter(hyd => {
+      const isMevcut = hyd.durum === 'MEVCUT' || hyd.durum === 'Aktif';
+      
+      // If "Sadece Arızalı Hidrantlar" is active, hide operational ones
+      if (onlyArizaliHydrants) {
+        return !isMevcut;
+      }
+      
+      // Otherwise, check general showHidrantlar setting
+      return showHidrantlar;
+    });
+  }, [hydrants, onlyActiveIncidents, onlyArizaliHydrants, showHidrantlar]);
+
+  const filteredVehicles = useMemo(() => {
+    // If "Sadece Aktif Vakalar" is active, or if showFilo is false, hide all vehicles
+    if (onlyActiveIncidents || !showFilo) {
+      return [];
+    }
+    return vehicles || [];
+  }, [vehicles, onlyActiveIncidents, showFilo]);
 
   useEffect(() => {
     onMapClickRef.current = onMapClick
@@ -495,6 +626,11 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
     mapRef.current = map
     setMapReady(true)
 
+    // Track zoom level end for performance-optimized clustering
+    map.on('zoomend', () => {
+      setZoomLevel(map.getZoom())
+    })
+
     return () => {
       if (routeAnimFrameRef.current) {
         cancelAnimationFrame(routeAnimFrameRef.current)
@@ -511,22 +647,63 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
     const map = mapRef.current
     if (!map || !mapReady) return
 
-    console.log("Map: Syncing markers. Hydrants count:", hydrants.length, "Incidents count:", incidents.length);
-
+    console.log("Map: Syncing markers. Hydrants count:", filteredHydrants.length, "Incidents count:", filteredIncidents.length);
 
     // Clear old markers
     markersRef.current.forEach(m => m.remove())
     markersRef.current = []
 
-    // Incident markers (dynamic triage pulse — all incidents from DB)
-    incidents.forEach(inc => {
-      const coords = parseLocation(inc.location)
-      if (!coords) return
+    // Helper: Render Cluster Marker (cyan-neon for hydrants, slate/grey for incidents)
+    const renderClusterMarker = (coords: [number, number], count: number, type: 'hydrant' | 'incident') => {
+      const el = document.createElement('div')
+      el.style.width = '42px'
+      el.style.height = '42px'
+      el.style.cursor = 'pointer'
 
-      // Biten / Pasif Vakaların Yönetimi (State & Filtre)
-      const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
-      if (isPasif && !showPasifVakalar) return;
-      
+      const color = type === 'hydrant' ? '#22d3ee' : '#cbd5e1' // cyan-neon for hydrants, slate/grey for incidents
+      const glowShadow = type === 'hydrant' 
+        ? '0 0 15px rgba(34, 211, 238, 0.8), inset 0 0 10px rgba(34, 211, 238, 0.4)'
+        : '0 0 15px rgba(148, 163, 184, 0.8), inset 0 0 10px rgba(148, 163, 184, 0.4)'
+
+      el.className = 'map-marker-cluster-pulse'
+      el.style.cssText = `
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 2px solid ${color};
+        background: rgba(15, 23, 42, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+        color: ${color};
+        box-shadow: ${glowShadow};
+        font-family: monospace;
+        transition: transform 0.2s ease;
+      `
+      el.innerHTML = `<span>${count}</span>`
+
+      // Fly to cluster centroid on click
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const currentZoom = map.getZoom()
+        map.flyTo({
+          center: coords,
+          zoom: Math.min(currentZoom + 2, 16),
+          essential: true
+        })
+      })
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(coords)
+        .addTo(map)
+
+      markersRef.current.push(marker)
+    }
+
+    // Helper: Render Individual Incident Marker
+    const renderIndividualIncident = (inc: Incident, coords: [number, number], isPasif: boolean) => {
       const triage = getTriageInfo(inc.olay_turu)
       
       const el = document.createElement('div')
@@ -580,140 +757,202 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
         .addTo(map)
 
       markersRef.current.push(marker)
-    })
-
-    hydrantElementsRef.current = []
-
-    // Hydrant markers (durum-based green/red with modern custom droplet/shield SVG shape-coding)
-    if (showHidrantlar) {
-      hydrants.forEach(hyd => {
-        const coords = parseLocation(hyd.location)
-        if (!coords) return
-
-        const isMevcut = hyd.durum === 'MEVCUT' || hyd.durum === 'Aktif'
-        
-        const el = document.createElement('div')
-        el.style.width = '32px'
-        el.style.height = '32px'
-        
-        const innerEl = document.createElement('div')
-        innerEl.className = `map-marker-hydrant ${isMevcut ? 'map-marker-hydrant-pulse-green' : 'map-marker-hydrant-pulse-red'}`
-        innerEl.style.cssText = `
-          width: 100%; height: 100%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        `
-        
-        const gradientId = `hydrant-grad-${hyd.id}`
-        
-        innerEl.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: ${isMevcut ? 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.8))' : 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.8))'};">
-            <!-- Modern upward-tapering droplet/shield form for shape-coding -->
-            <path d="M50 5 C50 5 82 45 82 68 A32 32 0 1 1 18 68 C18 45 50 5 50 5 Z" fill="url(#${gradientId})" stroke="#ffffff" stroke-width="3"/>
-            <!-- Elegant premium fire hydrant graphics positioned perfectly inside the shape -->
-            <g transform="translate(0, 10)">
-              <path d="M35 42 L35 70 C35 76 65 76 65 70 L65 42 Z" fill="#ffffff" opacity="0.95"/>
-              <path d="M30 32 H70 V42 H30 Z" fill="#ffffff"/>
-              <circle cx="50" cy="22" r="8" fill="#ffffff"/>
-              <path d="M50 48 C53 52 53 58 50 62 C47 58 47 52 50 48 Z" fill="${isMevcut ? '#22c55e' : '#ef4444'}"/>
-            </g>
-            <defs>
-              <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="${isMevcut ? '#22c55e' : '#ef4444'}" />
-                <stop offset="100%" stop-color="${isMevcut ? '#15803d' : '#b91c1c'}" />
-              </linearGradient>
-            </defs>
-          </svg>
-        `
-        el.appendChild(innerEl)
-
-        const popup = new maplibregl.Popup({ offset: 16, maxWidth: '280px' }).setHTML(`
-          <div style="font-family:system-ui;padding:4px;color:#e2e8f0;line-height:1.5;">
-            <h3 style="font-weight:800;color:${isMevcut ? '#22c55e' : '#ef4444'};font-size:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:6px;margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
-              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${isMevcut ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${isMevcut ? '#22c55e' : '#ef4444'}"></span>
-              Yangın Hidrantı #${hyd.no}
-            </h3>
-            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:12px;">
-              <span style="color:#94a3b8;font-weight:500;">Durum:</span>
-              <span style="font-weight:700;color:${isMevcut ? '#22c55e' : '#ef4444'}">${isMevcut ? 'MEVCUT (Çalışıyor)' : 'DEVRE_DIŞI (Arızalı)'}</span>
-              
-              <span style="color:#94a3b8;font-weight:500;">Kalite:</span>
-              <span style="font-weight:600;color:#f1f5f9;">${hyd.kalite || 'Belirtilmemiş'}</span>
-              
-              <span style="color:#94a3b8;font-weight:500;">İmalatçı:</span>
-              <span style="font-weight:600;color:#f1f5f9;">${hyd.imalatci || 'Sivas Belediyesi'}</span>
-              
-              ${hyd.proje_adi ? `
-              <span style="color:#94a3b8;font-weight:500;grid-column:1/3;margin-top:4px;">Konum Detayı:</span>
-              <span style="grid-column:1/3;color:#cbd5e1;background:rgba(255,255,255,0.05);padding:6px;border-radius:4px;font-size:11px;line-height:1.4;border:1px solid rgba(255,255,255,0.08);word-break:break-word;">${hyd.proje_adi}</span>
-              ` : ''}
-
-              <div style="grid-column:1/3;margin-top:8px;">
-                <button class="toggle-hydrant-btn" data-id="${hyd.id}" data-current="${hyd.durum}" style="width:100%;background:${isMevcut ? '#ef4444' : '#22c55e'};color:#ffffff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-                  <span>🔧</span> ${isMevcut ? 'Arızalı / Devre Dışı Yap' : 'Çalışır / Mevcut Yap'}
-                </button>
-              </div>
-            </div>
-          </div>
-        `)
-
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat(coords)
-          .setPopup(popup)
-          .addTo(map)
-
-        markersRef.current.push(marker)
-        hydrantElementsRef.current.push({ el: innerEl, coords })
-      })
     }
 
-    // Fixed Fire Station Marker
-    const stationEl = document.createElement('div')
-    stationEl.className = 'map-marker-station'
-    stationEl.style.cssText = `
-      width: 44px; height: 44px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `
-    stationEl.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(249,115,22,0.6));">
-        <path d="M50 5 L90 20 L90 55 C90 75 75 90 50 95 C25 90 10 75 10 55 L10 20 Z" fill="url(#station-grad)" stroke="#ffffff" stroke-width="3"/>
-        <path d="M35 80 L35 45 L65 45 L65 80 Z" fill="#ffffff" opacity="0.2"/>
-        <path d="M50 25 C60 38 60 55 50 68 C40 55 40 38 50 25 Z" fill="#ffffff"/>
-        <path d="M50 35 C55 45 55 55 50 62 C45 55 45 45 50 35 Z" fill="#f97316"/>
-        <defs>
-          <linearGradient id="station-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ea580c" />
-            <stop offset="100%" stop-color="#b91c1c" />
-          </linearGradient>
-        </defs>
-      </svg>
-    `
+    // Helper: Render Individual Hydrant Marker
+    const renderIndividualHydrant = (hyd: Hydrant, coords: [number, number]) => {
+      const isMevcut = hyd.durum === 'MEVCUT' || hyd.durum === 'Aktif'
+      
+      const el = document.createElement('div')
+      el.style.width = '32px'
+      el.style.height = '32px'
+      
+      const innerEl = document.createElement('div')
+      innerEl.className = `map-marker-hydrant ${isMevcut ? 'map-marker-hydrant-pulse-green' : 'map-marker-hydrant-pulse-red'}`
+      innerEl.style.cssText = `
+        width: 100%; height: 100%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `
+      
+      const gradientId = `hydrant-grad-${hyd.id}`
+      
+      innerEl.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: ${isMevcut ? 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.8))' : 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.8))'};">
+          <!-- Modern upward-tapering droplet/shield form for shape-coding -->
+          <path d="M50 5 C50 5 82 45 82 68 A32 32 0 1 1 18 68 C18 45 50 5 50 5 Z" fill="url(#${gradientId})" stroke="#ffffff" stroke-width="3"/>
+          <!-- Elegant premium fire hydrant graphics positioned perfectly inside the shape -->
+          <g transform="translate(0, 10)">
+            <path d="M35 42 L35 70 C35 76 65 76 65 70 L65 42 Z" fill="#ffffff" opacity="0.95"/>
+            <path d="M30 32 H70 V42 H30 Z" fill="#ffffff"/>
+            <circle cx="50" cy="22" r="8" fill="#ffffff"/>
+            <path d="M50 48 C53 52 53 58 50 62 C47 58 47 52 50 48 Z" fill="${isMevcut ? '#22c55e' : '#ef4444'}"/>
+          </g>
+          <defs>
+            <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="${isMevcut ? '#22c55e' : '#ef4444'}" />
+              <stop offset="100%" stop-color="${isMevcut ? '#15803d' : '#b91c1c'}" />
+            </linearGradient>
+          </defs>
+        </svg>
+      `
+      el.appendChild(innerEl)
 
-    const stationPopup = new maplibregl.Popup({ offset: 20 }).setHTML(`
-      <div style="font-family:system-ui;padding:4px 0;color:#e2e8f0;">
-        <h3 style="font-weight:700;color:#f97316;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px;margin-bottom:4px">Merkez İtfaiye İstasyonu</h3>
-        <p style="font-size:12px;margin:2px 0;color:#cbd5e1;">Sivas Belediyesi İtfaiye Müdürlüğü</p>
-        <p style="font-size:11px;color:#94a3b8;margin-top:2px">Yenişehir, Merkez</p>
-      </div>
-    `)
+      const popup = new maplibregl.Popup({ offset: 16, maxWidth: '280px' }).setHTML(`
+        <div style="font-family:system-ui;padding:4px;color:#e2e8f0;line-height:1.5;">
+          <h3 style="font-weight:800;color:${isMevcut ? '#22c55e' : '#ef4444'};font-size:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:6px;margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${isMevcut ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${isMevcut ? '#22c55e' : '#ef4444'}"></span>
+            Yangın Hidrantı #${hyd.no}
+          </h3>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:12px;">
+            <span style="color:#94a3b8;font-weight:500;">Durum:</span>
+            <span style="font-weight:700;color:${isMevcut ? '#22c55e' : '#ef4444'}">${isMevcut ? 'MEVCUT (Çalışıyor)' : 'DEVRE_DIŞI (Arızalı)'}</span>
+            
+            <span style="color:#94a3b8;font-weight:500;">Kalite:</span>
+            <span style="font-weight:600;color:#f1f5f9;">${hyd.kalite || 'Belirtilmemiş'}</span>
+            
+            <span style="color:#94a3b8;font-weight:500;">İmalatçı:</span>
+            <span style="font-weight:600;color:#f1f5f9;">${hyd.imalatci || 'Sivas Belediyesi'}</span>
+            
+            ${hyd.proje_adi ? `
+            <span style="color:#94a3b8;font-weight:500;grid-column:1/3;margin-top:4px;">Konum Detayı:</span>
+            <span style="grid-column:1/3;color:#cbd5e1;background:rgba(255,255,255,0.05);padding:6px;border-radius:4px;font-size:11px;line-height:1.4;border:1px solid rgba(255,255,255,0.08);word-break:break-word;">${hyd.proje_adi}</span>
+            ` : ''}
 
-    const stationMarker = new maplibregl.Marker({ element: stationEl })
-      .setLngLat(STATION_COORDS)
-      .setPopup(stationPopup)
-      .addTo(map)
+            <div style="grid-column:1/3;margin-top:8px;">
+              <button class="toggle-hydrant-btn" data-id="${hyd.id}" data-current="${hyd.durum}" style="width:100%;background:${isMevcut ? '#ef4444' : '#22c55e'};color:#ffffff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                <span>🔧</span> ${isMevcut ? 'Arızalı / Devre Dışı Yap' : 'Çalışır / Mevcut Yap'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `)
 
-    markersRef.current.push(stationMarker)
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(coords)
+        .setPopup(popup)
+        .addTo(map)
 
-    // Otomatik Sivas hidrant kadrajına uydurma (fitBounds)
-    if (hydrants.length > 0 && !hasFitBoundsRef.current) {
+      markersRef.current.push(marker)
+      hydrantElementsRef.current.push({ el: innerEl, coords })
+    }
+
+    // Helper: Render Station Marker
+    const renderFireStation = () => {
+      const stationEl = document.createElement('div')
+      stationEl.className = 'map-marker-station'
+      stationEl.style.cssText = `
+        width: 44px; height: 44px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `
+      stationEl.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(249,115,22,0.6));">
+          <path d="M50 5 L90 20 L90 55 C90 75 75 90 50 95 C25 90 10 75 10 55 L10 20 Z" fill="url(#station-grad)" stroke="#ffffff" stroke-width="3"/>
+          <path d="M35 80 L35 45 L65 45 L65 80 Z" fill="#ffffff" opacity="0.2"/>
+          <path d="M50 25 C60 38 60 55 50 68 C40 55 40 38 50 25 Z" fill="#ffffff"/>
+          <path d="M50 35 C55 45 55 55 50 62 C45 55 45 45 50 35 Z" fill="#f97316"/>
+          <defs>
+            <linearGradient id="station-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ea580c" />
+              <stop offset="100%" stop-color="#b91c1c" />
+            </linearGradient>
+          </defs>
+        </svg>
+      `
+
+      const stationPopup = new maplibregl.Popup({ offset: 20 }).setHTML(`
+        <div style="font-family:system-ui;padding:4px 0;color:#e2e8f0;">
+          <h3 style="font-weight:700;color:#f97316;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px;margin-bottom:4px">Merkez İtfaiye İstasyonu</h3>
+          <p style="font-size:12px;margin:2px 0;color:#cbd5e1;">Sivas Belediyesi İtfaiye Müdürlüğü</p>
+          <p style="font-size:11px;color:#94a3b8;margin-top:2px">Yenişehir, Merkez</p>
+        </div>
+      `)
+
+      const stationMarker = new maplibregl.Marker({ element: stationEl })
+        .setLngLat(STATION_COORDS)
+        .setPopup(stationPopup)
+        .addTo(map)
+
+      markersRef.current.push(stationMarker)
+    }
+
+    // ─── Render Incidents (Separating active/pasif for clustering) ───
+    const activeIncidents = filteredIncidents.filter(inc => {
+      const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
+      return !isPasif;
+    });
+
+    const pasifIncidents = filteredIncidents.filter(inc => {
+      const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
+      return isPasif;
+    });
+
+    // 1. Render active incidents (always individual, never clustered)
+    activeIncidents.forEach(inc => {
+      const coords = parseLocation(inc.location)
+      if (!coords) return
+      renderIndividualIncident(inc, coords, false)
+    });
+
+    // 2. Render pasif incidents (clustered)
+    const pasifIncidentPoints = pasifIncidents.map(inc => {
+      const coords = parseLocation(inc.location);
+      return {
+        id: inc.id,
+        coords: coords || [0, 0] as [number, number],
+        data: inc
+      };
+    }).filter(p => p.coords[0] !== 0 || p.coords[1] !== 0);
+
+    const clusteredPasifIncidents = computeClusters(pasifIncidentPoints, zoomLevel, 'incident');
+
+    clusteredPasifIncidents.forEach(item => {
+      if (item.isCluster) {
+        renderClusterMarker(item.coords, item.pointCount, 'incident');
+      } else {
+        const inc = item.points[0];
+        const coords = item.coords;
+        renderIndividualIncident(inc, coords, true);
+      }
+    });
+
+    // ─── Render Hydrants (Clustered) ───
+    hydrantElementsRef.current = []
+
+    const hydrantPoints = filteredHydrants.map(hyd => {
+      const coords = parseLocation(hyd.location);
+      return {
+        id: hyd.id,
+        coords: coords || [0, 0] as [number, number],
+        data: hyd
+      };
+    }).filter(p => p.coords[0] !== 0 || p.coords[1] !== 0);
+
+    const clusteredHydrants = computeClusters(hydrantPoints, zoomLevel, 'hydrant');
+
+    clusteredHydrants.forEach(item => {
+      if (item.isCluster) {
+        renderClusterMarker(item.coords, item.pointCount, 'hydrant');
+      } else {
+        const hyd = item.points[0];
+        const coords = item.coords;
+        renderIndividualHydrant(hyd, coords);
+      }
+    });
+
+    // ─── Render Fire Station ───
+    renderFireStation()
+
+    // ─── Fit Bounds ───
+    if (filteredHydrants.length > 0 && !hasFitBoundsRef.current) {
       const bounds = new maplibregl.LngLatBounds()
       let hasValidCoords = false
-      hydrants.forEach(hyd => {
+      filteredHydrants.forEach(hyd => {
         const coords = parseLocation(hyd.location)
         if (coords) {
           bounds.extend(coords)
@@ -726,7 +965,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       }
     }
 
-  }, [incidents, hydrants, showHidrantlar, showPasifVakalar, mapReady])
+  }, [filteredIncidents, filteredHydrants, zoomLevel, mapReady])
 
   // ─── Sync markers for vehicles ────────────────
   useEffect(() => {
@@ -737,9 +976,9 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
     vehicleMarkersRef.current.forEach(m => m.remove())
     vehicleMarkersRef.current = []
 
-    if (vehicles && vehicles.length > 0) {
-      vehicles.forEach((veh, i) => {
-        const count = vehicles.length
+    if (filteredVehicles && filteredVehicles.length > 0) {
+      filteredVehicles.forEach((veh, i) => {
+        const count = filteredVehicles.length
         const angle = (i * 2 * Math.PI) / count
         const radius = 0.00035 // cluster around Sivas fire station coordinates beautifully
         const lngOffset = Math.cos(angle) * radius
@@ -903,7 +1142,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       vehicleMarkersRef.current.forEach(m => m.remove())
       vehicleMarkersRef.current = []
     }
-  }, [vehicles, mapReady])
+  }, [filteredVehicles, mapReady])
 
   // ─── Sync visibility of binalar & numarataj layers ───
   useEffect(() => {
@@ -1038,6 +1277,68 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
           <span>Taktiksel Harita Lejantı</span>
         </div>
+
+        {/* Taktiksel Aktif Durum Süzgeçleri */}
+        <div className="mb-4 space-y-2 border-b border-white/10 pb-3">
+          <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block mb-1.5 opacity-80">
+            Aktif Durum Süzgeçleri
+          </span>
+          
+          {/* 🔥 Sadece Aktif Vakalar */}
+          <button
+            onClick={() => setOnlyActiveIncidents(!onlyActiveIncidents)}
+            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg border text-left transition-all duration-300 min-h-[36px] ${
+              onlyActiveIncidents
+                ? 'bg-red-500/20 border-red-500/60 text-red-200 shadow-[0_0_12px_rgba(239,68,68,0.35)]'
+                : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm shrink-0">🔥</span>
+              <span className="text-[11px] font-medium leading-none">Sadece Aktif Vakalar</span>
+            </div>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${onlyActiveIncidents ? 'bg-red-500 animate-ping' : 'bg-slate-600'}`}></span>
+          </button>
+
+          {/* 💧 Sadece Arızalı Hidrantlar */}
+          <button
+            onClick={() => setOnlyArizaliHydrants(!onlyArizaliHydrants)}
+            disabled={onlyActiveIncidents}
+            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg border text-left transition-all duration-300 min-h-[36px] ${
+              onlyActiveIncidents ? 'opacity-40 cursor-not-allowed' : ''
+            } ${
+              onlyArizaliHydrants
+                ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.35)]'
+                : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm shrink-0">💧</span>
+              <span className="text-[11px] font-medium leading-none">Sadece Arızalı Hidrantlar</span>
+            </div>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${onlyArizaliHydrants ? 'bg-cyan-400 animate-pulse' : 'bg-slate-600'}`}></span>
+          </button>
+
+          {/* 🚛 Tüm Filoyu Göster / Gizle */}
+          <button
+            onClick={() => setShowFilo(!showFilo)}
+            disabled={onlyActiveIncidents}
+            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg border text-left transition-all duration-300 min-h-[36px] ${
+              onlyActiveIncidents ? 'opacity-40 cursor-not-allowed' : ''
+            } ${
+              showFilo
+                ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:border-slate-700 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm shrink-0">🚛</span>
+              <span className="text-[11px] font-medium leading-none">Tüm Filoyu Göster</span>
+            </div>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${showFilo ? 'bg-emerald-400' : 'bg-slate-600'}`}></span>
+          </button>
+        </div>
+
         <div className="space-y-2.5">
           {/* Kritik */}
           <div className="flex items-center gap-3">
@@ -1340,6 +1641,68 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
                   </span>
                   <span className="bg-blue-500/15 text-blue-400 font-black text-xs px-2 py-0.5 rounded-full">{hydrants.length}</span>
                 </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-800/60 my-2" />
+
+            {/* Taktiksel Aktif Durum Süzgeçleri (Mobile) */}
+            <div className="space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-cyan-400/90 block">Aktif Durum Süzgeçleri</span>
+              <div className="grid grid-cols-1 gap-2.5">
+                {/* 🔥 Sadece Aktif Vakalar */}
+                <button
+                  onClick={() => setOnlyActiveIncidents(!onlyActiveIncidents)}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all duration-300 min-h-[44px] ${
+                    onlyActiveIncidents
+                      ? 'bg-red-500/20 border-red-500/60 text-red-200 shadow-[0_0_12px_rgba(239,68,68,0.35)]'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base shrink-0">🔥</span>
+                    <span className="text-xs font-semibold leading-none">Sadece Aktif Vakalar</span>
+                  </div>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${onlyActiveIncidents ? 'bg-red-500 animate-ping' : 'bg-slate-600'}`}></span>
+                </button>
+
+                {/* 💧 Sadece Arızalı Hidrantlar */}
+                <button
+                  onClick={() => setOnlyArizaliHydrants(!onlyArizaliHydrants)}
+                  disabled={onlyActiveIncidents}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all duration-300 min-h-[44px] ${
+                    onlyActiveIncidents ? 'opacity-40 cursor-not-allowed' : ''
+                  } ${
+                    onlyArizaliHydrants
+                      ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.35)]'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base shrink-0">💧</span>
+                    <span className="text-xs font-semibold leading-none">Sadece Arızalı Hidrantlar</span>
+                  </div>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${onlyArizaliHydrants ? 'bg-cyan-400 animate-pulse' : 'bg-slate-600'}`}></span>
+                </button>
+
+                {/* 🚛 Tüm Filoyu Göster / Gizle */}
+                <button
+                  onClick={() => setShowFilo(!showFilo)}
+                  disabled={onlyActiveIncidents}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all duration-300 min-h-[44px] ${
+                    onlyActiveIncidents ? 'opacity-40 cursor-not-allowed' : ''
+                  } ${
+                    showFilo
+                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base shrink-0">🚛</span>
+                    <span className="text-xs font-semibold leading-none">Tüm Filoyu Göster</span>
+                  </div>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${showFilo ? 'bg-emerald-400' : 'bg-slate-600'}`}></span>
+                </button>
               </div>
             </div>
 
