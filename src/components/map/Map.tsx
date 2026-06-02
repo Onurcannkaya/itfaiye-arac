@@ -1033,9 +1033,9 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       />
 
       {/* Taktiksel Harita Lejantı Panel */}
-      <div className="hidden sm:block absolute bottom-4 right-4 z-10 bg-slate-950/85 backdrop-blur-md border border-cyan-500/20 rounded-xl p-4 w-60 shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300 text-xs text-slate-200">
+      <div className="hidden sm:block absolute right-4 bottom-6 z-10 bg-slate-950/85 backdrop-blur-md border border-slate-800/50 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300 text-xs text-slate-200">
         <div className="font-bold text-slate-100 mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
           <span>Taktiksel Harita Lejantı</span>
         </div>
         <div className="space-y-2.5">
@@ -1102,29 +1102,29 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       </div>
       
       {/* Sleek Floating Control Panel for Sivas Kent Rehberi (Desktop Only) */}
-      <div className="hidden md:block absolute top-4 left-4 z-10 bg-slate-950/90 backdrop-blur-xl border border-cyan-500/20 rounded-xl p-3 w-56 shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300">
+      <div className="hidden md:block absolute top-4 left-4 z-10 backdrop-blur-lg bg-slate-950/85 border border-slate-800/50 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300">
         <div className="flex items-center gap-2 mb-2 text-slate-100 font-bold text-xs tracking-wide">
-          <Layers className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+          <Layers className="w-4 h-4 text-cyan-400 animate-pulse shrink-0" />
           <span>AKILLI ŞEHİR KATMANLARI</span>
         </div>
         <div className="h-px bg-gradient-to-r from-cyan-500/20 via-slate-800/60 to-transparent my-1.5" />
         <div className="space-y-2 mt-2">
           {/* Binalar Katmanı Toggle */}
-          <div className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-2 select-none">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+              <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Binalar (Vektör)</span>
             </div>
             <button
               onClick={() => setShowBinalar(!showBinalar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
-                showBinalar ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'bg-slate-800 border border-slate-700/50'
+              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showBinalar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
-                  showBinalar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showBinalar ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1149,42 +1149,42 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           )}
 
           {/* Numarataj Katmanı Toggle */}
-          <div className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-2 select-none">
-              <span className="text-slate-400 font-bold text-[11px] w-3.5 text-center">#</span>
+              <span className="text-slate-400 font-bold text-[11px] w-3.5 text-center shrink-0">#</span>
               <span className="text-[11px] font-semibold text-slate-200">Numarataj</span>
             </div>
             <button
               onClick={() => setShowNumarataj(!showNumarataj)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
-                showNumarataj ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'bg-slate-800 border border-slate-700/50'
+              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showNumarataj ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
-                  showNumarataj ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showNumarataj ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
           {/* Mahalle Sınırları Toggle */}
-          <div className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-2 select-none">
-              <MapIcon className="w-3.5 h-3.5 text-slate-400" />
+              <MapIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Mahalle Sınırları</span>
             </div>
             <button
               onClick={() => setShowMahalleler(!showMahalleler)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
-                showMahalleler ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'bg-slate-800 border border-slate-700/50'
+              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showMahalleler ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
-                  showMahalleler ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showMahalleler ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1209,66 +1209,87 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           )}
 
           {/* Sokak Aksları Toggle */}
-          <div className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-2 select-none">
-              <Milestone className="w-3.5 h-3.5 text-slate-400" />
+              <Milestone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Sokak Aksları</span>
             </div>
             <button
               onClick={() => setShowSokaklar(!showSokaklar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
-                showSokaklar ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'bg-slate-800 border border-slate-700/50'
+              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showSokaklar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
-                  showSokaklar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showSokaklar ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
           {/* Yangın Hidrantları Toggle */}
-          <div className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-2 select-none">
-              <Droplets className="w-3.5 h-3.5 text-slate-400" />
+              <Droplets className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Yangın Hidrantları</span>
             </div>
             <button
               onClick={() => setShowHidrantlar(!showHidrantlar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
-                showHidrantlar ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'bg-slate-800 border border-slate-700/50'
+              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showHidrantlar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
-                  showHidrantlar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showHidrantlar ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
           {/* Biten/Pasif Vakalar Toggle */}
-          <div className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-white/5 transition-colors">
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
             <div className="flex items-center gap-2 select-none">
-              <span className="w-3.5 h-3.5 rounded-full bg-slate-400/20 flex items-center justify-center text-[9px] text-slate-300 font-bold border border-slate-500/30">✓</span>
+              <span className="w-3.5 h-3.5 rounded-full bg-slate-400/20 flex items-center justify-center text-[9px] text-slate-300 font-bold border border-slate-500/30 shrink-0">✓</span>
               <span className="text-[11px] font-semibold text-slate-200">Biten/Pasif Vakalar</span>
             </div>
             <button
               onClick={() => setShowPasifVakalar(!showPasifVakalar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
-                showPasifVakalar ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]' : 'bg-slate-800 border border-slate-700/50'
+              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showPasifVakalar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
-                  showPasifVakalar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showPasifVakalar ? 'translate-x-3.5' : 'translate-x-0'
                 }`}
               />
             </button>
+          </div>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-cyan-500/20 via-slate-800/60 to-transparent my-3" />
+        
+        {/* Canlı Katman İstatistikleri Entegrasyonu */}
+        <div className="space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Canlı Katmanlar</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 rounded-lg p-2">
+              <span className="text-[11px] font-semibold text-slate-300">Vakalar</span>
+              <span className="bg-red-500/10 text-red-500 font-bold px-1.5 py-0.5 rounded text-[10px]">{incidents.length}</span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 rounded-lg p-2">
+              <span className="text-[11px] font-semibold text-slate-300">Hidrantlar</span>
+              <span className="bg-blue-500/10 text-blue-400 font-bold px-1.5 py-0.5 rounded text-[10px]">{hydrants.length}</span>
+            </div>
           </div>
         </div>
       </div>

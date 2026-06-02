@@ -257,18 +257,18 @@ export default function HaritaPage() {
       <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
       {interactionMode === 'add_incident' && <div className="emergency-glow-overlay" />}
       
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-950/40 backdrop-blur-md border border-white/5 shadow-2xl shrink-0 z-10 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-950/40 backdrop-blur-md border border-white/5 shadow-2xl shrink-0 z-10 relative">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2.5 bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(255,255,255,0.05)]">
-            <MapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse" /> 
+          <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-4 whitespace-nowrap bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(255,255,255,0.05)]">
+            <MapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
             Komuta Kontrol Haritası
           </h1>
-          <p className="text-muted-foreground text-xs sm:text-sm mt-1 font-medium hidden sm:block">
-            İnteraktif mekansal analiz ve saha yönetimi
+          <p className="text-muted-foreground text-xs sm:text-sm mt-1 font-medium hidden sm:block whitespace-nowrap">
+            İnteraktif mekansal analiz and saha yönetimi
           </p>
         </div>
         
-        <div className="flex flex-nowrap overflow-x-auto gap-2 w-full px-4 sm:px-0 sm:w-auto sm:flex-wrap sm:overflow-visible scrollbar-none shrink-0 pb-2 sm:pb-0">
+        <div className="flex flex-row flex-wrap items-center gap-2 shrink-0">
           <Button 
             variant={interactionMode === 'add_incident' ? 'default' : 'outline'}
             className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
@@ -359,28 +359,7 @@ export default function HaritaPage() {
             )}
           </div>
 
-          {/* Harita Katman ve Bilgi Kontrolü */}
-
-          <div className="absolute bottom-4 left-4 z-[400] flex-col gap-2 pointer-events-none hidden sm:flex">
-            <div className="bg-slate-950/85 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.15)] rounded-xl p-4 w-52 pointer-events-auto text-xs text-slate-200 transition-all duration-300">
-              <h3 className="font-bold uppercase tracking-wider text-slate-100 border-b border-white/10 pb-2 mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Canlı Katmanlar
-              </h3>
-              
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between py-1 px-1.5 rounded-lg bg-white/5 border border-white/[0.03]">
-                  <span className="font-semibold flex items-center gap-2"><Flame className="w-4 h-4 text-danger animate-pulse" /> Vakalar</span>
-                  <Badge variant="outline" className="bg-danger/15 text-danger border-none font-bold px-2 py-0.5">{incidents.length}</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between py-1 px-1.5 rounded-lg bg-white/5 border border-white/[0.03]">
-                  <span className="font-semibold flex items-center gap-2"><Droplets className="w-4 h-4 text-blue-400" /> Hidrantlar</span>
-                  <Badge variant="outline" className="bg-blue-500/15 text-blue-400 border-none font-bold px-2 py-0.5">{hydrants.length}</Badge>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Harita Katman ve Bilgi Kontrolü - Sol panele (Map.tsx) entegre edildi */}
 
           <Map 
             incidents={incidents} 
