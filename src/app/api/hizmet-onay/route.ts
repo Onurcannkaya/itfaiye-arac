@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Backend ACL Shield: Verify Müdür/Admin credentials
+    const session = getSessionFromRequest(request);
+    const isMudur = session && (session.rol === 'Admin' || session.unvan === 'Müdür' || session.rol?.toLowerCase() === 'admin' || session.unvan?.toLowerCase() === 'müdür');
+    
+    if (!isMudur) {
+      console.warn(`[ACL API Shield] Unauthorized services approval attempt from: ${session ? session.sicilNo : 'Guest'}`);
+      return NextResponse.json(
+        { success: false, error: 'Yetkisiz erişim: Bu işlem sadece Müdür rütbesine sahip personel tarafından gerçekleştirilebilir.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { id, durum, islem_yapan_amir, atanan_ekip, red_gerekcesi } = body;
 

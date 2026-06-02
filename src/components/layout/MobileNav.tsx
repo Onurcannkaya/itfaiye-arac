@@ -42,7 +42,7 @@ export function MobileNav() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const { user } = useAuthStore()
-  const isEr = user?.rol === 'User'
+  const isEr = user?.rol === 'User' || user?.unvan === 'İtfaiye Eri' || user?.unvan?.toLowerCase().includes('er')
 
   // Dynamic status match helper
   const isActive = (href: string, matchStart?: string) => {
@@ -63,9 +63,9 @@ export function MobileNav() {
     {
       title: "FİLO & LOJİSTİK YÖNETİMİ",
       items: [
-        { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: !isEr, matchStart: '/arac/' },
+        { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: true, matchStart: '/arac/' },
         { href: "/yonetim/tarayici", label: "QR Araç Tara", icon: Camera, visible: true },
-        { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: !isEr },
+        { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: true },
         { href: "/yonetim/arac-bakim", label: "Araç Bakım & Yakıt", icon: Wrench, visible: !isEr },
         { href: "/scba", label: "SCBA Tüp Takibi", icon: Wind, visible: !isEr },
       ]
@@ -83,7 +83,7 @@ export function MobileNav() {
       items: [
         { href: "/yonetim/hizmetler", label: "Hizmet Başvuruları", icon: Building, visible: !isEr },
         { href: "/yonetim/olaylar", label: "Olay & Vaka Raporları", icon: FileText, visible: !isEr },
-        { href: "/yonetim/yetkiler", label: "Yetki & Rol Matrisi", icon: ShieldAlert, visible: user?.rol === 'Müdür' || user?.rol === 'Admin' },
+        { href: "/yonetim/yetkiler", label: "Yetki & Rol Matrisi", icon: ShieldAlert, visible: user?.rol === 'Admin' || user?.unvan === 'Müdür' },
         { href: "/yonetim/raporlar", label: "Sistem Raporları & Loglar", icon: History, visible: !isEr },
       ]
     }
@@ -177,7 +177,7 @@ export function MobileNav() {
         style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {navLink("/", <Home size={22} />, "Ana Sayfa")}
-        {!isEr && navLink("/araclar", <Truck size={22} />, "Filo")}
+        {navLink("/araclar", <Truck size={22} />, "Filo")}
         
         {/* ★ QR Tarayıcı — Ortada Belirgin Yüzen Buton */}
         <Link
@@ -199,7 +199,7 @@ export function MobileNav() {
           )}>QR Tara</span>
         </Link>
 
-        {!isEr && navLink("/envanter-yonetimi", <Combine size={22} />, "Envanter")}
+        {navLink("/envanter-yonetimi", <Combine size={22} />, "Envanter")}
         
         <button 
           onClick={() => setMenuOpen(!menuOpen)}

@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 export function Sidebar() {
   const pathname = usePathname()
   const { user } = useAuthStore()
-  const isEr = user?.rol === 'User'
+  const isEr = user?.rol === 'User' || user?.unvan === 'İtfaiye Eri' || user?.unvan?.toLowerCase().includes('er')
 
   // Dynamic status match helper
   const isActive = (href: string, matchStart?: string) => {
@@ -47,9 +47,9 @@ export function Sidebar() {
     {
       title: "FİLO & LOJİSTİK YÖNETİMİ",
       items: [
-        { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: !isEr, matchStart: '/arac/' },
+        { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: true, matchStart: '/arac/' },
         { href: "/yonetim/tarayici", label: "QR Araç Tara", icon: Camera, visible: true },
-        { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: !isEr },
+        { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: true },
         { href: "/yonetim/arac-bakim", label: "Araç Bakım & Yakıt", icon: Wrench, visible: !isEr },
         { href: "/scba", label: "SCBA Tüp Takibi", icon: Wind, visible: !isEr },
       ]
@@ -67,7 +67,7 @@ export function Sidebar() {
       items: [
         { href: "/yonetim/hizmetler", label: "Hizmet Başvuruları", icon: Building, visible: !isEr },
         { href: "/yonetim/olaylar", label: "Olay & Vaka Raporları", icon: FileText, visible: !isEr },
-        { href: "/yonetim/yetkiler", label: "Yetki & Rol Matrisi", icon: ShieldAlert, visible: user?.rol === 'Müdür' || user?.rol === 'Admin' },
+        { href: "/yonetim/yetkiler", label: "Yetki & Rol Matrisi", icon: ShieldAlert, visible: user?.rol === 'Admin' || user?.unvan === 'Müdür' },
         { href: "/yonetim/raporlar", label: "Sistem Raporları & Loglar", icon: History, visible: !isEr },
       ]
     }

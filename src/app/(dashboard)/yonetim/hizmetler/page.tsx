@@ -525,19 +525,33 @@ export default function HizmetlerPage() {
 
                         <td className="p-4 align-middle text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Neon Cyber HUD Action Trigger Button (min 44px height hitbox) */}
-                            <Button 
-                              size="sm" 
-                              className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-[1.02] transition duration-150 border border-cyan-400/20 whitespace-nowrap"
-                              onClick={() => setSelectedRequest(req)}
-                              disabled={updating === req.id}
-                            >
-                              {updating === req.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <>🔍 İncele / İşlem Yap</>
-                              )}
-                            </Button>
+                            {isMudur ? (
+                              <Button 
+                                size="sm" 
+                                className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-[1.02] transition duration-150 border border-cyan-400/20 whitespace-nowrap"
+                                onClick={() => setSelectedRequest(req)}
+                                disabled={updating === req.id}
+                              >
+                                {updating === req.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <>🔧 İşlem Yap</>
+                                )}
+                              </Button>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700 whitespace-nowrap"
+                                onClick={() => setSelectedRequest(req)}
+                                disabled={updating === req.id}
+                              >
+                                {updating === req.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <>🔍 İncele</>
+                                )}
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -12,6 +12,20 @@ export interface JWTPayload {
   exp?: number;
 }
 
+function getUserRole(session: any): 'MUDUR' | 'AMIR' | 'ER' {
+  if (!session) return 'ER';
+  const rol = session.rol || '';
+  const unvan = session.unvan || '';
+  
+  if (unvan === 'Müdür' || rol === 'Admin' || rol?.toLowerCase() === 'admin' || unvan?.toLowerCase() === 'müdür') {
+    return 'MUDUR';
+  }
+  if (unvan === 'Amir' || rol === 'Editor' || rol?.toLowerCase() === 'editor' || unvan?.toLowerCase() === 'amir') {
+    return 'AMIR';
+  }
+  return 'ER';
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || "default-secret-change-me-in-production";
 
 // Convert base64url to Uint8Array for Web Crypto API signature validation
@@ -160,6 +174,30 @@ export async function proxy(request: NextRequest) {
     const loginUrl = getRedirectUrl("/login", request);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // 5. Strict Role-Based Access Control (ACL) for İtfaiye Eri (ER) rank
+  const role = getUserRole(session);
+  if (role === 'ER') {
+    const blockedPathsForEr = [
+      "/yonetim/hizmetler",
+      "/yonetim/hizmet-basvurulari",
+      "/yonetim/personel",
+      "/yonetim/personel-yonetimi",
+      "/yonetim/yetkiler",
+      "/yonetim/raporlar",
+      "/yonetim/istatistikler",
+      "/yonetim/sablonlar",
+      "/yonetim/harita",
+      "/yonetim/egitimler"
+    ];
+
+    const isBlocked = blockedPathsForEr.some((p) => pathname === p || pathname.startsWith(p + "/"));
+    
+    if (isBlocked) {
+      console.warn(`[ACL proxy] ER rank user (${session.sicilNo}) attempted unauthorized access to: ${pathname}`);
+      return NextResponse.redirect(getRedirectUrl("/yonetim/403", request));
+    }
   }
 
   // RBAC: Admin-only paths
