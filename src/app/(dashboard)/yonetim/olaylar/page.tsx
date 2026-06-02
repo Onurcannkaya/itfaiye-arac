@@ -83,7 +83,7 @@ export default function OlaylarPage() {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto pb-[120px] md:pb-6">
+    <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto pb-[140px] md:pb-8">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -176,7 +176,7 @@ export default function EnvanterYonetimiPage() {
 
   return (
     <PageGuard pageId="envanter">
-      <div className="space-y-6">
+      <div className="space-y-6 pb-[140px] md:pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 pb-4 print:hidden gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">

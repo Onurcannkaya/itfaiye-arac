@@ -120,7 +120,7 @@ export default function YetkilerPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-32 animate-in fade-in duration-300">
+    <div className="space-y-6 max-w-7xl mx-auto pb-[140px] md:pb-8 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border/50 pb-4 gap-4">
         <div>
           <div className="flex items-center gap-2">
