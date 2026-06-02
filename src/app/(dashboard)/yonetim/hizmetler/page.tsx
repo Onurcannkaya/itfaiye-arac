@@ -337,7 +337,7 @@ export default function HizmetlerPage() {
 
   return (
     <PageGuard pageId="hizmet_basvurulari">
-      <div className="flex flex-col min-h-screen overflow-y-auto space-y-6 max-w-7xl mx-auto pb-[140px] md:pb-8 animate-in fade-in duration-300">
+      <div className="flex flex-col min-h-screen overflow-y-auto space-y-6 max-w-7xl mx-auto pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8 animate-in fade-in duration-300">
         
         {/* Sayfa Başlığı */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
@@ -1179,7 +1179,11 @@ export default function HizmetlerPage() {
         )}
 
         {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
-        <div className="h-36 w-full block md:hidden pointer-events-none clear-both" aria-hidden="true" />
+        <div 
+          className="w-full block md:hidden pointer-events-none clear-both" 
+          style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
+          aria-hidden="true" 
+        />
 
       </div>
     </PageGuard>

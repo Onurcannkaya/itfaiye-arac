@@ -137,7 +137,7 @@ export function MobileNav() {
             </div>
             
             {/* Group Lists */}
-            <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pb-32 flex-1">
+            <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-160px)] pb-[calc(8rem+env(safe-area-inset-bottom))] flex-1">
               {groups.map((group, gIdx) => {
                 const visibleItems = group.items.filter(item => item.visible)
                 if (visibleItems.length === 0) return null
@@ -174,7 +174,11 @@ export function MobileNav() {
               })}
 
               {/* Menü Alt Bar Taşma Kalkanı */}
-              <div className="h-28 w-full block pointer-events-none clear-both" aria-hidden="true" />
+              <div 
+                className="w-full block pointer-events-none clear-both" 
+                style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
+                aria-hidden="true" 
+              />
             </div>
           </div>
         </div>
