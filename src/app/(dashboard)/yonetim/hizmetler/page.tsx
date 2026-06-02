@@ -1178,6 +1178,9 @@ export default function HizmetlerPage() {
           </div>
         )}
 
+        {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
+        <div className="h-36 w-full block md:hidden pointer-events-none clear-both" aria-hidden="true" />
+
       </div>
     </PageGuard>
   )

@@ -83,7 +83,7 @@ export default function OlaylarPage() {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto pb-[140px] md:pb-8">
+    <div className="flex flex-col min-h-screen space-y-6 max-w-6xl mx-auto pb-[140px] md:pb-8">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -269,6 +269,9 @@ export default function OlaylarPage() {
           )}
         </div>
       )}
+
+      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
+      <div className="h-36 w-full block md:hidden pointer-events-none clear-both" aria-hidden="true" />
 
     </div>
   )
