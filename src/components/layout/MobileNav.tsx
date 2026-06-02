@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useAuthStore } from '@/lib/authStore'
+import { GeofenceButton } from './GeofenceButton'
 
 interface NavItem {
   href: string
@@ -128,6 +129,11 @@ export function MobileNav() {
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Görev Başlat / Bitir Geofence Mobil Kontrol Butonu Enjeksiyonu */}
+            <div className="w-full animate-in slide-in-from-top-2 duration-300">
+              <GeofenceButton isMobile={true} />
             </div>
             
             {/* Group Lists */}

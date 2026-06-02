@@ -6,13 +6,18 @@ import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/lib/authStore'
 import { api } from '@/lib/api'
 import { DutyLog } from '@/types'
+import { cn } from '@/lib/utils'
 
 // Sivas Ana İtfaiye Binası Koordinatları (39.7388, 37.0025)
 const STATION_LAT = 39.7388
 const STATION_LNG = 37.0025
 const MAX_DISTANCE_METERS = 50
 
-export function GeofenceButton() {
+interface GeofenceButtonProps {
+  isMobile?: boolean
+}
+
+export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
   const { user } = useAuthStore()
   const [dutyStatus, setDutyStatus] = useState<'AKTIF' | 'TAMAMLANDI'>('TAMAMLANDI')
   const [loading, setLoading] = useState(true)
@@ -21,9 +26,10 @@ export function GeofenceButton() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [permissionDenied, setPermissionDenied] = useState(false)
 
   // Haversine formula to calculate distance between two coordinates in meters
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371e3; // metres
     const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
     const φ2 = lat2 * Math.PI / 180;
@@ -65,7 +71,7 @@ export function GeofenceButton() {
         } else {
           setDutyStatus('TAMAMLANDI');
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[GeofenceButton] Nöbet durumu sorgulama hatası:', err);
       } finally {
         setLoading(false);
@@ -85,7 +91,7 @@ export function GeofenceButton() {
 
     const checkLocation = () => {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        (position: GeolocationPosition) => {
           const { latitude, longitude } = position.coords;
           const lat = latitude || 0;
           const lng = longitude || 0;
@@ -93,6 +99,7 @@ export function GeofenceButton() {
 
           const dist = calculateDistance(lat, lng, STATION_LAT, STATION_LNG);
           setDistance(dist);
+          setPermissionDenied(false);
 
           if (dist > MAX_DISTANCE_METERS) {
             setStatus("error");
@@ -102,11 +109,12 @@ export function GeofenceButton() {
             setMessage("");
           }
         },
-        (error) => {
+        (error: GeolocationPositionError) => {
           console.error('[GeofenceButton] Konum alma hatası:', error);
           setStatus("error");
           if (error.code === error.PERMISSION_DENIED) {
             setMessage("Konum izni verilmedi.");
+            setPermissionDenied(true);
           } else {
             setMessage("Konum alınamadı. Lütfen tekrar deneyin.");
           }
@@ -164,10 +172,11 @@ export function GeofenceButton() {
             : "Vardiyanız başarıyla sonlandırıldı. İyi istirahatler!"
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[GeofenceButton] Nöbet kaydı yazma hatası:', err);
       setStatus("error");
-      setMessage(`Bağlantı hatası: ${err.message || err}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setMessage(`Bağlantı hatası: ${errMsg}`);
     } finally {
       setBtnLoading(false);
       setTimeout(() => {
@@ -180,8 +189,68 @@ export function GeofenceButton() {
   // Hide component completely if user info is not loaded yet
   if (!user) return null;
 
+  // Render for mobile nav sheet menu enjection
+  if (isMobile) {
+    if (permissionDenied) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="bg-slate-900 border border-amber-500/30 text-amber-500/70 opacity-60 w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 font-semibold cursor-not-allowed text-sm"
+        >
+          <span>⚠️</span>
+          <span>
+            {dutyStatus === 'AKTIF'
+              ? 'Görevi Bitir (Konum İzni Gerekli)'
+              : 'Görevi Başlat (Konum İzni Gerekli)'}
+          </span>
+        </button>
+      )
+    }
+
+    if (distance === null || distance > MAX_DISTANCE_METERS) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="bg-slate-900 border border-red-500/20 text-slate-500 opacity-60 w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 font-semibold cursor-not-allowed text-sm"
+        >
+          <span>🛑</span>
+          <span>
+            {dutyStatus === 'AKTIF'
+              ? 'Görevi Bitir (İstasyon Dışındasınız)'
+              : 'Görevi Başlat (İstasyon Dışındasınız)'}
+          </span>
+        </button>
+      )
+    }
+
+    return (
+      <button
+        type="button"
+        disabled={loading || btnLoading}
+        onClick={handleToggleDuty}
+        className={cn(
+          "w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 transition-all font-bold text-sm shadow-md",
+          dutyStatus === 'AKTIF'
+            ? "bg-rose-950/20 border border-rose-500/40 text-rose-400 hover:bg-rose-950/40 active:scale-95 transition-all shadow-[0_0_15px_rgba(244,63,94,0.1)]"
+            : "bg-emerald-950/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-950/40 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+        )}
+      >
+        {loading || btnLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <>
+            <span>{dutyStatus === 'AKTIF' ? '🛑' : '🚪'}</span>
+            <span>{dutyStatus === 'AKTIF' ? 'Görevi Bitir' : 'Görevi Başlat'}</span>
+          </>
+        )}
+      </button>
+    )
+  }
+
   const isOutOfRange = distance === null || distance > MAX_DISTANCE_METERS;
-  const isButtonDisabled = loading || btnLoading || isOutOfRange;
+  const isButtonDisabled = loading || btnLoading || isOutOfRange || permissionDenied;
 
   return (
     <div className="relative flex items-center space-x-2">
