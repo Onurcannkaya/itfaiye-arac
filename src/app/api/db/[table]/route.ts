@@ -141,8 +141,65 @@ async function ensureAracBakimGecmisiTableExists() {
     await query(`ALTER TABLE public.arac_bakim_gecmisi ADD COLUMN IF NOT EXISTS durum VARCHAR(20) DEFAULT 'Onaylandı'`);
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_plaka ON public.arac_bakim_gecmisi(plaka)`);
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_tarih ON public.arac_bakim_gecmisi(tarih DESC)`);
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('ensureAracBakimGecmisiTableExists hatası:', err);
+  }
+}
+
+async function ensureUnifiedSystemLogsViewExists() {
+  try {
+    await query(`
+      CREATE OR REPLACE VIEW public.unified_system_logs AS
+      SELECT 
+        id, 
+        created_at AS tarih, 
+        plaka, 
+        'Günlük Kontrol' AS islem_tipi, 
+        kontrol_eden_sicil AS sicil, 
+        kontrol_eden_ad AS ad_soyad,
+        (CASE 
+          WHEN yakit_durumu IN ('Boş', 'Az') 
+            OR su_durumu IN ('Boş', 'Az') 
+            OR kopuk_durumu IN ('Boş', 'Az') 
+            OR pompa_durumu = 'Arızalı' 
+            OR lastik_durumu = 'Kötü' 
+            OR far_durumu = 'Arızalı' 
+            OR genel_temizlik = 'Kötü'
+          THEN 'Sorunlu' 
+          ELSE 'Kusursuz' 
+        END) AS durum, 
+        notlar AS detaylar
+      FROM public.daily_vehicle_checks
+      
+      UNION ALL
+      
+      SELECT 
+        id, 
+        created_at AS tarih, 
+        plaka, 
+        'Envanter Sayımı' AS islem_tipi, 
+        kontrol_eden AS sicil, 
+        kontrol_eden AS ad_soyad,
+        (CASE WHEN yeni_durum IN ('Eksik', 'Arızalı') THEN 'Sorunlu' ELSE 'Kusursuz' END) AS durum, 
+        CONCAT(bolme, ' - ', malzeme, ' (', yeni_durum, ')', COALESCE(' - Not: ' || notlar, '')) AS detaylar
+      FROM public.inventory_checks
+
+      UNION ALL
+
+      SELECT 
+        id, 
+        created_at AS tarih, 
+        '-' AS plaka, 
+        (CASE WHEN action_type = 'nobet_baslangic' THEN 'Nöbet Başlangıcı' ELSE 'Nöbet Bitişi' END) AS islem_tipi, 
+        actor_sicil_no AS sicil, 
+        actor_name AS ad_soyad, 
+        'Kusursuz' AS durum, 
+        CONCAT(target, COALESCE(' - Cihaz: ' || (details->>'cihaz'), ''), COALESCE(' - Geofence: ' || (details->>'geofence'), '')) AS detaylar
+      FROM public.audit_logs
+      WHERE action_type IN ('nobet_baslangic', 'nobet_bitis')
+    `);
+  } catch (err: unknown) {
+    console.error('ensureUnifiedSystemLogsViewExists hatası:', err);
   }
 }
 
@@ -256,6 +313,9 @@ export async function GET(
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
     }
+    if (table === 'unified_system_logs') {
+      await ensureUnifiedSystemLogsViewExists();
+    }
 
     const { searchParams } = new URL(request.url);
     const select = searchParams.get('select') || '*';
@@ -355,10 +415,32 @@ export async function POST(
       if (result.rows[0]) insertedRows.push(result.rows[0]);
     }
 
+    if (table === 'duty_logs') {
+      for (const row of insertedRows) {
+        const actionType = row.action === 'START_DUTY' ? 'nobet_baslangic' : 'nobet_bitis';
+        const details = row.action === 'START_DUTY' 
+          ? { cihaz: 'Mobil/Web', tarih: new Date().toISOString(), geofence: '50m_ici' }
+          : { cihaz: 'Mobil/Web', tarih: new Date().toISOString() };
+        
+        await query(
+          `INSERT INTO audit_logs (action_type, actor_sicil_no, actor_name, target, details)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            actionType,
+            session.sicilNo,
+            `${session.ad} ${session.soyad}`,
+            'Merkez İstasyonu',
+            JSON.stringify(details)
+          ]
+        ).catch((err: unknown) => console.error('[Server AuditLog] Nöbet log yazma hatası:', err));
+      }
+    }
+
     return NextResponse.json({ data: insertedRows, error: null });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`[db/POST] Hata:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
 

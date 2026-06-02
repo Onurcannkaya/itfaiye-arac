@@ -35,4 +35,18 @@ SELECT
   kontrol_eden AS ad_soyad, -- inventory_checks may only have one 'kontrol_eden' field containing sicil or name
   (CASE WHEN yeni_durum IN ('Eksik', 'Arızalı') THEN 'Sorunlu' ELSE 'Kusursuz' END) AS durum, 
   CONCAT(bolme, ' - ', malzeme, ' (', yeni_durum, ')', COALESCE(' - Not: ' || notlar, '')) AS detaylar
-FROM public.inventory_checks;
+FROM public.inventory_checks
+
+UNION ALL
+
+SELECT 
+  id, 
+  created_at AS tarih, 
+  '-' AS plaka, 
+  (CASE WHEN action_type = 'nobet_baslangic' THEN 'Nöbet Başlangıcı' ELSE 'Nöbet Bitişi' END) AS islem_tipi, 
+  actor_sicil_no AS sicil, 
+  actor_name AS ad_soyad, 
+  'Kusursuz' AS durum, 
+  CONCAT(target, COALESCE(' - Cihaz: ' || (details->>'cihaz'), ''), COALESCE(' - Geofence: ' || (details->>'geofence'), '')) AS detaylar
+FROM public.audit_logs
+WHERE action_type IN ('nobet_baslangic', 'nobet_bitis');
