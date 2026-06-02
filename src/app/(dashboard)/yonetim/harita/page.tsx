@@ -32,6 +32,74 @@ type NominatimResult = {
   class: string
 }
 
+// ─── PostGIS WKB parser helpers for real-time focus ─────────
+const parseWKBPoint = (wkbHex: string): [number, number] | null => {
+  if (!wkbHex || typeof wkbHex !== 'string') return null
+  const cleanHex = wkbHex.trim()
+  if (cleanHex.length < 42) return null
+  
+  const isLittleEndian = cleanHex.substring(0, 2) === '01'
+  const type = cleanHex.substring(2, 10)
+  
+  let coordsHex = ''
+  if (type === '01000020' || type === '20000001') {
+    coordsHex = cleanHex.substring(18)
+  } else if (type === '01000000' || type === '00000001') {
+    coordsHex = cleanHex.substring(10)
+  } else {
+    if (cleanHex.length === 50) {
+      coordsHex = cleanHex.substring(18)
+    } else if (cleanHex.length === 42) {
+      coordsHex = cleanHex.substring(10)
+    } else {
+      return null
+    }
+  }
+
+  if (coordsHex.length < 32) return null
+
+  const xHex = coordsHex.substring(0, 16)
+  const yHex = coordsHex.substring(16, 32)
+
+  const hexToDouble = (hexStr: string): number => {
+    const bytes = new Uint8Array(8)
+    for (let i = 0; i < 8; i++) {
+      const byteHex = hexStr.substring(i * 2, i * 2 + 2)
+      bytes[isLittleEndian ? i : 7 - i] = parseInt(byteHex, 16)
+    }
+    const view = new DataView(bytes.buffer)
+    return view.getFloat64(0, true)
+  }
+
+  const x = hexToDouble(xHex)
+  const y = hexToDouble(yHex)
+
+  return [x, y]
+}
+
+const parseLocation = (loc: any): [number, number] | null => {
+  if (!loc) return null
+  if (typeof loc === 'string') {
+    const trimmed = loc.trim()
+    if (/^[0-9a-fA-F]+$/.test(trimmed)) {
+      const parsed = parseWKBPoint(trimmed)
+      if (parsed) return parsed
+    }
+    try {
+      const parsed = JSON.parse(loc)
+      if (parsed.coordinates) {
+        return [parsed.coordinates[0], parsed.coordinates[1]]
+      }
+    } catch {
+      return null
+    }
+  }
+  if (loc.coordinates) {
+    return [loc.coordinates[0], loc.coordinates[1]]
+  }
+  return null
+}
+
 export default function HaritaPage() {
   const { user } = useAuthStore()
   const [incidents, setIncidents] = useState<Incident[]>([])
@@ -63,6 +131,44 @@ export default function HaritaPage() {
 
   useEffect(() => {
     fetchData()
+
+    // ─── Real-Time Canlı Vaka Polling Dinleyicisi ─────────
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetch('/api/harita-canli-vaka')
+        const data = await res.json()
+        if (data.success && data.incidents) {
+          const newIncidents = data.incidents as Incident[]
+          
+          setIncidents(prev => {
+            const currentIds = new Set(prev.map(i => String(i.id)))
+            let newlyDetectedIncident: Incident | null = null
+            
+            for (const inc of newIncidents) {
+              if (!currentIds.has(String(inc.id))) {
+                newlyDetectedIncident = inc
+                break
+              }
+            }
+            
+            if (newlyDetectedIncident) {
+              const coords = parseLocation(newlyDetectedIncident.location)
+              if (coords) {
+                // Focus on new incident: [lat, lng] -> [coords[1], coords[0]]
+                setFocusLocation([coords[1], coords[0]])
+                console.log('[Real-Time] Yeni Vaka Tespit Edildi, Odaklanılıyor:', newlyDetectedIncident)
+              }
+            }
+            
+            return newIncidents
+          })
+        }
+      } catch (err) {
+        console.warn('[Real-Time] Canlı vaka sorgulama hatası:', err)
+      }
+    }, 5000) // 5 saniyede bir sorgula
+
+    return () => clearInterval(intervalId)
   }, [])
 
   const fetchData = async () => {
