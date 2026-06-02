@@ -1612,15 +1612,24 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             {/* Drawer Close Button */}
             <button
               onClick={() => setIsLayerDrawerOpen(false)}
-              className="absolute top-4 right-4 rounded-xl p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-500 hover:border-red-500/30 transition-all cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="absolute top-4 right-4 text-slate-400 hover:text-red-400 active:scale-95 transition-all bg-slate-900/50 border border-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
               title="Kapat"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-2.5 mb-1 text-slate-100 font-extrabold text-lg">
-              <Layers className="w-5 h-5 text-cyan-400" />
-              <span>Mobil Kontrol & Lejant</span>
+            <div className="flex items-center justify-between gap-2.5 mb-1 text-slate-100 font-extrabold text-lg">
+              <div className="flex items-center gap-2.5">
+                <Layers className="w-5 h-5 text-cyan-400" />
+                <span>Mobil Kontrol & Lejant</span>
+              </div>
+              <button
+                onClick={() => setIsLayerDrawerOpen(false)}
+                className="text-slate-400 hover:text-red-400 active:scale-95 transition-all bg-slate-900/50 border border-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                title="Kapat"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
             
             <div className="h-px bg-slate-800/60 my-2" />
