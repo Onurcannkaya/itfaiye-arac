@@ -1403,7 +1403,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       </div>
       
       {/* Sleek Floating Control Panel for Sivas Kent Rehberi (Desktop Only) */}
-      <div className="hidden md:block absolute top-4 left-4 z-10 backdrop-blur-lg bg-slate-950/85 border border-slate-800/50 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300">
+      <div className="hidden md:block absolute top-24 left-4 z-10 backdrop-blur-lg bg-slate-950/85 border border-slate-800/50 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300">
         <div className="flex items-center gap-2 mb-2 text-slate-100 font-bold text-xs tracking-wide">
           <Layers className="w-4 h-4 text-cyan-400 animate-pulse shrink-0" />
           <span>AKILLI ŞEHİR KATMANLARI</span>
@@ -1418,14 +1418,14 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             </div>
             <button
               onClick={() => setShowBinalar(!showBinalar)}
-              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showBinalar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  showBinalar ? 'translate-x-3.5' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showBinalar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1457,14 +1457,14 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             </div>
             <button
               onClick={() => setShowNumarataj(!showNumarataj)}
-              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showNumarataj ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  showNumarataj ? 'translate-x-3.5' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showNumarataj ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1478,14 +1478,14 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             </div>
             <button
               onClick={() => setShowMahalleler(!showMahalleler)}
-              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showMahalleler ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  showMahalleler ? 'translate-x-3.5' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showMahalleler ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1517,14 +1517,14 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             </div>
             <button
               onClick={() => setShowSokaklar(!showSokaklar)}
-              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showSokaklar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  showSokaklar ? 'translate-x-3.5' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showSokaklar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1538,14 +1538,14 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             </div>
             <button
               onClick={() => setShowHidrantlar(!showHidrantlar)}
-              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showHidrantlar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  showHidrantlar ? 'translate-x-3.5' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showHidrantlar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -1559,14 +1559,14 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
             </div>
             <button
               onClick={() => setShowPasifVakalar(!showPasifVakalar)}
-              className={`relative inline-flex h-4 w-7.5 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showPasifVakalar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  showPasifVakalar ? 'translate-x-3.5' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showPasifVakalar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>

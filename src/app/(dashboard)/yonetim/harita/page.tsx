@@ -461,7 +461,7 @@ export default function HaritaPage() {
         <CardContent className="p-0 h-full w-full relative">
           
           {/* Arama Çubuğu (Search Engine) */}
-          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[400] w-[calc(100%-2rem)] mx-4 my-2 sm:w-full sm:max-w-md sm:mx-0 sm:my-0 sm:px-4">
+          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[400] w-[95%] sm:w-full sm:max-w-md sm:px-4">
             <form onSubmit={handleSearch} className="relative bg-background rounded-full shadow-lg border flex items-center overflow-hidden">
               <Search className="w-5 h-5 text-muted-foreground ml-4 shrink-0" />
               <input 
