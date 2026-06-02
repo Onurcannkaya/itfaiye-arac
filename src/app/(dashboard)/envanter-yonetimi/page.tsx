@@ -186,18 +186,18 @@ export default function EnvanterYonetimiPage() {
           <p className="text-muted-foreground mt-1 text-sm">Araç envanterlerini canlı olarak düzenleyin, siber-şifreli QR barkod etiketlerini toplu yazdırın.</p>
         </div>
         
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
           <select 
             value={printFilter} 
             onChange={e => setPrintFilter(e.target.value)} 
-            className="h-11 rounded-lg border border-white/10 bg-slate-900/80 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shrink-0 font-medium font-mono"
+            className="h-11 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-900/80 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shrink-0 font-medium font-mono min-h-[44px]"
           >
             <option value="all">Tüm Bölmeler</option>
             {distinctCompartments.map(c => (
                <option key={c} value={c}>{COMPARTMENT_NAMES[c] || c}</option>
             ))}
           </select>
-          <Button onClick={handlePrint} variant="default" className="w-full sm:w-auto h-11 shrink-0 font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_-3px_rgba(6,182,212,0.4)] border border-cyan-500/30">
+          <Button onClick={handlePrint} variant="default" className="w-full sm:w-auto h-11 shrink-0 font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_-3px_rgba(6,182,212,0.4)] border border-cyan-500/30 min-h-[44px]">
             <Printer className="w-4 h-4 mr-2" />
             Etiketleri Yazdır
           </Button>
@@ -245,7 +245,9 @@ export default function EnvanterYonetimiPage() {
                Yeni Ekipman Ekle
             </Button>
           </CardHeader>
-          <CardContent className="p-0 w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
+          <CardContent className="p-0 w-full max-w-full box-border">
+            {/* ═══ Desktop Tablo Görünümü (md+) ═══ */}
+            <div className="hidden md:block overflow-x-auto">
              <table className="w-full text-sm">
                 <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
                   <tr>
@@ -260,10 +262,10 @@ export default function EnvanterYonetimiPage() {
                   {inventory.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center text-slate-500 italic font-mono text-xs">
-                        Bu araca ait malzeme kaydı bulunamadı. "Yeni Ekipman Ekle" butonuna basarak matrise satır ekleyin.
+                        Bu araca ait malzeme kaydı bulunamadı. &quot;Yeni Ekipman Ekle&quot; butonuna basarak matrise satır ekleyin.
                       </td>
                     </tr>
-                  ) : inventory.map((item, index) => (
+                  ) : inventory.map((item) => (
                     <tr key={item.internalId} className="hover:bg-white/5 transition-colors duration-150">
                       <td className="px-5 py-2.5 align-top">
                         <select
@@ -318,6 +320,79 @@ export default function EnvanterYonetimiPage() {
                   ))}
                 </tbody>
              </table>
+            </div>
+
+            {/* ═══ Mobil Kart Görünümü (md altı) ═══ */}
+            <div className="md:hidden p-4 space-y-3">
+              {inventory.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                  Bu araca ait malzeme kaydı bulunamadı. &quot;Yeni Ekipman Ekle&quot; butonuna basarak ekipman ekleyin.
+                </div>
+              ) : inventory.map((item) => (
+                <div key={item.internalId} className="bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 space-y-3 shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all">
+                  {/* Kart Başlık: Malzeme Adı + Sil Butonu */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono block mb-1">Malzeme Adı</label>
+                      <Input 
+                        placeholder="Ekipman ismi (Örn: 85'lik Hortum)..."
+                        value={item.malzeme}
+                        onChange={(e) => handleFieldChange(item.internalId, "malzeme", e.target.value)}
+                        className="bg-slate-900/60 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/50 h-11 w-full min-h-[44px]"
+                      />
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteItem(item.internalId)}
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-xl transition-colors border border-transparent hover:border-rose-500/20 shrink-0 mt-5"
+                      title="Satırı Kaldır"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Bölme Seçimi */}
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono block mb-1">Bölme (Kapak)</label>
+                    <select
+                      value={item.bolme}
+                      onChange={(e) => handleFieldChange(item.internalId, "bolme", e.target.value)}
+                      className="min-h-[44px] w-full rounded-xl border border-white/10 bg-slate-900/60 text-slate-200 px-3 py-2 text-sm focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono"
+                    >
+                      {Object.entries(COMPARTMENT_NAMES).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Adet + Durum yan yana */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono block mb-1">Adet</label>
+                      <Input 
+                        type="number"
+                        min="1"
+                        value={item.adet}
+                        onChange={(e) => handleFieldChange(item.internalId, "adet", e.target.value)}
+                        className="bg-slate-900/60 border-white/10 text-slate-200 font-mono text-sm focus:border-cyan-500/50 focus:ring-cyan-500/50 h-11 w-full min-h-[44px]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono block mb-1">Durum</label>
+                      <select
+                        value={item.durum}
+                        onChange={(e) => handleFieldChange(item.internalId, "durum", e.target.value)}
+                        className="min-h-[44px] w-full rounded-xl border border-white/10 bg-slate-900/60 text-slate-200 px-3 py-2 text-sm focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono font-bold"
+                      >
+                         <option value="Tam">Tam (Eksiksiz)</option>
+                         <option value="Eksik">Eksik (Hasarsız)</option>
+                         <option value="Arızalı">Arızalı (Bakımda)</option>
+                         <option value="Kayıp/Yok">Kayıp / Yok</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
           <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex justify-end items-center gap-3 rounded-b-2xl md:relative sticky bottom-0 z-40"
                style={{ bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))' }}>
