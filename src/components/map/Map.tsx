@@ -1416,19 +1416,18 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Binalar (Vektör)</span>
             </div>
-            <button
+            <div
               onClick={() => setShowBinalar(!showBinalar)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showBinalar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
-              type="button"
             >
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
                   showBinalar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
-            </button>
+            </div>
           </div>
 
           {showBinalar && (
@@ -1455,19 +1454,18 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               <span className="text-slate-400 font-bold text-[11px] w-3.5 text-center shrink-0">#</span>
               <span className="text-[11px] font-semibold text-slate-200">Numarataj</span>
             </div>
-            <button
+            <div
               onClick={() => setShowNumarataj(!showNumarataj)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showNumarataj ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
-              type="button"
             >
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
                   showNumarataj ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
-            </button>
+            </div>
           </div>
 
           {/* Mahalle Sınırları Toggle */}
@@ -1476,19 +1474,18 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               <MapIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Mahalle Sınırları</span>
             </div>
-            <button
+            <div
               onClick={() => setShowMahalleler(!showMahalleler)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showMahalleler ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
-              type="button"
             >
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
                   showMahalleler ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
-            </button>
+            </div>
           </div>
 
           {showMahalleler && (
@@ -1515,19 +1512,18 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               <Milestone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Sokak Aksları</span>
             </div>
-            <button
+            <div
               onClick={() => setShowSokaklar(!showSokaklar)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showSokaklar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
-              type="button"
             >
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
                   showSokaklar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
-            </button>
+            </div>
           </div>
 
           {/* Yangın Hidrantları Toggle */}
@@ -1536,19 +1532,18 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               <Droplets className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-[11px] font-semibold text-slate-200">Yangın Hidrantları</span>
             </div>
-            <button
+            <div
               onClick={() => setShowHidrantlar(!showHidrantlar)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showHidrantlar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
-              type="button"
             >
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
                   showHidrantlar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
-            </button>
+            </div>
           </div>
 
           {/* Biten/Pasif Vakalar Toggle */}
@@ -1557,19 +1552,18 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               <span className="w-3.5 h-3.5 rounded-full bg-slate-400/20 flex items-center justify-center text-[9px] text-slate-300 font-bold border border-slate-500/30 shrink-0">✓</span>
               <span className="text-[11px] font-semibold text-slate-200">Biten/Pasif Vakalar</span>
             </div>
-            <button
+            <div
               onClick={() => setShowPasifVakalar(!showPasifVakalar)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
                 showPasifVakalar ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-700/50 border border-slate-600/30'
               }`}
-              type="button"
             >
               <span
                 className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
                   showPasifVakalar ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
-            </button>
+            </div>
           </div>
         </div>
 
