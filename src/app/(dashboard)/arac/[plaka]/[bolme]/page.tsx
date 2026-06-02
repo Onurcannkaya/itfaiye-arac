@@ -8,7 +8,8 @@ import { InventoryCheckModal } from "@/components/inventory/InventoryCheckModal"
 import { AuditTimeline } from "@/components/inventory/AuditTimeline"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
-import { ArrowLeft, Truck, ScanLine, CheckCircle2 } from "lucide-react"
+import { Button } from "@/components/ui/Button"
+import { ArrowLeft, Truck, ScanLine, CheckCircle2, AlertTriangle, X, Loader2 } from "lucide-react"
 import Link from "next/link"
 
 export default function DeepLinkCompartmentPage() {
@@ -21,6 +22,11 @@ export default function DeepLinkCompartmentPage() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+
+  // 🚨 Arıza Raporlama Eklentileri
+  const [isArizaOpen, setIsArizaOpen] = useState(false)
+  const [arizaAciklama, setArizaAciklama] = useState("")
+  const [isSavingAriza, setIsSavingAriza] = useState(false)
 
   // Parse plaka from slug: "58-act-367" -> try matching against DB
   useEffect(() => {
@@ -41,10 +47,44 @@ export default function DeepLinkCompartmentPage() {
   }, [plakaSlug])
 
   const handleSave = (results: any[]) => {
-    // Sayım veritabanına InventoryCheckModal içinde kaydedildi
     setModalOpen(false)
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 4000)
+  }
+
+  const compartmentName = COMPARTMENT_NAMES[bolmeKey] || bolmeKey
+
+  const handleArizaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!arizaAciklama.trim()) return;
+
+    setIsSavingAriza(true);
+    try {
+      const formattedAciklama = `${compartmentName} Arızası: ${arizaAciklama.trim()}`;
+
+      const res = await fetch('/api/arac-ariza-bildir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plaka: vehicle.plaka,
+          aciklama: formattedAciklama,
+          durum: 'Bekliyor'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsArizaOpen(false);
+        setArizaAciklama("");
+        alert("Arıza kaydı başarıyla garaj merkezine iletildi.");
+      } else {
+        alert("Bildirim gönderilemedi: " + (data.error || "Bilinmeyen hata"));
+      }
+    } catch (err) {
+      console.error("Ariza submit error:", err);
+      alert("Bağlantı hatası oluştu.");
+    } finally {
+      setIsSavingAriza(false);
+    }
   }
 
   if (loading) {
@@ -77,10 +117,8 @@ export default function DeepLinkCompartmentPage() {
     )
   }
 
-  const compartmentName = COMPARTMENT_NAMES[bolmeKey] || bolmeKey
-
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 max-w-2xl mx-auto relative">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border/50 pb-4">
         <Link href={`/araclar/${plakaSlug}`} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0">
@@ -91,7 +129,7 @@ export default function DeepLinkCompartmentPage() {
             <h1 className="text-xl font-bold">{vehicle.plaka}</h1>
             <Badge variant="success" className="text-[10px]">QR Tarandı</Badge>
           </div>
-          <p className="text-muted-foreground text-sm truncate">{vehicle.aracTipi} — {compartmentName}</p>
+          <p className="text-muted-foreground text-sm truncate">{vehicle.aracTipi || vehicle.arac_tipi} — {compartmentName}</p>
         </div>
         <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20 shrink-0">
           <ScanLine className="w-6 h-6 text-cyan-400" />
@@ -121,14 +159,23 @@ export default function DeepLinkCompartmentPage() {
           <p>
             Bu sayfa <strong className="text-foreground">{vehicle.plaka}</strong> aracının <strong className="text-foreground">{compartmentName}</strong> bölmesine doğrudan bağlantı ile açıldı.
           </p>
-          {!modalOpen && !saveSuccess && (
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            {!modalOpen && !saveSuccess && (
+              <button
+                onClick={() => setModalOpen(true)}
+                className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-bold text-sm hover:bg-primary/90 transition-colors min-h-[44px]"
+              >
+                Sayımı Başlat
+              </button>
+            )}
             <button
-              onClick={() => setModalOpen(true)}
-              className="mt-2 w-full bg-primary text-primary-foreground rounded-xl py-3 font-bold text-sm hover:bg-primary/90 transition-colors"
+              onClick={() => setIsArizaOpen(true)}
+              className="w-full bg-red-950/20 hover:bg-red-950/30 text-red-400 hover:text-white border border-red-500/20 rounded-xl py-3 font-bold text-sm transition-all min-h-[44px] shadow-[0_0_12px_rgba(239,68,68,0.1)] flex items-center justify-center gap-1.5"
             >
-              Sayımı Başlat
+              <AlertTriangle className="w-4 h-4 text-red-500" /> Arıza Bildir
             </button>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -150,6 +197,75 @@ export default function DeepLinkCompartmentPage() {
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
       />
+
+      {/* Cam Morfolojili Arıza Bildirim Pop-up Modalı */}
+      {isArizaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md bg-slate-950/90 backdrop-blur-md border border-red-900/50 shadow-[0_0_30px_rgba(239,68,68,0.25)] overflow-hidden rounded-2xl p-6 relative">
+            <button 
+              onClick={() => setIsArizaOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white rounded-lg h-9 w-9 p-0 flex items-center justify-center"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+                <h3 className="text-lg font-black text-red-400 tracking-wider">BÖLME ARIZA BİLDİRİMİ</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Bu bildirim Sivas Belediyesi İtfaiye Garajı arıza takip veritabanına anlık kayıt oluşturur.
+              </p>
+
+              <form onSubmit={handleArizaSubmit} className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Araç Plakası / Bilgisi</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={vehicle.plaka} 
+                    className="w-full bg-slate-900 border border-slate-800 text-slate-400 rounded-xl px-3.5 py-2.5 text-sm cursor-not-allowed font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Arıza Yapılan Bölme / Kapak</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={compartmentName} 
+                    className="w-full bg-slate-900 border border-slate-800 text-slate-400 rounded-xl px-3.5 py-2.5 text-sm cursor-not-allowed font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Arıza Tanımı / Açıklaması <span className="text-red-500">*</span></label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={arizaAciklama}
+                    onChange={(e) => setArizaAciklama(e.target.value)}
+                    placeholder="Arıza detayını yazınız..."
+                    className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-red-500 font-medium resize-none"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSavingAriza || !arizaAciklama.trim()}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl h-11 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.3)] min-h-[44px]"
+                >
+                  {isSavingAriza ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>🚨 Arızayı Merkeze Raporla</>
+                  )}
+                </Button>
+              </form>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

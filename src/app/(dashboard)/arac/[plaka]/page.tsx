@@ -8,8 +8,9 @@ import { DailyVehicleCheckModal } from "@/components/inventory/DailyVehicleCheck
 import { InventoryCheckModal } from "@/components/inventory/InventoryCheckModal"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
+import { Button } from "@/components/ui/Button"
 import {
-  Truck, ScanLine, CheckCircle2, ClipboardCheck, ChevronDown, Loader2, ArrowLeft
+  Truck, ScanLine, CheckCircle2, ClipboardCheck, ChevronDown, Loader2, ArrowLeft, X, AlertTriangle
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -24,6 +25,12 @@ export default function VehicleDeepLinkPage() {
   const [mode, setMode] = useState<PageMode>("loading")
   const [compartmentKey, setCompartmentKey] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
+
+  // 🚨 Arıza Bildirim State'leri
+  const [isArizaOpen, setIsArizaOpen] = useState(false)
+  const [arizaAciklama, setArizaAciklama] = useState("")
+  const [arizaBolme, setArizaBolme] = useState("Genel Araç Gövdesi")
+  const [isSavingAriza, setIsSavingAriza] = useState(false)
 
   useEffect(() => {
     async function fetchVehicle() {
@@ -58,6 +65,39 @@ export default function VehicleDeepLinkPage() {
   const handleDailySaved = () => {
     setSuccessMsg(`${vehicle?.plaka} günlük kontrol raporu kaydedildi!`)
     setMode("success")
+  }
+
+  const handleArizaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!arizaAciklama.trim()) return;
+
+    setIsSavingAriza(true);
+    try {
+      const formattedAciklama = `${arizaBolme} Arızası: ${arizaAciklama.trim()}`;
+
+      const res = await fetch('/api/arac-ariza-bildir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plaka: vehicle.plaka,
+          aciklama: formattedAciklama,
+          durum: 'Bekliyor'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsArizaOpen(false);
+        setArizaAciklama("");
+        alert("Arıza kaydı başarıyla garaj merkezine iletildi.");
+      } else {
+        alert("Bildirim gönderilemedi: " + (data.error || "Bilinmeyen hata"));
+      }
+    } catch (err) {
+      console.error("Ariza submit error:", err);
+      alert("Bağlantı hatası oluştu.");
+    } finally {
+      setIsSavingAriza(false);
+    }
   }
 
   // ─── Loading ─────────────────────────────────────────────
@@ -120,7 +160,7 @@ export default function VehicleDeepLinkPage() {
 
   // ─── Choose Mode ─────────────────────────────────────────
   return (
-    <div className="flex flex-col items-center justify-start min-h-[60vh] pt-8 space-y-6 max-w-md mx-auto">
+    <div className="flex flex-col items-center justify-start min-h-[60vh] pt-8 space-y-6 max-w-md mx-auto relative">
       {/* Vehicle Header */}
       <div className="text-center space-y-2">
         <Badge variant="success" className="text-xs mb-2">QR ile Açıldı</Badge>
@@ -205,7 +245,98 @@ export default function VehicleDeepLinkPage() {
             </p>
           </div>
         </button>
+
+        {/* Option 3: 🚨 Arıza / Hasar Raporla (min-h-44px touch friendly) */}
+        <button
+          onClick={() => setIsArizaOpen(true)}
+          className="w-full p-4 bg-red-950/20 hover:bg-red-950/30 border-2 border-red-500/20 hover:border-red-500/40 rounded-2xl flex items-center gap-4 transition-all group text-left min-h-[44px] shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+        >
+          <div className="w-12 h-12 bg-red-500/15 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-red-500/20">
+            <AlertTriangle className="w-6 h-6 text-red-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-base text-red-400">🚨 Arıza / Hasar Raporla</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Saha başında tespit edilen hasarı anında garaja bildir
+            </p>
+          </div>
+        </button>
       </div>
+
+      {/* Cam Morfolojili Arıza Bildirim Pop-up Modalı */}
+      {isArizaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md bg-slate-950/90 backdrop-blur-md border border-red-900/50 shadow-[0_0_30px_rgba(239,68,68,0.25)] overflow-hidden rounded-2xl p-6 relative">
+            <button 
+              onClick={() => setIsArizaOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white rounded-lg h-9 w-9 p-0 flex items-center justify-center"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+                <h3 className="text-lg font-black text-red-400 tracking-wider">ARIZA / HASAR BİLDİRİMİ</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Bu bildirim Sivas Belediyesi İtfaiye Garajı arıza takip veritabanına anlık kayıt oluşturur.
+              </p>
+
+              <form onSubmit={handleArizaSubmit} className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Araç Plakası / Bilgisi</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={vehicle.plaka} 
+                    className="w-full bg-slate-900 border border-slate-800 text-slate-400 rounded-xl px-3.5 py-2.5 text-sm cursor-not-allowed font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Arıza Yapılan Bölme / Kapak</label>
+                  <select
+                    value={arizaBolme}
+                    onChange={(e) => setArizaBolme(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-red-500 font-semibold"
+                  >
+                    <option value="Genel Araç Gövdesi">Genel Araç Gövdesi</option>
+                    {vehicleCompartments.map((key: string) => (
+                      <option key={key} value={COMPARTMENT_NAMES[key] || key}>
+                        {COMPARTMENT_NAMES[key] || key}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Arıza Tanımı / Açıklaması <span className="text-red-500">*</span></label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={arizaAciklama}
+                    onChange={(e) => setArizaAciklama(e.target.value)}
+                    placeholder="Arıza detayını yazınız..."
+                    className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-red-500 font-medium resize-none"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSavingAriza || !arizaAciklama.trim()}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl h-11 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.3)] min-h-[44px]"
+                >
+                  {isSavingAriza ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>🚨 Arızayı Merkeze Raporla</>
+                  )}
+                </Button>
+              </form>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Modals */}
       {mode === "inventory" && vehicle && compartmentKey && (
