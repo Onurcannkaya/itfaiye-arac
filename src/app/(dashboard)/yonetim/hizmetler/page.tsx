@@ -337,7 +337,7 @@ export default function HizmetlerPage() {
 
   return (
     <PageGuard pageId="hizmet_basvurulari">
-      <div className="flex flex-col min-h-screen overflow-y-auto space-y-6 max-w-7xl mx-auto pb-24 animate-in fade-in duration-300">
+      <div className="flex flex-col min-h-screen overflow-y-auto space-y-6 max-w-7xl mx-auto pb-32 animate-in fade-in duration-300">
         
         {/* Sayfa Başlığı */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
@@ -450,115 +450,160 @@ export default function HizmetlerPage() {
               </span>
             </div>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto scrollbar-thin">
+          <CardContent className="p-0">
             {requests.length === 0 ? (
               <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
                 Sistemde henüz bir hizmet başvurusu bulunmamaktadır.
               </div>
             ) : (
-              <table className="w-full min-w-[1000px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider">
-                    <th className="p-4 text-left">Başvuran / Kurum Adı</th>
-                    <th className="p-4 text-left">Hizmet Türü</th>
-                    <th className="p-4 text-left">Başvuru Tarihi</th>
-                    <th className="p-4 text-left">Görevli Ekip</th>
-                    <th className="p-4 text-left">Harç Durumu</th>
-                    <th className="p-4 text-left">İşlem Durumu</th>
-                    <th className="p-4 text-right">İşlemler / Aksiyonlar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-900">
+              <>
+                {/* ═══ Desktop Tablo Görünümü (md+) ═══ */}
+                <div className="hidden md:block overflow-x-auto scrollbar-thin">
+                  <table className="w-full min-w-[1000px] border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider">
+                        <th className="p-4 text-left">Başvuran / Kurum Adı</th>
+                        <th className="p-4 text-left">Hizmet Türü</th>
+                        <th className="p-4 text-left">Başvuru Tarihi</th>
+                        <th className="p-4 text-left">Görevli Ekip</th>
+                        <th className="p-4 text-left">Harç Durumu</th>
+                        <th className="p-4 text-left">İşlem Durumu</th>
+                        <th className="p-4 text-right">İşlemler / Aksiyonlar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-900">
+                      {requests.map(req => {
+                        const feeObj = getHarcDurumu(req)
+                        return (
+                          <tr key={req.id} className="hover:bg-zinc-900/30 transition duration-150 group">
+                            <td className="p-4 align-middle whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:scale-105 transition shrink-0">
+                                  <User className="w-4 h-4" />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="font-bold text-zinc-200 block text-sm line-clamp-1">{req.basvuran_ad_soyad}</span>
+                                  <span className="text-[10px] text-zinc-500 font-mono block">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 align-middle whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
+                                  {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                                </div>
+                                <span className="font-semibold text-zinc-300">{req.talep_turu}</span>
+                              </div>
+                            </td>
+                            <td className="p-4 align-middle text-zinc-400 font-medium whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <Calendar className="w-3.5 h-3.5 text-zinc-600" />
+                                {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </div>
+                            </td>
+                            <td className="p-4 align-middle font-bold text-xs text-zinc-400 whitespace-nowrap">
+                              <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
+                                {getGorevliEkip(req)}
+                              </span>
+                            </td>
+                            <td className="p-4 align-middle whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${feeObj.color}`}>{feeObj.text}</span>
+                            </td>
+                            <td className="p-4 align-middle whitespace-nowrap">{getStatusBadge(req.durum)}</td>
+                            <td className="p-4 align-middle text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2">
+                                {isMudur ? (
+                                  <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-[1.02] transition duration-150 border border-cyan-400/20 whitespace-nowrap" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
+                                    {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700 whitespace-nowrap" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
+                                    {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* ═══ Mobil Kart Görünümü (md altı) ═══ */}
+                <div className="md:hidden p-4 space-y-3">
                   {requests.map(req => {
                     const feeObj = getHarcDurumu(req)
                     return (
-                      <tr key={req.id} className="hover:bg-zinc-900/30 transition duration-150 group">
-                        <td className="p-4 align-middle whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:scale-105 transition shrink-0">
+                      <div key={req.id} className="bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 space-y-3 shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all">
+                        {/* Başvuran Adı + Durum Badge */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">
                               <User className="w-4 h-4" />
                             </div>
-                            <div className="space-y-0.5">
-                              <span className="font-bold text-zinc-200 block text-sm line-clamp-1">{req.basvuran_ad_soyad}</span>
-                              <span className="text-[10px] text-zinc-500 font-mono block">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-zinc-100 block text-sm leading-tight">{req.basvuran_ad_soyad}</span>
+                              <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
                             </div>
                           </div>
-                        </td>
-                        
-                        <td className="p-4 align-middle whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1.5 rounded-md ${
-                              req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' :
-                              req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' :
-                              'text-yellow-400 bg-yellow-500/10'
-                            }`}>
-                              {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> :
-                               req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> :
-                               <ShieldCheck className="w-3.5 h-3.5" />}
-                            </div>
-                            <span className="font-semibold text-zinc-300">{req.talep_turu}</span>
-                          </div>
-                        </td>
+                          <div className="shrink-0">{getStatusBadge(req.durum)}</div>
+                        </div>
 
-                        <td className="p-4 align-middle text-zinc-400 font-medium whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 text-xs">
-                            <Calendar className="w-3.5 h-3.5 text-zinc-600" />
-                            {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {/* Hizmet Türü Rozeti */}
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
+                            {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
                           </div>
-                        </td>
+                          <span className="font-semibold text-zinc-300 text-sm">{req.talep_turu}</span>
+                        </div>
 
-                        <td className="p-4 align-middle font-bold text-xs text-zinc-400 whitespace-nowrap">
-                          <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
+                        {/* Tarih + Harç bilgileri */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-zinc-900/40 rounded-xl p-2.5 border border-zinc-800/40">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block">Tarih</span>
+                            <span className="text-xs text-zinc-300 font-medium flex items-center gap-1 mt-0.5">
+                              <Calendar className="w-3 h-3 text-zinc-600" />
+                              {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                          <div className="bg-zinc-900/40 rounded-xl p-2.5 border border-zinc-800/40">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block">Harç</span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border mt-0.5 ${feeObj.color}`}>{feeObj.text}</span>
+                          </div>
+                        </div>
+
+                        {/* Görevli Ekip */}
+                        <div className="text-xs">
+                          <span className="text-zinc-500 font-bold">Görevli Ekip: </span>
+                          <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 italic' : 'text-zinc-300 font-semibold'}>
                             {getGorevliEkip(req)}
                           </span>
-                        </td>
+                        </div>
 
-                        <td className="p-4 align-middle whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${feeObj.color}`}>
-                            {feeObj.text}
-                          </span>
-                        </td>
-
-                        <td className="p-4 align-middle whitespace-nowrap">
-                          {getStatusBadge(req.durum)}
-                        </td>
-
-                        <td className="p-4 align-middle text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
-                            {isMudur ? (
-                              <Button 
-                                size="sm" 
-                                className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-[1.02] transition duration-150 border border-cyan-400/20 whitespace-nowrap"
-                                onClick={() => setSelectedRequest(req)}
-                                disabled={updating === req.id}
-                              >
-                                {updating === req.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <>🔧 İşlem Yap</>
-                                )}
-                              </Button>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700 whitespace-nowrap"
-                                onClick={() => setSelectedRequest(req)}
-                                disabled={updating === req.id}
-                              >
-                                {updating === req.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <>🔍 İncele</>
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                        {/* Aksiyon Butonu */}
+                        {isMudur ? (
+                          <Button 
+                            className="w-full bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] transition duration-150 border border-cyan-400/20"
+                            onClick={() => setSelectedRequest(req)}
+                            disabled={updating === req.id}
+                          >
+                            {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
+                          </Button>
+                        ) : (
+                          <Button 
+                            className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700"
+                            onClick={() => setSelectedRequest(req)}
+                            disabled={updating === req.id}
+                          >
+                            {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
+                          </Button>
+                        )}
+                      </div>
                     )
                   })}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
