@@ -120,7 +120,7 @@ export default function YetkilerPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+    <div className="space-y-6 max-w-7xl mx-auto pb-32 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border/50 pb-4 gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -188,96 +188,137 @@ export default function YetkilerPage() {
           </div>
         </CardHeader>
         
-        <CardContent className="p-0 w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
-          <table className="w-full min-w-[900px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-zinc-900 bg-zinc-950/40">
-                <th className="p-5 text-left font-black text-xs uppercase tracking-wider text-zinc-400 w-1/3">
-                  KONTROL PANELLERİ
-                </th>
-                {ROLES.map(role => (
-                  <th key={role.id} className="p-5 text-center font-black text-xs uppercase tracking-wider text-zinc-400">
-                    <div className="space-y-1">
-                      <div className="text-zinc-200 font-black">{role.title}</div>
-                      <div className="text-[10px] text-zinc-500 font-medium normal-case tracking-normal max-w-[150px] mx-auto line-clamp-1">{role.desc}</div>
-                    </div>
+        <CardContent className="p-0 w-full max-w-full box-border">
+          {/* ═══ Desktop Tablo Görünümü (md+) ═══ */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-zinc-900 bg-zinc-950/40">
+                  <th className="p-5 text-left font-black text-xs uppercase tracking-wider text-zinc-400 w-1/3">
+                    KONTROL PANELLERİ
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-900">
-              {PAGE_METADATA.map(page => {
-                const PageIcon = page.icon;
-                return (
-                  <tr key={page.id} className="hover:bg-zinc-900/25 transition duration-150 group">
-                    <td className="p-5 align-middle">
-                      <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-2xl ${page.color} shrink-0 mt-0.5 transition duration-300 group-hover:scale-110 shadow-lg`}>
-                          <PageIcon className="w-5 h-5" />
+                  {ROLES.map(role => (
+                    <th key={role.id} className="p-5 text-center font-black text-xs uppercase tracking-wider text-zinc-400">
+                      <div className="space-y-1">
+                        <div className="text-zinc-200 font-black">{role.title}</div>
+                        <div className="text-[10px] text-zinc-500 font-medium normal-case tracking-normal max-w-[150px] mx-auto line-clamp-1">{role.desc}</div>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-900">
+                {PAGE_METADATA.map(page => {
+                  const PageIcon = page.icon;
+                  return (
+                    <tr key={page.id} className="hover:bg-zinc-900/25 transition duration-150 group">
+                      <td className="p-5 align-middle">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-2xl ${page.color} shrink-0 mt-0.5 transition duration-300 group-hover:scale-110 shadow-lg`}>
+                            <PageIcon className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-zinc-100 text-sm group-hover:text-primary transition duration-150">{page.title}</h4>
+                            <p className="text-xs text-zinc-400 leading-relaxed font-medium">{page.desc}</p>
+                            <Badge variant="outline" className="text-[9px] font-mono px-2 py-0 h-4 uppercase tracking-wider bg-zinc-900 text-zinc-500 border-zinc-800">
+                              id: {page.id}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <h4 className="font-bold text-zinc-100 text-sm group-hover:text-primary transition duration-150">{page.title}</h4>
-                          <p className="text-xs text-zinc-400 leading-relaxed font-medium">{page.desc}</p>
-                          <Badge variant="outline" className="text-[9px] font-mono px-2 py-0 h-4 uppercase tracking-wider bg-zinc-900 text-zinc-500 border-zinc-800">
-                            id: {page.id}
-                          </Badge>
+                      </td>
+                      {ROLES.map(role => {
+                        const isAllowed = getPermission(role.id, page.id);
+                        const key = `${role.id}-${page.id}`;
+                        const isUpdating = updatingId === key;
+                        return (
+                          <td key={role.id} className="p-5 text-center align-middle">
+                            <div className="flex flex-col items-center justify-center space-y-3">
+                              <button
+                                disabled={!isMudur || isUpdating}
+                                onClick={() => handleToggle(role.id, page.id, isAllowed)}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${isAllowed ? 'bg-emerald-500' : 'bg-red-500/30'}`}
+                              >
+                                <span className="sr-only">Toggle</span>
+                                <span className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${isAllowed ? 'translate-x-5' : 'translate-x-0'}`}>
+                                  {isUpdating ? <Loader2 className="w-3 h-3 text-zinc-600 animate-spin" /> : isAllowed ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" /> : <div className="w-1.5 h-1.5 rounded-full bg-red-400" />}
+                                </span>
+                              </button>
+                              <div className="flex items-center gap-1.5">
+                                {isAllowed ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full"><Sparkles className="w-2.5 h-2.5" /> İzinli</span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">Engelli</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ═══ Mobil Rütbe Kartı Görünümü (md altı) ═══ */}
+          <div className="md:hidden p-4 space-y-5">
+            {ROLES.map(role => (
+              <div key={role.id} className="bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all">
+                {/* Rütbe Başlığı */}
+                <div className="bg-slate-900/60 border-b border-white/5 px-4 py-3 flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                    <Shield className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-sm text-zinc-100 uppercase tracking-wide">{role.title}</h3>
+                    <p className="text-[10px] text-zinc-500 font-medium leading-tight">{role.desc}</p>
+                  </div>
+                </div>
+
+                {/* Panel Yetki Satırları */}
+                <div className="divide-y divide-white/5">
+                  {PAGE_METADATA.map(page => {
+                    const PageIcon = page.icon;
+                    const isAllowed = getPermission(role.id, page.id);
+                    const key = `${role.id}-${page.id}`;
+                    const isUpdating = updatingId === key;
+                    return (
+                      <div key={page.id} className="flex items-center justify-between gap-3 px-4 py-3 min-h-[52px]">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`p-1.5 rounded-lg ${page.color} shrink-0`}>
+                            <PageIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-xs font-semibold text-zinc-200 leading-tight">{page.title}</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <button
+                            disabled={!isMudur || isUpdating}
+                            onClick={() => handleToggle(role.id, page.id, isAllowed)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 min-h-[44px] min-w-[44px] items-center justify-center ${isAllowed ? 'bg-emerald-500' : 'bg-red-500/30'}`}
+                          >
+                            <span className="sr-only">Toggle</span>
+                            <span className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${isAllowed ? 'translate-x-5' : 'translate-x-0'}`}>
+                              {isUpdating ? <Loader2 className="w-3 h-3 text-zinc-600 animate-spin" /> : isAllowed ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" /> : <div className="w-1.5 h-1.5 rounded-full bg-red-400" />}
+                            </span>
+                          </button>
+                          {isAllowed ? (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full w-[60px] justify-center">
+                              <Sparkles className="w-2.5 h-2.5" /> İzinli
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-full w-[60px] justify-center">
+                              Engelli
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </td>
-                    
-                    {ROLES.map(role => {
-                      const isAllowed = getPermission(role.id, page.id);
-                      const key = `${role.id}-${page.id}`;
-                      const isUpdating = updatingId === key;
-                      
-                      return (
-                        <td key={role.id} className="p-5 text-center align-middle">
-                          <div className="flex flex-col items-center justify-center space-y-3">
-                            {/* Toggle Wrapper */}
-                            <button
-                              disabled={!isMudur || isUpdating}
-                              onClick={() => handleToggle(role.id, page.id, isAllowed)}
-                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-                                isAllowed ? 'bg-emerald-500' : 'bg-red-500/30'
-                              }`}
-                            >
-                              <span className="sr-only">Toggle</span>
-                              <span
-                                className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
-                                  isAllowed ? 'translate-x-5' : 'translate-x-0'
-                                }`}
-                              >
-                                {isUpdating ? (
-                                  <Loader2 className="w-3 h-3 text-zinc-600 animate-spin" />
-                                ) : isAllowed ? (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                                ) : (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                                )}
-                              </span>
-                            </button>
-                            
-                            {/* Status label */}
-                            <div className="flex items-center gap-1.5">
-                              {isAllowed ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                                  <Sparkles className="w-2.5 h-2.5" /> İzinli
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">
-                                  Engelli
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
