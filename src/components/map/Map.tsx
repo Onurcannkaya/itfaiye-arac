@@ -1033,7 +1033,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       />
 
       {/* Taktiksel Harita Lejantı Panel */}
-      <div className="hidden sm:block absolute bottom-20 sm:bottom-4 left-4 z-10 bg-slate-950/85 backdrop-blur-md border border-white/10 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300 text-xs text-slate-200">
+      <div className="hidden sm:block absolute bottom-20 sm:bottom-4 right-4 z-10 bg-slate-950/85 backdrop-blur-md border border-white/10 rounded-xl p-4 w-60 shadow-2xl transition-all duration-300 text-xs text-slate-200">
         <div className="font-semibold text-slate-100 mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
           <span>Taktiksel Harita Lejantı</span>
@@ -1102,37 +1102,37 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       </div>
       
       {/* Sleek Floating Control Panel for Sivas Kent Rehberi (Desktop Only) */}
-      <div className="hidden md:block absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 rounded-xl p-4 w-64 shadow-2xl transition-all duration-300">
-        <div className="flex items-center gap-2 mb-3 text-slate-100 font-semibold text-sm">
-          <Layers className="w-4 h-4 text-blue-400" />
+      <div className="hidden md:block absolute top-4 left-4 z-10 bg-slate-950/85 backdrop-blur-md border border-slate-800/80 rounded-xl p-3 w-56 shadow-xl transition-all duration-300">
+        <div className="flex items-center gap-2 mb-2 text-slate-100 font-semibold text-xs">
+          <Layers className="w-3.5 h-3.5 text-blue-400" />
           <span>Akıllı Şehir Katmanları</span>
         </div>
-        <div className="h-px bg-slate-800/60 my-2" />
-        <div className="space-y-3 mt-3">
+        <div className="h-px bg-slate-800/60 my-1.5" />
+        <div className="space-y-2 mt-2">
           {/* Binalar Katmanı Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 select-none">
-              <Building2 className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-200">Binalar (Vektör)</span>
+              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-[11px] font-medium text-slate-200">Binalar (Vektör)</span>
             </div>
             <button
               onClick={() => setShowBinalar(!showBinalar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-3.5 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
                 showBinalar ? 'bg-blue-500' : 'bg-slate-700'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  showBinalar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showBinalar ? 'translate-x-3.5' : 'translate-x-0.5'
                 }`}
               />
             </button>
           </div>
 
           {showBinalar && (
-            <div className="pl-6 pr-2 py-1 space-y-1 transition-all duration-300 animate-in slide-in-from-top-1">
-              <div className="flex justify-between text-[10px] text-slate-400">
+            <div className="pl-6 pr-2 py-0.5 space-y-1 transition-all duration-300 animate-in slide-in-from-top-1">
+              <div className="flex justify-between text-[9px] text-slate-400">
                 <span>Bina Opaklığı</span>
                 <span>{Math.round(binalarOpacity * 100)}%</span>
               </div>
@@ -1151,19 +1151,19 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           {/* Numarataj Katmanı Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 select-none">
-              <span className="text-slate-400 font-bold text-xs w-4 text-center">#</span>
-              <span className="text-xs font-medium text-slate-200">Numarataj</span>
+              <span className="text-slate-400 font-bold text-[11px] w-3.5 text-center">#</span>
+              <span className="text-[11px] font-medium text-slate-200">Numarataj</span>
             </div>
             <button
               onClick={() => setShowNumarataj(!showNumarataj)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-3.5 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
                 showNumarataj ? 'bg-blue-500' : 'bg-slate-700'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  showNumarataj ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showNumarataj ? 'translate-x-3.5' : 'translate-x-0.5'
                 }`}
               />
             </button>
@@ -1172,27 +1172,27 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           {/* Mahalle Sınırları Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 select-none">
-              <MapIcon className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-200">Mahalle Sınırları</span>
+              <MapIcon className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-[11px] font-medium text-slate-200">Mahalle Sınırları</span>
             </div>
             <button
               onClick={() => setShowMahalleler(!showMahalleler)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-3.5 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
                 showMahalleler ? 'bg-blue-500' : 'bg-slate-700'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  showMahalleler ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showMahalleler ? 'translate-x-3.5' : 'translate-x-0.5'
                 }`}
               />
             </button>
           </div>
 
           {showMahalleler && (
-            <div className="pl-6 pr-2 py-1 space-y-1 transition-all duration-300 animate-in slide-in-from-top-1">
-              <div className="flex justify-between text-[10px] text-slate-400">
+            <div className="pl-6 pr-2 py-0.5 space-y-1 transition-all duration-300 animate-in slide-in-from-top-1">
+              <div className="flex justify-between text-[9px] text-slate-400">
                 <span>Mahalle Sınır Opaklığı</span>
                 <span>{Math.round(mahallelerOpacity * 100)}%</span>
               </div>
@@ -1202,7 +1202,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
                 max="1"
                 step="0.05"
                 value={mahallelerOpacity}
-                onChange={(e) => setMahallelerOpacity(parseFloat(e.target.value))}
+                onChange={(e) => setBinalarOpacity(parseFloat(e.target.value))}
                 className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>
@@ -1211,19 +1211,19 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           {/* Sokak Aksları Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 select-none">
-              <Milestone className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-200">Sokak Aksları</span>
+              <Milestone className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-[11px] font-medium text-slate-200">Sokak Aksları</span>
             </div>
             <button
               onClick={() => setShowSokaklar(!showSokaklar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-3.5 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
                 showSokaklar ? 'bg-blue-500' : 'bg-slate-700'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  showSokaklar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showSokaklar ? 'translate-x-3.5' : 'translate-x-0.5'
                 }`}
               />
             </button>
@@ -1232,19 +1232,19 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           {/* Yangın Hidrantları Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 select-none">
-              <Droplets className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-medium text-slate-200">Yangın Hidrantları</span>
+              <Droplets className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-[11px] font-medium text-slate-200">Yangın Hidrantları</span>
             </div>
             <button
               onClick={() => setShowHidrantlar(!showHidrantlar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-3.5 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
                 showHidrantlar ? 'bg-blue-500' : 'bg-slate-700'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  showHidrantlar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showHidrantlar ? 'translate-x-3.5' : 'translate-x-0.5'
                 }`}
               />
             </button>
@@ -1253,19 +1253,19 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           {/* Biten/Pasif Vakalar Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 select-none">
-              <span className="w-4 h-4 rounded-full bg-slate-400/20 flex items-center justify-center text-[10px] text-slate-300 font-bold border border-slate-500/30">✓</span>
-              <span className="text-xs font-medium text-slate-200">Biten/Pasif Vakalar</span>
+              <span className="w-3.5 h-3.5 rounded-full bg-slate-400/20 flex items-center justify-center text-[9px] text-slate-300 font-bold border border-slate-500/30">✓</span>
+              <span className="text-[11px] font-medium text-slate-200">Biten/Pasif Vakalar</span>
             </div>
             <button
               onClick={() => setShowPasifVakalar(!showPasifVakalar)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-3.5 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
                 showPasifVakalar ? 'bg-blue-500' : 'bg-slate-700'
               }`}
               type="button"
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  showPasifVakalar ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  showPasifVakalar ? 'translate-x-3.5' : 'translate-x-0.5'
                 }`}
               />
             </button>
