@@ -121,6 +121,11 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS kopuk_kapasite INTEGER DEFAULT 0;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS next_inspection_date DATE;`);
     await query(`UPDATE public.vehicles SET next_inspection_date = "muayeneBitis" WHERE next_inspection_date IS NULL AND "muayeneBitis" IS NOT NULL;`);
+    
+    // Phase 28.21: Add physical status column and sync
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'active';`);
+    await query(`UPDATE public.vehicles SET status = 'maintenance' WHERE durum IN ('bakımda', 'serviste', 'Bekliyor', 'Serviste', 'maintenance', 'Bakımda');`);
+    await query(`UPDATE public.vehicles SET status = 'active' WHERE status != 'maintenance' OR status IS NULL;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }
@@ -313,6 +318,11 @@ export async function GET(
       await ensureVehicleColumnsExist();
       await autoSeedVehiclesIfEmpty();
     }
+    if (table === 'fire_hydrants') {
+      await query(`ALTER TABLE public.fire_hydrants ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'active';`);
+      await query(`UPDATE public.fire_hydrants SET status = 'broken' WHERE durum IN ('Arızalı', 'Bakımda', 'DEVRE_DIŞI', 'broken', 'Arızalı Musluk');`);
+      await query(`UPDATE public.fire_hydrants SET status = 'active' WHERE durum NOT IN ('Arızalı', 'Bakımda', 'DEVRE_DIŞI', 'broken', 'Arızalı Musluk') OR durum IS NULL;`);
+    }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
     }
@@ -400,6 +410,12 @@ export async function POST(
     const insertedRows: any[] = [];
 
     for (const row of rows) {
+      if (table === 'fire_hydrants' && row.status !== undefined) {
+        row.durum = row.status === 'broken' ? 'DEVRE_DIŞI' : 'MEVCUT';
+      }
+      if (table === 'vehicles' && row.status !== undefined) {
+        row.durum = row.status === 'maintenance' ? 'Bakımda' : 'aktif';
+      }
       const keys = Object.keys(row);
       const safeCols = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, '')}"`);
       const placeholders = keys.map((_, i) => `$${i + 1}`);
@@ -479,6 +495,14 @@ export async function PATCH(
 
     const body = await request.json();
     const { data, filters } = body;
+
+    // Sync durum/status on updates
+    if (table === 'fire_hydrants' && data && data.status !== undefined) {
+      data.durum = data.status === 'broken' ? 'DEVRE_DIŞI' : 'MEVCUT';
+    }
+    if (table === 'vehicles' && data && data.status !== undefined) {
+      data.durum = data.status === 'maintenance' ? 'Bakımda' : 'aktif';
+    }
 
     // Authorize vehicle inspection update
     if (table === 'vehicles' && data && data.next_inspection_date !== undefined) {

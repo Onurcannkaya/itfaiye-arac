@@ -8,6 +8,22 @@ import { Personnel } from "@/types"
 
 export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], activePosta: number }) {
   
+  const handleExportPDF = () => {
+    if (!personnel || personnel.length === 0) {
+      alert("Kayıtlı aktif nöbetçi posta listesi bulunamadı");
+      return;
+    }
+    exportShiftListToPDF(personnel, activePosta);
+  };
+
+  const handleExportExcel = () => {
+    if (!personnel || personnel.length === 0) {
+      alert("Kayıtlı aktif nöbetçi posta listesi bulunamadı");
+      return;
+    }
+    exportShiftListToExcel(personnel, activePosta);
+  };
+
   function rolLabel(rol: string, unvan?: string): string {
     if (unvan) return unvan
     switch (rol) {
@@ -21,11 +37,11 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
   return (
     <div>
       <div className="flex justify-end gap-2 mb-4">
-        <Button variant="outline" size="sm" onClick={() => exportShiftListToPDF(personnel, activePosta)} className="gap-2">
+        <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2">
           <FileText className="w-4 h-4 text-red-500" />
           PDF İndir
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportShiftListToExcel(personnel, activePosta)} className="gap-2">
+        <Button variant="outline" size="sm" onClick={handleExportExcel} className="gap-2">
           <TableIcon className="w-4 h-4 text-green-600" />
           Excel İndir
         </Button>

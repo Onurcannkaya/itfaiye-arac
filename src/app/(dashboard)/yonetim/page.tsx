@@ -289,18 +289,19 @@ export default function DashboardPage() {
       const { count: incidentCount } = await api
         .from("incidents")
         .select("*")
+        .eq("status", "active")
 
       // ── 2. KPI: Vehicles in Maintenance ───────────────────
       const { count: maintCount } = await api
-        .from("vehicle_maintenances")
+        .from("vehicles")
         .select("*")
-        .in("durum", ["Bekliyor", "Serviste"])
+        .eq("status", "maintenance")
 
       // ── 3. KPI: Faulty Hydrants ───────────────────────────
       const { count: hydrantCount } = await api
         .from("fire_hydrants")
         .select("*")
-        .in("durum", ["Arızalı", "Bakımda"])
+        .eq("status", "broken")
 
       // ── 4. KPI: Upcoming Trainings ────────────────────────
       const now = new Date().toISOString()
@@ -489,7 +490,7 @@ export default function DashboardPage() {
           }
         }
 
-        const coords = parseLocation(inc.location)
+        const coords = parseLocation(inc.location) || [37.0209312, 39.7339522]
 
         plates.forEach((plaka) => {
           const matchedVeh = vehicles.find((v) => v.plaka === plaka)
@@ -504,29 +505,6 @@ export default function DashboardPage() {
           })
         })
       })
-    }
-
-    if (list.length === 0) {
-      return [
-        {
-          plaka: "58 AAF 110",
-          arac_tipi: "Arazöz (Söndürme)",
-          olay_turu: "Konut Yangını",
-          mahalle: "Alibaba Mh.",
-          adres: "Aşık Veysel Blv. No: 42",
-          cikis_saati: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-          coords: [37.01524, 39.75231],
-        },
-        {
-          plaka: "58 RT 911",
-          arac_tipi: "Arama Kurtarma",
-          olay_turu: "Sıkışmalı Trafik Kazası",
-          mahalle: "Yenişehir Mh.",
-          adres: "Kardeşler Cd. Lise Kavşağı",
-          cikis_saati: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
-          coords: [37.03212, 39.72845],
-        },
-      ]
     }
 
     return list
@@ -567,7 +545,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-3">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-          <p className="text-sm text-muted-foreground font-medium">Karar Destek Kokpiti yükleniyor…</p>
+          <p className="text-sm text-muted-foreground font-medium">Yönetim ve Gösterge Paneli yükleniyor…</p>
         </div>
       </div>
     )
@@ -579,38 +557,36 @@ export default function DashboardPage() {
     label,
     value,
     subtitle,
-    color,
     href,
+    iconColor,
   }: {
     icon: React.ReactNode
     label: string
     value: number | string
     subtitle: string
-    color: string
     href: string
+    iconColor: string
   }) => (
     <Link href={href}>
-      <Card className="group relative overflow-hidden border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 cursor-pointer">
-        {/* Gradient accent bar */}
-        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${color}`} />
+      <Card className="group relative overflow-hidden bg-slate-900/35 border-slate-800/90 hover:border-slate-700/90 transition-all duration-300 hover:shadow-md cursor-pointer rounded-2xl">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs sm:text-sm font-medium text-slate-400 uppercase tracking-wider">
                 {label}
               </p>
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight">{value}</p>
-              <p className="text-xs text-muted-foreground line-clamp-1">{subtitle}</p>
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100">{value}</p>
+              <p className="text-xs text-slate-500 line-clamp-1">{subtitle}</p>
             </div>
             <div
-              className={`p-2.5 rounded-xl bg-gradient-to-br ${color} text-white shadow-md group-hover:scale-110 transition-transform duration-300`}
+              className={`p-2.5 rounded-xl bg-slate-950/65 border border-slate-800 text-slate-300 shadow-inner group-hover:scale-105 transition-transform duration-300 ${iconColor}`}
             >
               {icon}
             </div>
           </div>
-          <div className="flex items-center mt-3 pt-3 border-t border-border/50">
-            <span className="text-xs text-primary font-medium group-hover:underline flex items-center gap-1">
-              Detay Görüntüle <ArrowRight className="w-3 h-3" />
+          <div className="flex items-center mt-3 pt-3 border-t border-slate-800/60">
+            <span className="text-xs text-slate-400 font-medium group-hover:text-slate-200 transition-colors flex items-center gap-1">
+              Detay Görüntüle <ArrowRight className="w-3 h-3 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
         </CardContent>
@@ -637,10 +613,10 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <Shield className="w-6 h-6 text-primary" />
-            Karar Destek Kokpiti
+            Yönetim ve Gösterge Paneli
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Gerçek zamanlı operasyonel durum — Sivas İtfaiye Müdürlüğü
+            Sivas İtfaiye Müdürlüğü Anlık Durum Özeti
           </p>
         </div>
         <Badge variant="outline" className="self-start sm:self-auto px-3 py-1.5 text-xs font-mono border-primary/30 text-primary bg-primary/5">
@@ -649,7 +625,7 @@ export default function DashboardPage() {
         </Badge>
       </div>
 
-      {/* ═══════════ CANLI OPERASYON ODASI & GÖREVDEKİ ARAÇLAR ═══════════ */}
+      {/* ═══════════ GÖREVDEKİ ARAÇ DURUMLARI ═══════════ */}
       <Card className="border-border bg-slate-900/30 backdrop-blur-lg border-slate-800/80 shadow-[0_0_25px_rgba(6,182,212,0.1)] rounded-2xl overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-slate-800/60 gap-3">
           <div className="flex items-center gap-3">
@@ -659,10 +635,10 @@ export default function DashboardPage() {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
-                Canlı Operasyon Odası
+                Görevdeki Araç Durumları
               </h2>
               <p className="text-xs text-cyan-400/80 font-mono mt-0.5 tracking-wide uppercase">
-                GÖREVDEKİ ARAÇLAR & CANLI TELEMETRİ
+                Sivas İtfaiye Müdürlüğü Anlık Durum Özeti
               </p>
             </div>
           </div>
@@ -674,65 +650,71 @@ export default function DashboardPage() {
         </div>
         <CardContent className="p-3 sm:p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {activeMissions.map((mission, index) => {
-              const latVal = mission.coords ? mission.coords[1].toFixed(5) : "39.750"
-              const lngVal = mission.coords ? mission.coords[0].toFixed(5) : "37.016"
-              return (
-                <div 
-                  key={`${mission.plaka}-${index}`}
-                  className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden"
-                >
-                  {/* Subtle siber grids overlay */}
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-                  
-                  <div className="flex items-start justify-between gap-2 relative z-10">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-bold tracking-wider text-slate-200 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded shadow-inner">
-                          {mission.plaka}
-                        </span>
-                        <Badge variant="outline" className="text-[10px] py-0 border-cyan-500/20 text-cyan-400 bg-cyan-950/20 whitespace-nowrap">
-                          {mission.arac_tipi}
-                        </Badge>
+            {activeMissions.length === 0 ? (
+              <div className="col-span-full py-8 text-center text-slate-400 bg-slate-950/25 border border-slate-900 rounded-xl font-medium">
+                Görevde aktif araç bulunmamaktadır.
+              </div>
+            ) : (
+              activeMissions.map((mission, index) => {
+                const latVal = mission.coords ? mission.coords[1].toFixed(5) : "39.73395"
+                const lngVal = mission.coords ? mission.coords[0].toFixed(5) : "37.02093"
+                return (
+                  <div 
+                    key={`${mission.plaka}-${index}`}
+                    className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden"
+                  >
+                    {/* Subtle siber grids overlay */}
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+                    
+                    <div className="flex items-start justify-between gap-2 relative z-10">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-bold tracking-wider text-slate-200 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded shadow-inner">
+                            {mission.plaka}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] py-0 border-cyan-500/20 text-cyan-400 bg-cyan-950/20 whitespace-nowrap">
+                            {mission.arac_tipi}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                          <span>Vaka: <strong className="text-red-400">{mission.olay_turu}</strong></span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-                        <span>Vaka: <strong className="text-red-400">{mission.olay_turu}</strong></span>
+                      <span className="text-[11px] text-slate-400 bg-slate-900/80 border border-slate-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 font-mono whitespace-nowrap">
+                        ⏱️ <LiveDuration cikisSaati={mission.cikis_saati} />
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 border-t border-slate-900 pt-2.5 relative z-10">
+                      <div className="text-xs space-y-1.5">
+                        <p className="text-slate-400 flex items-start gap-1">
+                          <span className="text-slate-500 select-none">📍</span>
+                          <span><strong className="text-slate-300">{mission.mahalle}</strong> {mission.adres}</span>
+                        </p>
+                        <p className="text-slate-500 font-mono text-[10px] flex items-center gap-1">
+                          <span className="text-cyan-500/70 select-none">📡</span>
+                          <span>GPS: <span className="text-cyan-400 font-semibold">{latVal}°N, {lngVal}°E</span></span>
+                        </p>
                       </div>
                     </div>
-                    <span className="text-[11px] text-slate-400 bg-slate-900/80 border border-slate-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 font-mono whitespace-nowrap">
-                      ⏱️ <LiveDuration cikisSaati={mission.cikis_saati} />
-                    </span>
-                  </div>
 
-                  <div className="space-y-2 border-t border-slate-900 pt-2.5 relative z-10">
-                    <div className="text-xs space-y-1.5">
-                      <p className="text-slate-400 flex items-start gap-1">
-                        <span className="text-slate-500 select-none">📍</span>
-                        <span><strong className="text-slate-300">{mission.mahalle}</strong> {mission.adres}</span>
-                      </p>
-                      <p className="text-slate-500 font-mono text-[10px] flex items-center gap-1">
-                        <span className="text-cyan-500/70 select-none">📡</span>
-                        <span>GPS: <span className="text-cyan-400 font-semibold">{latVal}°N, {lngVal}°E</span></span>
-                      </p>
+                    <div className="flex justify-end pt-1 relative z-10">
+                      <button 
+                        onClick={() => {
+                          const lat = mission.coords ? mission.coords[1] : 39.73395
+                          const lng = mission.coords ? mission.coords[0] : 37.02093
+                          router.push(`/yonetim/harita?focusPlaka=${mission.plaka}&lat=${lat}&lng=${lng}`)
+                        }}
+                        className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-950/40 hover:bg-cyan-950/10 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer animate-none"
+                      >
+                        <Target className="w-3.5 h-3.5 text-cyan-400" /> Konuma Git
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex justify-end pt-1 relative z-10">
-                    <button 
-                      onClick={() => {
-                        const lat = mission.coords ? mission.coords[1] : 39.750
-                        const lng = mission.coords ? mission.coords[0] : 37.016
-                        router.push(`/yonetim/harita?focusPlaka=${mission.plaka}&lat=${lat}&lng=${lng}`)
-                      }}
-                      className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-950/40 hover:bg-cyan-950/10 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer animate-none"
-                    >
-                      <Target className="w-3.5 h-3.5 text-cyan-400" /> Konuma Git
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
         </CardContent>
       </Card>
@@ -747,24 +729,24 @@ export default function DashboardPage() {
           label="Aktif Olaylar"
           value={kpi.activeIncidents}
           subtitle="Toplam kayıtlı vaka"
-          color="from-red-500 to-rose-600"
           href="/yonetim/olaylar"
+          iconColor="text-red-400"
         />
         <KPICard
           icon={<Truck className="w-5 h-5" />}
           label="Araç Bakımda"
           value={kpi.vehiclesInMaintenance}
           subtitle="Servis bekleyen araç"
-          color="from-orange-500 to-amber-600"
           href="/yonetim/arac-bakim"
+          iconColor="text-amber-400"
         />
         <KPICard
           icon={<Droplets className="w-5 h-5" />}
           label="Arızalı Hidrant"
           value={kpi.faultyHydrants}
           subtitle="Bakım/Arıza durumunda"
-          color="from-blue-500 to-cyan-600"
           href="/yonetim/harita"
+          iconColor="text-blue-400"
         />
         <KPICard
           icon={<GraduationCap className="w-5 h-5" />}
@@ -775,12 +757,24 @@ export default function DashboardPage() {
               ? `Sonraki: ${kpi.upcomingTraining.nextTopic}`
               : "Planlanmış eğitim yok"
           }
-          color="from-emerald-500 to-green-600"
           href="/yonetim/egitimler"
+          iconColor="text-emerald-400"
         />
       </div>
 
-
+      {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL) ═══════════ */}
+      <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl">
+        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20">
+          <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-100">
+            <Users className="w-4 h-4 text-cyan-500" />
+            <span>{activePostaNumber}. Posta Canlı Nöbetçi Personel Listesi</span>
+          </h2>
+          <Badge variant="outline" className="text-xs bg-slate-950/40 text-slate-300 border-slate-800">{sortedPersonnel.length} Personel</Badge>
+        </div>
+        <CardContent className="p-4 sm:p-5">
+          <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
+        </CardContent>
+      </Card>
 
       {/* ═══════════ CHART + ACTIVITY FEED ═══════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -889,20 +883,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL) ═══════════ */}
-      <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl">
-        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20">
-          <h2 className="text-sm sm:text-base font-bold flex items-center gap-2">
-            <Users className="w-4 h-4 text-cyan-500" />
-            <span>{activePostaNumber}. Posta Canlı Nöbetçi Personel Listesi</span>
-          </h2>
-          <Badge variant="outline" className="text-xs bg-slate-950/40 text-slate-300 border-slate-800">{sortedPersonnel.length} Personel</Badge>
-        </div>
-        <CardContent className="p-4 sm:p-5">
-          <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
-        </CardContent>
-      </Card>
 
       {/* ═══════════ QUICK LINKS ═══════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
