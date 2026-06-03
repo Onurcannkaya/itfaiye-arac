@@ -56,6 +56,44 @@ interface ActivityItem {
   rawTime: string
 }
 
+interface IncidentInfo {
+  created_at: string
+}
+
+interface IncidentDetail {
+  id: string | number
+  olay_turu: string
+  mahalle: string | null
+  created_at: string
+}
+
+interface VehicleMaintenance {
+  id: number
+  plaka: string
+  islem_turu: string
+  created_at: string
+}
+
+interface FireHydrant {
+  id: string | number
+  no: string | null
+  durum: string
+  created_at: string
+}
+
+interface ActivityAndTraining {
+  id: number
+  faaliyet_turu: string
+  faaliyet_konusu: string
+  created_at: string
+}
+
+interface DashboardTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number; name?: string; color?: string }>
+  label?: string
+}
+
 // ─── Helpers ────────────────────────────────────────────────
 function formatRelativeTime(dateStr: string): string {
   const now = new Date()
@@ -176,7 +214,7 @@ export default function DashboardPage() {
         })
       }
 
-      recentIncidents?.forEach((inc: any) => {
+      recentIncidents?.forEach((inc: IncidentInfo) => {
         const dateStr = new Date(inc.created_at).toISOString().split("T")[0]
         const bucket = buckets.find((b) => b.date === dateStr)
         if (bucket) bucket.count++
@@ -193,7 +231,7 @@ export default function DashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5)
 
-      recentInc?.forEach((r: any) =>
+      recentInc?.forEach((r: IncidentDetail) =>
         feed.push({
           id: `inc-${r.id}`,
           type: "incident",
@@ -210,7 +248,7 @@ export default function DashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5)
 
-      recentMaint?.forEach((r: any) =>
+      recentMaint?.forEach((r: VehicleMaintenance) =>
         feed.push({
           id: `mnt-${r.id}`,
           type: "maintenance",
@@ -227,7 +265,7 @@ export default function DashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5)
 
-      recentHyd?.forEach((r: any) =>
+      recentHyd?.forEach((r: FireHydrant) =>
         feed.push({
           id: `hyd-${r.id}`,
           type: "hydrant",
@@ -244,7 +282,7 @@ export default function DashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5)
 
-      recentTrain?.forEach((r: any) =>
+      recentTrain?.forEach((r: ActivityAndTraining) =>
         feed.push({
           id: `trn-${r.id}`,
           type: "training",
@@ -335,7 +373,7 @@ export default function DashboardPage() {
   )
 
   // ─── Custom Tooltip for Chart ─────────────────────────────
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: DashboardTooltipProps) => {
     if (!active || !payload?.length) return null
     return (
       <div className="bg-background border shadow-xl rounded-lg px-3 py-2">
@@ -347,7 +385,7 @@ export default function DashboardPage() {
 
   // ─── Render ───────────────────────────────────────────────
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
+    <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6 max-w-[1600px] mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>
@@ -535,6 +573,13 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
+      <div 
+        className="w-full block pointer-events-none clear-both" 
+        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
+        aria-hidden="true" 
+      />
     </div>
   )
 }
