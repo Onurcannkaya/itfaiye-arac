@@ -17,7 +17,7 @@ export function getTriageInfo(olayTuru: string) {
       label: "KRİTİK",
       badgeText: "🔴 KRİTİK",
       color: "#ef4444",
-      bgClass: "bg-red-500/10 text-red-500 border border-red-500/20",
+      bgClass: "bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)]",
       glowClass: "triage-critical-glow",
       animation: "pulse-glow-red 1s infinite ease-in-out"
     };
@@ -29,7 +29,7 @@ export function getTriageInfo(olayTuru: string) {
       label: "ORTA",
       badgeText: "🟡 ORTA",
       color: "#eab308",
-      bgClass: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20",
+      bgClass: "bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.05)]",
       glowClass: "triage-medium-glow",
       animation: "pulse-glow-yellow 2s infinite ease-in-out"
     };
@@ -41,7 +41,7 @@ export function getTriageInfo(olayTuru: string) {
     label: "DÜŞÜK",
     badgeText: "🟢 DÜŞÜK",
     color: "#22c55e",
-    bgClass: "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20",
+    bgClass: "bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)]",
     glowClass: "triage-low-glow",
     animation: "pulse-glow-green 2.5s infinite ease-in-out"
   };

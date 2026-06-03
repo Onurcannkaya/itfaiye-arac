@@ -116,7 +116,7 @@ export function MobileNav() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setMenuOpen(false)} />
           
           {/* Drawer Sheet */}
-          <div className="relative z-50 bg-slate-950/95 border-t border-slate-900 rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-hidden flex flex-col space-y-4 animate-in slide-in-from-bottom duration-300">
+          <div className="relative z-50 bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-hidden flex flex-col space-y-4 animate-in slide-in-from-bottom duration-300">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-slate-900 pb-3">
               <div className="flex items-center space-x-2">

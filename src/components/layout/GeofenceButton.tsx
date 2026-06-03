@@ -231,10 +231,10 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
         disabled={loading || btnLoading}
         onClick={handleToggleDuty}
         className={cn(
-          "w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 transition-all font-bold text-sm shadow-md",
+          "w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)] font-bold text-sm shadow-md",
           dutyStatus === 'AKTIF'
-            ? "bg-rose-950/20 border border-rose-500/40 text-rose-400 hover:bg-rose-950/40 active:scale-95 transition-all shadow-[0_0_15px_rgba(244,63,94,0.1)]"
-            : "bg-emerald-950/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-950/40 active:scale-95 transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+            ? "bg-rose-950/20 border border-rose-500/40 text-rose-400 hover:bg-rose-950/40 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
+            : "bg-emerald-950/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-950/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
         )}
       >
         {loading || btnLoading ? (
@@ -273,7 +273,7 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
       <Button 
         onClick={handleToggleDuty}
         disabled={isButtonDisabled}
-        className={`hidden md:flex items-center space-x-2 rounded-full px-5 py-2 transition-all duration-300 font-bold shadow-lg border border-white/10 ${
+        className={`hidden md:flex items-center space-x-2 rounded-full px-5 py-2 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)] font-bold shadow-lg border border-white/10 ${
           isButtonDisabled
             ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60'
             : dutyStatus === 'AKTIF'

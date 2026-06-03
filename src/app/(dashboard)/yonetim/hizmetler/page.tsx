@@ -313,16 +313,16 @@ export default function HizmetlerPage() {
     const d = durum ? durum.toUpperCase() : 'BEKLEMEDE';
     switch (d) {
       case 'ONAYLANDI': 
-        return <Badge className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-bold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
+        return <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] font-bold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
       case 'EKİP ATANDI': 
       case 'EKİP_ATANDI':
         return <Badge className="bg-blue-950/40 border border-blue-500/30 text-blue-400 font-bold px-2.5 py-1 rounded-lg">Ekip Atandı</Badge>
       case 'REDDEDİLDİ':
-        return <Badge className="bg-red-950/40 border border-red-500/30 text-red-400 font-bold px-2.5 py-1 rounded-lg">Reddedildi</Badge>
+        return <Badge className="bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] font-bold px-2.5 py-1 rounded-lg">Reddedildi</Badge>
       case 'BEKLIYOR':
       case 'BEKLEMEDE':
       default: 
-        return <Badge className="bg-slate-800 border border-slate-700 text-slate-300 font-bold px-2.5 py-1 rounded-lg">Bekliyor</Badge>
+        return <Badge className="bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.05)] font-bold px-2.5 py-1 rounded-lg">Bekliyor</Badge>
     }
   }
 
@@ -367,7 +367,7 @@ export default function HizmetlerPage() {
         {/* 1. Üst Özet KPI Kartları (Glassmorphic) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Baca Temizliği */}
-          <Card className="bg-slate-900/40 backdrop-blur-md border border-white/5 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-blue-500/20 transition duration-300">
+          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-blue-500/20 transition duration-300">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-blue-500 group-hover:scale-110 transition duration-500">
               <Brush className="w-24 h-24" />
             </div>
@@ -384,7 +384,7 @@ export default function HizmetlerPage() {
           </Card>
 
           {/* Yangın Önlem / Ruhsat */}
-          <Card className="bg-slate-900/40 backdrop-blur-md border border-white/5 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-yellow-500/20 transition duration-300">
+          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-yellow-500/20 transition duration-300">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-yellow-500 group-hover:scale-110 transition duration-500">
               <ShieldCheck className="w-24 h-24" />
             </div>
@@ -401,7 +401,7 @@ export default function HizmetlerPage() {
           </Card>
 
           {/* Eğitim Talepleri */}
-          <Card className="bg-slate-900/40 backdrop-blur-md border border-white/5 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-purple-500/20 transition duration-300">
+          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-purple-500/20 transition duration-300">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-purple-500 group-hover:scale-110 transition duration-500">
               <GraduationCap className="w-24 h-24" />
             </div>
@@ -418,7 +418,7 @@ export default function HizmetlerPage() {
           </Card>
 
           {/* Vezne / Tahsilat */}
-          <Card className="bg-slate-900/40 backdrop-blur-md border border-white/5 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition duration-300">
+          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/20 transition duration-300">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-110 transition duration-500">
               <CreditCard className="w-24 h-24" />
             </div>
@@ -436,7 +436,7 @@ export default function HizmetlerPage() {
         </div>
 
         {/* 3. Resmi İş Akışı ve Kurumsal Tablo Düzenlemesi */}
-        <Card className="border-zinc-800 bg-zinc-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
           <CardHeader className="border-b border-zinc-800 bg-zinc-900/10 pb-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
@@ -513,7 +513,7 @@ export default function HizmetlerPage() {
                             <td className="p-4 align-middle text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2">
                                 {isMudur ? (
-                                  <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-[1.02] transition duration-150 border border-cyan-400/20 whitespace-nowrap" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
+                                  <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 whitespace-nowrap transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
                                     {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
                                   </Button>
                                 ) : (
@@ -584,7 +584,7 @@ export default function HizmetlerPage() {
                         {/* Aksiyon Butonu */}
                         {isMudur ? (
                           <Button 
-                            className="w-full bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] transition duration-150 border border-cyan-400/20"
+                            className="w-full bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
                             onClick={() => setSelectedRequest(req)}
                             disabled={updating === req.id}
                           >
@@ -611,7 +611,7 @@ export default function HizmetlerPage() {
         {/* Premium Amir Taktik Operasyon Modalı */}
         {selectedRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
-            <Card className="w-full max-w-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
+            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
               <CardHeader className="bg-slate-900/40 border-b border-slate-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100 uppercase tracking-wider">
@@ -896,7 +896,7 @@ export default function HizmetlerPage() {
         {/* Create Modal */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-8">
+            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-8">
               <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100">

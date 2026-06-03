@@ -206,7 +206,7 @@ export default function EnvanterYonetimiPage() {
 
       <div className="print:hidden space-y-6">
         {/* Seçici Kart */}
-        <Card className="backdrop-blur-md bg-slate-900/60 border border-white/10 shadow-[0_0_15px_-3px_rgba(34,211,238,0.1)] rounded-2xl">
+        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl">
           <CardContent className="p-5 flex flex-col md:flex-row items-center gap-4">
             <div className="flex-1 w-full">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">HEDEF TAKTİK ARAÇ SEÇİMİ</label>
@@ -234,7 +234,7 @@ export default function EnvanterYonetimiPage() {
         </Card>
 
         {/* DataGrid Yöneticisi */}
-        <Card className="backdrop-blur-md bg-slate-900/60 border border-white/10 shadow-[0_0_20px_-3px_rgba(34,211,238,0.15)] overflow-hidden rounded-2xl">
+        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
           <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
             <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
               <Settings className="w-4 h-4 text-cyan-400 animate-spin-slow" />
@@ -404,7 +404,7 @@ export default function EnvanterYonetimiPage() {
              <Button 
                onClick={saveInventoryToDB} 
                disabled={isSaving} 
-               className="font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] border border-emerald-500/30 px-5 w-full sm:w-auto min-h-[44px]"
+               className="font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] border border-emerald-500/30 px-5 w-full sm:w-auto min-h-[44px] transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
              >
                {isSaving ? "Şifreleniyor..." : <><Save className="w-4 h-4 mr-2"/> Taktik Kaydet</>}
              </Button>

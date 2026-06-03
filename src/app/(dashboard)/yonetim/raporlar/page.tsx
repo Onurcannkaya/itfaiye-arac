@@ -111,7 +111,7 @@ export default function LogsReportsPage() {
       </div>
 
       {/* FILTERS */}
-      <Card className="bg-surface/50 border-primary/10">
+      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
         <CardContent className="p-4 sm:p-6 space-y-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 space-y-1.5">
@@ -175,7 +175,7 @@ export default function LogsReportsPage() {
       </Card>
 
       {/* DATA GRID */}
-      <Card>
+      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
         <CardHeader className="p-4 sm:p-6 pb-2 border-b border-border/50 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -235,11 +235,11 @@ export default function LogsReportsPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {log.durum === "Sorunlu" ? (
-                          <Badge variant="danger" className="gap-1 px-2 py-0.5">
+                          <Badge className="gap-1 px-2 py-0.5 bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)]">
                             <AlertTriangle className="w-3 h-3" /> Sorunlu
                           </Badge>
                         ) : (
-                          <Badge variant="success" className="gap-1 px-2 py-0.5 bg-success/10 text-success border-success/20">
+                          <Badge className="gap-1 px-2 py-0.5 bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)]">
                             <CheckCircle2 className="w-3 h-3" /> Kusursuz
                           </Badge>
                         )}

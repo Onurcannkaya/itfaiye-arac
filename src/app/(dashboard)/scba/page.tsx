@@ -247,14 +247,14 @@ export default function SCBAModulePage() {
              const rem = calculateRemainingDays(cyl.sonraki_test_tarihi)
              
              return (
-               <Card key={cyl.id} className={`overflow-hidden border-l-4 ${expired ? 'border-l-danger bg-danger/5' : warning ? 'border-l-warning' : 'border-l-success'}`}>
+               <Card key={cyl.id} className={`overflow-hidden border-l-4 bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] ${expired ? 'border-l-danger bg-danger/5' : warning ? 'border-l-warning' : 'border-l-success'}`}>
                  <CardContent className="p-5">
                    <div className="flex justify-between items-start mb-4">
                      <div>
                        <h3 className="font-bold text-lg font-mono">{cyl.seri_no}</h3>
                        <p className="text-sm text-muted-foreground">{cyl.marka} — {cyl.kapasite_lt}L / {cyl.basinc_bar} Bar</p>
                      </div>
-                     {expired ? <Badge variant="danger">TEST GEÇMİŞ!</Badge> : warning ? <Badge variant="warning">Test Yaklaşıyor</Badge> : <Badge variant="success">Test Geçerli</Badge>}
+                     {expired ? <Badge className="bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)]">TEST GEÇMİŞ!</Badge> : warning ? <Badge className="bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.05)]">Test Yaklaşıyor</Badge> : <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)]">Test Geçerli</Badge>}
                    </div>
 
                    <div className="grid grid-cols-2 gap-4 text-sm mb-4 bg-background p-3 rounded-lg border">
@@ -306,7 +306,7 @@ export default function SCBAModulePage() {
                    ) : (
                      <Button 
                        variant="outline" 
-                       className="w-full mt-3 min-h-[52px]" 
+                       className="w-full mt-3 min-h-[52px] transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]" 
                        disabled={expired && !isAdminOrEditor} 
                        onClick={() => setSelectedCyl(cyl)}
                      >

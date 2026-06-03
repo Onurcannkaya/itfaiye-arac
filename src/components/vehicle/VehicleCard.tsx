@@ -103,18 +103,18 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
   const getStatusBadge = (durum: string) => {
     switch (durum) {
       case 'aktif':
-        return <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)] text-[10px] font-bold tracking-wide uppercase px-2 py-0.5">AKTİF</Badge>
+        return <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] text-[10px] font-bold tracking-wide uppercase px-2 py-0.5">AKTİF</Badge>
       case 'bakimda':
-        return <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)] text-[10px] font-bold tracking-wide uppercase px-2 py-0.5">BAKIMDA</Badge>
+        return <Badge className="bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.05)] text-[10px] font-bold tracking-wide uppercase px-2 py-0.5">BAKIMDA</Badge>
       case 'arizali':
-        return <Badge className="bg-rose-500/10 text-rose-400 border border-rose-500/30 shadow-[0_0_12px_rgba(239,68,68,0.25)] text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 animate-pulse">ARIZALI</Badge>
+        return <Badge className="bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 animate-pulse">ARIZALI</Badge>
       default:
-        return <Badge className="bg-slate-500/10 text-slate-400 border border-slate-500/30 text-[10px] font-bold tracking-wide uppercase px-2 py-0.5">PASİF</Badge>
+        return <Badge className="bg-slate-900/60 text-slate-400 border border-slate-800 text-[10px] font-bold tracking-wide uppercase px-2 py-0.5">PASİF</Badge>
     }
   }
   
   return (
-    <Card className="backdrop-blur-md bg-slate-900/70 border border-white/10 hover:border-cyan-500/30 hover:shadow-[0_0_20px_-3px_rgba(34,211,238,0.25)] transition-all duration-300 group relative overflow-hidden rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+    <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:border-cyan-500/30 hover:shadow-[0_0_20px_-3px_rgba(34,211,238,0.25)] transition-all duration-300 group relative overflow-hidden rounded-2xl">
       {/* Decorative premium line */}
       <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
       

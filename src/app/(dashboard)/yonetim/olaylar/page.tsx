@@ -144,7 +144,7 @@ export default function OlaylarPage() {
             incidents.map(inc => {
               const triage = getTriageInfo(inc.olay_turu)
               return (
-                <Card key={inc.id} className="hover:border-primary/50 transition-colors">
+                <Card key={inc.id} className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:border-primary/50 transition-all duration-200">
                   <CardContent className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
                       <div 
@@ -178,13 +178,13 @@ export default function OlaylarPage() {
                   {/* Desktop Action Area */}
                   <div className="hidden md:flex md:flex-col gap-2 items-end md:min-w-[170px]">
                     {inc.status === 'closed' && (
-                      <Badge className="bg-success/10 text-success border-none text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
+                      <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
                     )}
                     <div className="flex gap-2 w-full">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className={`flex-1 text-xs ${inc.status === 'closed' ? 'border-success/30 text-success hover:bg-success/10' : 'border-danger/30 text-danger hover:bg-danger/10'}`}
+                        className={`flex-1 text-xs transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)] ${inc.status === 'closed' ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/40' : 'border-danger/30 text-danger hover:bg-danger/10'}`}
                         onClick={() => setEk16Incident(inc)}
                       >
                         <FileText className="w-3.5 h-3.5 mr-1.5" />
@@ -208,11 +208,11 @@ export default function OlaylarPage() {
                       <div className="flex flex-col gap-2.5 w-full">
                         {/* Status & Delete Row */}
                         <div className="flex items-center justify-between w-full">
-                          <Badge className="bg-success/10 text-success border-none text-[11px] font-bold px-3 py-1">KAPALI</Badge>
+                          <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] text-[11px] font-bold px-3 py-1">KAPALI</Badge>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-danger/30 text-danger hover:bg-danger/10 text-[11px] px-3 py-1 gap-1.5 h-8 font-medium"
+                            className="border-danger/30 text-danger hover:bg-danger/10 text-[11px] px-3 py-1 gap-1.5 h-8 font-medium transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
                             onClick={() => handleDelete(inc.id)}
                           >
                             <Trash2 className="w-3.5 h-3.5" /> Vakayı Sil
@@ -223,7 +223,7 @@ export default function OlaylarPage() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="w-full text-xs border-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/10 h-10 gap-1.5"
+                          className="w-full text-xs border-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/10 h-10 gap-1.5 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
                           onClick={() => setEk16Incident(inc)}
                         >
                           <FileText className="w-4 h-4 text-sky-500" /> Raporu Gör
@@ -233,7 +233,7 @@ export default function OlaylarPage() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="w-full text-xs border-success/30 text-success hover:bg-success/10 h-10 gap-1.5 font-semibold bg-success/5"
+                          className="w-full text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 h-10 gap-1.5 font-semibold bg-emerald-500/5 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
                           onClick={() => setEk16Incident(inc)}
                         >
                           <FileText className="w-4 h-4" /> EK-16 Raporu

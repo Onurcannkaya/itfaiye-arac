@@ -180,7 +180,7 @@ export default function YetkilerPage() {
       )}
 
       {/* MATRIX TABLE */}
-      <Card className="border-zinc-800 bg-zinc-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
+      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
         <CardHeader className="border-b border-zinc-800 bg-zinc-900/20 pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-black tracking-wider uppercase text-zinc-300">MODERN YETKİLENDİRME GRİD MATRİSİ</CardTitle>
@@ -245,9 +245,9 @@ export default function YetkilerPage() {
                               </button>
                               <div className="flex items-center gap-1.5">
                                 {isAllowed ? (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full"><Sparkles className="w-2.5 h-2.5" /> İzinli</span>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] px-2 py-0.5 rounded-full"><Sparkles className="w-2.5 h-2.5" /> İzinli</span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">Engelli</span>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-950/30 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] px-2 py-0.5 rounded-full">Engelli</span>
                                 )}
                               </div>
                             </div>
@@ -303,11 +303,11 @@ export default function YetkilerPage() {
                             </span>
                           </button>
                           {isAllowed ? (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full w-[60px] justify-center">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] px-2 py-1 rounded-full w-[65px] justify-center">
                               <Sparkles className="w-2.5 h-2.5" /> İzinli
                             </span>
                           ) : (
-                            <span className="inline-flex items-center text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-full w-[60px] justify-center">
+                            <span className="inline-flex items-center text-[10px] font-bold text-red-400 bg-red-950/30 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] px-2 py-1 rounded-full w-[65px] justify-center">
                               Engelli
                             </span>
                           )}
