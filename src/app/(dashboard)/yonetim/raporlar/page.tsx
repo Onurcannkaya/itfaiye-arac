@@ -104,7 +104,7 @@ export default function LogsReportsPage() {
 
   return (
     <PageGuard pageId="raporlar">
-      <div className="space-y-6">
+      <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6">
       <div className="border-b border-border/50 pb-4">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Sistem Logları ve Raporlar</h1>
         <p className="text-muted-foreground mt-1 text-sm">Tüm araç kontrolleri ve envanter sayımlarının birleştirilmiş görünümü.</p>
@@ -255,6 +255,13 @@ export default function LogsReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
+      <div 
+        className="w-full block md:hidden pointer-events-none clear-both" 
+        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
+        aria-hidden="true" 
+      />
     </div>
     </PageGuard>
   )

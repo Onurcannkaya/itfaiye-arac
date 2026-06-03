@@ -136,7 +136,7 @@ export default function SCBAModulePage() {
   const expiredCount = cylinders.filter(c => isTestExpired(c.sonraki_test_tarihi)).length
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">SCBA İstasyon Takibi</h1>
@@ -325,6 +325,13 @@ export default function SCBAModulePage() {
           )}
         </div>
       )}
+
+      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
+      <div 
+        className="w-full block md:hidden pointer-events-none clear-both" 
+        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
+        aria-hidden="true" 
+      />
     </div>
   )
 }
