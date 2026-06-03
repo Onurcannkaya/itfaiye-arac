@@ -96,6 +96,58 @@ function getTacticalSilhouette(aracTipi: string) {
   }
 }
 
+function formatToTurkishDate(dateStr: string | undefined | null): string {
+  if (!dateStr || dateStr === 'Tarih Girilmedi') return 'Tarih Girilmedi';
+  try {
+    const [year, month, day] = dateStr.split('-');
+    if (!year || !month || !day) return dateStr;
+    return `${day}.${month}.${year}`;
+  } catch {
+    return dateStr;
+  }
+}
+
+function getInspectionStatus(nextInspectionDate: string | undefined | null) {
+  if (!nextInspectionDate || nextInspectionDate === 'Tarih Girilmedi') {
+    return {
+      text: 'Tarih Girilmedi',
+      badgeClass: 'bg-slate-900/60 text-slate-400 border border-slate-800'
+    };
+  }
+
+  const inspectionDate = new Date(nextInspectionDate);
+  if (isNaN(inspectionDate.getTime())) {
+    return {
+      text: 'Geçersiz Tarih',
+      badgeClass: 'bg-slate-900/60 text-slate-400 border border-slate-800'
+    };
+  }
+
+  const now = new Date();
+  const d1 = Date.UTC(inspectionDate.getFullYear(), inspectionDate.getMonth(), inspectionDate.getDate());
+  const d2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const diffTime = d1 - d2;
+  const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (remainingDays <= 0) {
+    return {
+      text: '⚠️ Muayene Süresi Geçti!',
+      badgeClass: 'bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)] animate-pulse'
+    };
+  } else if (remainingDays <= 30) {
+    return {
+      text: `⏳ Son ${remainingDays} Gün`,
+      badgeClass: 'bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+    };
+  } else {
+    return {
+      text: `✅ ${remainingDays} Gün Kaldı`,
+      badgeClass: 'bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+    };
+  }
+}
+
 export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
   const idStr = vehicle.plaka.replace(/\s+/g, '-').toLowerCase()
   const activeDurum = (vehicle.durum || "aktif").toLowerCase();
@@ -197,6 +249,19 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Glasmorfik Muayene Takip Alanı */}
+        <div className="mt-4 bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
+            <p className="text-xs font-semibold text-slate-500 font-mono mt-0.5">
+              {formatToTurkishDate(vehicle.next_inspection_date)}
+            </p>
+          </div>
+          <Badge className={`text-xs font-bold px-2.5 py-1 ${getInspectionStatus(vehicle.next_inspection_date).badgeClass}`}>
+            {getInspectionStatus(vehicle.next_inspection_date).text}
+          </Badge>
         </div>
 
         {/* Zimmetli Personel Footer */}

@@ -119,6 +119,8 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS model TEXT;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS su_kapasite INTEGER DEFAULT 0;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS kopuk_kapasite INTEGER DEFAULT 0;`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS next_inspection_date DATE;`);
+    await query(`UPDATE public.vehicles SET next_inspection_date = "muayeneBitis" WHERE next_inspection_date IS NULL AND "muayeneBitis" IS NOT NULL;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }
@@ -211,8 +213,8 @@ async function autoSeedVehiclesIfEmpty() {
       const { mockVehicles } = await import('@/lib/data');
       for (const v of mockVehicles) {
         await query(
-          'INSERT INTO vehicles (plaka, arac_tipi, marka, durum, bolmeler, km, "motorSaatiPTO", "sigortaBitis", "muayeneBitis", istasyon, yil, model) ' +
-          'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ' +
+          'INSERT INTO vehicles (plaka, arac_tipi, marka, durum, bolmeler, km, "motorSaatiPTO", "sigortaBitis", "muayeneBitis", next_inspection_date, istasyon, yil, model) ' +
+          'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ' +
           'ON CONFLICT (plaka) DO NOTHING',
           [
             v.plaka,
@@ -223,6 +225,7 @@ async function autoSeedVehiclesIfEmpty() {
             v.km || 0,
             v.motorSaatiPTO || 0,
             v.sigortaBitis || null,
+            v.muayeneBitis || null,
             v.muayeneBitis || null,
             v.istasyon || null,
             v.yil || null,

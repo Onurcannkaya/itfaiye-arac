@@ -19,6 +19,7 @@ export interface Vehicle {
   durum?: "aktif" | "bakimda" | "arizali" | "pasif" | string;
   sigortaBitis?: string;
   muayeneBitis?: string;
+  next_inspection_date?: string;
   istasyon?: string;
   yil?: number;
   model?: string;

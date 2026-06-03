@@ -23,6 +23,11 @@ export async function GET(request: NextRequest) {
       durum: row.durum || 'aktif',
       sigortaBitis: row.sigortaBitis || '',
       muayeneBitis: row.muayeneBitis || '',
+      next_inspection_date: row.next_inspection_date
+        ? new Date(row.next_inspection_date).toISOString().split('T')[0]
+        : (row.muayeneBitis
+            ? new Date(row.muayeneBitis).toISOString().split('T')[0]
+            : 'Tarih Girilmedi'),
       istasyon: row.istasyon || '',
       yil: row.yil || 0,
       model: row.model || '',

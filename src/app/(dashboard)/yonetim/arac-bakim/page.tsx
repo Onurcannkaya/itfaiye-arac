@@ -33,7 +33,59 @@ import { Vehicle, AracBakimGecmisi, FuelLog, Personnel } from "@/types"
 // ─── Constants ────────────────────────────────────────────────────
 const ISLEM_TURLERI = ['Periyodik Bakım', 'Arıza/Tamir', 'Yağ Değişimi', 'Lastik', 'Kaza/Hasar', 'Diğer']
 
-type ActiveTab = 'bakim' | 'yakit' | 'onay' | 'sarf'
+type ActiveTab = 'bakim' | 'yakit' | 'onay' | 'sarf' | 'muayene'
+
+function formatToTurkishDate(dateStr: string | undefined | null): string {
+  if (!dateStr || dateStr === 'Tarih Girilmedi') return 'Tarih Girilmedi';
+  try {
+    const [year, month, day] = dateStr.split('-');
+    if (!year || !month || !day) return dateStr;
+    return `${day}.${month}.${year}`;
+  } catch {
+    return dateStr;
+  }
+}
+
+function getInspectionStatus(nextInspectionDate: string | undefined | null) {
+  if (!nextInspectionDate || nextInspectionDate === 'Tarih Girilmedi') {
+    return {
+      text: 'Tarih Girilmedi',
+      badgeClass: 'bg-slate-900/60 text-slate-400 border border-slate-800'
+    };
+  }
+
+  const inspectionDate = new Date(nextInspectionDate);
+  if (isNaN(inspectionDate.getTime())) {
+    return {
+      text: 'Geçersiz Tarih',
+      badgeClass: 'bg-slate-900/60 text-slate-400 border border-slate-800'
+    };
+  }
+
+  const now = new Date();
+  const d1 = Date.UTC(inspectionDate.getFullYear(), inspectionDate.getMonth(), inspectionDate.getDate());
+  const d2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const diffTime = d1 - d2;
+  const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (remainingDays <= 0) {
+    return {
+      text: '⚠️ Muayene Süresi Geçti!',
+      badgeClass: 'bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)] animate-pulse'
+    };
+  } else if (remainingDays <= 30) {
+    return {
+      text: `⏳ Son ${remainingDays} Gün`,
+      badgeClass: 'bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+    };
+  } else {
+    return {
+      text: `✅ ${remainingDays} Gün Kaldı`,
+      badgeClass: 'bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+    };
+  }
+}
 
 export default function AracBakimPage() {
   const router = useRouter()
@@ -284,6 +336,41 @@ export default function AracBakimPage() {
     }).filter(item => item.isRisk)
   }, [vehicles, allLogs])
 
+  // 2b. Muayene Countdown Tracker (<= 30 days remaining)
+  const inspectionRiskList = useMemo(() => {
+    return vehicles.map(v => {
+      const nextDate = v.next_inspection_date;
+      if (!nextDate || nextDate === 'Tarih Girilmedi') {
+        return {
+          plaka: v.plaka,
+          model: `${v.marka || ''} ${v.model || ''}`,
+          remainingDays: 9999,
+          isRisk: false
+        };
+      }
+      const inspectionDate = new Date(nextDate);
+      if (isNaN(inspectionDate.getTime())) {
+        return {
+          plaka: v.plaka,
+          model: `${v.marka || ''} ${v.model || ''}`,
+          remainingDays: 9999,
+          isRisk: false
+        };
+      }
+      const now = new Date();
+      const d1 = Date.UTC(inspectionDate.getFullYear(), inspectionDate.getMonth(), inspectionDate.getDate());
+      const d2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffTime = d1 - d2;
+      const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return {
+        plaka: v.plaka,
+        model: `${v.marka || ''} ${v.model || ''}`,
+        remainingDays,
+        isRisk: remainingDays <= 30
+      };
+    }).filter(item => item.isRisk);
+  }, [vehicles])
+
   // 3. Active Unresolved Arıza Bildirimleri Banner
   const activeUnresolvedAlerts = useMemo(() => {
     const dbAlerts = allLogs.filter(l => {
@@ -528,8 +615,8 @@ export default function AracBakimPage() {
           </div>
         </div>
 
-        {/* ═══ 1. Cam Morfolojili 3 Taktik Skorbord ═══ */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* ═══ 1. Cam Morfolojili 4 Taktik Skorbord ═══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           
           {/* Skorbord 1: Kritik Antifriz Alarmı */}
           <Card className="bg-slate-950/40 backdrop-blur-xl border border-red-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-red-500/40 transition duration-300">
@@ -630,6 +717,44 @@ export default function AracBakimPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Skorbord 4: Muayene Takip Alarmı */}
+          <Card className="bg-slate-950/40 backdrop-blur-xl border border-cyan-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-cyan-500/40 transition duration-300">
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-cyan-500 group-hover:scale-110 transition duration-500">
+              <Calendar className="w-24 h-24" />
+            </div>
+            <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-cyan-400 font-black tracking-widest uppercase">MUAYENE PLANI ALARMI</span>
+                <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+                  <Calendar className="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-3xl font-black text-cyan-400">{inspectionRiskList.length} Risk Sınırında</h3>
+                <p className="text-[10px] text-slate-400 mt-1">Muayene süresi geçmiş veya 30 günden az kalmış araçlar</p>
+              </div>
+
+              {inspectionRiskList.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {inspectionRiskList.map(item => (
+                    <button
+                      key={item.plaka}
+                      onClick={() => jumpToVehicle(item.plaka)}
+                      className="bg-cyan-950/40 hover:bg-cyan-500 hover:text-slate-950 text-cyan-400 font-bold border border-cyan-500/20 px-2 py-0.5 rounded text-[10px] tracking-wider transition active:scale-95 flex items-center gap-1"
+                      title={`${item.model} (${item.remainingDays <= 0 ? 'Süre Geçti' : `${item.remainingDays} gün`})`}
+                    >
+                      {item.plaka} <span className="text-[9px] opacity-75">{item.remainingDays <= 0 ? 'Geçti' : `${item.remainingDays}g`}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[11px] text-green-400 font-bold pt-2 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" /> Tüm araç muayeneleri güncel
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* ═══ 2. Taktik Filtre Paneli & Sekmeler ═══ */}
@@ -668,6 +793,16 @@ export default function AracBakimPage() {
                 }`}
               >
                 <Droplets className="w-3.5 h-3.5" /> Sarf İstatistikleri ({sarfStats.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('muayene')}
+                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                  activeTab === 'muayene'
+                    ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" /> Muayene Takip Sayaçları ({vehicles.length})
               </button>
               <button
                 onClick={() => setActiveTab('onay')}
@@ -1059,6 +1194,64 @@ export default function AracBakimPage() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* ═══ Sekme 5: Muayene Takip Sayaçları Grid İçeriği ═══ */}
+        {activeTab === 'muayene' && (
+          <div className="space-y-6">
+            <Card className="border-slate-900 bg-slate-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
+              <CardHeader className="border-b border-slate-900 bg-slate-900/10 pb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-base font-black tracking-wider uppercase text-slate-300 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-cyan-400" /> TÜVTÜRK ARAÇ MUAYENE GEÇERLİLİK TAKİBİ
+                    </CardTitle>
+                    <p className="text-xs text-slate-500 mt-1">İtfaiye filosundaki araçların TÜVTÜRK muayene geçerlilik süreleri ve kalan gün sayaçları</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {vehicles.map(v => {
+                    const inspectionStatus = getInspectionStatus(v.next_inspection_date);
+                    return (
+                      <div 
+                        key={v.plaka}
+                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between hover:border-cyan-500/30 transition duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.4)]"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="font-mono font-bold text-slate-200 tracking-tight">{v.plaka}</h3>
+                            <p className="text-[11px] text-slate-400 font-semibold">{v.marka} {v.model || ''} - {v.arac_tipi || v.aracTipi}</p>
+                          </div>
+                          <Button
+                            onClick={() => jumpToVehicle(v.plaka)}
+                            size="sm"
+                            className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 font-bold text-[10px] px-2 py-1 h-7 rounded-md transition duration-150 active:scale-95 animate-in fade-in"
+                          >
+                            Detay
+                          </Button>
+                        </div>
+                        
+                        {/* Glasmorfik Muayene Takip Bileşeni */}
+                        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center">
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
+                            <p className="text-xs font-semibold text-slate-500 font-mono mt-0.5">
+                              {formatToTurkishDate(v.next_inspection_date)}
+                            </p>
+                          </div>
+                          <Badge className={`text-[10px] font-bold px-2 py-0.5 ${inspectionStatus.badgeClass}`}>
+                            {inspectionStatus.text}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* ═══ Yeni Kayıt Ekleme Modalı ═══ */}
