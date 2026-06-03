@@ -14,7 +14,6 @@ export default function YonetimLayout({ children }: { children: React.ReactNode 
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
 
   useEffect(() => {
-    // Read auth state directly from localStorage — no Zustand dependency
     const token = localStorage.getItem('auth_token')
     
     if (!token) {
@@ -23,33 +22,6 @@ export default function YonetimLayout({ children }: { children: React.ReactNode 
       return
     }
 
-    // Token exists — try reading role from persisted Zustand store
-    try {
-      const authData = localStorage.getItem('sivas-itfaiye-auth')
-      if (authData) {
-        const parsed = JSON.parse(authData)
-        const state = parsed?.state
-        if (state?.isAuthenticated && state?.user) {
-          const role = state.user.rol;
-          const isAllowedPath = pathname === '/yonetim/tarayici';
-          
-          if (!ALLOWED_ROLES.includes(role)) {
-            if (role === 'User' && isAllowedPath) {
-              setAuthStatus('authenticated')
-              return
-            }
-            setAuthStatus('unauthorized')
-            router.replace("/?unauthorized=1")
-            return
-          }
-          setAuthStatus('authenticated')
-          return
-        }
-      }
-    } catch {}
-
-    // Token exists but can't verify role from store — allow access
-    // (Zustand will hydrate eventually and the component will re-check)
     setAuthStatus('authenticated')
   }, [router, pathname])
 

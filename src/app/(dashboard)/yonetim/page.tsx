@@ -22,9 +22,12 @@ import {
   ArrowRight,
   Target,
   Map as MapIcon,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
+import { ShiftList } from "@/components/dashboard/ShiftList"
+import { Personnel } from "@/types"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -205,6 +208,7 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [vehicles, setVehicles] = useState<VehicleInfo[]>([])
   const [activeIncidentsList, setActiveIncidentsList] = useState<ActiveIncidentDetail[]>([])
+  const [personnelList, setPersonnelList] = useState<Personnel[]>([])
 
   // ─── PostGIS WKB parser helpers for real-time focus ─────────
   const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -441,6 +445,15 @@ export default function DashboardPage() {
       if (Array.isArray(activeIncs)) {
         setActiveIncidentsList(activeIncs)
       }
+
+      // ── 8. Nöbetçi Personel Sorgulaması ───────────────────
+      const { data: persData } = await api
+        .from<Personnel>("personnel")
+        .select("*")
+        .eq("aktif", true)
+      if (Array.isArray(persData)) {
+        setPersonnelList(persData)
+      }
     } catch (err) {
       console.error("Dashboard veri hatası:", err)
     } finally {
@@ -518,6 +531,35 @@ export default function DashboardPage() {
 
     return list
   }, [activeIncidentsList, vehicles])
+
+  const sortedPersonnel = useMemo<Personnel[]>(() => {
+    if (personnelList.length === 0) return []
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const daysSinceEpoch = Math.floor(todayStart.getTime() / MS_PER_DAY);
+    const activePosta = (daysSinceEpoch % 3) + 1;
+
+    const activeShiftPersonnel = personnelList.filter(p => p.posta_no === activePosta)
+
+    const leaders = activeShiftPersonnel.filter(p =>
+      p.rol === 'Shift_Leader' || p.rol === 'Admin' || p.rol === 'Editor'
+    )
+    const others = activeShiftPersonnel.filter(p =>
+      p.rol !== 'Shift_Leader' && p.rol !== 'Admin' && p.rol !== 'Editor'
+    ).sort((a, b) => a.ad.localeCompare(b.ad))
+
+    return [...leaders, ...others]
+  }, [personnelList])
+
+  const activePostaNumber = useMemo<number>(() => {
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const daysSinceEpoch = Math.floor(todayStart.getTime() / MS_PER_DAY);
+    return (daysSinceEpoch % 3) + 1;
+  }, [])
 
   // ─── Loading State ────────────────────────────────────────
   if (loading) {
@@ -607,49 +649,6 @@ export default function DashboardPage() {
         </Badge>
       </div>
 
-      {/* ═══════════ CRITICAL ALERTS ═══════════ */}
-      <CriticalAlertsWidget />
-
-      {/* ═══════════ KPI CARDS ═══════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard
-          icon={<Flame className="w-5 h-5" />}
-          label="Aktif Olaylar"
-          value={kpi.activeIncidents}
-          subtitle="Toplam kayıtlı vaka"
-          color="from-red-500 to-rose-600"
-          href="/yonetim/olaylar"
-        />
-        <KPICard
-          icon={<Truck className="w-5 h-5" />}
-          label="Araç Bakımda"
-          value={kpi.vehiclesInMaintenance}
-          subtitle="Servis bekleyen araç"
-          color="from-orange-500 to-amber-600"
-          href="/yonetim/arac-bakim"
-        />
-        <KPICard
-          icon={<Droplets className="w-5 h-5" />}
-          label="Arızalı Hidrant"
-          value={kpi.faultyHydrants}
-          subtitle="Bakım/Arıza durumunda"
-          color="from-blue-500 to-cyan-600"
-          href="/yonetim/harita"
-        />
-        <KPICard
-          icon={<GraduationCap className="w-5 h-5" />}
-          label="Planlı Eğitim"
-          value={kpi.upcomingTraining.count}
-          subtitle={
-            kpi.upcomingTraining.nextTopic
-              ? `Sonraki: ${kpi.upcomingTraining.nextTopic}`
-              : "Planlanmış eğitim yok"
-          }
-          color="from-emerald-500 to-green-600"
-          href="/yonetim/egitimler"
-        />
-      </div>
-
       {/* ═══════════ CANLI OPERASYON ODASI & GÖREVDEKİ ARAÇLAR ═══════════ */}
       <Card className="border-border bg-slate-900/30 backdrop-blur-lg border-slate-800/80 shadow-[0_0_25px_rgba(6,182,212,0.1)] rounded-2xl overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-slate-800/60 gap-3">
@@ -737,6 +736,51 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ═══════════ CRITICAL ALERTS ═══════════ */}
+      <CriticalAlertsWidget />
+
+      {/* ═══════════ KPI CARDS ═══════════ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <KPICard
+          icon={<Flame className="w-5 h-5" />}
+          label="Aktif Olaylar"
+          value={kpi.activeIncidents}
+          subtitle="Toplam kayıtlı vaka"
+          color="from-red-500 to-rose-600"
+          href="/yonetim/olaylar"
+        />
+        <KPICard
+          icon={<Truck className="w-5 h-5" />}
+          label="Araç Bakımda"
+          value={kpi.vehiclesInMaintenance}
+          subtitle="Servis bekleyen araç"
+          color="from-orange-500 to-amber-600"
+          href="/yonetim/arac-bakim"
+        />
+        <KPICard
+          icon={<Droplets className="w-5 h-5" />}
+          label="Arızalı Hidrant"
+          value={kpi.faultyHydrants}
+          subtitle="Bakım/Arıza durumunda"
+          color="from-blue-500 to-cyan-600"
+          href="/yonetim/harita"
+        />
+        <KPICard
+          icon={<GraduationCap className="w-5 h-5" />}
+          label="Planlı Eğitim"
+          value={kpi.upcomingTraining.count}
+          subtitle={
+            kpi.upcomingTraining.nextTopic
+              ? `Sonraki: ${kpi.upcomingTraining.nextTopic}`
+              : "Planlanmış eğitim yok"
+          }
+          color="from-emerald-500 to-green-600"
+          href="/yonetim/egitimler"
+        />
+      </div>
+
+
 
       {/* ═══════════ CHART + ACTIVITY FEED ═══════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -845,6 +889,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL) ═══════════ */}
+      <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl">
+        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20">
+          <h2 className="text-sm sm:text-base font-bold flex items-center gap-2">
+            <Users className="w-4 h-4 text-cyan-500" />
+            <span>{activePostaNumber}. Posta Canlı Nöbetçi Personel Listesi</span>
+          </h2>
+          <Badge variant="outline" className="text-xs bg-slate-950/40 text-slate-300 border-slate-800">{sortedPersonnel.length} Personel</Badge>
+        </div>
+        <CardContent className="p-4 sm:p-5">
+          <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
+        </CardContent>
+      </Card>
 
       {/* ═══════════ QUICK LINKS ═══════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

@@ -47,7 +47,7 @@ export function MobileNav() {
 
   // Dynamic status match helper
   const isActive = (href: string, matchStart?: string) => {
-    if (href === '/' && pathname !== '/') return false
+    if (href === '/yonetim' && pathname !== '/yonetim') return false
     if (matchStart && pathname.startsWith(matchStart)) return true
     return pathname === href || pathname.startsWith(href + '/')
   }
@@ -57,7 +57,7 @@ export function MobileNav() {
     {
       title: "ANLIK DURUM & KOMUTA",
       items: [
-        { href: "/", label: "Gösterge Paneli", icon: LayoutDashboard, visible: true },
+        { href: "/yonetim", label: "Gösterge Paneli", icon: LayoutDashboard, visible: true },
         { href: "/yonetim/harita", label: "Komuta Haritası (CBS)", icon: Map, visible: !isEr },
       ]
     },
@@ -189,7 +189,7 @@ export function MobileNav() {
         className="md:hidden fixed bottom-0 left-0 right-0 border-t border-slate-900 bg-slate-950/95 backdrop-blur-xl flex items-center justify-around z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.3)]"
         style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        {navLink("/", <Home size={22} />, "Ana Sayfa")}
+        {navLink("/yonetim", <Home size={22} />, "Ana Sayfa")}
         {navLink("/araclar", <Truck size={22} />, "Filo")}
         
         {/* ★ QR Tarayıcı — Ortada Belirgin Yüzen Buton */}

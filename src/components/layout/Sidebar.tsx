@@ -30,7 +30,7 @@ export function Sidebar() {
 
   // Dynamic status match helper
   const isActive = (href: string, matchStart?: string) => {
-    if (href === '/' && pathname !== '/') return false
+    if (href === '/yonetim' && pathname !== '/yonetim') return false
     if (matchStart && pathname.startsWith(matchStart)) return true
     return pathname === href || pathname.startsWith(href + '/')
   }
@@ -40,7 +40,7 @@ export function Sidebar() {
     {
       title: "ANLIK DURUM & KOMUTA",
       items: [
-        { href: "/", label: "Gösterge Paneli", icon: LayoutDashboard, visible: true },
+        { href: "/yonetim", label: "Gösterge Paneli", icon: LayoutDashboard, visible: true },
         { href: "/yonetim/harita", label: "Komuta Haritası (CBS)", icon: Map, visible: !isEr },
       ]
     },
