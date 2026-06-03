@@ -5,6 +5,7 @@ import { Printer, Edit2, MapPin, Calendar, Compass, Milestone, X } from "lucide-
 import Link from "next/link"
 import { Vehicle } from "@/types"
 import { api } from "@/lib/api"
+import { useAuthStore } from "@/lib/authStore"
 
 interface VehicleCardProps {
   vehicle: Vehicle
@@ -151,10 +152,36 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
 }
 
 export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
+  const { user } = useAuthStore()
   const [inspectionDate, setInspectionDate] = useState(vehicle.next_inspection_date)
   const [isEditing, setIsEditing] = useState(false)
   const [newDate, setNewDate] = useState(vehicle.next_inspection_date || '')
   const [isUpdating, setIsUpdating] = useState(false)
+
+  const canUpdateInspection = (() => {
+    if (!user) return false;
+    const rol = user.rol || '';
+    const unvan = user.unvan || '';
+    
+    // Müdür
+    if (unvan === 'Müdür' || rol === 'Admin' || rol?.toLowerCase() === 'admin' || unvan?.toLowerCase() === 'müdür') return true;
+    // Amir
+    if (unvan === 'Amir' || rol === 'Editor' || rol?.toLowerCase() === 'editor' || unvan?.toLowerCase() === 'amir') return true;
+    // Çavuş
+    if (unvan === 'Başçavuş' || unvan === 'Çavuş' || rol === 'Shift_Leader') return true;
+    // Karargah
+    if (
+      unvan.includes('Santral') || 
+      unvan.includes('İhbar') || 
+      unvan.includes('Memur') || 
+      rol === 'Santral' ||
+      unvan.toLowerCase().includes('santral') ||
+      unvan.toLowerCase().includes('ihbar') ||
+      unvan.toLowerCase().includes('memur')
+    ) return true;
+    
+    return false;
+  })();
 
   useEffect(() => {
     setInspectionDate(vehicle.next_inspection_date)
@@ -324,13 +351,15 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
               <Badge className={`text-[10px] font-bold px-2 py-0.5 ${getInspectionStatus(inspectionDate).badgeClass}`}>
                 {getInspectionStatus(inspectionDate).text}
               </Badge>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
-                title="Muayene Tarihini Güncelle"
-              >
-                <span className="text-[11px] leading-none">✏️</span>
-              </button>
+              {canUpdateInspection && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
+                  title="Muayene Tarihini Güncelle"
+                >
+                  <span className="text-[11px] leading-none">✏️</span>
+                </button>
+              )}
             </div>
           </div>
         )}

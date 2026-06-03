@@ -480,6 +480,23 @@ export async function PATCH(
     const body = await request.json();
     const { data, filters } = body;
 
+    // Authorize vehicle inspection update
+    if (table === 'vehicles' && data && data.next_inspection_date !== undefined) {
+      const uRol = session.rol || '';
+      const uUnvan = session.unvan || '';
+      
+      const isAuthorized = 
+        uUnvan === 'Müdür' || uRol === 'Admin' || uRol?.toLowerCase() === 'admin' || uUnvan?.toLowerCase() === 'müdür' ||
+        uUnvan === 'Amir' || uRol === 'Editor' || uRol?.toLowerCase() === 'editor' || uUnvan?.toLowerCase() === 'amir' ||
+        uUnvan === 'Başçavuş' || uUnvan === 'Çavuş' || uRol === 'Shift_Leader' ||
+        uUnvan.includes('Santral') || uUnvan.includes('İhbar') || uUnvan.includes('Memur') || uRol === 'Santral' ||
+        uUnvan.toLowerCase().includes('santral') || uUnvan.toLowerCase().includes('ihbar') || uUnvan.toLowerCase().includes('memur');
+        
+      if (!isAuthorized) {
+        return NextResponse.json({ error: 'Muayene tarihini değiştirme yetkiniz bulunmamaktadır.' }, { status: 403 });
+      }
+    }
+
     // Fetch previous inspection date if updating next_inspection_date in vehicles table
     let oldInspectionDate: string | null = null;
     if (table === 'vehicles' && data && data.next_inspection_date !== undefined) {

@@ -138,6 +138,31 @@ export default function AracBakimPage() {
   // ─── Role Detection ──────────────────────────────────────────
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür'
 
+  const canUpdateInspection = (() => {
+    if (!user) return false;
+    const rol = user.rol || '';
+    const unvan = user.unvan || '';
+    
+    // Müdür
+    if (unvan === 'Müdür' || rol === 'Admin' || rol?.toLowerCase() === 'admin' || unvan?.toLowerCase() === 'müdür') return true;
+    // Amir
+    if (unvan === 'Amir' || rol === 'Editor' || rol?.toLowerCase() === 'editor' || unvan?.toLowerCase() === 'amir') return true;
+    // Çavuş
+    if (unvan === 'Başçavuş' || unvan === 'Çavuş' || rol === 'Shift_Leader') return true;
+    // Karargah
+    if (
+      unvan.includes('Santral') || 
+      unvan.includes('İhbar') || 
+      unvan.includes('Memur') || 
+      rol === 'Santral' ||
+      unvan.toLowerCase().includes('santral') ||
+      unvan.toLowerCase().includes('ihbar') ||
+      unvan.toLowerCase().includes('memur')
+    ) return true;
+    
+    return false;
+  })();
+
   useEffect(() => {
     fetchAllData()
     fetchPersonnel()
@@ -1301,16 +1326,18 @@ export default function AracBakimPage() {
                               <Badge className={`text-[10px] font-bold px-2 py-0.5 ${inspectionStatus.badgeClass}`}>
                                 {inspectionStatus.text}
                               </Badge>
-                              <button
-                                onClick={() => {
-                                  setEditingPlaka(v.plaka);
-                                  setEditingNewDate(v.next_inspection_date || '');
-                                }}
-                                className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
-                                title="Muayene Tarihini Güncelle"
-                              >
-                                <span className="text-[11px] leading-none">✏️</span>
-                              </button>
+                              {canUpdateInspection && (
+                                <button
+                                  onClick={() => {
+                                    setEditingPlaka(v.plaka);
+                                    setEditingNewDate(v.next_inspection_date || '');
+                                  }}
+                                  className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
+                                  title="Muayene Tarihini Güncelle"
+                                >
+                                  <span className="text-[11px] leading-none">✏️</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
