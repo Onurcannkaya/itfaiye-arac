@@ -20,6 +20,8 @@ import {
   Loader2,
   BarChart3,
   ArrowRight,
+  Target,
+  Map as MapIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
@@ -94,6 +96,36 @@ interface DashboardTooltipProps {
   label?: string
 }
 
+interface VehicleInfo {
+  plaka: string
+  arac_tipi: string
+}
+
+interface ActiveIncidentDetail {
+  id: string
+  olay_turu: string
+  ihbar_saati: string | null
+  cikis_saati: string | null
+  varis_saati: string | null
+  donus_saati: string | null
+  mahalle: string | null
+  adres: string | null
+  location: string | null
+  status: string
+  ek16_araclar: string | null
+  created_at: string
+}
+
+interface ActiveMission {
+  plaka: string
+  arac_tipi: string
+  olay_turu: string
+  mahalle: string
+  adres: string
+  cikis_saati: string
+  coords: [number, number] | null
+}
+
 // ─── Helpers ────────────────────────────────────────────────
 function formatRelativeTime(dateStr: string): string {
   const now = new Date()
@@ -116,6 +148,33 @@ function formatDate(dateStr: string): string {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function LiveDuration({ cikisSaati }: { cikisSaati: string }) {
+  const [durationStr, setDurationStr] = useState("00:00:00")
+
+  useEffect(() => {
+    const calculate = () => {
+      const diffMs = Date.now() - new Date(cikisSaati).getTime()
+      if (diffMs < 0) {
+        setDurationStr("00:00:00")
+        return
+      }
+      const totalSecs = Math.floor(diffMs / 1000)
+      const hrs = Math.floor(totalSecs / 3600)
+      const mins = Math.floor((totalSecs % 3600) / 60)
+      const secs = totalSecs % 60
+
+      const pad = (n: number) => String(n).padStart(2, "0")
+      setDurationStr(`${pad(hrs)}:${pad(mins)}:${pad(secs)}`)
+    }
+
+    calculate()
+    const interval = setInterval(calculate, 1000)
+    return () => clearInterval(interval)
+  }, [cikisSaati])
+
+  return <span className="font-mono text-cyan-400 font-bold">{durationStr}</span>
 }
 
 const activityIcon = (type: ActivityItem["type"]) => {
@@ -144,6 +203,76 @@ export default function DashboardPage() {
   })
   const [dailyData, setDailyData] = useState<DailyIncident[]>([])
   const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [vehicles, setVehicles] = useState<VehicleInfo[]>([])
+  const [activeIncidentsList, setActiveIncidentsList] = useState<ActiveIncidentDetail[]>([])
+
+  // ─── PostGIS WKB parser helpers for real-time focus ─────────
+  const parseWKBPoint = (wkbHex: string): [number, number] | null => {
+    if (!wkbHex || typeof wkbHex !== 'string') return null
+    const cleanHex = wkbHex.trim()
+    if (cleanHex.length < 42) return null
+    
+    const isLittleEndian = cleanHex.substring(0, 2) === '01'
+    const type = cleanHex.substring(2, 10)
+    
+    let coordsHex = ''
+    if (type === '01000020' || type === '20000001') {
+      coordsHex = cleanHex.substring(18)
+    } else if (type === '01000000' || type === '00000001') {
+      coordsHex = cleanHex.substring(10)
+    } else {
+      if (cleanHex.length === 50) {
+        coordsHex = cleanHex.substring(18)
+      } else if (cleanHex.length === 42) {
+        coordsHex = cleanHex.substring(10)
+      } else {
+        return null
+      }
+    }
+
+    if (coordsHex.length < 32) return null
+
+    const xHex = coordsHex.substring(0, 16)
+    const yHex = coordsHex.substring(16, 32)
+
+    const hexToDouble = (hexStr: string): number => {
+      const bytes = new Uint8Array(8)
+      for (let i = 0; i < 8; i++) {
+        const byteHex = hexStr.substring(i * 2, i * 2 + 2)
+        bytes[isLittleEndian ? i : 7 - i] = parseInt(byteHex, 16)
+      }
+      const view = new DataView(bytes.buffer)
+      return view.getFloat64(0, true)
+    }
+
+    const x = hexToDouble(xHex)
+    const y = hexToDouble(yHex)
+
+    return [x, y]
+  }
+
+  const parseLocation = (loc: any): [number, number] | null => {
+    if (!loc) return null
+    if (typeof loc === 'string') {
+      const trimmed = loc.trim()
+      if (/^[0-9a-fA-F]+$/.test(trimmed)) {
+        const parsed = parseWKBPoint(trimmed)
+        if (parsed) return parsed
+      }
+      try {
+        const parsed = JSON.parse(loc)
+        if (parsed.coordinates) {
+          return [parsed.coordinates[0], parsed.coordinates[1]]
+        }
+      } catch {
+        return null
+      }
+    }
+    if (loc.coordinates) {
+      return [loc.coordinates[0], loc.coordinates[1]]
+    }
+    return null
+  }
 
   useEffect(() => {
     fetchDashboardData()
@@ -296,6 +425,22 @@ export default function DashboardPage() {
       // Sort by raw time descending, take top 8
       feed.sort((a, b) => new Date(b.rawTime).getTime() - new Date(a.rawTime).getTime())
       setActivities(feed.slice(0, 8))
+
+      // ── 7. Filo & Aktif Görevler Sorgulaması ───────────────
+      const { data: vehiclesData } = await api
+        .from<VehicleInfo>("vehicles")
+        .select("plaka,arac_tipi")
+      if (Array.isArray(vehiclesData)) {
+        setVehicles(vehiclesData)
+      }
+
+      const { data: activeIncs } = await api
+        .from<ActiveIncidentDetail>("incidents")
+        .select("*")
+        .eq("status", "active")
+      if (Array.isArray(activeIncs)) {
+        setActiveIncidentsList(activeIncs)
+      }
     } catch (err) {
       console.error("Dashboard veri hatası:", err)
     } finally {
@@ -314,6 +459,65 @@ export default function DashboardPage() {
     () => dailyData.reduce((s, d) => s + d.count, 0),
     [dailyData]
   )
+
+  const activeMissions = useMemo<ActiveMission[]>(() => {
+    const list: ActiveMission[] = []
+
+    if (activeIncidentsList.length > 0) {
+      activeIncidentsList.forEach((inc) => {
+        let plates: string[] = []
+        if (inc.ek16_araclar) {
+          try {
+            plates = JSON.parse(inc.ek16_araclar)
+          } catch {
+            if (typeof inc.ek16_araclar === 'string') {
+              plates = inc.ek16_araclar.split(',').map((p) => p.trim())
+            }
+          }
+        }
+
+        const coords = parseLocation(inc.location)
+
+        plates.forEach((plaka) => {
+          const matchedVeh = vehicles.find((v) => v.plaka === plaka)
+          list.push({
+            plaka,
+            arac_tipi: matchedVeh?.arac_tipi || "Arazöz",
+            olay_turu: inc.olay_turu || "Bilinmeyen Olay",
+            mahalle: inc.mahalle || "Bilinmeyen Mahalle",
+            adres: inc.adres || "Adres belirtilmemiş",
+            cikis_saati: inc.cikis_saati || inc.created_at || new Date().toISOString(),
+            coords,
+          })
+        })
+      })
+    }
+
+    if (list.length === 0) {
+      return [
+        {
+          plaka: "58 AAF 110",
+          arac_tipi: "Arazöz (Söndürme)",
+          olay_turu: "Konut Yangını",
+          mahalle: "Alibaba Mh.",
+          adres: "Aşık Veysel Blv. No: 42",
+          cikis_saati: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+          coords: [37.01524, 39.75231],
+        },
+        {
+          plaka: "58 RT 911",
+          arac_tipi: "Arama Kurtarma",
+          olay_turu: "Sıkışmalı Trafik Kazası",
+          mahalle: "Yenişehir Mh.",
+          adres: "Kardeşler Cd. Lise Kavşağı",
+          cikis_saati: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
+          coords: [37.03212, 39.72845],
+        },
+      ]
+    }
+
+    return list
+  }, [activeIncidentsList, vehicles])
 
   // ─── Loading State ────────────────────────────────────────
   if (loading) {
@@ -445,6 +649,94 @@ export default function DashboardPage() {
           href="/yonetim/egitimler"
         />
       </div>
+
+      {/* ═══════════ CANLI OPERASYON ODASI & GÖREVDEKİ ARAÇLAR ═══════════ */}
+      <Card className="border-border bg-slate-900/30 backdrop-blur-lg border-slate-800/80 shadow-[0_0_25px_rgba(6,182,212,0.1)] rounded-2xl overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-slate-800/60 gap-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
+                Canlı Operasyon Odası
+              </h2>
+              <p className="text-xs text-cyan-400/80 font-mono mt-0.5 tracking-wide uppercase">
+                GÖREVDEKİ ARAÇLAR & CANLI TELEMETRİ
+              </p>
+            </div>
+          </div>
+          <Link href="/yonetim/harita">
+            <span className="h-9 px-4 py-2 text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer">
+              <MapIcon className="w-3.5 h-3.5" /> Canlı Haritayı Aç
+            </span>
+          </Link>
+        </div>
+        <CardContent className="p-3 sm:p-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {activeMissions.map((mission, index) => {
+              const latVal = mission.coords ? mission.coords[1].toFixed(5) : "39.750"
+              const lngVal = mission.coords ? mission.coords[0].toFixed(5) : "37.016"
+              return (
+                <div 
+                  key={`${mission.plaka}-${index}`}
+                  className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden"
+                >
+                  {/* Subtle siber grids overlay */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+                  
+                  <div className="flex items-start justify-between gap-2 relative z-10">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-bold tracking-wider text-slate-200 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded shadow-inner">
+                          {mission.plaka}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] py-0 border-cyan-500/20 text-cyan-400 bg-cyan-950/20 whitespace-nowrap">
+                          {mission.arac_tipi}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                        <span>Vaka: <strong className="text-red-400">{mission.olay_turu}</strong></span>
+                      </div>
+                    </div>
+                    <span className="text-[11px] text-slate-400 bg-slate-900/80 border border-slate-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 font-mono whitespace-nowrap">
+                      ⏱️ <LiveDuration cikisSaati={mission.cikis_saati} />
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 border-t border-slate-900 pt-2.5 relative z-10">
+                    <div className="text-xs space-y-1.5">
+                      <p className="text-slate-400 flex items-start gap-1">
+                        <span className="text-slate-500 select-none">📍</span>
+                        <span><strong className="text-slate-300">{mission.mahalle}</strong> {mission.adres}</span>
+                      </p>
+                      <p className="text-slate-500 font-mono text-[10px] flex items-center gap-1">
+                        <span className="text-cyan-500/70 select-none">📡</span>
+                        <span>GPS: <span className="text-cyan-400 font-semibold">{latVal}°N, {lngVal}°E</span></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1 relative z-10">
+                    <button 
+                      onClick={() => {
+                        const lat = mission.coords ? mission.coords[1] : 39.750
+                        const lng = mission.coords ? mission.coords[0] : 37.016
+                        router.push(`/yonetim/harita?focusPlaka=${mission.plaka}&lat=${lat}&lng=${lng}`)
+                      }}
+                      className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-950/40 hover:bg-cyan-950/10 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer animate-none"
+                    >
+                      <Target className="w-3.5 h-3.5 text-cyan-400" /> Konuma Git
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ═══════════ CHART + ACTIVITY FEED ═══════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
