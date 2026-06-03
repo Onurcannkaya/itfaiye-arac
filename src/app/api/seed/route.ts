@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
-import { mockPersonnel } from "@/lib/data";
 import * as xlsx from "xlsx";
 import path from "path";
 import fs from "fs";
@@ -171,20 +170,8 @@ export async function GET() {
     const logs: string[] = [];
     const defaultPasswordHash = await hashPassword("1234");
 
-    // 1. Seed Personel
-    for (const p of mockPersonnel) {
-      try {
-        await query(
-          `INSERT INTO personnel (sicil_no, ad, soyad, unvan, rol, aktif, view_only, can_approve, can_print, password_hash)
-           VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9)
-           ON CONFLICT (sicil_no) DO UPDATE SET ad = $2, soyad = $3, unvan = $4, rol = $5, password_hash = $9`,
-          [p.sicil_no, p.ad, p.soyad, p.unvan, p.rol, p.rol === 'User', p.rol === 'Shift_Leader' || p.rol === 'Admin', p.rol !== 'User', defaultPasswordHash]
-        );
-      } catch (err: unknown) {
-        logs.push(`✗ Personel ${p.sicil_no}: ${(err as Error).message}`);
-      }
-    }
-    logs.push(`✓ Personeller sisteme başarıyla mühürlendi.`);
+    // 1. Personnel seeding is skipped here because it is now handled by /api/setup route with Sivas Fire Department's official roster.
+    logs.push(`- Personel mühürleme bu rota üzerinden atlandı (kurulum /api/setup rotasına taşındı).`);
 
     // 2. Tabloları Hazırla
     await query(`
