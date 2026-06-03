@@ -480,6 +480,22 @@ export async function PATCH(
     const body = await request.json();
     const { data, filters } = body;
 
+    // Fetch previous inspection date if updating next_inspection_date in vehicles table
+    let oldInspectionDate: string | null = null;
+    if (table === 'vehicles' && data && data.next_inspection_date !== undefined) {
+      const plaka = filters?.plaka;
+      if (plaka) {
+        try {
+          const oldRowRes = await query('SELECT next_inspection_date, "muayeneBitis" FROM vehicles WHERE plaka = $1', [plaka]);
+          if (oldRowRes.rows[0]) {
+            oldInspectionDate = oldRowRes.rows[0].next_inspection_date || oldRowRes.rows[0].muayeneBitis || null;
+          }
+        } catch (e) {
+          console.error('[Server AuditLog] Eski muayene tarihi okuma hatası:', e);
+        }
+      }
+    }
+
     const setClauses: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -501,6 +517,33 @@ export async function PATCH(
     const sql = `UPDATE ${table} SET ${setClauses.join(', ')} ${whereStr} RETURNING *`;
 
     const result = await query(sql, values);
+
+    // Dynamic Server-Side Audit Log hooks for vehicles next_inspection_date update
+    if (table === 'vehicles' && result.rows[0] && data && data.next_inspection_date !== undefined) {
+      const row = result.rows[0];
+      const formatToISO = (d: any) => {
+        if (!d) return 'Tarih Girilmedi';
+        try {
+          return new Date(d).toISOString().split('T')[0];
+        } catch {
+          return 'Tarih Girilmedi';
+        }
+      };
+      const eski_tarih = formatToISO(oldInspectionDate);
+      const yeni_tarih = formatToISO(row.next_inspection_date);
+      
+      await query(
+        `INSERT INTO audit_logs (action_type, actor_sicil_no, actor_name, target, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          'arac_muayene_guncelleme',
+          session.sicilNo || 'SYSTEM',
+          `${session.ad || ''} ${session.soyad || ''}`.trim() || 'Sistem',
+          row.plaka,
+          JSON.stringify({ eski_tarih, yeni_tarih })
+        ]
+      ).catch(err => console.error('[Server AuditLog] Araç muayene log yazma hatası:', err));
+    }
 
     // 6. Dynamic Server-Side Audit Log hooks for fire_hydrants status update
     if (table === 'fire_hydrants' && result.rows[0]) {

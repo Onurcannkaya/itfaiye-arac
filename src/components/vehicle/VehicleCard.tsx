@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
-import { Printer, Edit2, MapPin, Calendar, Compass, Milestone } from "lucide-react"
+import { Printer, Edit2, MapPin, Calendar, Compass, Milestone, X } from "lucide-react"
 import Link from "next/link"
 import { Vehicle } from "@/types"
+import { api } from "@/lib/api"
 
 interface VehicleCardProps {
   vehicle: Vehicle
@@ -149,6 +151,39 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
 }
 
 export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
+  const [inspectionDate, setInspectionDate] = useState(vehicle.next_inspection_date)
+  const [isEditing, setIsEditing] = useState(false)
+  const [newDate, setNewDate] = useState(vehicle.next_inspection_date || '')
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  useEffect(() => {
+    setInspectionDate(vehicle.next_inspection_date)
+    setNewDate(vehicle.next_inspection_date || '')
+  }, [vehicle.next_inspection_date])
+
+  const handleUpdateDate = async () => {
+    if (!newDate) {
+      alert('Lütfen geçerli bir tarih seçin.');
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      const { error } = await api.update(
+        'vehicles',
+        { next_inspection_date: newDate },
+        { plaka: vehicle.plaka }
+      );
+      if (error) throw new Error(error);
+      setInspectionDate(newDate);
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error('Muayene tarihi güncellenirken hata oluştu:', err);
+      alert('Güncelleme başarısız: ' + (err.message || err));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const idStr = vehicle.plaka.replace(/\s+/g, '-').toLowerCase()
   const activeDurum = (vehicle.durum || "aktif").toLowerCase();
 
@@ -252,17 +287,53 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
         </div>
 
         {/* Glasmorfik Muayene Takip Alanı */}
-        <div className="mt-4 bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center">
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
-            <p className="text-xs font-semibold text-slate-500 font-mono mt-0.5">
-              {formatToTurkishDate(vehicle.next_inspection_date)}
-            </p>
+        {isEditing ? (
+          <div className="mt-4 bg-slate-900/80 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Muayene Tarihi Güncelle</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="bg-slate-950 border border-slate-850 rounded-lg px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500/50 flex-1 min-h-[32px]"
+              />
+              <button
+                onClick={handleUpdateDate}
+                disabled={isUpdating}
+                className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition disabled:opacity-50 min-h-[32px] cursor-pointer"
+              >
+                {isUpdating ? '...' : '💾 Güncelle'}
+              </button>
+              <button
+                onClick={() => { setIsEditing(false); setNewDate(inspectionDate || '') }}
+                className="bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 p-1 rounded-lg text-xs transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center border border-white/5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-          <Badge className={`text-xs font-bold px-2.5 py-1 ${getInspectionStatus(vehicle.next_inspection_date).badgeClass}`}>
-            {getInspectionStatus(vehicle.next_inspection_date).text}
-          </Badge>
-        </div>
+        ) : (
+          <div className="mt-4 bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center relative group/inspection">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
+              <p className="text-xs font-semibold text-slate-200 font-mono mt-0.5">
+                📅 Son Geçerlilik: {formatToTurkishDate(inspectionDate)}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Badge className={`text-[10px] font-bold px-2 py-0.5 ${getInspectionStatus(inspectionDate).badgeClass}`}>
+                {getInspectionStatus(inspectionDate).text}
+              </Badge>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
+                title="Muayene Tarihini Güncelle"
+              >
+                <span className="text-[11px] leading-none">✏️</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Zimmetli Personel Footer */}
         <div className="mt-4 pt-3.5 border-t border-white/5">

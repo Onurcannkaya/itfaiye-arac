@@ -106,6 +106,11 @@ export default function AracBakimPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [updatingId, setUpdatingId] = useState<number | null>(null)
 
+  // ─── Inline Edit State for Vehicle Inspection ─────────────────
+  const [editingPlaka, setEditingPlaka] = useState<string | null>(null)
+  const [editingNewDate, setEditingNewDate] = useState<string>('')
+  const [isEditingUpdating, setIsEditingUpdating] = useState<boolean>(false)
+
   // ─── Form State ──────────────────────────────────────────────
   const [kayitTuru, setKayitTuru] = useState<'bakim' | 'yakit'>('bakim')
   const [bakimForm, setBakimForm] = useState({
@@ -177,6 +182,30 @@ export default function AracBakimPage() {
       alert("Bakım onaylanırken bir hata oluştu.")
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  // ─── Inline Update Inspection Date ───────────────────────────
+  const handleUpdateInspectionDate = async (plaka: string) => {
+    if (!editingNewDate) {
+      alert('Lütfen geçerli bir tarih seçin.');
+      return;
+    }
+    setIsEditingUpdating(true);
+    try {
+      const { error } = await api.update(
+        'vehicles',
+        { next_inspection_date: editingNewDate },
+        { plaka }
+      );
+      if (error) throw error;
+      setVehicles(prev => prev.map(v => v.plaka === plaka ? { ...v, next_inspection_date: editingNewDate } : v));
+      setEditingPlaka(null);
+    } catch (err: any) {
+      console.error('Muayene tarihi güncellenirken hata oluştu:', err);
+      alert('Güncelleme başarısız: ' + (err.message || err));
+    } finally {
+      setIsEditingUpdating(false);
     }
   }
 
@@ -1214,6 +1243,7 @@ export default function AracBakimPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {vehicles.map(v => {
                     const inspectionStatus = getInspectionStatus(v.next_inspection_date);
+                    const isEditingThis = editingPlaka === v.plaka;
                     return (
                       <div 
                         key={v.plaka}
@@ -1234,17 +1264,56 @@ export default function AracBakimPage() {
                         </div>
                         
                         {/* Glasmorfik Muayene Takip Bileşeni */}
-                        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center">
-                          <div>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
-                            <p className="text-xs font-semibold text-slate-500 font-mono mt-0.5">
-                              {formatToTurkishDate(v.next_inspection_date)}
-                            </p>
+                        {isEditingThis ? (
+                          <div className="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-2 w-full">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Muayene Tarihi Güncelle</p>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="date"
+                                value={editingNewDate}
+                                onChange={(e) => setEditingNewDate(e.target.value)}
+                                className="bg-slate-950 border border-slate-850 rounded-lg px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500/50 flex-1 min-h-[32px]"
+                              />
+                              <Button
+                                onClick={() => handleUpdateInspectionDate(v.plaka)}
+                                disabled={isEditingUpdating}
+                                className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-2.5 py-1 h-8 rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition disabled:opacity-50 cursor-pointer"
+                              >
+                                {isEditingUpdating ? '...' : '💾 Güncelle'}
+                              </Button>
+                              <button
+                                onClick={() => { setEditingPlaka(null); setEditingNewDate('') }}
+                                className="bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 p-1.5 rounded-lg text-xs transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center border border-white/5"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
-                          <Badge className={`text-[10px] font-bold px-2 py-0.5 ${inspectionStatus.badgeClass}`}>
-                            {inspectionStatus.text}
-                          </Badge>
-                        </div>
+                        ) : (
+                          <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center relative group/inspection w-full">
+                            <div>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
+                              <p className="text-xs font-semibold text-slate-200 font-mono mt-0.5">
+                                📅 Son Geçerlilik: {formatToTurkishDate(v.next_inspection_date)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Badge className={`text-[10px] font-bold px-2 py-0.5 ${inspectionStatus.badgeClass}`}>
+                                {inspectionStatus.text}
+                              </Badge>
+                              <button
+                                onClick={() => {
+                                  setEditingPlaka(v.plaka);
+                                  setEditingNewDate(v.next_inspection_date || '');
+                                }}
+                                className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
+                                title="Muayene Tarihini Güncelle"
+                              >
+                                <span className="text-[11px] leading-none">✏️</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
