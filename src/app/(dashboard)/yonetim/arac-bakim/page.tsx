@@ -817,10 +817,10 @@ export default function AracBakimPage() {
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
             
             {/* Sekmeli Navigasyon */}
-            <div className="flex bg-slate-900/60 rounded-xl p-1 border border-slate-800 self-start">
+            <div className="flex overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-slate-800/80 bg-slate-900/60 rounded-xl p-1 border border-slate-800 self-stretch sm:self-start gap-1.5 pb-2 sm:pb-1">
               <button
                 onClick={() => setActiveTab('bakim')}
-                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'bakim'
                     ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
                     : 'text-slate-400 hover:text-slate-200'
@@ -830,7 +830,7 @@ export default function AracBakimPage() {
               </button>
               <button
                 onClick={() => setActiveTab('yakit')}
-                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'yakit'
                     ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
                     : 'text-slate-400 hover:text-slate-200'
@@ -840,7 +840,7 @@ export default function AracBakimPage() {
               </button>
               <button
                 onClick={() => setActiveTab('sarf')}
-                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'sarf'
                     ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
                     : 'text-slate-400 hover:text-slate-200'
@@ -850,7 +850,7 @@ export default function AracBakimPage() {
               </button>
               <button
                 onClick={() => setActiveTab('muayene')}
-                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'muayene'
                     ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
                     : 'text-slate-400 hover:text-slate-200'
@@ -860,7 +860,7 @@ export default function AracBakimPage() {
               </button>
               <button
                 onClick={() => setActiveTab('onay')}
-                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'onay'
                     ? 'bg-indigo-600 text-white shadow-md font-black'
                     : 'text-slate-400 hover:text-slate-200'
