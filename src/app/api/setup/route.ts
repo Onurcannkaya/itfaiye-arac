@@ -217,33 +217,47 @@ const OZBELSAN_LIST: Omit<PersonnelEntry, "sicil_no">[] = [
 // ─── DRIVER LICENSE DATA ───────────────────────────────────────────────────
 const DRIVER_LICENSES: { fullName: string; expiry: string | null }[] = [
   { fullName: "Bilal Demir", expiry: "2028-12-20" },
-  { fullName: "Sercan Karaca", expiry: "2032-01-29" },
-  { fullName: "Talip Kozan", expiry: "2032-03-27" },
-  { fullName: "Yusuf Erdoğan", expiry: "2032-07-29" },
-  { fullName: "Fatih Bahşi", expiry: "2027-10-28" },
-  { fullName: "Oğuzhan Toprak", expiry: "2033-06-09" },
-  { fullName: "Mücahit Koç", expiry: "2033-06-16" },
-  { fullName: "Köksal Çelik", expiry: "2028-11-14" },
-  { fullName: "H.İbrahim Yılmaz", expiry: "2034-01-26" },
-  { fullName: "Turan Uçan", expiry: "2030-12-05" },
-  { fullName: "Emir Furkan Taşdelen", expiry: "2033-06-16" },
-  { fullName: "Mustafa Metin Bıçakcigil", expiry: "2031-05-15" },
-  { fullName: "Hasan Arslan", expiry: "2029-07-13" },
-  { fullName: "M.Esat Şahin", expiry: "2032-01-29" },
-  { fullName: "Faruk Özdere", expiry: "2033-09-01" },
-  { fullName: "Murat Karapınar", expiry: "2028-09-07" },
-  { fullName: "H.Kerem Dokuzluoğlu", expiry: "2033-06-16" },
-  { fullName: "Hanifi Karakaya", expiry: "2028-12-27" },
-  { fullName: "Pehlül Bektaş", expiry: null },
-  { fullName: "Sencer Yıldız", expiry: "2027-06-03" },
-  { fullName: "G.Osman Şahin", expiry: "2026-11-27" },
-  { fullName: "M.Mücahit Koç", expiry: "2033-06-16" },
-  { fullName: "İsmail Kartal", expiry: "2028-06-22" },
-  { fullName: "Serkan Yangın", expiry: "2033-06-09" },
-  { fullName: "Emre Kalkan", expiry: "2034-07-12" },
+  { fullName: "Ahmet Yıldız", expiry: "2029-04-24" },
+  { fullName: "Ali Tumbul", expiry: "2030-12-08" },
+  { fullName: "Batuhan Işık", expiry: "2027-08-01" },
+  { fullName: "Abdullah Gelöz", expiry: "2026-12-27" },
+  { fullName: "Bilal Öztaş", expiry: "2031-04-01" },
+  { fullName: "Emre Ekici", expiry: "2030-07-04" },
+  { fullName: "Emre Kalkan", expiry: "2027-06-01" },
+  { fullName: "Emrullah Yücel", expiry: "2029-12-09" },
+  { fullName: "Erman Bulut", expiry: "2030-10-09" },
+  { fullName: "Fatih Çimen", expiry: "2029-12-16" },
+  { fullName: "Fatih Kaya", expiry: "2029-03-06" },
+  { fullName: "Furkan Halis", expiry: "2030-10-13" },
+  { fullName: "Hanifi Karakaya", expiry: "2030-12-24" },
+  { fullName: "Harun Aygün", expiry: "2027-02-16" },
+  { fullName: "İkbal Bayat", expiry: "2030-05-20" },
+  { fullName: "İlker Şahin", expiry: "2031-02-20" },
+  { fullName: "Lütfi Toy", expiry: "2027-05-10" },
+  { fullName: "M.Mustafa Arslan", expiry: "2027-12-14" },
+  { fullName: "M.Raşit Akgül", expiry: "2029-12-18" },
+  { fullName: "Mehmet Polat", expiry: "2029-03-28" },
+  { fullName: "Metin Selvi", expiry: "2031-05-14" },
+  { fullName: "Muhammet Elbay", expiry: "2029-02-27" },
+  { fullName: "Muhlis Demir", expiry: "2030-07-31" },
+  { fullName: "Murat Karapınar", expiry: "2030-02-19" },
+  { fullName: "Mutlu Akbay", expiry: "2029-07-12" },
+  { fullName: "Mücahit Coşkun", expiry: "2027-04-18" },
+  { fullName: "Mücahit Koç", expiry: "2029-12-31" },
+  { fullName: "Müjdat Demirci", expiry: "2029-10-23" },
+  { fullName: "Necati Bulut", expiry: "2029-04-30" },
+  { fullName: "Nizamettin Polat", expiry: "2029-12-13" },
+  { fullName: "Oğuzhan Toprak", expiry: "2031-04-08" },
   { fullName: "Özgür Mercan", expiry: null },
-  { fullName: "M.Mustafa Arslan", expiry: "2033-06-16" },
-  { fullName: "Yaşar Çil", expiry: "2027-05-13" }
+  { fullName: "Pehlül Bektaş", expiry: null },
+  { fullName: "Refik Beral Duman", expiry: "2026-11-02" },
+  { fullName: "Selahattin Ildır", expiry: "2027-08-18" },
+  { fullName: "Turan Uçan", expiry: "2026-08-23" },
+  { fullName: "U.Güner Söğüt", expiry: "2030-07-09" },
+  { fullName: "Umut Büyükçakmak", expiry: "2027-07-27" },
+  { fullName: "Ümmet Gülmez", expiry: "2029-03-28" },
+  { fullName: "Yaşar Çil", expiry: "2028-08-15" },
+  { fullName: "Yasin Akyel", expiry: "2029-01-02" }
 ];
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -443,11 +457,14 @@ export async function POST() {
     // ── 7. Seed driver licenses into staff_certifications ───────────────
     log("Seeding driver licenses...");
 
-    // Build a lookup map: "ad soyad" → sicil_no
+    // Build a lookup map: "ad soyad" → sicil_no (preferring drivers/officers to resolve duplicate names)
     const nameToSicil: Record<string, string> = {};
     for (const p of personnelWithUsernames) {
       const fullName = `${p.ad} ${p.soyad}`;
-      nameToSicil[fullName] = p.sicil_no;
+      const isDriverOrOfficer = p.unvan.toLowerCase().includes("şoför") || p.unvan.toLowerCase().includes("çvş") || p.unvan.toLowerCase().includes("çavuş") || p.unvan.toLowerCase().includes("başçavuş");
+      if (!nameToSicil[fullName] || isDriverOrOfficer) {
+        nameToSicil[fullName] = p.sicil_no;
+      }
     }
 
     let driverCount = 0;

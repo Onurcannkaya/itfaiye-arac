@@ -18,6 +18,7 @@ export default function PersonelYonetimPage() {
   const { user: currentUser } = useAuthStore()
   const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [licenseFilter, setLicenseFilter] = useState("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
@@ -128,15 +129,38 @@ export default function PersonelYonetimPage() {
   const nextSicil = `SB${nextSicilSuffix.toString().padStart(4, "0")}`
 
   const filteredPersonnel = useMemo(() => {
-    if (!searchQuery) return personnel
-    const query = searchQuery.toLowerCase()
-    return personnel.filter(p => 
-      p.ad.toLowerCase().includes(query) || 
-      p.soyad.toLowerCase().includes(query) || 
-      p.sicil_no.toLowerCase().includes(query) ||
-      p.unvan.toLowerCase().includes(query)
-    )
-  }, [personnel, searchQuery])
+    let result = personnel
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(p => 
+        p.ad.toLowerCase().includes(query) || 
+        p.soyad.toLowerCase().includes(query) || 
+        p.sicil_no.toLowerCase().includes(query) ||
+        p.unvan.toLowerCase().includes(query)
+      )
+    }
+
+    if (licenseFilter === "has_license") {
+      result = result.filter(p => p.ehliyet_gecerlilik_tarihi !== undefined)
+    } else if (licenseFilter === "no_license") {
+      result = result.filter(p => p.ehliyet_gecerlilik_tarihi === undefined)
+    } else if (licenseFilter === "expired_license") {
+      result = result.filter(p => {
+        if (!p.ehliyet_gecerlilik_tarihi) return false
+        const res = calculateRemainingDays(p.ehliyet_gecerlilik_tarihi)
+        return res.days !== null && res.days <= 0
+      })
+    } else if (licenseFilter === "critical_license") {
+      result = result.filter(p => {
+        if (!p.ehliyet_gecerlilik_tarihi) return false
+        const res = calculateRemainingDays(p.ehliyet_gecerlilik_tarihi)
+        return res.days !== null && res.days > 0 && res.days <= 30
+      })
+    }
+
+    return result
+  }, [personnel, searchQuery, licenseFilter])
 
   // ADD PERSONNEL — Supabase INSERT
   const handleAddPersonel = async (e: React.FormEvent) => {
@@ -942,19 +966,37 @@ export default function PersonelYonetimPage() {
 
       {/* Arama ve Liste */}
       <Card>
-        <CardHeader className="pb-3 border-b border-border/50 bg-muted/10 flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="pb-3 border-b border-border/50 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="text-base flex items-center space-x-2">
             <UsersIcon className="w-5 h-5 text-muted-foreground" />
             <span>Kayıtlı Personel ({filteredPersonnel.length})</span>
           </CardTitle>
-          <div className="relative w-full max-w-[200px] sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="İsim veya Sicil No ara..." 
-              className="pl-9 h-9 text-sm"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto items-stretch sm:items-center">
+            {/* Ehliyet Filtresi */}
+            <div className="relative">
+              <select
+                className="flex h-9 w-full sm:w-[190px] rounded-md border border-input bg-background px-3 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={licenseFilter}
+                onChange={e => setLicenseFilter(e.target.value)}
+              >
+                <option value="all">📇 Tüm Ehliyet Durumları</option>
+                <option value="has_license">✅ Ehliyeti Olanlar</option>
+                <option value="no_license">❌ Ehliyeti Olmayanlar</option>
+                <option value="expired_license">🚨 Süresi Dolan Ehliyetler</option>
+                <option value="critical_license">⏳ Kritik Ehliyetler (≤30 Gün)</option>
+              </select>
+            </div>
+            
+            {/* Arama Kutusu */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="İsim veya Sicil No ara..." 
+                className="pl-9 h-9 text-xs"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
