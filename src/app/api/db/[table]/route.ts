@@ -12,7 +12,8 @@ const ALLOWED_TABLES = [
   'citizen_requests', 'activities_and_trainings', 'personnel_activities',
   'vehicle_maintenances', 'fire_hydrants', 'spatial_addresses',
   'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks',
-  'role_permissions', 'duty_logs', 'arac_bakim_gecmisi'
+  'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
+  'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari'
 ];
 
 async function ensureRolePermissionsTableExists() {

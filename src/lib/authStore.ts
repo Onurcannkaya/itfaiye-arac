@@ -34,7 +34,7 @@ interface AuthState {
   token: string | null
   isAuthenticated: boolean
   redirectUrl: string | null
-  login: (sicilNo: string, password: string) => Promise<{ success: boolean; error?: string; token?: string }>
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string; token?: string }>
   logout: () => Promise<void>
   setRedirectUrl: (url: string | null) => void
 }
@@ -47,14 +47,17 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       redirectUrl: null,
 
-      login: async (sicilNo: string, password: string) => {
-        const key = sicilNo.toUpperCase().trim()
+      login: async (identifier: string, password: string) => {
+        const trimmed = identifier.trim()
+        // If it starts with SB or is numeric, it is sicil_no -> uppercase, otherwise keep lowercase for username
+        const isSicilNo = /^SB/i.test(trimmed) || /^\d+$/.test(trimmed);
+        const key = isSicilNo ? trimmed.toUpperCase() : trimmed.toLowerCase();
 
         try {
           const res = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sicil_no: key, password }),
+            body: JSON.stringify({ identifier: key, password }),
           })
 
           const data = await res.json()

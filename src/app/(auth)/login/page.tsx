@@ -8,7 +8,7 @@ import Image from "next/image"
 import { useAuthStore } from "@/lib/authStore"
 
 function LoginForm() {
-  const [sicilNo, setSicilNo] = useState("")
+  const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState("")
@@ -53,7 +53,7 @@ function LoginForm() {
     await new Promise(r => setTimeout(r, 400))
 
     try {
-      const result = await login(sicilNo, password)
+      const result = await login(identifier, password)
 
       if (result.success) {
         if (result.token) {
@@ -238,13 +238,13 @@ function LoginForm() {
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] lg:text-xs font-black text-slate-300 uppercase tracking-widest transition-all">Sicil Numarası</label>
+                <label className="text-[10px] lg:text-xs font-black text-slate-300 uppercase tracking-widest transition-all">Kullanıcı Adı veya Sicil No</label>
                 <Input 
-                  placeholder="Sicil Numaranız (Örn: SBXXXX)" 
-                  value={sicilNo}
-                  onChange={(e) => setSicilNo(e.target.value)}
+                  placeholder="Kullanıcı adı veya sicil no" 
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  className="h-11 lg:h-12 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-xl font-mono tracking-widest text-slate-100 lg:text-base font-semibold placeholder-slate-600 lg:placeholder-slate-400 pl-4 w-full text-sm transition-all"
+                  className="h-11 lg:h-12 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-xl text-slate-100 lg:text-base font-semibold placeholder-slate-600 lg:placeholder-slate-400 pl-4 w-full text-sm transition-all"
                 />
               </div>
 

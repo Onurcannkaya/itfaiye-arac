@@ -30,12 +30,14 @@ export interface Vehicle {
 
 export interface Personnel {
   sicil_no: string;
+  username?: string;
   ad: string;
   soyad: string;
   unvan: string;
   rol: "Admin" | "Editor" | "Shift_Leader" | "User" | string;
   posta?: string;
   posta_no?: number;
+  istasyon?: string;
   durum?: "Görevde" | "İzinli" | "Raporlu" | string;
   ilkyardim_sertifika_tarihi?: string;
   ehliyet_gecerlilik_tarihi?: string;

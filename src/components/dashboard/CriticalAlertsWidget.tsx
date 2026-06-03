@@ -34,10 +34,19 @@ interface VehicleAlert {
   kalan_gun: number
 }
 
+interface MissingCertAlert {
+  sicil_no: string
+  ad: string
+  soyad: string
+  unvan: string
+  tip: string
+}
+
 export function CriticalAlertsWidget() {
   const [certAlerts, setCertAlerts] = useState<CertAlert[]>([])
   const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>([])
   const [vehicleAlerts, setVehicleAlerts] = useState<VehicleAlert[]>([])
+  const [missingCertAlerts, setMissingCertAlerts] = useState<MissingCertAlert[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(true)
 
@@ -95,6 +104,21 @@ export function CriticalAlertsWidget() {
           vAlerts.sort((a, b) => a.kalan_gun - b.kalan_gun)
           setVehicleAlerts(vAlerts)
         }
+
+        // 4. Personnel with expected certs missing (Ehliyet — Şoför/Başşoför)
+        const { data: allPersonnel } = await api.from("personnel").select("sicil_no,ad,soyad,unvan").eq("aktif", true)
+        const { data: allCerts } = await api.from("staff_certifications").select("sicil_no,tip")
+        if (allPersonnel && allCerts) {
+          const ehliyetSicils = new Set((allCerts as any[]).filter(c => c.tip === 'Ehliyet').map(c => c.sicil_no))
+          const missing: MissingCertAlert[] = (allPersonnel as any[])
+            .filter(p => {
+              const u = (p.unvan || '').toLowerCase()
+              return (u.includes('şoför') || u.includes('şof') || u.includes('başşoför') || u.includes('baş şoför'))
+                && !ehliyetSicils.has(p.sicil_no)
+            })
+            .map(p => ({ sicil_no: p.sicil_no, ad: p.ad, soyad: p.soyad, unvan: p.unvan, tip: 'Ehliyet' }))
+          setMissingCertAlerts(missing)
+        }
       } catch (err) {
         console.error("[CriticalAlerts] Error:", err)
       } finally {
@@ -104,7 +128,7 @@ export function CriticalAlertsWidget() {
     fetchAlerts()
   }, [])
 
-  const totalAlerts = certAlerts.length + inventoryAlerts.length + vehicleAlerts.length
+  const totalAlerts = certAlerts.length + inventoryAlerts.length + vehicleAlerts.length + missingCertAlerts.length
 
   if (loading) {
     return (
@@ -191,6 +215,36 @@ export function CriticalAlertsWidget() {
               </div>
               <Link href="/yonetim/personel" className="text-xs text-primary font-medium hover:underline">
                 Personel Yönetimi →
+              </Link>
+            </div>
+          )}
+
+          {/* Missing Certificate Alerts — Veri Eksik */}
+          {missingCertAlerts.length > 0 && (
+            <div className="p-4 space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#ff1744', textShadow: '0 0 8px rgba(255,23,68,0.5)' }}>
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Veri Eksik — Ehliyet Tarihi Girilmedi
+              </p>
+              <div className="space-y-1.5">
+                {missingCertAlerts.map(m => (
+                  <div key={`missing-${m.sicil_no}`} className="flex items-center justify-between p-2.5 rounded-lg border" style={{ background: 'rgba(255,23,68,0.04)', borderColor: 'rgba(255,23,68,0.25)' }}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">{m.ad} {m.soyad}</p>
+                      <p className="text-xs text-muted-foreground">Sicil: {m.sicil_no} — {m.unvan}</p>
+                    </div>
+                    <Badge 
+                      variant="danger" 
+                      className="shrink-0 text-xs animate-pulse"
+                      style={{ background: 'rgba(255,23,68,0.15)', color: '#ff1744', borderColor: 'rgba(255,23,68,0.4)', textShadow: '0 0 6px rgba(255,23,68,0.4)' }}
+                    >
+                      ⚠ Veri Eksik
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              <Link href="/yonetim/personel" className="text-xs font-medium hover:underline" style={{ color: '#ff1744' }}>
+                Personel Yönetimi — Ehliyet Verisini Gir →
               </Link>
             </div>
           )}

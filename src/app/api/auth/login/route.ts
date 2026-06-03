@@ -4,39 +4,64 @@ import { verifyPassword, signToken, COOKIE_CONFIG } from '@/lib/auth';
 
 /**
  * POST /api/auth/login
- * Body: { sicil_no: string, password: string }
+ * Body: { identifier: string, password: string }
+ * identifier can be a username (lowercase) or sicil_no (uppercase).
  */
 export async function POST(request: NextRequest) {
   try {
     console.log("1. API İsteği Geldi - POST /api/auth/login");
     const body = await request.json();
-    const { sicil_no, password } = body;
+    const { identifier, sicil_no: legacySicilNo, password } = body;
 
-    if (!sicil_no || !password) {
+    // Support both new 'identifier' field and legacy 'sicil_no' field
+    const rawIdentifier = identifier || legacySicilNo;
+
+    if (!rawIdentifier || !password) {
       return NextResponse.json(
-        { error: 'Sicil numarası ve parola zorunludur.' },
+        { error: 'Kullanıcı adı/sicil numarası ve parola zorunludur.' },
         { status: 400 }
       );
     }
 
-    const key = sicil_no.toUpperCase().trim();
+    const trimmed = rawIdentifier.trim();
 
-    // Personeli bul
-    console.log(`2. DB Bağlantısı Deneniyor - Sicil: ${key}`);
-    const person = await queryOne(
-      'SELECT * FROM personnel WHERE sicil_no = $1',
-      [key]
-    );
+    // Determine if it looks like a sicil_no (starts with SB or is all uppercase/digits)
+    // or a username (lowercase, no SB prefix)
+    const isSicilNo = /^SB/i.test(trimmed) || /^\d+$/.test(trimmed);
+
+    let person;
+    let lookupKey: string;
+
+    if (isSicilNo) {
+      // Sicil No lookup — uppercase
+      lookupKey = trimmed.toUpperCase();
+      console.log(`2. DB Bağlantısı Deneniyor - Sicil: ${lookupKey}`);
+      person = await queryOne(
+        'SELECT * FROM personnel WHERE sicil_no = $1',
+        [lookupKey]
+      );
+    } else {
+      // Username lookup — lowercase
+      lookupKey = trimmed.toLowerCase();
+      console.log(`2. DB Bağlantısı Deneniyor - Username: ${lookupKey}`);
+      person = await queryOne(
+        'SELECT * FROM personnel WHERE username = $1',
+        [lookupKey]
+      );
+    }
+
     console.log(`3. Sorgu Bitti - Sonuç: ${person ? 'Kullanıcı Bulundu' : 'Bulunamadı'}`);
+
+    const logSicil = person?.sicil_no || lookupKey;
 
     if (!person) {
       // Auth log — başarısız
       await query(
         'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
-        [key, 'login_failed', 'Sicil numarası bulunamadı']
+        [logSicil, 'login_failed', isSicilNo ? 'Sicil numarası bulunamadı' : 'Kullanıcı adı bulunamadı']
       );
       return NextResponse.json(
-        { error: 'Sicil numarası veya parola hatalı.' },
+        { error: 'Kullanıcı adı/sicil numarası veya parola hatalı.' },
         { status: 401 }
       );
     }
@@ -44,7 +69,7 @@ export async function POST(request: NextRequest) {
     if (!person.aktif) {
       await query(
         'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
-        [key, 'login_failed', 'Hesap pasif durumda']
+        [person.sicil_no, 'login_failed', 'Hesap pasif durumda']
       );
       return NextResponse.json(
         { error: 'Hesabınız pasif durumdadır.' },
@@ -57,7 +82,7 @@ export async function POST(request: NextRequest) {
       // Eğer hash yoksa, varsayılan şifre "1234" ile dene (ilk kurulum için)
       if (password !== '1234') {
         return NextResponse.json(
-          { error: 'Sicil numarası veya parola hatalı.' },
+          { error: 'Kullanıcı adı/sicil numarası veya parola hatalı.' },
           { status: 401 }
         );
       }
@@ -66,10 +91,10 @@ export async function POST(request: NextRequest) {
       if (!valid) {
         await query(
           'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
-          [key, 'login_failed', 'Hatalı parola']
+          [person.sicil_no, 'login_failed', 'Hatalı parola']
         );
         return NextResponse.json(
-          { error: 'Sicil numarası veya parola hatalı.' },
+          { error: 'Kullanıcı adı/sicil numarası veya parola hatalı.' },
           { status: 401 }
         );
       }
@@ -91,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     await query(
       'INSERT INTO auth_logs (sicil_no, event_type, ip_address, user_agent, details) VALUES ($1, $2, $3, $4, $5)',
-      [key, 'login_success', ip, ua, `${person.ad} ${person.soyad} (${person.unvan})`]
+      [person.sicil_no, 'login_success', ip, ua, `${person.ad} ${person.soyad} (${person.unvan})`]
     );
 
     // Cookie set et (ve JSON olarak da dön ki fallback mekanizması çalışabilsin)

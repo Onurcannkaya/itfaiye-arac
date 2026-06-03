@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity } from "lucide-react"
+import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy } from "lucide-react"
 import { api } from "@/lib/api"
 import { type Personnel } from "@/types"
 import { cn, calculateRemainingDays } from "@/lib/utils"
@@ -48,6 +48,8 @@ export default function PersonelYonetimPage() {
   const [scbaDate, setScbaDate] = useState("")
   const [activeShift, setActiveShift] = useState(1)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [resetPasswordSuccess, setResetPasswordSuccess] = useState<string | null>(null)
 
   // Fetch personnel from Supabase
   const fetchPersonnel = useCallback(async () => {
@@ -260,8 +262,36 @@ export default function PersonelYonetimPage() {
     setEhliyetDate(ehliyet?.gecerlilik_tarihi || "")
     setIlkyardimDate(ilkyardim?.gecerlilik_tarihi || "")
     setScbaDate(scba?.gecerlilik_tarihi || "")
+    setResetPasswordSuccess(null)
 
     setIsEditModalOpen(true)
+  }
+
+  const handleResetPassword = async (sicil_no: string) => {
+    setResettingPassword(true)
+    setResetPasswordSuccess(null)
+    try {
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ sicil_no }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) {
+        alert(json.error || 'Şifre sıfırlama başarısız.')
+        return
+      }
+      setResetPasswordSuccess(json.newPassword)
+    } catch (err: any) {
+      console.error(err)
+      alert('Parola sıfırlama sırasında sunucu hatası oluştu.')
+    } finally {
+      setResettingPassword(false)
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -519,6 +549,13 @@ export default function PersonelYonetimPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {currentUser?.rol === 'Admin' && (
+            <Link href="/yonetim/personel/gecici-sifreler">
+              <Button variant="outline" size="sm" className="gap-1.5 border-slate-800 bg-slate-900/50 text-slate-300 hover:text-white">
+                <Key className="w-3.5 h-3.5 text-amber-500" /> Geçici Şifreler
+              </Button>
+            </Link>
+          )}
           <Button onClick={fetchPersonnel} variant="secondary" size="sm" className="gap-1.5">
             <RefreshCcw className="w-3.5 h-3.5" /> Yenile
           </Button>
@@ -1238,6 +1275,54 @@ export default function PersonelYonetimPage() {
                     </div>
                   )
                 })()}
+
+                {/* Şifre Sıfırlama Bölümü */}
+                {currentUser?.rol === 'Admin' && (
+                  <div className="pt-4 border-t border-border space-y-3">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                      <Key className="w-4 h-4 text-amber-500" />
+                      Parola Yönetimi
+                    </h4>
+                    <div className="bg-slate-950/60 border border-slate-900 rounded-xl p-3 space-y-3 flex flex-col items-center">
+                      {resetPasswordSuccess ? (
+                        <div className="w-full text-center space-y-2">
+                          <p className="text-xs text-emerald-400 font-bold">Yeni Geçici Şifre:</p>
+                          <div className="flex items-center justify-center gap-2 bg-slate-900 px-3 py-1.5 rounded border border-slate-800">
+                            <span className="font-mono font-black text-emerald-300 text-lg tracking-widest">{resetPasswordSuccess}</span>
+                            <button
+                              onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                  navigator.clipboard.writeText(resetPasswordSuccess);
+                                  alert('Şifre kopyalandı.');
+                                }
+                              }}
+                              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded transition-colors cursor-pointer"
+                              type="button"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">Kullanıcı bu şifreyle giriş yaptıktan sonra şifresini değiştirmelidir.</p>
+                        </div>
+                      ) : (
+                        <div className="w-full flex items-center justify-between gap-3">
+                          <span className="text-xs text-slate-400 font-semibold">Geçici şifre oluştur:</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={resettingPassword}
+                            onClick={() => handleResetPassword(selectedPerson.sicil_no)}
+                            className="h-8 text-xs border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-amber-500 hover:text-amber-400 gap-1.5"
+                          >
+                            {resettingPassword ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCcw className="w-3 h-3" />}
+                            Şifreyi Sıfırla
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

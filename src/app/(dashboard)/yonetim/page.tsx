@@ -510,34 +510,14 @@ export default function DashboardPage() {
     return list
   }, [activeIncidentsList, vehicles])
 
+  // ─── Nöbetçi posta: 1. Posta sabit olarak atandı (Faz 28.23) ───
+  const activePostaNumber = 1;
+
   const sortedPersonnel = useMemo<Personnel[]>(() => {
     if (personnelList.length === 0) return []
-
-    const MS_PER_DAY = 1000 * 60 * 60 * 24;
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const daysSinceEpoch = Math.floor(todayStart.getTime() / MS_PER_DAY);
-    const activePosta = (daysSinceEpoch % 3) + 1;
-
-    const activeShiftPersonnel = personnelList.filter(p => p.posta_no === activePosta)
-
-    const leaders = activeShiftPersonnel.filter(p =>
-      p.rol === 'Shift_Leader' || p.rol === 'Admin' || p.rol === 'Editor'
-    )
-    const others = activeShiftPersonnel.filter(p =>
-      p.rol !== 'Shift_Leader' && p.rol !== 'Admin' && p.rol !== 'Editor'
-    ).sort((a, b) => a.ad.localeCompare(b.ad))
-
-    return [...leaders, ...others]
+    // Filter to active posta only — ShiftList handles station grouping and hierarchical sorting internally
+    return personnelList.filter(p => p.posta_no === activePostaNumber)
   }, [personnelList])
-
-  const activePostaNumber = useMemo<number>(() => {
-    const MS_PER_DAY = 1000 * 60 * 60 * 24;
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const daysSinceEpoch = Math.floor(todayStart.getTime() / MS_PER_DAY);
-    return (daysSinceEpoch % 3) + 1;
-  }, [])
 
   // ─── Loading State ────────────────────────────────────────
   if (loading) {
