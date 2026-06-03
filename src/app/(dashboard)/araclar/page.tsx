@@ -7,9 +7,10 @@ import { VehicleEditModal } from "@/components/vehicle/VehicleEditModal"
 import { VehicleAddModal } from "@/components/vehicle/VehicleAddModal"
 import { useAuthStore } from "@/lib/authStore"
 import { PlusCircle, RefreshCw } from "lucide-react"
+import { Vehicle } from "@/types"
 
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState<any[]>([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuthStore()
 
@@ -22,7 +23,7 @@ export default function VehiclesPage() {
   })
 
   // Edit Modal state
-  const [editModal, setEditModal] = useState<{ open: boolean; vehicle: any | null }>({
+  const [editModal, setEditModal] = useState<{ open: boolean; vehicle: Vehicle | null }>({
     open: false,
     vehicle: null,
   })
@@ -44,7 +45,7 @@ export default function VehiclesPage() {
   const canEdit = user?.rol !== 'User'
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/50 pb-5">
         <div>
@@ -124,6 +125,13 @@ export default function VehiclesPage() {
           setAddModalOpen(false)
           fetchVehicles()
         }}
+      />
+
+      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
+      <div 
+        className="w-full block md:hidden pointer-events-none clear-both" 
+        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
+        aria-hidden="true" 
       />
     </div>
   )
