@@ -212,8 +212,8 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
   const [mapReady, setMapReady] = useState(false)
   const hasFitBoundsRef = useRef(false)
 
-  const [showBinalar, setShowBinalar] = useState(true)
-  const [showNumarataj, setShowNumarataj] = useState(true)
+  const [showBinalar, setShowBinalar] = useState(false)
+  const [showNumarataj, setShowNumarataj] = useState(false)
   const [showMahalleler, setShowMahalleler] = useState(false)
   const [showSokaklar, setShowSokaklar] = useState(false)
   const [showHidrantlar, setShowHidrantlar] = useState(true)
