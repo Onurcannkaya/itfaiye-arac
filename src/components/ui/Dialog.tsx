@@ -4,8 +4,13 @@ import { cn } from "@/lib/utils"
 export function Dialog({ open, onOpenChange, children }: { open: boolean, onOpenChange: (open: boolean) => void, children: React.ReactNode }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center" onClick={() => onOpenChange(false)}>
-      {children}
+    <div 
+      className="fixed inset-0 z-50 bg-background/85 backdrop-blur-sm overflow-y-auto flex items-start justify-center p-3 sm:p-6" 
+      onClick={() => onOpenChange(false)}
+    >
+      <div className="w-full flex justify-center my-auto min-h-0">
+        {children}
+      </div>
     </div>
   )
 }
@@ -13,7 +18,7 @@ export function Dialog({ open, onOpenChange, children }: { open: boolean, onOpen
 export function DialogContent({ children, className }: { children: React.ReactNode, className?: string }) {
   return (
     <div 
-      className={cn("z-50 w-full max-w-lg bg-surface border border-border shadow-lg rounded-xl overflow-hidden animate-in fade-in zoom-in-95", className)} 
+      className={cn("z-50 w-full max-w-lg bg-surface border border-border shadow-lg rounded-xl overflow-hidden animate-in fade-in zoom-in-95 flex flex-col", className)} 
       onClick={e => e.stopPropagation()}
     >
       {children}

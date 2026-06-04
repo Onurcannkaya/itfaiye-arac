@@ -1174,16 +1174,16 @@ export default function PersonelYonetimPage() {
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="flex items-center gap-2 text-xl text-primary">
-              <Settings2 className="w-5 h-5" />
+        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
+          <DialogHeader className="p-5 border-b border-slate-900 bg-slate-900/20 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg text-slate-100">
+              <Settings2 className="w-5 h-5 text-primary" />
               Personel Düzenle
             </DialogTitle>
           </DialogHeader>
           
           {selectedPerson && (
-            <div className="p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
               <div className="bg-muted/50 p-4 rounded-xl border border-border/50 flex flex-col items-center justify-center text-center">
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary border-2 border-primary/20 flex items-center justify-center font-bold text-lg mb-2">
                   {selectedPerson.ad.charAt(0)}{selectedPerson.soyad.charAt(0)}
@@ -1369,11 +1369,11 @@ export default function PersonelYonetimPage() {
             </div>
           )}
           
-          <DialogFooter className="p-6 pt-0 mt-2 gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingEdit}>
+          <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingEdit} className="w-full sm:w-auto h-10">
               İptal
             </Button>
-            <Button onClick={handleSaveEdit} disabled={isSavingEdit} className="min-w-[140px]">
+            <Button onClick={handleSaveEdit} disabled={isSavingEdit} className="w-full sm:w-auto min-w-[140px] h-10">
               {isSavingEdit ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
