@@ -590,7 +590,7 @@ export async function POST() {
             INSERT INTO public.vehicles (plaka, arac_tipi, marka, model, durum, status)
             VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (plaka) DO NOTHING
-          `, [plaka, 'Diğer', 'Bilinmeyen', `${plaka} (Excel Sürücüsü)`, 'Aktif', 'aktif']);
+          `, [plaka, 'Diğer', 'Bilinmeyen', plaka, 'Aktif', 'aktif']);
         }
       }
 
@@ -747,7 +747,7 @@ export async function POST() {
           await query(`
             INSERT INTO public.vehicles (plaka, arac_tipi, marka, model, durum, status)
             VALUES ($1, $2, $3, $4, $5, $6)
-          `, [plaka, 'Diğer', 'Bilinmeyen', `${plaka} (Excel)`, 'Aktif', 'aktif']);
+          `, [plaka, 'Diğer', 'Bilinmeyen', plaka, 'Aktif', 'aktif']);
         }
 
         // Find header row
