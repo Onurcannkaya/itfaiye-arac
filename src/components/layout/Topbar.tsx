@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check } from 'lucide-react'
+import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
@@ -27,6 +27,8 @@ export function Topbar() {
   const [isMobile, setIsMobile] = useState(false)
   const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   // Track window size for responsive layout and set mounted to true
   useEffect(() => {
@@ -305,11 +307,14 @@ export function Topbar() {
     return () => clearInterval(interval)
   }, [isAuthenticated, user])
 
-  // Click outside to close dropdown
+  // Click outside to close dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -482,22 +487,50 @@ export function Topbar() {
         </div>
         
         {isAuthenticated ? (
-          <button 
-            onClick={handleLogout}
-            title="Çıkış Yap"
-            className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3 hover:bg-muted cursor-pointer transition-colors group"
-          >
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-              {initials}
-            </div>
-            <div className="hidden md:block text-sm pr-2 text-left">
-              <p className="font-semibold leading-none text-foreground">{displayName}</p>
-              <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide flex items-center gap-1">
-                {rolLabel} 
-                <LogOut className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-danger" />
-              </p>
-            </div>
-          </button>
+          <div className="relative" ref={profileRef}>
+            <button 
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3 hover:bg-muted cursor-pointer transition-colors group focus:outline-none"
+            >
+              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                {initials}
+              </div>
+              <div className="hidden md:block text-sm pr-2 text-left">
+                <p className="font-semibold leading-none text-foreground">{displayName}</p>
+                <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide flex items-center gap-1">
+                  {rolLabel}
+                </p>
+              </div>
+            </button>
+
+            {isProfileOpen && (
+              <div className="absolute right-0 mt-2 w-48 origin-top-right bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="p-2.5 border-b border-slate-900/60 bg-slate-900/10">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2">Hesap İşlemleri</p>
+                </div>
+                <div className="p-1.5 space-y-1">
+                  <Link 
+                    href="/sifre-degistir"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                  >
+                    <Key className="w-4 h-4" />
+                    <span>Şifremi Değiştir</span>
+                  </Link>
+                  <button 
+                    onClick={() => {
+                      setIsProfileOpen(false)
+                      handleLogout()
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-colors w-full text-left font-medium"
+                  >
+                    <LogOut className="w-4 h-4 text-red-500" />
+                    <span>Çıkış Yap</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <button 
             onClick={() => router.push('/login')} 

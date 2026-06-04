@@ -31,6 +31,7 @@ export default function PersonelYonetimPage() {
   const [newRole, setNewRole] = useState("User")
   const [newPostaNo, setNewPostaNo] = useState("1")
   const [newDurum, setNewDurum] = useState("Görevde")
+  const [newPassword, setNewPassword] = useState("")
   
   // Permissions state synced with DB
   const [permissions, setPermissions] = useState<Record<string, { view_only: boolean, can_approve: boolean, can_print: boolean }>>({})
@@ -289,7 +290,8 @@ export default function PersonelYonetimPage() {
         can_approve: newRole === 'Shift_Leader' || newRole === 'Admin' || newRole === 'Editor',
         can_print: newRole === 'Admin' || newRole === 'Editor',
         posta_no: parseInt(newPostaNo, 10),
-        durum: newDurum
+        durum: newDurum,
+        password: newPassword || '1234'
       })
 
       if (insertErr) throw insertErr
@@ -297,6 +299,7 @@ export default function PersonelYonetimPage() {
       // Refresh list from DB
       await fetchPersonnel()
       setNewAdSoyad("")
+      setNewPassword("")
       setNewRole("User")
       setIsAdding(false)
 
@@ -330,6 +333,7 @@ export default function PersonelYonetimPage() {
         }
       }))
       setNewAdSoyad("")
+      setNewPassword("")
       setNewRole("User")
       setIsAdding(false)
     } finally {
@@ -1017,12 +1021,12 @@ export default function PersonelYonetimPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddPersonel} className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="space-y-2 flex-col w-full sm:w-1/4">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Sicil No (Otom. Atandı)</label>
-                <Input value={nextSicil} disabled className="font-mono bg-muted/50 border-input" />
+            <form onSubmit={handleAddPersonel} className="flex flex-wrap gap-4 items-end">
+              <div className="space-y-2 flex-col w-full sm:w-[110px]">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Sicil No</label>
+                <Input value={nextSicil} disabled className="font-mono bg-muted/50 border-input h-11" />
               </div>
-              <div className="space-y-2 flex-col w-full sm:w-1/2">
+              <div className="space-y-2 flex-col w-full sm:flex-1 min-w-[200px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Ad Soyad</label>
                 <Input 
                   placeholder="Örn: Serdar Vatansever" 
@@ -1030,12 +1034,13 @@ export default function PersonelYonetimPage() {
                   onChange={e => setNewAdSoyad(e.target.value)}
                   autoFocus
                   required
+                  className="h-11"
                 />
               </div>
-              <div className="space-y-2 flex-col w-full sm:w-1/4">
+              <div className="space-y-2 flex-col w-full sm:w-[220px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Sistem Rolü</label>
                 <select 
-                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   value={newRole}
                   onChange={e => setNewRole(e.target.value)}
                 >
@@ -1045,7 +1050,7 @@ export default function PersonelYonetimPage() {
                   <option value="User">İtfaiye Eri (Kullanıcı)</option>
                 </select>
               </div>
-              <div className="space-y-2 flex-col w-full sm:w-1/4">
+              <div className="space-y-2 flex-col w-full sm:w-[110px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Posta</label>
                 <select 
                   className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -1057,7 +1062,7 @@ export default function PersonelYonetimPage() {
                   <option value="3">3. Posta</option>
                 </select>
               </div>
-              <div className="space-y-2 flex-col w-full sm:w-1/4">
+              <div className="space-y-2 flex-col w-full sm:w-[110px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Durum</label>
                 <select 
                   className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -1068,6 +1073,18 @@ export default function PersonelYonetimPage() {
                   <option value="İzinli">İzinli</option>
                   <option value="Raporlu">Raporlu</option>
                 </select>
+              </div>
+              <div className="space-y-2 flex-col w-full sm:w-[150px]">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Başlangıç Şifresi</label>
+                <Input 
+                  type="password"
+                  placeholder="Şifre belirleyin" 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                  minLength={4}
+                  className="h-11"
+                />
               </div>
               <Button type="submit" disabled={saving} className="w-full sm:w-auto h-11 px-8 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}

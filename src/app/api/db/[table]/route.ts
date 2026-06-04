@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSessionFromRequest, AuthError } from '@/lib/auth';
+import { getSessionFromRequest, AuthError, hashPassword } from '@/lib/auth';
+
+// Turkish character mapping and username helpers
+function removeTurkishChars(str: string): string {
+  const map: Record<string, string> = {
+    İ: "i", ı: "i", Ö: "o", ö: "o", Ü: "u", ü: "u",
+    Ş: "s", ş: "s", Ç: "c", ç: "c", Ğ: "g", ğ: "g",
+  };
+  return str.replace(/[İıÖöÜüŞşÇçĞğ]/g, (ch) => map[ch] || ch);
+}
+
+function generateUsername(ad: string, soyad: string): string {
+  const firstLetter = removeTurkishChars(ad.charAt(0)).toLowerCase();
+  const surname = removeTurkishChars(soyad).toLowerCase();
+  return firstLetter + surname;
+}
+
 
 // İzin verilen tablolar (SQL injection koruması)
 const ALLOWED_TABLES = [
@@ -545,6 +561,40 @@ export async function POST(
       if (table === 'vehicles' && row.status !== undefined) {
         row.durum = row.status === 'maintenance' ? 'Bakımda' : 'aktif';
       }
+      if (table === 'personnel') {
+        // Generate username
+        if (!row.username && row.ad && row.soyad) {
+          const baseUsername = generateUsername(row.ad, row.soyad);
+          let finalUsername = baseUsername;
+          let counter = 1;
+          while (true) {
+            const check = await query('SELECT sicil_no FROM personnel WHERE username = $1', [finalUsername]);
+            if (check.rows.length === 0) break;
+            finalUsername = baseUsername + counter;
+            counter++;
+          }
+          row.username = finalUsername;
+        }
+
+        // Handle password hashing if plain password is provided
+        if (row.password) {
+          const plainPassword = row.password;
+          delete row.password; // remove plain password field before inserting to personnel table
+          
+          const hashed = await hashPassword(plainPassword);
+          row.password_hash = hashed;
+
+          // Insert/Upsert into temp_passwords
+          await query(
+            `INSERT INTO temp_passwords (sicil_no, username, ad, soyad, plain_password, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (sicil_no)
+             DO UPDATE SET username = $2, ad = $3, soyad = $4, plain_password = $5, created_by = $6, created_at = NOW(), used = false, used_at = NULL`,
+            [row.sicil_no, row.username || null, row.ad, row.soyad, plainPassword, session.sicilNo]
+          );
+        }
+      }
+
       const keys = Object.keys(row);
       const safeCols = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, '')}"`);
       const placeholders = keys.map((_, i) => `$${i + 1}`);
