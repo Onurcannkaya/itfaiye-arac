@@ -13,8 +13,23 @@ interface VehicleCardProps {
   onEdit?: (vehicle: Vehicle) => void
 }
 
-function getTacticalSilhouette(aracTipi: string) {
+function getTacticalSilhouette(aracTipi: string, filoNo?: number | null) {
   const typeStr = (aracTipi || "").toLowerCase();
+  
+  if (filoNo === 1 || typeStr.includes("minibüs") || typeStr.includes("servis") || typeStr.includes("kılavuz") || typeStr.includes("klavuz")) {
+    // Minibüs / Servis / Kılavuz (Mercedes Sprinter / Ford Transit)
+    return (
+      <svg viewBox="0 0 100 60" className="w-16 h-10 text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)]" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="10" y="18" width="80" height="26" rx="6" />
+        <rect x="18" y="22" width="10" height="9" rx="1.5" fill="currentColor" fillOpacity="0.15" />
+        <rect x="32" y="22" width="10" height="9" rx="1.5" fill="currentColor" fillOpacity="0.15" />
+        <rect x="46" y="22" width="10" height="9" rx="1.5" fill="currentColor" fillOpacity="0.15" />
+        <path d="M60 22 L78 22 L84 27 L84 31 L60 31 Z" fill="currentColor" fillOpacity="0.15" />
+        <circle cx="28" cy="46" r="7" fill="currentColor" />
+        <circle cx="72" cy="46" r="7" fill="currentColor" />
+      </svg>
+    );
+  }
   
   if (typeStr.includes("arazöz")) {
     // Arazöz (Water Tanker / Pumper)
@@ -251,7 +266,7 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
               className={`flex items-center space-x-3.5 flex-1 min-w-0 ${vehicle.filo_no ? 'pl-9' : ''}`}
             >
               <div className="p-2 rounded-xl bg-slate-800/80 border border-white/5 group-hover:bg-slate-800/100 group-hover:border-cyan-500/20 transition-all duration-300 flex items-center justify-center shrink-0">
-                {getTacticalSilhouette(vehicle.arac_tipi || vehicle.aracTipi)}
+                {getTacticalSilhouette(vehicle.arac_tipi || vehicle.aracTipi, vehicle.filo_no)}
               </div>
               <div className="min-w-0">
                  <h3 className="font-bold text-slate-100 tracking-wider text-sm md:text-base leading-tight break-words font-mono">
