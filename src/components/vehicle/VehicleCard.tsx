@@ -257,8 +257,11 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
                  <h3 className="font-bold text-slate-100 tracking-wider text-sm md:text-base leading-tight break-words font-mono">
                    {vehicle.plaka}
                  </h3>
+                 <div className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-0.5 leading-none">
+                   {vehicle.arac_tipi || vehicle.aracTipi || ''}
+                 </div>
                  {vehicle.marka && (
-                   <Badge variant="outline" className="font-mono text-[9px] font-extrabold text-cyan-400 border-cyan-400/25 px-1 py-0 bg-cyan-400/5 uppercase mt-1">
+                   <Badge variant="outline" className="font-mono text-[9px] font-extrabold text-cyan-400 border-cyan-400/25 px-1 py-0 bg-cyan-400/5 uppercase mt-1.5">
                      {vehicle.marka}
                    </Badge>
                  )}
