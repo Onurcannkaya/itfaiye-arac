@@ -27,7 +27,8 @@ import {
   FilePlus,
   AlertTriangle,
   Send,
-  UserCheck
+  UserCheck,
+  Download
 } from "lucide-react"
 
 // Strict TypeScript structure for Sivas Fire Department Citizen Service requests
@@ -326,6 +327,174 @@ export default function HizmetlerPage() {
     }
   }
 
+  // ── Dilekçe (Petition) Generator ─────────────────────────────────────
+  const generateDilekce = (req: CitizenRequest) => {
+    const tarih = new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const now = new Date().toLocaleDateString('tr-TR', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+
+    let konuText = '';
+    let govdeText = '';
+    let teknikBilgi = '';
+
+    if (req.talep_turu.includes('Baca')) {
+      konuText = 'Baca Temizliği Hizmet Talebi Hk.';
+      govdeText = `Aşağıda bilgileri verilen adresimde bulunan binanın baca temizliğinin yapılmasını talep ediyorum. Gerekli harç bedelinin tarafıma bildirilmesi halinde ödemeyi yapmayı kabul ve taahhüt ederim.`;
+      if (req.baca_detaylari) {
+        const bd = req.baca_detaylari;
+        teknikBilgi = `
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Kat Sayısı</td><td style="padding:6px 12px;border:1px solid #ccc;">${bd.kat_sayisi || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Daire Sayısı</td><td style="padding:6px 12px;border:1px solid #ccc;">${bd.daire_sayisi || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Yakıt Tipi</td><td style="padding:6px 12px;border:1px solid #ccc;">${bd.yakit_tipi || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Baca Tipi</td><td style="padding:6px 12px;border:1px solid #ccc;">${bd.baca_tipi || '-'}</td></tr>
+        `;
+      }
+    } else if (req.talep_turu.includes('Uygunluk') || req.talep_turu.includes('Ruhsat') || req.talep_turu.includes('Olur')) {
+      konuText = 'İtfaiye Uygunluk (Olur) Raporu Talebi Hk.';
+      govdeText = `Aşağıda bilgileri verilen işyerimiz için İtfaiye Uygunluk (Olur) Raporu düzenlenmesini talep ediyorum. Ruhsat işlemleri kapsamında gerekli denetimlerin yapılmasını ve raporun tarafıma teslim edilmesini arz ederim.`;
+      if (req.isyeri_detaylari) {
+        const id = req.isyeri_detaylari;
+        teknikBilgi = `
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Faaliyet Konusu</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.faaliyet_konusu || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Kapalı Alan (m²)</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.alan_m2 || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Yangın Dolabı</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.yangin_dolabi || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Acil Çıkış</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.acil_cikis || '-'}</td></tr>
+        `;
+      }
+    } else if (req.talep_turu.includes('Eğitim')) {
+      konuText = 'Yangın Güvenliği Eğitimi Talebi Hk.';
+      govdeText = `Aşağıda bilgileri verilen kurum/kuruluşumuz personeline yönelik yangın güvenliği eğitimi verilmesini talep ediyorum. Eğitim programının planlanması ve tarafıma bilgi verilmesini arz ederim.`;
+      if (req.isyeri_detaylari) {
+        const id = req.isyeri_detaylari;
+        teknikBilgi = `
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Eğitim Türü</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.egitim_turu || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Katılımcı Sayısı</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.kisi_sayisi || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Planlanan Tarih</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.egitim_tarihi || '-'}</td></tr>
+        `;
+      }
+    } else {
+      konuText = `${req.talep_turu} Hk.`;
+      govdeText = `Aşağıda bilgileri sunulan talebimin değerlendirilmesini saygılarımla arz ederim.`;
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dilekçe - ${req.basvuran_ad_soyad} - ${req.talep_turu}</title>
+  <style>
+    @page { size: A4; margin: 25mm 20mm 25mm 20mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Times New Roman', 'Noto Serif', serif;
+      font-size: 13pt;
+      line-height: 1.7;
+      color: #1a1a1a;
+      padding: 60px 50px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header { text-align: center; margin-bottom: 40px; border-bottom: 3px double #333; padding-bottom: 20px; }
+    .header h1 { font-size: 16pt; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+    .header h2 { font-size: 13pt; font-weight: 700; color: #444; }
+    .meta-row { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 11pt; }
+    .meta-row .left { text-align: left; }
+    .meta-row .right { text-align: right; }
+    .konu { margin-bottom: 25px; }
+    .konu strong { font-size: 12pt; text-decoration: underline; }
+    .govde { text-align: justify; text-indent: 40px; margin-bottom: 30px; }
+    .bilgi-tablosu { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 11pt; }
+    .bilgi-tablosu th { background: #f0f0f0; padding: 8px 12px; border: 1px solid #ccc; text-align: left; font-weight: 700; }
+    .bilgi-tablosu td { padding: 6px 12px; border: 1px solid #ccc; }
+    .section-title { font-size: 11pt; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    .imza { margin-top: 60px; text-align: right; }
+    .imza p { margin-bottom: 4px; }
+    .imza .ad { font-weight: 700; font-size: 13pt; }
+    .ek-bilgi { margin-top: 50px; font-size: 10pt; color: #888; border-top: 1px solid #ddd; padding-top: 15px; }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="text-align:center;margin-bottom:20px;">
+    <button onclick="window.print()" style="padding:12px 32px;font-size:14px;font-weight:700;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;">🖨️ Yazdır / PDF Olarak Kaydet</button>
+  </div>
+
+  <div class="header">
+    <h1>T.C. SİVAS BELEDİYESİ</h1>
+    <h2>İtfaiye Müdürlüğü'ne</h2>
+  </div>
+
+  <div class="meta-row">
+    <div class="left">
+      <strong>Takip Kodu:</strong> ${req.basvuran_tc || req.id}<br/>
+      <strong>Başvuru Tarihi:</strong> ${tarih}
+    </div>
+    <div class="right">
+      <strong>Belge Tarihi:</strong> ${now}
+    </div>
+  </div>
+
+  <div class="konu">
+    <strong>Konu:</strong> ${konuText}
+  </div>
+
+  <div class="govde">
+    <p>${govdeText}</p>
+    <p style="margin-top:10px;">Gereğini saygılarımla arz ederim.</p>
+  </div>
+
+  <p class="section-title">Başvuran Bilgileri</p>
+  <table class="bilgi-tablosu">
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;width:200px;">Ad Soyad</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.basvuran_ad_soyad}</td></tr>
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">T.C. / Takip No</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.basvuran_tc || '-'}</td></tr>
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">İrtibat Telefonu</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.irtibat_tel}</td></tr>
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Hizmet Adresi</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.adres}</td></tr>
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Hizmet Türü</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.talep_turu}</td></tr>
+  </table>
+
+  ${teknikBilgi ? `
+  <p class="section-title">Teknik Detaylar</p>
+  <table class="bilgi-tablosu">
+    ${teknikBilgi}
+  </table>
+  ` : ''}
+
+  <div class="imza">
+    <p>${tarih}</p>
+    <p class="ad">${req.basvuran_ad_soyad}</p>
+    <p style="font-size:10pt;color:#666;">İmza</p>
+  </div>
+
+  <div class="ek-bilgi">
+    <strong>Not:</strong> Bu dilekçe, Sivas Belediyesi İtfaiye Müdürlüğü Bilgi Yönetim Sistemi üzerinden
+    otomatik olarak oluşturulmuştur. Başvuru kaydı veritabanında saklanmaktadır.
+    <br/><strong>Sistem Kayıt ID:</strong> ${req.id} &nbsp;|&nbsp; <strong>Oluşturma:</strong> ${new Date(req.created_at || req.basvuru_tarihi).toLocaleString('tr-TR')}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank');
+    if (!w) {
+      // Fallback: download as file
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Dilekce_${req.basvuran_ad_soyad.replace(/\s+/g, '_')}_${req.talep_turu.replace(/\s+/g, '_')}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
+
   if (loading) {
     return (
       <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2 min-h-[50vh]">
@@ -610,8 +779,8 @@ export default function HizmetlerPage() {
 
         {/* Premium Amir Taktik Operasyon Modalı */}
         {selectedRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
-            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] overflow-y-auto animate-in fade-in duration-200">
+            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
               <CardHeader className="bg-slate-900/40 border-b border-slate-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100 uppercase tracking-wider">
@@ -771,6 +940,18 @@ export default function HizmetlerPage() {
                   </div>
                 )}
 
+                {/* 4.5 Dilekçe İndirme Butonu */}
+                <div className="pt-3 border-t border-slate-800/50">
+                  <Button
+                    type="button"
+                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 min-h-[44px] rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/15 border border-indigo-500/30 transition-all duration-200 active:scale-[0.97]"
+                    onClick={() => generateDilekce(selectedRequest)}
+                  >
+                    <Download className="w-4 h-4" />
+                    Dilekçe Olarak İndir
+                  </Button>
+                </div>
+
                 {/* 5. Müdür Siber Operasyon Menüsü */}
                 {isMudur ? (
                   <div className="space-y-3 pt-5 border-t border-slate-900">
@@ -895,8 +1076,8 @@ export default function HizmetlerPage() {
 
         {/* Create Modal */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-8">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
               <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100">

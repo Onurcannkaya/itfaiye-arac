@@ -140,7 +140,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen h-screen w-screen grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-950 text-slate-100 box-border">
+    <div className="min-h-screen lg:h-screen w-screen grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden bg-slate-950 text-slate-100 box-border pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       
       {/* Sol Panel: Premium Görsel (Masaüstü Özel - Asil Eski Düzen) */}
       <div className="hidden lg:flex lg:col-span-7 xl:col-span-8 relative h-full flex-col justify-between p-12 overflow-hidden select-none">
@@ -190,12 +190,12 @@ function LoginForm() {
       </div>
 
       {/* Sağ Panel: Giriş Formu (Bütün Cihazlarda Kompakt Asil Düzen) */}
-      <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center p-6 sm:p-12 md:p-16 bg-slate-950 relative overflow-hidden h-full">
+      <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center p-6 sm:p-12 md:p-16 bg-slate-950 relative overflow-hidden min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] lg:h-full">
         {/* Arka plan siber neon ışıltıları */}
         <div className="absolute top-1/4 right-0 w-80 h-80 bg-red-600/10 rounded-full filter blur-[100px] pointer-events-none z-0" />
         <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-cyan-600/5 rounded-full filter blur-[100px] pointer-events-none z-0" />
 
-        <div className="w-full max-w-sm mx-auto space-y-8 z-10 flex flex-col h-full justify-between lg:justify-center py-4 box-border">
+        <div className="w-full max-w-sm mx-auto space-y-8 z-10 flex flex-col justify-center py-4 box-border">
           
           {/* Mobil Logo / Başlık Bölümü */}
           <div className="text-center lg:hidden space-y-3">
@@ -311,9 +311,9 @@ function LoginForm() {
 
       {/* VATANDAŞ HİZMETLERİ MOBİL UYUMLU POP-UP MODAL (%100 MOBİL UYUMLULUK ZIRHI) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-x-hidden overflow-y-auto box-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] bg-slate-950/85 backdrop-blur-md overflow-x-hidden overflow-y-auto box-border">
           
-          <div className="relative w-full max-w-md max-h-[90vh] bg-slate-900/95 border border-cyan-500/25 p-6 rounded-xl shadow-2xl flex flex-col text-slate-100 overflow-y-auto box-border scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+          <div className="relative w-full max-w-md max-h-[calc(100vh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] my-auto bg-slate-900/95 border border-cyan-500/25 p-6 rounded-xl shadow-2xl flex flex-col text-slate-100 overflow-y-auto box-border scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent animate-in zoom-in-95 duration-200">
             
             {/* Modal Kapatma Butonu */}
             <button 
