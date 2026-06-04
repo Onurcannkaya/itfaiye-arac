@@ -804,12 +804,16 @@ export default function VehicleDetailPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{vehicle.plaka}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {vehicle.filo_no 
+                  ? `${vehicle.filo_no} NOLU ${vehicle.aciklama || ''} (${vehicle.plaka})` 
+                  : `${vehicle.arac_tipi || vehicle.aracTipi || ''} (${vehicle.plaka})`}
+              </h1>
               <Badge variant={vehicle.durum === "aktif" ? "success" : vehicle.durum === "bakimda" ? "warning" : "danger"}>
                 {vehicle.durum === "aktif" ? "Aktif" : vehicle.durum === "bakimda" ? "Bakımda" : "Arızalı"}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-sm mt-1">{vehicle.aracTipi}</p>
+            <p className="text-muted-foreground text-sm mt-1">{vehicle.aciklama || vehicle.arac_tipi || vehicle.aracTipi}</p>
           </div>
         </div>
         

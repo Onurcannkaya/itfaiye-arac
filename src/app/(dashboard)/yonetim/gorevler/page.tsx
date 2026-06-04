@@ -64,6 +64,8 @@ interface TaskTemplate {
 
 interface Vehicle {
   plaka: string;
+  filo_no?: number | null;
+  aciklama?: string;
 }
 
 interface Personnel {
@@ -132,13 +134,21 @@ export default function UnifiedGorevlerPage() {
         fetchOrNull(api.from('tasks').select('*').order('created_at', { ascending: false })),
         // If not manager, only fetch active templates, else fetch all to let manager edit/toggle
         fetchOrNull(api.from('task_templates').select('*').order('created_at', { ascending: false })),
-        fetchOrNull(api.from('vehicles').select('plaka')),
+        fetchOrNull(api.from('vehicles').select('plaka, filo_no, aciklama')),
         fetchOrNull(api.from('personnel').select('sicil_no, ad, soyad').eq('aktif', true)),
       ])
 
       if (tasksRes.data) setTasks(tasksRes.data as TaskItem[])
       if (templatesRes.data) setTemplates(templatesRes.data as TaskTemplate[])
-      if (vRes.data) setVehicles(vRes.data as Vehicle[])
+      if (vRes.data) {
+        const sortedV = [...(vRes.data || [])].sort((a: any, b: any) => {
+          const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
+          const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
+          if (valA !== valB) return valA - valB;
+          return a.plaka.localeCompare(b.plaka, 'tr');
+        });
+        setVehicles(sortedV as Vehicle[])
+      }
       if (pRes.data) setPersonnel(pRes.data as Personnel[])
     } catch (err) {
       console.error("Data fetch error:", err)
@@ -429,7 +439,9 @@ export default function UnifiedGorevlerPage() {
                           >
                             <option value="">Araç Plakası Seçin</option>
                             {(vehicles || []).map(v => (
-                              <option key={v.plaka} value={v.plaka}>{v.plaka}</option>
+                              <option key={v.plaka} value={v.plaka}>
+                                {v.filo_no ? `${v.filo_no} NOLU ${v.aciklama || ''} (${v.plaka})` : v.plaka}
+                              </option>
                             ))}
                           </select>
                         </div>

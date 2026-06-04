@@ -143,6 +143,10 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'active';`);
     await query(`UPDATE public.vehicles SET status = 'maintenance' WHERE durum IN ('bakımda', 'serviste', 'Bekliyor', 'Serviste', 'maintenance', 'Bakımda');`);
     await query(`UPDATE public.vehicles SET status = 'active' WHERE status != 'maintenance' OR status IS NULL;`);
+
+    // Faz 28.26: Add filo_no and aciklama columns
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS filo_no INTEGER;`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS aciklama VARCHAR;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }

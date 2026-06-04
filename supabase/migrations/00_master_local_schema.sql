@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
   "sigortaBitis" DATE,
   "muayeneBitis" DATE,
   bolmeler JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  filo_no INTEGER,
+  aciklama VARCHAR
 );
 
 -- ═══════════════════════════════════════════════

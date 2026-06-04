@@ -241,15 +241,16 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
                 {getTacticalSilhouette(vehicle.arac_tipi || vehicle.aracTipi)}
               </div>
               <div className="min-w-0">
-                 <div className="flex items-center gap-1.5">
-                   <h3 className="font-mono font-bold text-lg text-slate-100 tracking-tight">{vehicle.plaka}</h3>
-                   {vehicle.marka && (
-                     <Badge variant="outline" className="font-mono text-[9px] font-extrabold text-cyan-400 border-cyan-400/25 px-1 py-0 bg-cyan-400/5 uppercase">
-                       {vehicle.marka}
-                     </Badge>
-                   )}
-                 </div>
-                 <p className="text-muted-foreground text-xs font-semibold">{vehicle.arac_tipi || vehicle.aracTipi}</p>
+                 <h3 className="font-bold text-slate-100 tracking-tight text-sm md:text-base leading-tight break-words">
+                   {vehicle.filo_no 
+                     ? `${vehicle.filo_no} NOLU ${vehicle.aciklama || ''} (${vehicle.plaka})`
+                     : `${vehicle.arac_tipi || vehicle.aracTipi || ''} (${vehicle.plaka})`}
+                 </h3>
+                 {vehicle.marka && (
+                   <Badge variant="outline" className="font-mono text-[9px] font-extrabold text-cyan-400 border-cyan-400/25 px-1 py-0 bg-cyan-400/5 uppercase mt-1">
+                     {vehicle.marka}
+                   </Badge>
+                 )}
               </div>
             </Link>
             

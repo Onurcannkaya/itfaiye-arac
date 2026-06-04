@@ -34,7 +34,17 @@ export default function VehiclesPage() {
   const fetchVehicles = async () => {
     setLoading(true)
     const { data } = await api.from('vehicles').select('*')
-    setVehicles((data || []).filter((v: Vehicle) => v.plaka !== 'GARAJ'))
+    const filtered = (data || []).filter((v: Vehicle) => v.plaka !== 'GARAJ')
+    
+    // Numaratik Sıralama Nizamı: filo_no ASC (küçükten büyüğe, tanımsızlar sonda)
+    filtered.sort((a: Vehicle, b: Vehicle) => {
+      const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
+      const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
+      if (valA !== valB) return valA - valB;
+      return a.plaka.localeCompare(b.plaka);
+    })
+
+    setVehicles(filtered)
     setLoading(false)
   }
 

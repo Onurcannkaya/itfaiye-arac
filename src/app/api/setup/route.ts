@@ -14,6 +14,71 @@ function removeTurkishChars(str: string): string {
   return str.replace(/[İıÖöÜüŞşÇçĞğ]/g, (ch) => map[ch] || ch);
 }
 
+// ─── Turkish Title Case ─────────────────────────────────────────────────────
+function toTitleCase(str: string): string {
+  return str.toLocaleLowerCase('tr-TR').split(' ').map(word => {
+    if (!word) return '';
+    return word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1);
+  }).join(' ');
+}
+
+// ─── Parse header for fleet number and call sign description ────────────────
+function parseHeader(sheetName: string, rows: any[][]): { filo_no: number | null, aciklama: string } {
+  if (sheetName.toLowerCase() === 'garaj') {
+    return { filo_no: null, aciklama: "Garaj" };
+  }
+
+  let titleText = "";
+  for (let i = 0; i < Math.min(4, rows.length); i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const text = row.map(c => String(c || '').trim()).filter(Boolean).join(" ");
+    if (!text) continue;
+    if (
+      text.includes("İTFAİYE MÜDÜRLÜĞÜ") || 
+      text.includes("İTFAİYE MÜD ") || 
+      text.includes("İTFAİYE MÜDÜRLÜGÜ") || 
+      text.includes("ZİMMET LİSTESİ") || 
+      text.includes("ZİMMET DOSYASI")
+    ) {
+      continue;
+    }
+    if (text.includes("S.NO") || text.includes("MALZEME") || text.includes("MİKTARI")) {
+      continue;
+    }
+    titleText = text;
+    break;
+  }
+
+  if (!titleText) {
+    titleText = sheetName;
+  }
+
+  let filo_no: number | null = null;
+  let aciklama = titleText;
+
+  const noluMatch = titleText.match(/^(\d+)\s*(?:NOLU|NO'LU|NO)\s+(.*)$/i);
+  if (noluMatch) {
+    filo_no = parseInt(noluMatch[1], 10);
+    aciklama = noluMatch[2];
+  }
+
+  aciklama = aciklama
+    .replace(/\(\s*58\s*[A-Z]+\s*\d+\s*\)/gi, "")
+    .replace(/58\s*[A-Z]+\s*\d+/gi, "")
+    .replace(/-\s*$/g, "")
+    .replace(/^\s*-\s*/g, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!aciklama) {
+    aciklama = titleText;
+  }
+
+  return { filo_no, aciklama: toTitleCase(aciklama) };
+}
+
 // ─── Username generator ────────────────────────────────────────────────────
 function generateUsername(ad: string, soyad: string): string {
   const firstLetter = removeTurkishChars(ad.charAt(0)).toLowerCase();
@@ -749,6 +814,13 @@ export async function POST() {
             VALUES ($1, $2, $3, $4, $5, $6)
           `, [plaka, 'Diğer', 'Bilinmeyen', plaka, 'Aktif', 'aktif']);
         }
+
+        // Update vehicle with filo_no and aciklama
+        const { filo_no, aciklama } = parseHeader(sheetName, jsonData);
+        await query(
+          `UPDATE public.vehicles SET filo_no = $1, aciklama = $2 WHERE plaka = $3`,
+          [filo_no, aciklama, plaka]
+        );
 
         // Find header row
         let headerRowIdx = -1;

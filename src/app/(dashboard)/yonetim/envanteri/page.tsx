@@ -30,6 +30,8 @@ interface Vehicle {
   arac_tipi?: string;
   marka?: string;
   model?: string;
+  filo_no?: number | null;
+  aciklama?: string;
 }
 
 interface InventoryRow {
@@ -90,6 +92,7 @@ const DURUM_OPTIONS = [
 
 export default function EnvanteriPage() {
   const { user } = useAuthStore()
+  const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   
   // Navigation Tabs State
   const [activeTab, setActiveTab] = useState<"crud" | "matrix">("crud")
@@ -98,6 +101,53 @@ export default function EnvanteriPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedPlaka, setSelectedPlaka] = useState<string>("")
   const [tableRows, setTableRows] = useState<InventoryRow[]>([])
+  
+  // Vehicle metadata edit states (filo_no and aciklama)
+  const [editFiloNo, setEditFiloNo] = useState<string>("")
+  const [editAciklama, setEditAciklama] = useState<string>("")
+
+  // Synchronize edit fields when selectedPlaka changes
+  useEffect(() => {
+    if (!selectedPlaka) return;
+    const currentVeh = vehicles.find(v => v.plaka === selectedPlaka);
+    if (currentVeh) {
+      setEditFiloNo(currentVeh.filo_no?.toString() || "");
+      setEditAciklama(currentVeh.aciklama || "");
+    } else {
+      setEditFiloNo("");
+      setEditAciklama("");
+    }
+  }, [selectedPlaka, vehicles])
+
+  const handleUpdateVehicleMeta = async () => {
+    if (!selectedPlaka || selectedPlaka === "GARAJ") return;
+    try {
+      const updates = {
+        filo_no: editFiloNo ? parseInt(editFiloNo, 10) : null,
+        aciklama: editAciklama || null
+      };
+      
+      const { error } = await api.update('vehicles', updates, { plaka: selectedPlaka });
+      if (error) throw error;
+      
+      // Update vehicles state locally
+      setVehicles(prev => prev.map(v => {
+        if (v.plaka === selectedPlaka) {
+          return { 
+            ...v, 
+            filo_no: updates.filo_no,
+            aciklama: updates.aciklama || undefined 
+          };
+        }
+        return v;
+      }));
+      
+      alert("Araç filo bilgileri başarıyla güncellendi.");
+    } catch (err: any) {
+      console.error(err);
+      alert("Hata oluştu: " + (err.message || err));
+    }
+  }
   
   // Cache of malzeme_adi -> id
   const [inventoryCache, setInventoryCache] = useState<Record<string, number>>({})
@@ -157,7 +207,12 @@ export default function EnvanteriPage() {
       // 1. Fetch vehicles
       const { data: vehs } = await api.from('vehicles').select('*')
       if (vehs) {
-        const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => a.plaka.localeCompare(b.plaka, 'tr'))
+        const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => {
+          const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
+          const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
+          if (valA !== valB) return valA - valB;
+          return a.plaka.localeCompare(b.plaka, 'tr');
+        })
         setVehicles(sortedVehs)
       }
 
@@ -596,7 +651,9 @@ export default function EnvanteriPage() {
                         <option value="">-- Araç / Depo Seçin --</option>
                         {vehicles.map(v => (
                           <option key={v.plaka} value={v.plaka}>
-                            {v.plaka === "GARAJ" ? "🏠" : "🚗"} {v.plaka} {v.model ? `(${v.model})` : ''}
+                            {v.plaka === "GARAJ" 
+                              ? "🏠 GARAJ (Merkez İtfaiye ve Şubeler)" 
+                              : `🚗 ${v.filo_no ? `${v.filo_no} NOLU ${v.aciklama || ''} (${v.plaka})` : `${v.arac_tipi || ''} (${v.plaka})`}`}
                           </option>
                         ))}
                       </select>
@@ -622,6 +679,40 @@ export default function EnvanteriPage() {
                 </CardContent>
               </Card>
 
+              {/* Admin/Editor Vehicle Details Edit Tools */}
+              {canEdit && selectedPlaka && selectedPlaka !== "GARAJ" && (
+                <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
+                  <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-end">
+                    <div className="w-full sm:w-32">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">FİLO NUMARASI</label>
+                      <input
+                        type="number"
+                        value={editFiloNo}
+                        onChange={(e) => setEditFiloNo(e.target.value)}
+                        placeholder="Örn: 3"
+                        className="w-full h-11 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                      />
+                    </div>
+                    <div className="flex-1 w-full font-sans">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">AÇIKLAMA / ÇAĞRI ADI</label>
+                      <input
+                        type="text"
+                        value={editAciklama}
+                        onChange={(e) => setEditAciklama(e.target.value)}
+                        placeholder="Örn: Ford Kargo Merdiven"
+                        className="w-full h-11 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-bold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                      />
+                    </div>
+                    <button
+                      onClick={handleUpdateVehicleMeta}
+                      className="h-11 px-5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-extrabold rounded-xl text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 w-full sm:w-auto font-sans shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_-3px_rgba(16,185,129,0.3)]"
+                    >
+                      💾 Bilgiyi Güncelle
+                    </button>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* CRUD Editor Table Matrix Card */}
               {!selectedPlaka ? (
                 <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl print:hidden">
@@ -632,7 +723,17 @@ export default function EnvanteriPage() {
                   <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
                     <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
                       <Combine className="w-4 h-4 text-cyan-400" />
-                      <span>{selectedPlaka === "GARAJ" ? "Garaj Deposu Envanter Editörü" : `Tablo Yöneticisi (${selectedPlaka})`}</span>
+                      <span>
+                        {selectedPlaka === "GARAJ" 
+                          ? "Garaj Deposu Envanter Editörü" 
+                          : (() => {
+                              const currentVeh = vehicles.find(v => v.plaka === selectedPlaka);
+                              return currentVeh?.filo_no 
+                                ? `${currentVeh.filo_no} NOLU ${currentVeh.aciklama || ''} (${selectedPlaka})` 
+                                : `Tablo Yöneticisi (${selectedPlaka})`;
+                            })()
+                        }
+                      </span>
                     </CardTitle>
                     <Button 
                       onClick={handleAddNewItem} 

@@ -25,6 +25,8 @@ export function VehicleEditModal({ isOpen, onClose, vehicle, onSuccess }: Vehicl
     muayeneBitis: "",
     km: "",
     motorSaatiPTO: "",
+    filo_no: "",
+    aciklama: "",
   })
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export function VehicleEditModal({ isOpen, onClose, vehicle, onSuccess }: Vehicl
         muayeneBitis: vehicle.muayeneBitis ? new Date(vehicle.muayeneBitis).toISOString().split('T')[0] : "",
         km: vehicle.km?.toString() || "0",
         motorSaatiPTO: vehicle.motorSaatiPTO?.toString() || "0",
+        filo_no: vehicle.filo_no?.toString() || "",
+        aciklama: vehicle.aciklama || "",
       })
     }
   }, [vehicle, isOpen])
@@ -53,6 +57,8 @@ export function VehicleEditModal({ isOpen, onClose, vehicle, onSuccess }: Vehicl
         muayeneBitis: formData.muayeneBitis || null,
         km: parseInt(formData.km, 10) || 0,
         motorSaatiPTO: parseInt(formData.motorSaatiPTO, 10) || 0,
+        filo_no: formData.filo_no ? parseInt(formData.filo_no, 10) : null,
+        aciklama: formData.aciklama || null,
       }
 
       const { error: updErr } = await api.update('vehicles', updates, { plaka: vehicle.plaka })
@@ -98,6 +104,17 @@ export function VehicleEditModal({ isOpen, onClose, vehicle, onSuccess }: Vehicl
               <p>{error}</p>
             </div>
           )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Filo Numarası</label>
+              <Input type="number" value={formData.filo_no} onChange={e => setFormData({...formData, filo_no: e.target.value})} placeholder="Örn: 3" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Açıklama / Çağrı Adı</label>
+              <Input value={formData.aciklama} onChange={e => setFormData({...formData, aciklama: e.target.value})} placeholder="Örn: Ford Kargo Merdiven" />
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">

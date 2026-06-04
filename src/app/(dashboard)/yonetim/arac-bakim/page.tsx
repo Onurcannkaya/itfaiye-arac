@@ -178,6 +178,12 @@ export default function AracBakimPage() {
       // Filodan (vehicles tablosundan) doğrudan veri çekilerek güncel ve tam araç listesi sağlanır
       const { data: fleetVehicles } = await api.from('vehicles').select('*')
       const filteredVehicles = (fleetVehicles || []).filter((v: Vehicle) => v.plaka !== 'GARAJ')
+      filteredVehicles.sort((a: Vehicle, b: Vehicle) => {
+        const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
+        const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
+        if (valA !== valB) return valA - valB;
+        return a.plaka.localeCompare(b.plaka, 'tr');
+      })
       setVehicles(filteredVehicles)
 
       setAllLogs(data.logs || [])
@@ -904,7 +910,11 @@ export default function AracBakimPage() {
                 className="min-h-[44px] rounded-xl border border-slate-800 bg-slate-900 text-slate-200 px-3 text-xs font-semibold focus:outline-none focus:border-cyan-500 transition"
               >
                 <option value="all">Tüm Araçlar</option>
-                {vehicles.map(v => <option key={v.plaka} value={v.plaka}>{v.plaka} - {v.marka}</option>)}
+                {vehicles.map(v => (
+                  <option key={v.plaka} value={v.plaka}>
+                    {v.filo_no ? `${v.filo_no} NOLU ${v.aciklama || ''} (${v.plaka})` : `${v.plaka} - ${v.marka}`}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -1424,7 +1434,11 @@ export default function AracBakimPage() {
                             required
                           >
                             <option value="">Araç Seçiniz...</option>
-                            {vehicles.map(v => <option key={v.plaka} value={v.plaka}>{v.plaka} - {v.marka}</option>)}
+                            {vehicles.map(v => (
+                              <option key={v.plaka} value={v.plaka}>
+                                {v.filo_no ? `${v.filo_no} NOLU ${v.aciklama || ''} (${v.plaka})` : `${v.plaka} - ${v.marka}`}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div className="space-y-1.5">
@@ -1531,7 +1545,11 @@ export default function AracBakimPage() {
                             required
                           >
                             <option value="">Araç Seçiniz...</option>
-                            {vehicles.map(v => <option key={v.plaka} value={v.plaka}>{v.plaka} - {v.marka}</option>)}
+                            {vehicles.map(v => (
+                              <option key={v.plaka} value={v.plaka}>
+                                {v.filo_no ? `${v.filo_no} NOLU ${v.aciklama || ''} (${v.plaka})` : `${v.plaka} - ${v.marka}`}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div className="space-y-1.5">
