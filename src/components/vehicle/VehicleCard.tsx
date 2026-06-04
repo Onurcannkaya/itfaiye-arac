@@ -235,7 +235,7 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
       {/* Kurumsal Siber Filo Numarası Rozeti */}
       {vehicle.filo_no && (
         <div 
-          className="absolute top-3 left-3 w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/80 text-slate-100 font-extrabold text-sm flex items-center justify-center shadow-lg shadow-black/50 z-20 font-mono"
+          className="absolute top-3 left-3 w-8 h-8 rounded-full bg-slate-800 border border-slate-700/80 text-slate-100 font-extrabold text-sm flex items-center justify-center shadow-lg shadow-black/50 z-20 font-mono"
           title={`Filo Numarası: ${vehicle.filo_no}`}
         >
           {vehicle.filo_no}
@@ -254,10 +254,8 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
                 {getTacticalSilhouette(vehicle.arac_tipi || vehicle.aracTipi)}
               </div>
               <div className="min-w-0">
-                 <h3 className="font-bold text-slate-100 tracking-tight text-xs md:text-sm leading-tight break-words">
-                   {vehicle.filo_no 
-                     ? `${vehicle.filo_no} NOLU ${(vehicle.aciklama || '').toUpperCase()} (${vehicle.plaka})`
-                     : `${(vehicle.arac_tipi || vehicle.aracTipi || '').toUpperCase()} (${vehicle.plaka})`}
+                 <h3 className="font-bold text-slate-100 tracking-wider text-sm md:text-base leading-tight break-words font-mono">
+                   {vehicle.plaka}
                  </h3>
                  {vehicle.marka && (
                    <Badge variant="outline" className="font-mono text-[9px] font-extrabold text-cyan-400 border-cyan-400/25 px-1 py-0 bg-cyan-400/5 uppercase mt-1">
@@ -317,11 +315,13 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
                 <span className="text-slate-200 font-bold ml-auto truncate max-w-[150px]">{vehicle.istasyon}</span>
               </div>
             )}
-            {vehicle.yil && vehicle.model && (
+            {(vehicle.model || vehicle.aciklama) && (
               <div className="flex items-center gap-1.5 text-slate-400 col-span-2 border-t border-white/5 pt-1 mt-0.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-500" />
                 <span>Model:</span>
-                <span className="text-slate-200 font-bold ml-auto truncate max-w-[150px]">{vehicle.yil} - {vehicle.model}</span>
+                <span className="text-slate-200 font-bold ml-auto truncate max-w-[190px]" title={vehicle.aciklama || vehicle.model}>
+                  {vehicle.yil ? `${vehicle.yil} - ` : ''}{vehicle.aciklama || vehicle.model}
+                </span>
               </div>
             )}
           </div>
