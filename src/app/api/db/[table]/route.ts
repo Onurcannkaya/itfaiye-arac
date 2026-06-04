@@ -202,15 +202,16 @@ async function ensureUnifiedSystemLogsViewExists() {
       UNION ALL
       
       SELECT 
-        id, 
-        created_at AS tarih, 
-        plaka, 
+        ic.id, 
+        ic.created_at AS tarih, 
+        ic.plaka, 
         'Envanter Sayımı' AS islem_tipi, 
-        kontrol_eden AS sicil, 
-        kontrol_eden AS ad_soyad,
-        (CASE WHEN yeni_durum IN ('Eksik', 'Arızalı') THEN 'Sorunlu' ELSE 'Kusursuz' END) AS durum, 
-        CONCAT(bolme, ' - ', malzeme, ' (', yeni_durum, ')', COALESCE(' - Not: ' || notlar, '')) AS detaylar
-      FROM public.inventory_checks
+        ic.kontrol_eden AS sicil, 
+        COALESCE(p.ad || ' ' || p.soyad, ic.kontrol_eden) AS ad_soyad,
+        (CASE WHEN ic.yeni_durum IN ('Eksik', 'Arızalı') THEN 'Sorunlu' ELSE 'Kusursuz' END) AS durum, 
+        CONCAT(ic.bolme, ' - ', ic.malzeme, ' (', ic.yeni_durum, ')', COALESCE(' - Not: ' || ic.notlar, '')) AS detaylar
+      FROM public.inventory_checks ic
+      LEFT JOIN public.personnel p ON ic.kontrol_eden = p.sicil_no
 
       UNION ALL
 
