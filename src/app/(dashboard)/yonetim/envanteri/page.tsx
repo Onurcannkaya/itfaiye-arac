@@ -207,12 +207,7 @@ export default function EnvanteriPage() {
       // 1. Fetch vehicles
       const { data: vehs } = await api.from('vehicles').select('*')
       if (vehs) {
-        const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => {
-          const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
-          const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
-          if (valA !== valB) return valA - valB;
-          return a.plaka.localeCompare(b.plaka, 'tr');
-        })
+        const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => (a.filo_no || 999) - (b.filo_no || 999))
         setVehicles(sortedVehs)
       }
 

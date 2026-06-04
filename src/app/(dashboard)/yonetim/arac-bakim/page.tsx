@@ -178,12 +178,7 @@ export default function AracBakimPage() {
       // Filodan (vehicles tablosundan) doğrudan veri çekilerek güncel ve tam araç listesi sağlanır
       const { data: fleetVehicles } = await api.from('vehicles').select('*')
       const filteredVehicles = (fleetVehicles || []).filter((v: Vehicle) => v.plaka !== 'GARAJ')
-      filteredVehicles.sort((a: Vehicle, b: Vehicle) => {
-        const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
-        const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
-        if (valA !== valB) return valA - valB;
-        return a.plaka.localeCompare(b.plaka, 'tr');
-      })
+      filteredVehicles.sort((a: Vehicle, b: Vehicle) => (a.filo_no || 999) - (b.filo_no || 999))
       setVehicles(filteredVehicles)
 
       setAllLogs(data.logs || [])

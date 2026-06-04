@@ -141,12 +141,7 @@ export default function UnifiedGorevlerPage() {
       if (tasksRes.data) setTasks(tasksRes.data as TaskItem[])
       if (templatesRes.data) setTemplates(templatesRes.data as TaskTemplate[])
       if (vRes.data) {
-        const sortedV = [...(vRes.data || [])].sort((a: any, b: any) => {
-          const valA = a.filo_no === null || a.filo_no === undefined ? Infinity : a.filo_no;
-          const valB = b.filo_no === null || b.filo_no === undefined ? Infinity : b.filo_no;
-          if (valA !== valB) return valA - valB;
-          return a.plaka.localeCompare(b.plaka, 'tr');
-        });
+        const sortedV = [...(vRes.data || [])].sort((a: any, b: any) => (a.filo_no || 999) - (b.filo_no || 999));
         setVehicles(sortedV as Vehicle[])
       }
       if (pRes.data) setPersonnel(pRes.data as Personnel[])

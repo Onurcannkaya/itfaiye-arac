@@ -952,6 +952,29 @@ export async function POST() {
         );
       }
       log("Updated vehicles.bolmeler JSON field for all vehicles.");
+
+      // Collect all real plates
+      const allRealPlates = new Set<string>();
+      vehiclePlates.forEach(p => allRealPlates.add(p));
+      for (const sName of vehicleSheets) {
+        const ws = workbook.Sheets[sName];
+        const json = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        const plaka = extractPlate(sName, json);
+        if (plaka) {
+          allRealPlates.add(plaka);
+        }
+      }
+      allRealPlates.add('GARAJ');
+      
+      const realPlatesArray = Array.from(allRealPlates);
+      log(`Total real vehicles identified from Excel: ${realPlatesArray.length}`);
+      
+      // Clean up any vehicles in the DB that are not in the Excel file
+      const deleteRes = await query(`
+        DELETE FROM public.vehicles 
+        WHERE plaka NOT IN (${realPlatesArray.map((_, i) => `$${i + 1}`).join(', ')})
+      `, realPlatesArray);
+      log(`Cleaned up old mock/test vehicles. Deleted count: ${deleteRes.rowCount || 0}`);
     } else {
       log(`Excel file NOT found at: ${xlsPath}`);
     }

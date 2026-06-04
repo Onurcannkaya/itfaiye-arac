@@ -232,19 +232,32 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
       {/* Decorative premium line */}
       <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
       
+      {/* Kurumsal Siber Filo Numarası Rozeti */}
+      {vehicle.filo_no && (
+        <div 
+          className="absolute top-3 left-3 w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/80 text-slate-100 font-extrabold text-sm flex items-center justify-center shadow-lg shadow-black/50 z-20 font-mono"
+          title={`Filo Numarası: ${vehicle.filo_no}`}
+        >
+          {vehicle.filo_no}
+        </div>
+      )}
+      
       <CardContent className="p-5 flex flex-col justify-between h-full">
         <div>
           {/* Header */}
           <div className="flex items-start justify-between">
-            <Link href={`/araclar/${idStr}`} className="flex items-center space-x-3.5 flex-1 min-w-0">
-              <div className="p-2 rounded-xl bg-slate-800/80 border border-white/5 group-hover:bg-slate-800/100 group-hover:border-cyan-500/20 transition-all duration-300 flex items-center justify-center">
+            <Link 
+              href={`/araclar/${idStr}`} 
+              className={`flex items-center space-x-3.5 flex-1 min-w-0 ${vehicle.filo_no ? 'pl-9' : ''}`}
+            >
+              <div className="p-2 rounded-xl bg-slate-800/80 border border-white/5 group-hover:bg-slate-800/100 group-hover:border-cyan-500/20 transition-all duration-300 flex items-center justify-center shrink-0">
                 {getTacticalSilhouette(vehicle.arac_tipi || vehicle.aracTipi)}
               </div>
               <div className="min-w-0">
-                 <h3 className="font-bold text-slate-100 tracking-tight text-sm md:text-base leading-tight break-words">
+                 <h3 className="font-bold text-slate-100 tracking-tight text-xs md:text-sm leading-tight break-words">
                    {vehicle.filo_no 
-                     ? `${vehicle.filo_no} NOLU ${vehicle.aciklama || ''} (${vehicle.plaka})`
-                     : `${vehicle.arac_tipi || vehicle.aracTipi || ''} (${vehicle.plaka})`}
+                     ? `${vehicle.filo_no} NOLU ${(vehicle.aciklama || '').toUpperCase()} (${vehicle.plaka})`
+                     : `${(vehicle.arac_tipi || vehicle.aracTipi || '').toUpperCase()} (${vehicle.plaka})`}
                  </h3>
                  {vehicle.marka && (
                    <Badge variant="outline" className="font-mono text-[9px] font-extrabold text-cyan-400 border-cyan-400/25 px-1 py-0 bg-cyan-400/5 uppercase mt-1">
