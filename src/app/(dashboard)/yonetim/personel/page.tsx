@@ -22,6 +22,8 @@ export default function PersonelYonetimPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
+  const [isLicenseDashboardOpen, setIsLicenseDashboardOpen] = useState(false)
+  const [licenseSearchQuery, setLicenseSearchQuery] = useState("")
   
   // Registration form
   const [isAdding, setIsAdding] = useState(false)
@@ -158,9 +160,113 @@ export default function PersonelYonetimPage() {
         return res.days !== null && res.days > 0 && res.days <= 30
       })
     }
-
     return result
   }, [personnel, searchQuery, licenseFilter])
+
+  // Şoför ehliyet listesi ve kalan gün sıralaması (Faz 28.23.7)
+  const driverLicenseData = useMemo(() => {
+    const list = personnel.filter(p => {
+      const isDriverTitle = p.unvan.toLowerCase().includes("şoför") || 
+                            p.unvan.toLowerCase().includes("şöför") || 
+                            p.unvan.toLowerCase().includes("sofor") ||
+                            p.unvan.toLowerCase().includes("pos.baş.şof.") ||
+                            p.unvan.toLowerCase().includes("pos.baş şof.")
+      const hasEhliyet = certifications.some(c => c.sicil_no === p.sicil_no && c.tip === 'Ehliyet')
+      return isDriverTitle || hasEhliyet
+    })
+
+    const mapped = list.map(p => {
+      const cert = certifications.find(c => c.sicil_no === p.sicil_no && c.tip === 'Ehliyet')
+      
+      let status: 'active' | 'critical' | 'expired' | 'missing' = 'missing'
+      let label = 'Ehliyet Kaydı Yok'
+      let days: number | null = null
+      
+      const isDriverTitle = p.unvan.toLowerCase().includes("şoför") || 
+                            p.unvan.toLowerCase().includes("şöför") || 
+                            p.unvan.toLowerCase().includes("sofor") ||
+                            p.unvan.toLowerCase().includes("pos.baş.şof.") ||
+                            p.unvan.toLowerCase().includes("pos.baş şof.")
+
+      if (cert && cert.gecerlilik_tarihi) {
+        const today = new Date('2026-05-20') // Proje referans tarihi
+        const expiry = new Date(cert.gecerlilik_tarihi)
+        const diffTime = expiry.getTime() - today.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        days = diffDays
+
+        if (diffDays <= 0) {
+          status = 'expired'
+          label = `Süresi Geçti (${Math.abs(diffDays)} gün önce)`
+        } else if (diffDays <= 30) {
+          status = 'critical'
+          label = `Kritik (${diffDays} gün kaldı)`
+        } else {
+          status = 'active'
+          label = `Aktif (${diffDays} gün kaldı)`
+        }
+      } else {
+        if (isDriverTitle) {
+          status = 'missing'
+          label = 'Ehliyet Eksik! (Sürücü Kadrosu)'
+        } else {
+          status = 'missing'
+          label = 'Ehliyet Tanımsız'
+        }
+      }
+
+      return {
+        person: p,
+        expiryDate: cert?.gecerlilik_tarihi,
+        status,
+        label,
+        days
+      }
+    })
+
+    return mapped.sort((a, b) => {
+      const priority = { missing: 0, expired: 1, critical: 2, active: 3 }
+      if (priority[a.status] !== priority[b.status]) {
+        return priority[a.status] - priority[b.status]
+      }
+      if (a.status === 'missing') {
+        return `${a.person.ad} ${a.person.soyad}`.localeCompare(`${b.person.ad} ${b.person.soyad}`)
+      }
+      return (a.days ?? 0) - (b.days ?? 0)
+    })
+  }, [personnel, certifications])
+
+  const filteredDriverLicenses = useMemo(() => {
+    if (!licenseSearchQuery) return driverLicenseData
+    const q = licenseSearchQuery.toLowerCase()
+    return driverLicenseData.filter(d => 
+      d.person.ad.toLowerCase().includes(q) || 
+      d.person.soyad.toLowerCase().includes(q) || 
+      d.person.sicil_no.toLowerCase().includes(q)
+    )
+  }, [driverLicenseData, licenseSearchQuery])
+
+  const licenseStats = useMemo(() => {
+    let active = 0
+    let critical = 0
+    let expired = 0
+    let missing = 0
+    
+    driverLicenseData.forEach(d => {
+      if (d.status === 'active') active++
+      else if (d.status === 'critical') critical++
+      else if (d.status === 'expired') expired++
+      else if (d.status === 'missing') missing++
+    })
+
+    return {
+      total: driverLicenseData.length,
+      active,
+      critical,
+      expired,
+      missing
+    }
+  }, [driverLicenseData])
 
   // ADD PERSONNEL — Supabase INSERT
   const handleAddPersonel = async (e: React.FormEvent) => {
@@ -573,6 +679,14 @@ export default function PersonelYonetimPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setIsLicenseDashboardOpen(true)} 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 border-slate-800 bg-slate-900/50 text-slate-300 hover:text-white"
+          >
+            <Truck className="w-3.5 h-3.5 text-cyan-400" /> Ehliyet Durumları
+          </Button>
           {currentUser?.rol === 'Admin' && (
             <Link href="/yonetim/personel/gecici-sifreler">
               <Button variant="outline" size="sm" className="gap-1.5 border-slate-800 bg-slate-900/50 text-slate-300 hover:text-white">
@@ -1382,6 +1496,139 @@ export default function PersonelYonetimPage() {
               ) : (
                 "Değişiklikleri Kaydet"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Driver License Dashboard Modal */}
+      <Dialog open={isLicenseDashboardOpen} onOpenChange={setIsLicenseDashboardOpen}>
+        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[650px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
+          <DialogHeader className="p-5 border-b border-slate-900 bg-slate-900/20 shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-lg text-slate-100">
+                <Truck className="w-5 h-5 text-cyan-400" />
+                Şoför Ehliyet Durumları & Planlama Radarı
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          {/* Quick Stats Grid */}
+          <div className="p-4 bg-slate-900/30 border-b border-slate-900 shrink-0 grid grid-cols-4 gap-2 text-center">
+            <div className="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800/60">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Toplam Şoför</p>
+              <p className="text-base font-black text-slate-200 mt-0.5">{licenseStats.total}</p>
+            </div>
+            <div className="bg-emerald-500/5 p-2.5 rounded-lg border border-emerald-500/10">
+              <p className="text-[10px] text-emerald-400 uppercase font-semibold">Aktif</p>
+              <p className="text-base font-black text-emerald-400 mt-0.5">{licenseStats.active}</p>
+            </div>
+            <div className="bg-amber-500/5 p-2.5 rounded-lg border border-amber-500/10">
+              <p className="text-[10px] text-amber-500 uppercase font-semibold">Kritik (≤30g)</p>
+              <p className="text-base font-black text-amber-500 mt-0.5">{licenseStats.critical}</p>
+            </div>
+            <div className="bg-red-500/5 p-2.5 rounded-lg border border-red-500/10">
+              <p className="text-[10px] text-rose-500 uppercase font-semibold">Eksik/Geçik</p>
+              <p className="text-base font-black text-rose-500 mt-0.5">{licenseStats.expired + licenseStats.missing}</p>
+            </div>
+          </div>
+
+          {/* Search bar inside Modal */}
+          <div className="p-4 border-b border-slate-900 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Şoför ismi veya sicil no ile ara..."
+                className="pl-9 h-9 text-xs bg-slate-900/50 border-slate-800 text-slate-200"
+                value={licenseSearchQuery}
+                onChange={e => setLicenseSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Scrollable List */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+            {filteredDriverLicenses.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground text-xs">
+                Eşleşen şoför kaydı bulunamadı.
+              </div>
+            ) : (
+              filteredDriverLicenses.map(({ person, expiryDate, status, label, days }) => {
+                return (
+                  <div 
+                    key={person.sicil_no}
+                    className={cn(
+                      "p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors",
+                      status === 'missing' ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" :
+                      status === 'expired' ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" :
+                      status === 'critical' ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10" :
+                      "bg-slate-900/20 border-slate-800/80 hover:bg-slate-900/40"
+                    )}
+                  >
+                    {/* Driver info */}
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 border",
+                        status === 'missing' || status === 'expired' ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                        status === 'critical' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                        "bg-slate-800 text-slate-300 border-slate-700"
+                      )}>
+                        {person.ad.charAt(0)}{person.soyad.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-200">{person.ad} {person.soyad}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
+                          {person.sicil_no} • {person.unvan} • Posta {person.posta_no || 1}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Expiry / Days indicator */}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-900">
+                      <div className="text-right">
+                        {status === 'missing' ? (
+                          <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5 animate-pulse" /> Ehliyet Tanımsız!
+                          </span>
+                        ) : (
+                          <>
+                            <p className="text-[10px] text-muted-foreground">Geçerlilik Tarihi</p>
+                            <p className="text-xs font-semibold text-slate-300 mt-0.5 font-mono">
+                              {new Date(expiryDate).toLocaleDateString('tr-TR')}
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="shrink-0">
+                        {status === 'missing' ? (
+                          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[9px] font-bold">
+                            KAYIT EKSİK
+                          </Badge>
+                        ) : status === 'expired' ? (
+                          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[9px] font-bold animate-pulse">
+                            SÜRESİ GEÇTİ
+                          </Badge>
+                        ) : status === 'critical' ? (
+                          <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[9px] font-bold">
+                            {days} GÜN KALDI
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] font-medium">
+                            AKTİF ({days}g)
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
+            <Button variant="outline" onClick={() => setIsLicenseDashboardOpen(false)} className="w-full sm:w-auto h-10">
+              Kapat
             </Button>
           </DialogFooter>
         </DialogContent>
