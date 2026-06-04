@@ -667,11 +667,56 @@ export async function POST() {
       };
 
       const normalizeLocation = (loc: any) => {
-        if (!loc) return '';
-        return String(loc)
+        if (!loc) return 'Araç İçi';
+        const str = String(loc)
           .replace(/[\r\n]+/g, ' ')
           .replace(/\s+/g, ' ')
-          .trim();
+          .trim()
+          .toUpperCase();
+        
+        if (!str) return 'Araç İçi';
+
+        if (str.includes("KABİN İÇİ") || str.includes("ARAÇ İÇİ") || str.includes("ARAÇ ICI") || str.includes("KABIN ICI")) {
+          return "Araç İçi";
+        }
+        if (str.includes("SOL ÖN") || str.includes("SOL ON")) {
+          return "Sol Ön Kapak";
+        }
+        if (str.includes("SOL ORTA")) {
+          return "Sol Orta Kapak";
+        }
+        if (str.includes("SOL ARKA")) {
+          return "Sol Arka Kapak";
+        }
+        if (str.includes("SAĞ ÖN") || str.includes("SAĞ ON") || str.includes("SAG ON") || str.includes("SAG ÖN")) {
+          return "Sağ Ön Kapak";
+        }
+        if (str.includes("SAĞ ORTA") || str.includes("SAG ORTA")) {
+          return "Sağ Orta Kapak";
+        }
+        if (str.includes("SAĞ ARKA") || str.includes("SAG ARKA")) {
+          return "Sağ Arka Kapak";
+        }
+        if (str.includes("ARAÇ ÜSTÜ") || str.includes("ARAC USTU") || str.includes("ARAÇ ÜZERİ") || str.includes("ARAC UZERI")) {
+          return "Araç Üstü";
+        }
+        if (str.includes("ARKA KAPAK") || str.includes("ARKA BÖLME") || str.includes("ARKA BOLME") || str.includes("ARAÇ ARKA KAPAK")) {
+          return "Arka Kapak";
+        }
+        if (str.includes("SOL 1.") || str.includes("SOL 1")) return "Sol Ön Kapak";
+        if (str.includes("SOL 2.") || str.includes("SOL 2")) return "Sol Orta Kapak";
+        if (str.includes("SOL 3.") || str.includes("SOL 3")) return "Sol Orta Kapak";
+        if (str.includes("SOL 4.") || str.includes("SOL 4")) return "Sol Arka Kapak";
+
+        if (str.includes("SAĞ 1.") || str.includes("SAĞ 1") || str.includes("SAG 1")) return "Sağ Ön Kapak";
+        if (str.includes("SAĞ 2.") || str.includes("SAĞ 2") || str.includes("SAG 2")) return "Sağ Orta Kapak";
+        if (str.includes("SAĞ 3.") || str.includes("SAĞ 3") || str.includes("SAG 3")) return "Sağ Arka Kapak";
+
+        if (str.includes("HALAT")) return "Halat Çantası";
+        if (str.includes("KÜÇÜK KAPAK") || str.includes("KUCUK KAPAK")) return "Küçük Kapak";
+        if (str.includes("YÜKSEK AÇI") || str.includes("YUKSEK ACI")) return "Yüksek Açı Kurtarma Çantası";
+
+        return str.charAt(0) + str.slice(1).toLowerCase();
       };
 
       // Create a cache of material_name -> id

@@ -14,7 +14,10 @@ import {
   Printer, 
   ArrowRight, 
   Loader2, 
-  CheckCircle2 
+  Layers, 
+  Truck, 
+  FileSpreadsheet, 
+  Search 
 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuthStore } from "@/lib/authStore"
@@ -43,18 +46,35 @@ interface InventoryRow {
   durum: string;
 }
 
-const DEFAULT_COMPARTMENTS = [
+interface MasterInventoryItem {
+  id: number;
+  malzeme_adi: string;
+  merkez: number;
+  esentepe: number;
+  organize: number;
+  depo: number;
+  toplam: number;
+}
+
+interface VehicleInventoryItem {
+  plaka: string;
+  inventory_id: number;
+  adet: number;
+}
+
+const CLEAN_COMPARTMENT_OPTIONS = [
   "Araç İçi",
-  "Sol Ön Kapak",
-  "Sol Orta Kapak",
-  "Sol Arka Kapak",
+  "Araç Üstü",
+  "Arka Kapak",
+  "Halat Çantası",
+  "Küçük Kapak",
   "Sağ Ön Kapak",
   "Sağ Orta Kapak",
   "Sağ Arka Kapak",
-  "Araç Üstü",
-  "Arka Bölme",
-  "Arka Kapak",
-  "Kabin İçi"
+  "Sol Ön Kapak",
+  "Sol Orta Kapak",
+  "Sol Arka Kapak",
+  "Yüksek Açı Kurtarma Çantası"
 ];
 
 const DURUM_OPTIONS = [
@@ -66,13 +86,22 @@ const DURUM_OPTIONS = [
 
 export default function EnvanteriPage() {
   const { user } = useAuthStore()
+  
+  // Navigation Tabs State
+  const [activeTab, setActiveTab] = useState<"crud" | "matrix">("crud")
+  
+  // Vehicle Selections and Rows
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedPlaka, setSelectedPlaka] = useState<string>("")
   const [tableRows, setTableRows] = useState<InventoryRow[]>([])
-  const [compartmentOptions, setCompartmentOptions] = useState<string[]>(DEFAULT_COMPARTMENTS)
   
   // Cache of malzeme_adi -> id
   const [inventoryCache, setInventoryCache] = useState<Record<string, number>>({})
+  
+  // Master Matrix State
+  const [masterInventory, setMasterInventory] = useState<MasterInventoryItem[]>([])
+  const [allVehicleInventory, setAllVehicleInventory] = useState<VehicleInventoryItem[]>([])
+  const [searchQuery, setSearchQuery] = useState<string>("")
   
   // UI Loading States
   const [loading, setLoading] = useState<boolean>(true)
@@ -101,40 +130,49 @@ export default function EnvanteriPage() {
   // Initial load
   useEffect(() => {
     setMounted(true)
-    async function loadInitialData() {
-      try {
-        setLoading(true)
-        
-        // 1. Fetch vehicles
-        const { data: vehs } = await api.from('vehicles').select('*')
-        if (vehs) {
-          const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => a.plaka.localeCompare(b.plaka, 'tr'))
-          setVehicles(sortedVehs)
-        }
-
-        // 2. Fetch master inventory to populate cache
-        const { data: masterInv } = await api.from('inventory').select('id, malzeme_adi')
-        if (masterInv) {
-          const cache: Record<string, number> = {};
-          masterInv.forEach((item: InventoryItem) => {
-            cache[item.malzeme_adi.toUpperCase()] = item.id;
-          });
-          setInventoryCache(cache)
-        }
-
-        // 3. Select first vehicle by default
-        if (vehs && vehs.length > 0) {
-          const defaultPlate = vehs[0].plaka;
-          setSelectedPlaka(defaultPlate);
-        }
-      } catch (err) {
-        console.error("Envanter başlangıç yükleme hatası:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadInitialData()
+    loadAllData()
   }, [])
+
+  const loadAllData = async () => {
+    try {
+      setLoading(true)
+      
+      // 1. Fetch vehicles
+      const { data: vehs } = await api.from('vehicles').select('*')
+      if (vehs) {
+        const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => a.plaka.localeCompare(b.plaka, 'tr'))
+        setVehicles(sortedVehs)
+      }
+
+      // 2. Fetch master inventory to populate cache & matrix
+      const { data: masterInv } = await api.from('inventory').select('*')
+      if (masterInv) {
+        const cache: Record<string, number> = {};
+        masterInv.forEach((item: any) => {
+          cache[item.malzeme_adi.toUpperCase()] = item.id;
+        });
+        setInventoryCache(cache)
+        
+        const sortedInv = [...masterInv].sort((a: any, b: any) => a.malzeme_adi.localeCompare(b.malzeme_adi, 'tr'));
+        setMasterInventory(sortedInv)
+      }
+
+      // 3. Fetch all vehicle_inventory entries for search matrix cards
+      const { data: allVehInv } = await api.from('vehicle_inventory').select('plaka, inventory_id, adet')
+      if (allVehInv) {
+        setAllVehicleInventory(allVehInv)
+      }
+
+      // 4. Select first vehicle by default for CRUD editor
+      if (vehs && vehs.length > 0 && !selectedPlaka) {
+        setSelectedPlaka(vehs[0].plaka);
+      }
+    } catch (err) {
+      console.error("Envanter veri yükleme hatası:", err)
+    } finally {
+      setLoading(false)
+    }
+  };
 
   // Load rows when selectedPlaka changes
   useEffect(() => {
@@ -143,13 +181,12 @@ export default function EnvanteriPage() {
     async function loadVehicleRows() {
       try {
         setLoadingRows(true)
-        // Fetch rows
         const { data: vehInv } = await api.from('vehicle_inventory').select('*').eq('plaka', selectedPlaka)
         const { data: masterInv } = await api.from('inventory').select('id, malzeme_adi')
         
         if (vehInv && masterInv) {
           const cache: Record<string, number> = {};
-          masterInv.forEach((item: InventoryItem) => {
+          masterInv.forEach((item: any) => {
             cache[item.malzeme_adi.toUpperCase()] = item.id;
           });
           setInventoryCache(cache);
@@ -166,11 +203,6 @@ export default function EnvanteriPage() {
               durum: item.durum || "Tam"
             };
           });
-
-          // Extract and dedup any unique compartments from database rows
-          const uniqueLocs = Array.from(new Set(mapped.map(row => row.bolme_kapak)));
-          const mergedOptions = Array.from(new Set([...DEFAULT_COMPARTMENTS, ...uniqueLocs]));
-          setCompartmentOptions(mergedOptions);
 
           // Sort table rows by bolme_kapak, then by name
           mapped.sort((a, b) => {
@@ -315,6 +347,9 @@ export default function EnvanteriPage() {
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+      
+      // Refresh local matrix and data cache
+      loadAllData();
     } catch (err: any) {
       alert("Hata oluştu: " + err.message)
     } finally {
@@ -341,13 +376,62 @@ export default function EnvanteriPage() {
     }, 400)
   }
 
-  // Get distinct compartments in current table rows
+  // General stock matrix client-side Excel CSV exporter
+  const exportStockMatrixToCSV = () => {
+    const headers = ["Sira No", "Malzeme Cinsi", "Merkez", "Esentepe", "OSB (Organize)", "Depo", "Toplam Stok"];
+    const rows = filteredInventory.map((item, idx) => [
+      idx + 1,
+      item.malzeme_adi,
+      item.merkez,
+      item.esentepe,
+      item.organize,
+      item.depo,
+      item.toplam
+    ]);
+    
+    let csvContent = "\uFEFF"; // UTF-8 BOM for Excel compatibility
+    csvContent += headers.join(";") + "\n";
+    rows.forEach(row => {
+      csvContent += row.join(";") + "\n";
+    });
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Sivas_Itfaiyesi_Genel_Stok_Matrisi_2026.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Get distinct compartments in current table rows for QR printer
   const distinctCompartments = useMemo(() => {
     const set = new Set(tableRows.map(row => row.bolme_kapak));
     return Array.from(set).filter(Boolean);
   }, [tableRows]);
 
   const printCompartments = printFilter === "all" ? distinctCompartments : [printFilter];
+
+  // Dynamic distribution mapping for stock query tab
+  const distributionMap = useMemo(() => {
+    const map: Record<number, { plaka: string; adet: number }[]> = {};
+    allVehicleInventory.forEach(item => {
+      const invId = item.inventory_id;
+      if (!map[invId]) map[invId] = [];
+      map[invId].push({ plaka: item.plaka, adet: item.adet });
+    });
+    return map;
+  }, [allVehicleInventory]);
+
+  // Master stock filtering
+  const filteredInventory = useMemo(() => {
+    if (!searchQuery.trim()) return masterInventory;
+    const query = searchQuery.trim().toLowerCase();
+    return masterInventory.filter(item => 
+      item.malzeme_adi.toLowerCase().includes(query)
+    );
+  }, [masterInventory, searchQuery]);
 
   return (
     <PageGuard pageId="envanter">
@@ -365,222 +449,404 @@ export default function EnvanteriPage() {
             </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-            <select 
-              value={printFilter} 
-              onChange={e => setPrintFilter(e.target.value)} 
-              className="h-11 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-900/80 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shrink-0 font-medium font-mono min-h-[44px]"
-            >
-              <option value="all">Tüm Bölmeler</option>
-              {distinctCompartments.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+          {/* Print controls visible only on CRUD tab */}
+          {activeTab === "crud" && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              <select 
+                value={printFilter} 
+                onChange={e => setPrintFilter(e.target.value)} 
+                className="h-11 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-900/80 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shrink-0 font-medium font-mono min-h-[44px]"
+              >
+                <option value="all">Tüm Bölmeler</option>
+                {distinctCompartments.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <Button 
+                onClick={handlePrint} 
+                variant="default" 
+                className="w-full sm:w-auto h-11 shrink-0 font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_-3px_rgba(249,115,22,0.4)] border border-orange-500/30 min-h-[44px]"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Etiketleri Yazdır
+              </Button>
+            </div>
+          )}
+
+          {/* Matrix export visible only on Matrix tab */}
+          {activeTab === "matrix" && (
             <Button 
-              onClick={handlePrint} 
-              variant="default" 
-              className="w-full sm:w-auto h-11 shrink-0 font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_-3px_rgba(249,115,22,0.4)] border border-orange-500/30 min-h-[44px]"
+              onClick={exportStockMatrixToCSV} 
+              variant="secondary" 
+              className="w-full sm:w-auto h-11 shrink-0 font-bold border border-white/10 bg-slate-800/85 hover:bg-slate-800 text-slate-100 min-h-[44px]"
             >
-              <Printer className="w-4 h-4 mr-2" />
-              Etiketleri Yazdır
+              <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" />
+              Excel (CSV) İndir
             </Button>
-          </div>
+          )}
         </div>
 
-        {/* Filters and Inputs Controls */}
-        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
-          <CardContent className="p-5 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
-            
-            {/* 1. Target Plate Select Dropdown */}
-            <div className="flex-1">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
-              <div className="relative">
-                <select
-                  value={selectedPlaka}
-                  onChange={(e) => setSelectedPlaka(e.target.value)}
-                  className="w-full h-12 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
-                >
-                  <option value="">-- Araç Seçin --</option>
-                  {vehicles.map(v => (
-                    <option key={v.plaka} value={v.plaka}>
-                      🚗 {v.plaka} {v.model ? `(${v.model})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        {/* Tab Selection Row */}
+        <div className="flex gap-2 p-1 bg-slate-900/60 backdrop-blur-md rounded-xl border border-white/5 self-start print:hidden">
+          <button
+            onClick={() => setActiveTab("crud")}
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "crud" ? "bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-slate-200"}`}
+          >
+            🚗 Araç Envanter Editörü (CRUD)
+          </button>
+          <button
+            onClick={() => setActiveTab("matrix")}
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "matrix" ? "bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-slate-200"}`}
+          >
+            📊 Genel Stok & Sorgu Matrisi
+          </button>
+        </div>
 
-            {/* Separator / Arrow */}
-            <div className="flex items-center justify-center pt-4 md:pt-6 px-2">
-              <ArrowRight className="text-cyan-500/40 w-5 h-5 hidden md:block" />
-            </div>
-
-            {/* 2. Durum Bilgisi Counter Box */}
-            <div className="flex-1 bg-slate-950/40 p-3 rounded-xl border border-white/5 border-dashed flex justify-between items-center h-12">
-              <div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase font-mono leading-none mb-1">Durum Bilgisi</p>
-                <p className="text-xs text-slate-300 font-semibold leading-none">Sistemde Kayıtlı Toplam Malzeme</p>
-              </div>
-              <span className="font-mono bg-rose-500/10 text-rose-400 border border-rose-500/25 px-2.5 py-1 rounded text-xs font-bold shrink-0">
-                {tableRows.length} Adet
-              </span>
-            </div>
-
-          </CardContent>
-        </Card>
-
-        {/* Dynamic Display Area */}
+        {/* Dynamic Display Tab Body */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4 print:hidden">
             <Combine className="w-12 h-12 text-cyan-400 animate-spin" />
             <p className="text-slate-400 font-mono text-sm tracking-wider">ENVANTER VERİLERİ ÇEKİLİYOR...</p>
           </div>
-        ) : !selectedPlaka ? (
-          <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl print:hidden">
-            <p className="text-slate-500 italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası seçin.</p>
-          </Card>
         ) : (
           
-          /* ═══ TABLO YÖNETİCİSİ PANELİ ═══ */
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl print:hidden">
-            <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
-              <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
-                <Combine className="w-4 h-4 text-cyan-400" />
-                <span>Tablo Yöneticisi (Anlık Düzenleme)</span>
-              </CardTitle>
-              <Button 
-                onClick={handleAddNewItem} 
-                size="sm" 
-                variant="secondary" 
-                className="font-bold border border-white/10 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs rounded-lg px-3 py-1.5"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1 text-cyan-400"/>
-                Yeni Satır
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              
-              {loadingRows ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                  <p className="text-slate-500 font-mono text-xs">Araç envanter matrisi yükleniyor...</p>
-                </div>
+          /* ════════════════ TAB 1: CRUD EDITOR ════════════════ */
+          activeTab === "crud" ? (
+            <div className="space-y-6">
+              {/* Vehicle Selection Header Card */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
+                <CardContent className="p-5 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+                  
+                  {/* Target Plate Select Dropdown */}
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
+                    <div className="relative">
+                      <select
+                        value={selectedPlaka}
+                        onChange={(e) => setSelectedPlaka(e.target.value)}
+                        className="w-full h-12 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+                      >
+                        <option value="">-- Araç Seçin --</option>
+                        {vehicles.map(v => (
+                          <option key={v.plaka} value={v.plaka}>
+                            🚗 {v.plaka} {v.model ? `(${v.model})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Separator / Arrow */}
+                  <div className="flex items-center justify-center pt-4 md:pt-6 px-2">
+                    <ArrowRight className="text-cyan-500/40 w-5 h-5 hidden md:block" />
+                  </div>
+
+                  {/* Durum Bilgisi Counter Box */}
+                  <div className="flex-1 bg-slate-950/40 p-3 rounded-xl border border-white/5 border-dashed flex justify-between items-center h-12">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase font-mono leading-none mb-1">Durum Bilgisi</p>
+                      <p className="text-xs text-slate-300 font-semibold leading-none">Araçtaki Malzeme Çeşitliliği</p>
+                    </div>
+                    <span className="font-mono bg-rose-500/10 text-rose-400 border border-rose-500/25 px-2.5 py-1 rounded text-xs font-bold shrink-0">
+                      {tableRows.length} Kalem
+                    </span>
+                  </div>
+
+                </CardContent>
+              </Card>
+
+              {/* CRUD Editor Table Matrix Card */}
+              {!selectedPlaka ? (
+                <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl print:hidden">
+                  <p className="text-slate-500 italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası seçin.</p>
+                </Card>
               ) : (
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-sm min-w-[700px]">
-                    <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
-                      <tr>
-                        <th className="px-5 py-3.5 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
-                        <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
-                        <th className="px-5 py-3.5 text-left font-semibold w-24">ADET</th>
-                        <th className="px-5 py-3.5 text-left font-semibold w-40">DURUM</th>
-                        <th className="px-5 py-3.5 text-center font-semibold w-20">SİL</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 font-medium">
-                      {tableRows.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="py-12 text-center text-slate-500 italic font-mono text-xs">
-                            Bu araca ait malzeme kaydı bulunamadı. "Yeni Satır" butonuna basarak envanter ekleyin.
-                          </td>
-                        </tr>
+                <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl print:hidden">
+                  <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
+                    <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
+                      <Combine className="w-4 h-4 text-cyan-400" />
+                      <span>Tablo Yöneticisi (Anlık Düzenleme)</span>
+                    </CardTitle>
+                    <Button 
+                      onClick={handleAddNewItem} 
+                      size="sm" 
+                      variant="secondary" 
+                      className="font-bold border border-white/10 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs rounded-lg px-3 py-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1 text-cyan-400"/>
+                      Yeni Satır
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    
+                    {loadingRows ? (
+                      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                        <p className="text-slate-500 font-mono text-xs">Araç envanter matrisi yükleniyor...</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto w-full">
+                        <table className="w-full text-sm min-w-[700px]">
+                          <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
+                            <tr>
+                              <th className="px-5 py-3.5 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
+                              <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
+                              <th className="px-5 py-3.5 text-left font-semibold w-24">ADET</th>
+                              <th className="px-5 py-3.5 text-left font-semibold w-40">DURUM</th>
+                              <th className="px-5 py-3.5 text-center font-semibold w-20">SİL</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 font-medium">
+                            {tableRows.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                                  Bu araca ait malzeme kaydı bulunamadı. "Yeni Satır" butonuna basarak envanter ekleyin.
+                                </td>
+                              </tr>
+                            ) : (
+                              tableRows.map((row) => (
+                                <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
+                                  {/* Compartment select */}
+                                  <td className="px-5 py-2.5 align-middle">
+                                    <select
+                                      value={row.bolme_kapak}
+                                      onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
+                                      className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono"
+                                    >
+                                      {CLEAN_COMPARTMENT_OPTIONS.map(option => (
+                                        <option key={option} value={option}>{option}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+
+                                  {/* Material Name input */}
+                                  <td className="px-5 py-2.5 align-middle">
+                                    <Input 
+                                      placeholder="Malzeme ismi..."
+                                      value={row.malzeme_adi}
+                                      onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
+                                      className="bg-slate-950/60 border-white/10 text-slate-200 text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-full"
+                                    />
+                                  </td>
+
+                                  {/* Quantity input */}
+                                  <td className="px-5 py-2.5 align-middle">
+                                    <Input 
+                                      type="number"
+                                      min="1"
+                                      value={row.adet}
+                                      onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
+                                      className="bg-slate-950/60 border-white/10 text-slate-200 font-mono text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-20 text-center"
+                                    />
+                                  </td>
+
+                                  {/* Status select */}
+                                  <td className="px-5 py-2.5 align-middle">
+                                    <select
+                                      value={row.durum}
+                                      onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
+                                      className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono font-bold"
+                                    >
+                                      {DURUM_OPTIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value} className={opt.colorClass}>
+                                          {opt.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+
+                                  {/* Delete button */}
+                                  <td className="px-5 py-2.5 text-center align-middle">
+                                    <button 
+                                      onClick={() => handleDeleteItem(row.internalId)}
+                                      className="h-10 w-10 flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors mx-auto border border-transparent hover:border-rose-500/20 min-h-[44px]"
+                                      title="Satırı Kaldır"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                  
+                  {/* Save bar */}
+                  <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
+                    {saveSuccess && (
+                      <span className="text-xs font-mono font-bold text-emerald-400 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25 justify-center">
+                        ✓ VERİTABANINA YAZILDI VE MÜHÜRLENDİ
+                      </span>
+                    )}
+                    <Button 
+                      onClick={saveInventoryToDB} 
+                      disabled={isSaving || loadingRows} 
+                      className="font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_-3px_rgba(225,29,72,0.4)] border border-rose-500/30 px-6 min-h-[44px] transition-all duration-200 active:scale-[0.97]"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Kaydediliyor...
+                        </>
                       ) : (
-                        tableRows.map((row) => (
-                          <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
-                            {/* Compartment select */}
-                            <td className="px-5 py-2.5 align-middle">
-                              <select
-                                value={row.bolme_kapak}
-                                onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
-                                className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono"
-                              >
-                                {compartmentOptions.map(option => (
-                                  <option key={option} value={option}>{option}</option>
-                                ))}
-                              </select>
-                            </td>
+                        <>
+                          <Save className="w-4 h-4 mr-2"/>
+                          Kaydet
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              )}
+            </div>
+          ) : (
+            
+            /* ════════════════ TAB 2: GENERAL STOCK MATRIX ════════════════ */
+            <div className="space-y-6">
+              
+              {/* Dynamic query search bar */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
+                <CardContent className="p-5">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+                    <Input
+                      type="text"
+                      placeholder="Malzeme ismi ile stok sorgulayın (Örn: Jeneratör, Hortum, Lans)..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="bg-slate-900/60 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/50 h-12 pl-12 rounded-xl"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-                            {/* Material Name input */}
-                            <td className="px-5 py-2.5 align-middle">
-                              <Input 
-                                placeholder="Malzeme ismi..."
-                                value={row.malzeme_adi}
-                                onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
-                                className="bg-slate-950/60 border-white/10 text-slate-200 text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-full"
-                              />
-                            </td>
+              {/* Dynamic Search Query Cards & Vehicle Distribution List */}
+              {searchQuery.trim() !== "" && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono pl-1">ARAMA SONUÇLARI DİNAMİK DAĞILIMI</h3>
+                  
+                  {filteredInventory.length === 0 ? (
+                    <Card className="bg-slate-950/40 border border-slate-800/40 py-12 text-center rounded-2xl">
+                      <p className="text-slate-500 italic text-sm">Aranan malzeme cinsiyle eşleşen envanter kaydı bulunamadı.</p>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {filteredInventory.map(item => {
+                        const dists = distributionMap[item.id] || [];
+                        return (
+                          <Card key={item.id} className="bg-slate-950/75 border border-slate-800/60 rounded-2xl overflow-hidden shadow-lg hover:border-cyan-500/35 transition-all duration-200">
+                            <CardHeader className="bg-slate-950/40 border-b border-white/5 p-4 flex flex-row justify-between items-center">
+                              <span className="font-bold text-slate-200 text-sm md:text-base">{item.malzeme_adi}</span>
+                              <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded text-xs font-bold">
+                                Toplam: {item.toplam} Adet
+                              </span>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-4">
+                              
+                              {/* Depot list */}
+                              <div className="grid grid-cols-4 gap-2 bg-slate-950/40 p-2.5 rounded-xl border border-white/5 text-center">
+                                <div>
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">Merkez</span>
+                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.merkez}</p>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">Esentepe</span>
+                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.esentepe}</p>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">OSB</span>
+                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.organize}</p>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">Depo</span>
+                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.depo}</p>
+                                </div>
+                              </div>
 
-                            {/* Quantity input */}
-                            <td className="px-5 py-2.5 align-middle">
-                              <Input 
-                                type="number"
-                                min="1"
-                                value={row.adet}
-                                onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
-                                className="bg-slate-950/60 border-white/10 text-slate-200 font-mono text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-20 text-center"
-                              />
-                            </td>
+                              {/* Vehicles distribution */}
+                              <div className="space-y-2">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                  <Truck className="w-3.5 h-3.5 text-cyan-500" /> Taktik Araç Zimmet Dağılımı
+                                </span>
+                                {dists.length === 0 ? (
+                                  <p className="text-[11px] text-slate-500 italic font-mono pl-1">Araç zimmet dağılımı bulunmamaktadır.</p>
+                                ) : (
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {dists.map(d => (
+                                      <div key={d.plaka} className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
+                                        <span className="font-mono text-xs text-slate-400 font-bold">{d.plaka}</span>
+                                        <span className="font-mono text-xs text-cyan-400 font-extrabold bg-cyan-400/5 px-2 py-0.5 rounded border border-cyan-400/10">{d.adet}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
 
-                            {/* Status select */}
-                            <td className="px-5 py-2.5 align-middle">
-                              <select
-                                value={row.durum}
-                                onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
-                                className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono font-bold"
-                              >
-                                {DURUM_OPTIONS.map(opt => (
-                                  <option key={opt.value} value={opt.value} className={opt.colorClass}>
-                                    {opt.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                            {/* Delete button */}
-                            <td className="px-5 py-2.5 text-center align-middle">
-                              <button 
-                                onClick={() => handleDeleteItem(row.internalId)}
-                                className="h-10 w-10 flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors mx-auto border border-transparent hover:border-rose-500/20 min-h-[44px]"
-                                title="Satırı Kaldır"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+              {/* Master stock matrix table */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
+                <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
+                  <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
+                    <Layers className="w-5 h-5 text-cyan-400" />
+                    <span>Sivas İtfaiyesi Genel Stok Matrisi</span>
+                  </CardTitle>
+                  <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-3 py-1 rounded-lg text-xs font-bold">
+                    Toplam Çeşitlilik: {filteredInventory.length} Kalem
+                  </span>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-800">
+                    <table className="w-full text-sm min-w-[700px]">
+                      <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
+                        <tr>
+                          <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
+                          <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi</th>
+                          <th className="px-5 py-3.5 text-center font-semibold w-24">Merkez</th>
+                          <th className="px-5 py-3.5 text-center font-semibold w-24">Esentepe</th>
+                          <th className="px-5 py-3.5 text-center font-semibold w-24">OSB (Organize)</th>
+                          <th className="px-5 py-3.5 text-center font-semibold w-24">Depo</th>
+                          <th className="px-5 py-3.5 text-right font-semibold w-32">Toplam Stok</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-medium">
+                        {filteredInventory.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                              Gösterilecek malzeme cinsi bulunmamaktadır.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-            
-            {/* Footer with neon red save button */}
-            <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
-              {saveSuccess && (
-                <span className="text-xs font-mono font-bold text-emerald-400 animate-in fade-in duration-200 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25 justify-center">
-                  ✓ VERİTABANINA YAZILDI VE MÜHÜRLENDİ
-                </span>
-              )}
-              <Button 
-                onClick={saveInventoryToDB} 
-                disabled={isSaving || loadingRows} 
-                className="font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_-3px_rgba(225,29,72,0.4)] border border-rose-500/30 px-6 min-h-[44px] transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Kaydediliyor...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2"/>
-                    Kaydet
-                  </>
-                )}
-              </Button>
+                        ) : (
+                          filteredInventory.map((item, idx) => (
+                            <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
+                              <td className="px-5 py-2.5 text-slate-400 font-mono text-xs">{idx + 1}</td>
+                              <td className="px-5 py-2.5 text-slate-200 font-bold">{item.malzeme_adi}</td>
+                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.merkez}</td>
+                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.esentepe}</td>
+                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.organize}</td>
+                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.depo}</td>
+                              <td className="px-5 py-2.5 text-right text-cyan-400 font-mono font-extrabold text-sm">{item.toplam}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
             </div>
-          </Card>
+          )
         )}
 
         {/* --- Hidden QR print element (window.print() clone source) --- */}
