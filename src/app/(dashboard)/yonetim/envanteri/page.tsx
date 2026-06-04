@@ -108,6 +108,18 @@ export default function EnvanteriPage() {
   const [garajInventory, setGarajInventory] = useState<GarajInventoryItem[]>([])
   const [searchQuery, setSearchQuery] = useState<string>("")
   
+  // Render plate as a beautiful realistic Turkish license plate badge
+  const renderPlateHeader = (plaka: string) => {
+    const isPlate = plaka.match(/(58\s+[A-Z]+\s+\d+)/i);
+    if (!isPlate) return <span className="font-bold tracking-tight text-slate-300 font-sans">{plaka}</span>;
+    return (
+      <div className="inline-flex items-center border border-slate-700/60 rounded bg-slate-900 overflow-hidden text-[10px] font-mono leading-none shadow-[0_2px_5px_rgba(0,0,0,0.4)] border-b-2 border-slate-950">
+        <span className="bg-blue-600 text-white px-1 py-1 text-[8px] font-black select-none">TR</span>
+        <span className="px-1.5 py-1 text-slate-100 font-black tracking-tight whitespace-nowrap">{plaka}</span>
+      </div>
+    );
+  };
+
   // UI Loading States
   const [loading, setLoading] = useState<boolean>(true)
   const [loadingRows, setLoadingRows] = useState<boolean>(false)
@@ -854,7 +866,7 @@ export default function EnvanteriPage() {
                 <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
                   <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
                     <Layers className="w-5 h-5 text-cyan-400" />
-                    <span>Sivas İtfaiyesi Genel Stok Pivot Matrisi (Excel Düzeni)</span>
+                    <span>Sivas İtfaiyesi Genel Stok Durumu</span>
                   </CardTitle>
                   <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-3 py-1 rounded-lg text-xs font-bold">
                     Genel Çeşitlilik: {filteredInventory.length} Kalem
@@ -862,21 +874,23 @@ export default function EnvanteriPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-800 relative">
-                    <table className="w-full text-xs min-w-[1500px] border-collapse">
-                      <thead className="bg-slate-950/90 text-[9px] text-slate-400 uppercase tracking-wider border-b border-white/10 font-mono sticky top-0 z-20 backdrop-blur-md">
+                    <table className="w-full text-xs min-w-[1600px] border-collapse">
+                      <thead className="bg-slate-950/90 text-xs text-slate-400 uppercase tracking-wider border-b border-white/10 font-mono sticky top-0 z-20 backdrop-blur-md">
                         <tr>
-                          <th className="px-3 py-3.5 text-left font-semibold w-12 sticky left-0 bg-slate-950 z-30 border-r border-white/10">S.No</th>
-                          <th className="px-3 py-3.5 text-left font-semibold min-w-[220px] sticky left-12 bg-slate-950 z-30 border-r border-white/10">Malzeme (Cinsi)</th>
+                          <th className="px-4 py-4 text-left font-semibold w-16 sticky left-0 bg-slate-950 z-30 border-r border-white/10">S.No</th>
+                          <th className="px-4 py-4 text-left font-semibold min-w-[240px] sticky left-16 bg-slate-950 z-30 border-r border-white/10">Malzeme (Cinsi)</th>
                           {/* Dynamically mapped vehicles */}
                           {vehicleColumns.map(plaka => (
-                            <th key={plaka} className="px-2 py-3.5 text-center font-semibold w-24 border-r border-white/5 font-mono whitespace-nowrap">{plaka}</th>
+                            <th key={plaka} className="px-3 py-4 text-center font-semibold w-28 border-r border-white/5 whitespace-nowrap">
+                              {renderPlateHeader(plaka)}
+                            </th>
                           ))}
                           {/* Warehouse branches */}
-                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">MERKEZ</th>
-                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">ESENTEPE</th>
-                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">ORGANİZE</th>
-                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">DEPO</th>
-                          <th className="px-3 py-3.5 text-right font-black w-28 bg-cyan-950/40 text-cyan-400 sticky right-0 z-30 border-l border-cyan-500/20">TOPLAM STOK</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">MERKEZ</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">ESENTEPE</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">ORGANİZE</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">DEPO</th>
+                          <th className="px-4 py-4 text-right font-black w-32 bg-cyan-950/40 text-cyan-400 sticky right-0 z-30 border-l border-cyan-500/20">TOPLAM STOK</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 font-medium">
@@ -904,10 +918,10 @@ export default function EnvanteriPage() {
                             const liveTotal = (item.merkez || 0) + (item.esentepe || 0) + (item.organize || 0) + (item.depo || 0) + activeVehicleSum;
 
                             return (
-                              <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
+                              <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150 border-b border-white/5">
                                 {/* Sticky columns */}
-                                <td className="px-3 py-2.5 text-slate-400 font-mono text-[10px] sticky left-0 bg-slate-950/90 z-10 border-r border-white/10">{idx + 1}</td>
-                                <td className="px-3 py-2.5 text-slate-200 font-bold sticky left-12 bg-slate-950/90 z-10 border-r border-white/10 truncate max-w-[220px]" title={item.malzeme_adi}>
+                                <td className="px-4 py-3 text-slate-400 font-mono text-xs sticky left-0 bg-slate-950/95 z-10 border-r border-white/10">{idx + 1}</td>
+                                <td className="px-4 py-3 text-slate-100 font-bold text-sm sticky left-16 bg-slate-950/95 z-10 border-r border-white/10 truncate max-w-[240px]" title={item.malzeme_adi}>
                                   {item.malzeme_adi}
                                 </td>
                                 {/* Vehicle Cells */}
@@ -916,19 +930,61 @@ export default function EnvanteriPage() {
                                   return (
                                     <td 
                                       key={plaka} 
-                                      className={`px-2 py-2.5 text-center font-mono text-[11px] border-r border-white/5 ${qty > 0 ? "text-cyan-400 font-extrabold bg-cyan-500/10" : "text-slate-600"}`}
+                                      className="px-3 py-3 text-center font-mono border-r border-white/5 align-middle"
                                     >
-                                      {qty > 0 ? qty : "-"}
+                                      {qty > 0 ? (
+                                        <span className="inline-flex items-center justify-center bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
+                                          {qty}
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-700/40 select-none">·</span>
+                                      )}
                                     </td>
                                   )
                                 })}
                                 {/* Branch Cells */}
-                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.merkez || "-"}</td>
-                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.esentepe || "-"}</td>
-                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.organize || "-"}</td>
-                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.depo || "-"}</td>
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                  {item.merkez > 0 ? (
+                                    <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
+                                      {item.merkez}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-700/40 select-none">·</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                  {item.esentepe > 0 ? (
+                                    <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
+                                      {item.esentepe}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-700/40 select-none">·</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                  {item.organize > 0 ? (
+                                    <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
+                                      {item.organize}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-700/40 select-none">·</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                  {item.depo > 0 ? (
+                                    <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
+                                      {item.depo}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-700/40 select-none">·</span>
+                                  )}
+                                </td>
                                 {/* Sticky Dynamic Verified Total */}
-                                <td className="px-3 py-2.5 text-right text-cyan-400 font-mono font-black text-xs bg-cyan-950/20 sticky right-0 z-10 border-l border-cyan-500/20">{liveTotal}</td>
+                                <td className="px-4 py-3 text-right bg-cyan-950/20 sticky right-0 z-10 border-l border-cyan-500/20 align-middle">
+                                  <span className="inline-flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-black px-2.5 py-0.5 rounded-lg text-xs min-w-[28px]">
+                                    {liveTotal}
+                                  </span>
+                                </td>
                               </tr>
                             )
                           })
