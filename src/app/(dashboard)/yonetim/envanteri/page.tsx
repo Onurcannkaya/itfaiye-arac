@@ -17,7 +17,8 @@ import {
   Layers, 
   Truck, 
   FileSpreadsheet, 
-  Search 
+  Search,
+  Warehouse
 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuthStore } from "@/lib/authStore"
@@ -29,11 +30,6 @@ interface Vehicle {
   arac_tipi?: string;
   marka?: string;
   model?: string;
-}
-
-interface InventoryItem {
-  id: number;
-  malzeme_adi: string;
 }
 
 interface InventoryRow {
@@ -62,6 +58,13 @@ interface VehicleInventoryItem {
   adet: number;
 }
 
+interface GarajInventoryItem {
+  id: number;
+  malzeme_adi: string;
+  bolme_kapak: string;
+  adet: number;
+}
+
 const CLEAN_COMPARTMENT_OPTIONS = [
   "Araç İçi",
   "Araç Üstü",
@@ -74,7 +77,8 @@ const CLEAN_COMPARTMENT_OPTIONS = [
   "Sol Ön Kapak",
   "Sol Orta Kapak",
   "Sol Arka Kapak",
-  "Yüksek Açı Kurtarma Çantası"
+  "Yüksek Açı Kurtarma Çantası",
+  "Garaj"
 ];
 
 const DURUM_OPTIONS = [
@@ -101,6 +105,7 @@ export default function EnvanteriPage() {
   // Master Matrix State
   const [masterInventory, setMasterInventory] = useState<MasterInventoryItem[]>([])
   const [allVehicleInventory, setAllVehicleInventory] = useState<VehicleInventoryItem[]>([])
+  const [garajInventory, setGarajInventory] = useState<GarajInventoryItem[]>([])
   const [searchQuery, setSearchQuery] = useState<string>("")
   
   // UI Loading States
@@ -157,13 +162,29 @@ export default function EnvanteriPage() {
         setMasterInventory(sortedInv)
       }
 
-      // 3. Fetch all vehicle_inventory entries for search matrix cards
+      // 3. Fetch all vehicle_inventory entries for search matrix cards & pivot columns
       const { data: allVehInv } = await api.from('vehicle_inventory').select('plaka, inventory_id, adet')
       if (allVehInv) {
         setAllVehicleInventory(allVehInv)
       }
 
-      // 4. Select first vehicle by default for CRUD editor
+      // 4. Fetch Garaj list
+      const { data: garajRows } = await api.from('vehicle_inventory').select('*').eq('plaka', 'GARAJ')
+      if (garajRows && masterInv) {
+        const mapped = garajRows.map((item: any) => {
+          const matchingInv = masterInv.find((i: any) => i.id === item.inventory_id);
+          return {
+            id: item.id,
+            malzeme_adi: matchingInv ? matchingInv.malzeme_adi : `Bilinmeyen Malzeme (ID: ${item.inventory_id})`,
+            bolme_kapak: item.bolme_kapak || "Garaj",
+            adet: item.adet || 0
+          };
+        });
+        mapped.sort((a: any, b: any) => a.malzeme_adi.localeCompare(b.malzeme_adi, 'tr'));
+        setGarajInventory(mapped);
+      }
+
+      // 5. Select first vehicle by default for CRUD editor
       if (vehs && vehs.length > 0 && !selectedPlaka) {
         setSelectedPlaka(vehs[0].plaka);
       }
@@ -238,7 +259,7 @@ export default function EnvanteriPage() {
       {
         internalId: Math.random().toString(36).substring(7),
         plaka: selectedPlaka,
-        bolme_kapak: "Araç İçi",
+        bolme_kapak: selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi",
         malzeme_adi: "",
         adet: 1,
         durum: "Tam"
@@ -288,7 +309,7 @@ export default function EnvanteriPage() {
             inventory_id: cache[matUpper],
             adet: Number(row.adet),
             durum: row.durum || "Tam",
-            bolme_kapak: row.bolme_kapak || "Araç İçi"
+            bolme_kapak: row.bolme_kapak || (selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi")
           };
         });
 
@@ -376,18 +397,52 @@ export default function EnvanteriPage() {
     }, 400)
   }
 
-  // General stock matrix client-side Excel CSV exporter
+  // S.T.O.K Sheet vehicle columns extract (Excluding GARAJ to put in separate section)
+  const vehicleColumns = useMemo(() => {
+    const set = new Set(allVehicleInventory.map(item => item.plaka));
+    return Array.from(set)
+      .filter(plaka => plaka !== "GARAJ")
+      .sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [allVehicleInventory]);
+
+  // General stock matrix client-side Excel CSV exporter (includes vehicle columns)
   const exportStockMatrixToCSV = () => {
-    const headers = ["Sira No", "Malzeme Cinsi", "Merkez", "Esentepe", "OSB (Organize)", "Depo", "Toplam Stok"];
-    const rows = filteredInventory.map((item, idx) => [
-      idx + 1,
-      item.malzeme_adi,
-      item.merkez,
-      item.esentepe,
-      item.organize,
-      item.depo,
-      item.toplam
-    ]);
+    const headers = [
+      "Sira No", 
+      "Malzeme Cinsi", 
+      ...vehicleColumns,
+      "Merkez", 
+      "Esentepe", 
+      "OSB (Organize)", 
+      "Depo", 
+      "Toplam Stok"
+    ];
+
+    const rows = filteredInventory.map((item, idx) => {
+      const rowAllocations = allVehicleInventory.filter(vi => vi.inventory_id === item.id);
+      const vehicleCountMap: Record<string, number> = {};
+      rowAllocations.forEach(a => {
+        vehicleCountMap[a.plaka] = a.adet;
+      });
+
+      const vehicleSum = Object.entries(vehicleCountMap)
+        .filter(([plaka]) => plaka !== "GARAJ")
+        .reduce((sum, [_, val]) => sum + val, 0);
+
+      const liveTotal = (item.merkez || 0) + (item.esentepe || 0) + (item.organize || 0) + (item.depo || 0) + vehicleSum;
+      const vehicleCounts = vehicleColumns.map(plaka => vehicleCountMap[plaka] || 0);
+
+      return [
+        idx + 1,
+        item.malzeme_adi,
+        ...vehicleCounts,
+        item.merkez,
+        item.esentepe,
+        item.organize,
+        item.depo,
+        liveTotal
+      ];
+    });
     
     let csvContent = "\uFEFF"; // UTF-8 BOM for Excel compatibility
     csvContent += headers.join(";") + "\n";
@@ -413,7 +468,7 @@ export default function EnvanteriPage() {
 
   const printCompartments = printFilter === "all" ? distinctCompartments : [printFilter];
 
-  // Dynamic distribution mapping for stock query tab
+  // Dynamic distribution mapping for stock query tab cards
   const distributionMap = useMemo(() => {
     const map: Record<number, { plaka: string; adet: number }[]> = {};
     allVehicleInventory.forEach(item => {
@@ -526,10 +581,10 @@ export default function EnvanteriPage() {
                         onChange={(e) => setSelectedPlaka(e.target.value)}
                         className="w-full h-12 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
                       >
-                        <option value="">-- Araç Seçin --</option>
+                        <option value="">-- Araç / Depo Seçin --</option>
                         {vehicles.map(v => (
                           <option key={v.plaka} value={v.plaka}>
-                            🚗 {v.plaka} {v.model ? `(${v.model})` : ''}
+                            {v.plaka === "GARAJ" ? "🏠" : "🚗"} {v.plaka} {v.model ? `(${v.model})` : ''}
                           </option>
                         ))}
                       </select>
@@ -545,7 +600,7 @@ export default function EnvanteriPage() {
                   <div className="flex-1 bg-slate-950/40 p-3 rounded-xl border border-white/5 border-dashed flex justify-between items-center h-12">
                     <div>
                       <p className="text-[9px] font-bold text-slate-500 uppercase font-mono leading-none mb-1">Durum Bilgisi</p>
-                      <p className="text-xs text-slate-300 font-semibold leading-none">Araçtaki Malzeme Çeşitliliği</p>
+                      <p className="text-xs text-slate-300 font-semibold leading-none">Toplam Malzeme Çeşitliliği</p>
                     </div>
                     <span className="font-mono bg-rose-500/10 text-rose-400 border border-rose-500/25 px-2.5 py-1 rounded text-xs font-bold shrink-0">
                       {tableRows.length} Kalem
@@ -558,14 +613,14 @@ export default function EnvanteriPage() {
               {/* CRUD Editor Table Matrix Card */}
               {!selectedPlaka ? (
                 <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl print:hidden">
-                  <p className="text-slate-500 italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası seçin.</p>
+                  <p className="text-slate-500 italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası veya garaj deposunu seçin.</p>
                 </Card>
               ) : (
                 <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl print:hidden">
                   <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
                     <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
                       <Combine className="w-4 h-4 text-cyan-400" />
-                      <span>Tablo Yöneticisi (Anlık Düzenleme)</span>
+                      <span>{selectedPlaka === "GARAJ" ? "Garaj Deposu Envanter Editörü" : `Tablo Yöneticisi (${selectedPlaka})`}</span>
                     </CardTitle>
                     <Button 
                       onClick={handleAddNewItem} 
@@ -582,7 +637,7 @@ export default function EnvanteriPage() {
                     {loadingRows ? (
                       <div className="flex flex-col items-center justify-center py-20 space-y-4">
                         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                        <p className="text-slate-500 font-mono text-xs">Araç envanter matrisi yükleniyor...</p>
+                        <p className="text-slate-500 font-mono text-xs">Ayrıntılı envanter listesi yükleniyor...</p>
                       </div>
                     ) : (
                       <div className="overflow-x-auto w-full">
@@ -714,7 +769,7 @@ export default function EnvanteriPage() {
                     <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
                     <Input
                       type="text"
-                      placeholder="Malzeme ismi ile stok sorgulayın (Örn: Jeneratör, Hortum, Lans)..."
+                      placeholder="Malzeme ismi ile matriste süzme yapın (Örn: Ala Hortum, Motopomp, Jeneratör)..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       className="bg-slate-900/60 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/50 h-12 pl-12 rounded-xl"
@@ -723,13 +778,13 @@ export default function EnvanteriPage() {
                 </CardContent>
               </Card>
 
-              {/* Dynamic Search Query Cards & Vehicle Distribution List */}
+              {/* Dynamic Search Cards for vehicle distributions (visible only when search has text) */}
               {searchQuery.trim() !== "" && (
-                <div className="space-y-4">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono pl-1">ARAMA SONUÇLARI DİNAMİK DAĞILIMI</h3>
+                <div className="space-y-4 print:hidden">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono pl-1">ARAMA SONUÇLARI MATRİS DIŞI DAĞILIM KARTLARI</h3>
                   
                   {filteredInventory.length === 0 ? (
-                    <Card className="bg-slate-950/40 border border-slate-800/40 py-12 text-center rounded-2xl">
+                    <Card className="bg-slate-950/40 border border-slate-800/40 py-8 text-center rounded-2xl">
                       <p className="text-slate-500 italic text-sm">Aranan malzeme cinsiyle eşleşen envanter kaydı bulunamadı.</p>
                     </Card>
                   ) : (
@@ -739,9 +794,9 @@ export default function EnvanteriPage() {
                         return (
                           <Card key={item.id} className="bg-slate-950/75 border border-slate-800/60 rounded-2xl overflow-hidden shadow-lg hover:border-cyan-500/35 transition-all duration-200">
                             <CardHeader className="bg-slate-950/40 border-b border-white/5 p-4 flex flex-row justify-between items-center">
-                              <span className="font-bold text-slate-200 text-sm md:text-base">{item.malzeme_adi}</span>
+                              <span className="font-bold text-slate-200 text-sm">{item.malzeme_adi}</span>
                               <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded text-xs font-bold">
-                                Toplam: {item.toplam} Adet
+                                Toplam: {item.toplam} Adet (Depo)
                               </span>
                             </CardHeader>
                             <CardContent className="p-4 space-y-4">
@@ -769,13 +824,13 @@ export default function EnvanteriPage() {
                               {/* Vehicles distribution */}
                               <div className="space-y-2">
                                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                  <Truck className="w-3.5 h-3.5 text-cyan-500" /> Taktik Araç Zimmet Dağılımı
+                                  <Truck className="w-3.5 h-3.5 text-cyan-500" /> Taktik Araç Zimmet Dağılımı (Garaj Hariç)
                                 </span>
-                                {dists.length === 0 ? (
-                                  <p className="text-[11px] text-slate-500 italic font-mono pl-1">Araç zimmet dağılımı bulunmamaktadır.</p>
+                                {dists.filter(d => d.plaka !== "GARAJ").length === 0 ? (
+                                  <p className="text-[11px] text-slate-500 italic font-mono pl-1">Araç üzerinde aktif zimmet bulunmamaktadır.</p>
                                 ) : (
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    {dists.map(d => (
+                                    {dists.filter(d => d.plaka !== "GARAJ").map(d => (
                                       <div key={d.plaka} className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
                                         <span className="font-mono text-xs text-slate-400 font-bold">{d.plaka}</span>
                                         <span className="font-mono text-xs text-cyan-400 font-extrabold bg-cyan-400/5 px-2 py-0.5 rounded border border-cyan-400/10">{d.adet}</span>
@@ -794,48 +849,132 @@ export default function EnvanteriPage() {
                 </div>
               )}
 
-              {/* Master stock matrix table */}
+              {/* Master stock pivot table matrix (Excel layout) */}
               <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
                 <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
                   <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
                     <Layers className="w-5 h-5 text-cyan-400" />
-                    <span>Sivas İtfaiyesi Genel Stok Matrisi</span>
+                    <span>Sivas İtfaiyesi Genel Stok Pivot Matrisi (Excel Düzeni)</span>
                   </CardTitle>
                   <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-3 py-1 rounded-lg text-xs font-bold">
-                    Toplam Çeşitlilik: {filteredInventory.length} Kalem
+                    Genel Çeşitlilik: {filteredInventory.length} Kalem
                   </span>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-800">
-                    <table className="w-full text-sm min-w-[700px]">
-                      <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
+                  <div className="overflow-x-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-800 relative">
+                    <table className="w-full text-xs min-w-[1500px] border-collapse">
+                      <thead className="bg-slate-950/90 text-[9px] text-slate-400 uppercase tracking-wider border-b border-white/10 font-mono sticky top-0 z-20 backdrop-blur-md">
                         <tr>
-                          <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
-                          <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi</th>
-                          <th className="px-5 py-3.5 text-center font-semibold w-24">Merkez</th>
-                          <th className="px-5 py-3.5 text-center font-semibold w-24">Esentepe</th>
-                          <th className="px-5 py-3.5 text-center font-semibold w-24">OSB (Organize)</th>
-                          <th className="px-5 py-3.5 text-center font-semibold w-24">Depo</th>
-                          <th className="px-5 py-3.5 text-right font-semibold w-32">Toplam Stok</th>
+                          <th className="px-3 py-3.5 text-left font-semibold w-12 sticky left-0 bg-slate-950 z-30 border-r border-white/10">S.No</th>
+                          <th className="px-3 py-3.5 text-left font-semibold min-w-[220px] sticky left-12 bg-slate-950 z-30 border-r border-white/10">Malzeme (Cinsi)</th>
+                          {/* Dynamically mapped vehicles */}
+                          {vehicleColumns.map(plaka => (
+                            <th key={plaka} className="px-2 py-3.5 text-center font-semibold w-24 border-r border-white/5 font-mono whitespace-nowrap">{plaka}</th>
+                          ))}
+                          {/* Warehouse branches */}
+                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">MERKEZ</th>
+                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">ESENTEPE</th>
+                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">ORGANİZE</th>
+                          <th className="px-2.5 py-3.5 text-center font-bold w-20 border-r border-white/5 bg-slate-900/40">DEPO</th>
+                          <th className="px-3 py-3.5 text-right font-black w-28 bg-cyan-950/40 text-cyan-400 sticky right-0 z-30 border-l border-cyan-500/20">TOPLAM STOK</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 font-medium">
                         {filteredInventory.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                            <td colSpan={vehicleColumns.length + 7} className="py-12 text-center text-slate-500 italic font-mono text-xs">
                               Gösterilecek malzeme cinsi bulunmamaktadır.
                             </td>
                           </tr>
                         ) : (
-                          filteredInventory.map((item, idx) => (
+                          filteredInventory.map((item, idx) => {
+                            // Find allocations for this specific row in inventory
+                            const rowAllocations = allVehicleInventory.filter(vi => vi.inventory_id === item.id);
+                            const vehicleCountMap: Record<string, number> = {};
+                            rowAllocations.forEach(a => {
+                              vehicleCountMap[a.plaka] = a.adet;
+                            });
+
+                            // Quantities sum of active vehicle columns (excluding GARAJ)
+                            const activeVehicleSum = Object.entries(vehicleCountMap)
+                              .filter(([plaka]) => plaka !== "GARAJ")
+                              .reduce((sum, [_, val]) => sum + val, 0);
+
+                            // Calculate dynamically verified absolute total
+                            const liveTotal = (item.merkez || 0) + (item.esentepe || 0) + (item.organize || 0) + (item.depo || 0) + activeVehicleSum;
+
+                            return (
+                              <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
+                                {/* Sticky columns */}
+                                <td className="px-3 py-2.5 text-slate-400 font-mono text-[10px] sticky left-0 bg-slate-950/90 z-10 border-r border-white/10">{idx + 1}</td>
+                                <td className="px-3 py-2.5 text-slate-200 font-bold sticky left-12 bg-slate-950/90 z-10 border-r border-white/10 truncate max-w-[220px]" title={item.malzeme_adi}>
+                                  {item.malzeme_adi}
+                                </td>
+                                {/* Vehicle Cells */}
+                                {vehicleColumns.map(plaka => {
+                                  const qty = vehicleCountMap[plaka] || 0;
+                                  return (
+                                    <td 
+                                      key={plaka} 
+                                      className={`px-2 py-2.5 text-center font-mono text-[11px] border-r border-white/5 ${qty > 0 ? "text-cyan-400 font-extrabold bg-cyan-500/10" : "text-slate-600"}`}
+                                    >
+                                      {qty > 0 ? qty : "-"}
+                                    </td>
+                                  )
+                                })}
+                                {/* Branch Cells */}
+                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.merkez || "-"}</td>
+                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.esentepe || "-"}</td>
+                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.organize || "-"}</td>
+                                <td className="px-2.5 py-2.5 text-center font-mono text-slate-300 bg-slate-900/20 border-r border-white/5">{item.depo || "-"}</td>
+                                {/* Sticky Dynamic Verified Total */}
+                                <td className="px-3 py-2.5 text-right text-cyan-400 font-mono font-black text-xs bg-cyan-950/20 sticky right-0 z-10 border-l border-cyan-500/20">{liveTotal}</td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* standalone Garaj Deposu list (Müstakil Rapor) */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden mt-6">
+                <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
+                  <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
+                    <Warehouse className="w-5 h-5 text-amber-500" />
+                    <span>🏠 Garaj Deposu Zimmet Listesi (Müstakil Rapor)</span>
+                  </CardTitle>
+                  <span className="font-mono bg-amber-500/10 text-amber-400 border border-amber-500/25 px-3 py-1 rounded-lg text-xs font-bold">
+                    Toplam Çeşitlilik: {garajInventory.length} Kalem
+                  </span>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto max-h-[40vh] scrollbar-thin scrollbar-thumb-slate-800">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
+                        <tr>
+                          <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
+                          <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi</th>
+                          <th className="px-5 py-3.5 text-left font-semibold w-48">Bulunduğu Bölme / Detay</th>
+                          <th className="px-5 py-3.5 text-right font-semibold w-32">Miktar (Adet)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-medium">
+                        {garajInventory.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                              Garaj deposuna zimmetli herhangi bir malzeme bulunmamaktadır.
+                            </td>
+                          </tr>
+                        ) : (
+                          garajInventory.map((item, idx) => (
                             <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
-                              <td className="px-5 py-2.5 text-slate-400 font-mono text-xs">{idx + 1}</td>
-                              <td className="px-5 py-2.5 text-slate-200 font-bold">{item.malzeme_adi}</td>
-                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.merkez}</td>
-                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.esentepe}</td>
-                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.organize}</td>
-                              <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.depo}</td>
-                              <td className="px-5 py-2.5 text-right text-cyan-400 font-mono font-extrabold text-sm">{item.toplam}</td>
+                              <td className="px-5 py-3 text-slate-400 font-mono text-xs">{idx + 1}</td>
+                              <td className="px-5 py-3 text-slate-200 font-bold">{item.malzeme_adi}</td>
+                              <td className="px-5 py-3 text-slate-400 font-mono text-xs">{item.bolme_kapak}</td>
+                              <td className="px-5 py-3 text-right text-amber-400 font-mono font-bold text-sm">{item.adet}</td>
                             </tr>
                           ))
                         )}

@@ -635,11 +635,13 @@ export async function POST() {
       log(`Seeded ${seededInventoryCount} master inventory items from Excel.`);
 
       // ── 8.2 Seed individual vehicle inventories ──────────────────────
-      log("Seeding individual vehicle inventories from sheets...");
-      const excludeSheets = ['S   T   O   K', 'garaj', 'Sayfa2', 'Sayfa26'];
+       log("Seeding individual vehicle inventories from sheets...");
+      const excludeSheets = ['S   T   O   K', 'Sayfa2', 'Sayfa26'];
       const vehicleSheets = workbook.SheetNames.filter((name: string) => !excludeSheets.includes(name));
 
       const extractPlate = (sheetName: string, rows: any[][]) => {
+        if (sheetName.toLowerCase() === 'garaj') return 'GARAJ';
+
         let plateMatch = sheetName.match(/(58\s+[A-Z]+\s+\d+)/i);
         if (plateMatch) return plateMatch[1].replace(/\s+/g, ' ').trim().toUpperCase();
 
@@ -738,6 +740,16 @@ export async function POST() {
           continue;
         }
 
+        // Find or create vehicle in DB to satisfy foreign key constraint
+        const vehRes = await query(`SELECT plaka FROM public.vehicles WHERE plaka = $1`, [plaka]);
+        if (vehRes.rows.length === 0) {
+          log(`Vehicle ${plaka} not found in DB. Inserting placeholder...`);
+          await query(`
+            INSERT INTO public.vehicles (plaka, arac_tipi, marka, model, durum, status)
+            VALUES ($1, $2, $3, $4, $5, $6)
+          `, [plaka, 'Diğer', 'Bilinmeyen', `${plaka} (Excel)`, 'Aktif', 'aktif']);
+        }
+
         // Find header row
         let headerRowIdx = -1;
         for (let r = 0; r < Math.min(12, jsonData.length); r++) {
@@ -772,7 +784,7 @@ export async function POST() {
           }
         }
 
-        let currentLocation = 'Araç İçi';
+        let currentLocation = sheetName.toLowerCase() === 'garaj' ? 'Garaj' : 'Araç İçi';
 
         for (let r = headerRowIdx + 1; r < jsonData.length; r++) {
           const row = jsonData[r];
