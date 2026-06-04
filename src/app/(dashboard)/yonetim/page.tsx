@@ -510,14 +510,28 @@ export default function DashboardPage() {
     return list
   }, [activeIncidentsList, vehicles])
 
-  // ─── Nöbetçi posta: 1. Posta sabit olarak atandı (Faz 28.23) ───
-  const activePostaNumber = 1;
+  // ─── Nöbetçi posta: 3'lü posta döngüsü (Faz 28.23.8) ───
+  // Referans: 04.06.2026 tarihinde 2. Posta nöbette. Döngü sırasıyla: 2 -> 3 -> 1 -> 2 -> 3 -> 1
+  const activePostaNumber = useMemo(() => {
+    const referenceDate = new Date("2026-06-04");
+    referenceDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - referenceDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    // diffDays % 3 can be negative or positive, make sure it maps correctly:
+    const index = ((1 + (diffDays % 3) + 3) % 3) + 1;
+    return index;
+  }, []);
 
   const sortedPersonnel = useMemo<Personnel[]>(() => {
     if (personnelList.length === 0) return []
     // Filter to active posta only — ShiftList handles station grouping and hierarchical sorting internally
     return personnelList.filter(p => p.posta_no === activePostaNumber)
-  }, [personnelList])
+  }, [personnelList, activePostaNumber])
 
   // ─── Loading State ────────────────────────────────────────
   if (loading) {
