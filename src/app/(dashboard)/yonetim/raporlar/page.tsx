@@ -150,6 +150,16 @@ export default function LogsReportsPage() {
         query = query.ilike("plaka", `%${plakaFilter.trim()}%`)
       }
 
+      // Personnel filter (server-side - smart detection for name vs sicil)
+      if (personnelFilter.trim()) {
+        const term = personnelFilter.trim()
+        if (/^SB\d+$/i.test(term)) {
+          query = query.ilike("sicil", `%${term}%`)
+        } else {
+          query = query.ilike("ad_soyad", `%${term}%`)
+        }
+      }
+
       // Date filter (server-side)
       if (dateFilter === "today") {
         const today = new Date()
@@ -168,15 +178,7 @@ export default function LogsReportsPage() {
 
       if (error) throw error
 
-      // Personnel filter (client-side — OR logic not available in API)
-      let filtered = (data || []) as UnifiedLog[]
-      if (personnelFilter.trim()) {
-        const term = personnelFilter.trim().toLowerCase()
-        filtered = filtered.filter(
-          (log) => (log.sicil || "").toLowerCase().includes(term) || (log.ad_soyad || "").toLowerCase().includes(term)
-        )
-      }
-      setLogs(filtered)
+      setLogs((data || []) as UnifiedLog[])
     } catch (err: any) {
       console.error("[Logs] Fetch error:", err)
       setError(err.message || "Kayıtlar yüklenirken bir hata oluştu.")

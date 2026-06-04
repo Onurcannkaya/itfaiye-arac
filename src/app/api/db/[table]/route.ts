@@ -176,6 +176,7 @@ async function ensureAracBakimGecmisiTableExists() {
 
 async function ensureUnifiedSystemLogsViewExists() {
   try {
+    await query(`DROP VIEW IF EXISTS public.unified_system_logs CASCADE;`);
     await query(`
       CREATE OR REPLACE VIEW public.unified_system_logs AS
       SELECT 
