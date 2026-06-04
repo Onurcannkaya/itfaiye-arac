@@ -66,7 +66,7 @@ export function MobileNav() {
       items: [
         { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: true, matchStart: '/arac/' },
         { href: "/yonetim/tarayici", label: "QR Araç Tara", icon: Camera, visible: true },
-        { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: true },
+        { href: "/yonetim/envanteri", label: "Envanter Yönetimi", icon: Combine, visible: true },
         { href: "/yonetim/arac-bakim", label: "Araç Bakım & Yakıt", icon: Wrench, visible: !isEr },
         { href: "/scba", label: "SCBA Tüp Takibi", icon: Wind, visible: !isEr },
       ]
@@ -212,7 +212,7 @@ export function MobileNav() {
           )}>QR Tara</span>
         </Link>
 
-        {navLink("/envanter-yonetimi", <Combine size={22} />, "Envanter")}
+        {navLink("/yonetim/envanteri", <Combine size={22} />, "Envanter")}
         
         <button 
           onClick={() => setMenuOpen(!menuOpen)}

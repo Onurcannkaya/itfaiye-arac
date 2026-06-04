@@ -49,7 +49,7 @@ export function Sidebar() {
       items: [
         { href: "/araclar", label: "Araç Filosu & Envanter", icon: Truck, visible: true, matchStart: '/arac/' },
         { href: "/yonetim/tarayici", label: "QR Araç Tara", icon: Camera, visible: true },
-        { href: "/envanter-yonetimi", label: "Envanter Yönetimi", icon: Combine, visible: true },
+        { href: "/yonetim/envanteri", label: "Envanter Yönetimi", icon: Combine, visible: true },
         { href: "/yonetim/arac-bakim", label: "Araç Bakım & Yakıt", icon: Wrench, visible: !isEr },
         { href: "/scba", label: "SCBA Tüp Takibi", icon: Wind, visible: !isEr },
       ]

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import fs from "fs";
+import path from "path";
+import * as XLSX from "xlsx";
 
 // ─── Turkish character normalization ────────────────────────────────────────
 function removeTurkishChars(str: string): string {
@@ -294,7 +297,37 @@ export async function POST() {
       )
     `);
 
+    log("Creating inventory table...");
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.inventory (
+        id SERIAL PRIMARY KEY,
+        malzeme_adi VARCHAR(255) UNIQUE NOT NULL,
+        merkez INTEGER DEFAULT 0,
+        esentepe INTEGER DEFAULT 0,
+        organize INTEGER DEFAULT 0,
+        depo INTEGER DEFAULT 0,
+        toplam INTEGER DEFAULT 0
+      )
+    `);
+
+    log("Creating vehicle_inventory table...");
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.vehicle_inventory (
+        id SERIAL PRIMARY KEY,
+        plaka VARCHAR(20) NOT NULL REFERENCES public.vehicles(plaka) ON DELETE CASCADE,
+        inventory_id INTEGER NOT NULL REFERENCES public.inventory(id) ON DELETE CASCADE,
+        adet INTEGER DEFAULT 0,
+        CONSTRAINT uq_plaka_inventory UNIQUE(plaka, inventory_id)
+      )
+    `);
+
     // ── 2. Delete existing data ─────────────────────────────────────────
+    log("Deleting existing vehicle_inventory...");
+    await query(`DELETE FROM public.vehicle_inventory`);
+
+    log("Deleting existing inventory...");
+    await query(`DELETE FROM public.inventory`);
+
     log("Deleting existing personnel...");
     await query(`DELETE FROM public.personnel`);
 
@@ -500,7 +533,128 @@ export async function POST() {
       log(`Driver errors: ${driverErrors.join(", ")}`);
     }
 
-    // ── 8. Summary ──────────────────────────────────────────────────────
+    // ── 8. Seed inventory from Excel ───────────────────────────────────
+    log("Seeding inventory from Excel sheet...");
+    let seededInventoryCount = 0;
+    const xlsPath = path.join(process.cwd(), "public", "data", "ARAÇLAR VE MALZEMELER 2026.xls");
+    if (fs.existsSync(xlsPath)) {
+      const workbook = XLSX.readFile(xlsPath);
+      const sheetName = workbook.SheetNames.includes('S   T   O   K') ? 'S   T   O   K' : workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      const headers = jsonData[0] || [];
+      const colMappings: Record<number, { type: 'branch'; name: string } | { type: 'vehicle'; plaka: string }> = {};
+      const vehiclePlates: string[] = [];
+
+      const parseVal = (val: any) => {
+        if (val === undefined || val === null) return 0;
+        const str = String(val).trim();
+        if (str === '-' || str === '' || str === '?') return 0;
+        const parsed = parseInt(str, 10);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      for (let c = 2; c < headers.length; c++) {
+        const headerVal = String(headers[c] || '').trim().toUpperCase();
+        const headerLower = headerVal.toLowerCase();
+        if (headerLower === 'merkez') {
+          colMappings[c] = { type: 'branch', name: 'merkez' };
+        } else if (headerLower === 'esentepe') {
+          colMappings[c] = { type: 'branch', name: 'esentepe' };
+        } else if (headerLower.includes('organi')) {
+          colMappings[c] = { type: 'branch', name: 'organize' };
+        } else if (headerLower === 'depo') {
+          colMappings[c] = { type: 'branch', name: 'depo' };
+        } else if (headerLower === 'toplam') {
+          colMappings[c] = { type: 'branch', name: 'toplam' };
+        } else if (headerVal) {
+          let plaka = headerVal;
+          if (plaka === '58 TL T37') plaka = '58 TL 737';
+          colMappings[c] = { type: 'vehicle', plaka: plaka };
+          vehiclePlates.push(plaka);
+        }
+      }
+
+      // Check existing vehicles in DB
+      const existingVehiclesRes = await query(`SELECT plaka FROM public.vehicles`);
+      const existingPlates = new Set(existingVehiclesRes.rows.map((r: any) => r.plaka));
+
+      // Create dummy/placeholder entries for missing vehicles
+      for (const plaka of vehiclePlates) {
+        if (!existingPlates.has(plaka)) {
+          log(`Vehicle ${plaka} not found in DB. Inserting placeholder...`);
+          await query(`
+            INSERT INTO public.vehicles (plaka, arac_tipi, marka, model, durum, status)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (plaka) DO NOTHING
+          `, [plaka, 'Diğer', 'Bilinmeyen', `${plaka} (Excel Sürücüsü)`, 'Aktif', 'aktif']);
+        }
+      }
+
+      for (let r = 1; r < jsonData.length; r++) {
+        const row = jsonData[r];
+        if (row && row[1] && String(row[1]).trim()) {
+          const materialName = String(row[1]).trim();
+          
+          let merkezVal = 0;
+          let esentepeVal = 0;
+          let organizeVal = 0;
+          let depoVal = 0;
+          let toplamVal = 0;
+
+          for (let c = 2; c < row.length; c++) {
+            const mapping = colMappings[c];
+            if (!mapping) continue;
+            const val = parseVal(row[c]);
+            if (mapping.type === 'branch') {
+              if (mapping.name === 'merkez') merkezVal = val;
+              else if (mapping.name === 'esentepe') esentepeVal = val;
+              else if (mapping.name === 'organize') organizeVal = val;
+              else if (mapping.name === 'depo') depoVal = val;
+              else if (mapping.name === 'toplam') toplamVal = val;
+            }
+          }
+
+          // Insert into public.inventory
+          const insertInvRes = await query(`
+            INSERT INTO public.inventory (malzeme_adi, merkez, esentepe, organize, depo, toplam)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (malzeme_adi) DO UPDATE SET
+              merkez = EXCLUDED.merkez,
+              esentepe = EXCLUDED.esentepe,
+              organize = EXCLUDED.organize,
+              depo = EXCLUDED.depo,
+              toplam = EXCLUDED.toplam
+            RETURNING id
+          `, [materialName, merkezVal, esentepeVal, organizeVal, depoVal, toplamVal]);
+
+          const invId = insertInvRes.rows[0]?.id;
+          if (invId) {
+            // Insert into public.vehicle_inventory
+            for (let c = 2; c < row.length; c++) {
+              const mapping = colMappings[c];
+              if (mapping && mapping.type === 'vehicle') {
+                const val = parseVal(row[c]);
+                if (val > 0) {
+                  await query(`
+                    INSERT INTO public.vehicle_inventory (plaka, inventory_id, adet)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (plaka, inventory_id) DO UPDATE SET adet = EXCLUDED.adet
+                  `, [mapping.plaka, invId, val]);
+                }
+              }
+            }
+          }
+          seededInventoryCount++;
+        }
+      }
+      log(`Seeded ${seededInventoryCount} inventory items from Excel.`);
+    } else {
+      log(`Excel file NOT found at: ${xlsPath}`);
+    }
+
+    // ── 9. Summary ──────────────────────────────────────────────────────
     const summary = {
       success: true,
       totalPersonnel: insertedCount,
@@ -509,6 +663,7 @@ export async function POST() {
       developer: 1,
       driverLicenses: driverCount,
       driverErrors,
+      inventoryCount: seededInventoryCount,
       logs,
     };
 
