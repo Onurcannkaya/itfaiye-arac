@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Oturum açmanız gerekiyor.' }, { status: 401 });
     }
 
-    // 1. vehicles tablosunu sorgula (bolmeler JSON parse edilir)
-    const vehiclesResult = await query('SELECT * FROM vehicles ORDER BY plaka ASC');
+    // 1. vehicles tablosunu sorgula (GARAJ hariç, bolmeler JSON parse edilir)
+    const vehiclesResult = await query("SELECT * FROM vehicles WHERE plaka != 'GARAJ' ORDER BY plaka ASC");
     const vehicles: Vehicle[] = vehiclesResult.rows.map((row: any) => ({
       plaka: row.plaka,
       aracTipi: row.arac_tipi || row.aracTipi,

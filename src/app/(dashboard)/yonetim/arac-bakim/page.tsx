@@ -174,7 +174,12 @@ export default function AracBakimPage() {
       const res = await fetch('/api/bakim')
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setVehicles(data.vehicles || [])
+      
+      // Filodan (vehicles tablosundan) doğrudan veri çekilerek güncel ve tam araç listesi sağlanır
+      const { data: fleetVehicles } = await api.from('vehicles').select('*')
+      const filteredVehicles = (fleetVehicles || []).filter((v: Vehicle) => v.plaka !== 'GARAJ')
+      setVehicles(filteredVehicles)
+
       setAllLogs(data.logs || [])
       setFuelLogs(data.fuelLogs || [])
     } catch (err) {

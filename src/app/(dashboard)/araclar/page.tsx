@@ -34,7 +34,7 @@ export default function VehiclesPage() {
   const fetchVehicles = async () => {
     setLoading(true)
     const { data } = await api.from('vehicles').select('*')
-    setVehicles(data || [])
+    setVehicles((data || []).filter((v: Vehicle) => v.plaka !== 'GARAJ'))
     setLoading(false)
   }
 
