@@ -8,314 +8,399 @@ import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { 
   Combine, 
-  Search, 
-  Truck, 
-  FileText, 
-  FileSpreadsheet, 
-  SlidersHorizontal,
-  Layers,
-  MapPin,
-  ClipboardList
+  Trash2, 
+  Plus, 
+  Save, 
+  Printer, 
+  ArrowRight, 
+  Loader2, 
+  CheckCircle2 
 } from "lucide-react"
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
-import * as XLSX from "xlsx"
+import { QRCodeSVG } from "qrcode.react"
+import { useAuthStore } from "@/lib/authStore"
+import { COMPARTMENT_NAMES, APP_BASE_URL } from "@/lib/constants"
+
+// TypeScript interfaces
+interface Vehicle {
+  plaka: string;
+  arac_tipi?: string;
+  marka?: string;
+  model?: string;
+}
+
+interface InventoryItem {
+  id: number;
+  malzeme_adi: string;
+}
+
+interface InventoryRow {
+  internalId: string;
+  id?: number;
+  plaka: string;
+  bolme_kapak: string;
+  malzeme_adi: string;
+  adet: number;
+  durum: string;
+}
+
+const DEFAULT_COMPARTMENTS = [
+  "Araç İçi",
+  "Sol Ön Kapak",
+  "Sol Orta Kapak",
+  "Sol Arka Kapak",
+  "Sağ Ön Kapak",
+  "Sağ Orta Kapak",
+  "Sağ Arka Kapak",
+  "Araç Üstü",
+  "Arka Bölme",
+  "Arka Kapak",
+  "Kabin İçi"
+];
+
+const DURUM_OPTIONS = [
+  { value: "Tam", label: "Tam (Eksiksiz)", colorClass: "text-emerald-400" },
+  { value: "Eksik", label: "Eksik (Hasarsız)", colorClass: "text-amber-400" },
+  { value: "Arızalı", label: "Arızalı (Bakımda)", colorClass: "text-rose-400" },
+  { value: "Kayıp/Yok", label: "Kayıp / Yok", colorClass: "text-slate-400" }
+];
 
 export default function EnvanteriPage() {
-  const [inventory, setInventory] = useState<any[]>([])
-  const [vehicleInventory, setVehicleInventory] = useState<any[]>([])
-  const [vehicles, setVehicles] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuthStore()
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [selectedPlaka, setSelectedPlaka] = useState<string>("")
+  const [tableRows, setTableRows] = useState<InventoryRow[]>([])
+  const [compartmentOptions, setCompartmentOptions] = useState<string[]>(DEFAULT_COMPARTMENTS)
+  
+  // Cache of malzeme_adi -> id
+  const [inventoryCache, setInventoryCache] = useState<Record<string, number>>({})
+  
+  // UI Loading States
+  const [loading, setLoading] = useState<boolean>(true)
+  const [loadingRows, setLoadingRows] = useState<boolean>(false)
+  const [isSaving, setIsSaving] = useState<boolean>(false)
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false)
+  
+  // Print Filter Option
+  const [printFilter, setPrintFilter] = useState<string>("all")
+  const [mounted, setMounted] = useState<boolean>(false)
 
-  // Search & Filter State
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedPlaka, setSelectedPlaka] = useState("")
+  // Reverse mapping for clean slug URLs
+  const getCompartmentKey = (label: string): string => {
+    const entry = Object.entries(COMPARTMENT_NAMES).find(
+      ([_, v]) => v.toLowerCase() === label.toLowerCase()
+    );
+    return entry ? entry[0] : label.replace(/\s+/g, "_").toLowerCase();
+  };
 
-  // Fetch all inventory, vehicle inventory, and vehicles
+  const buildQrUrl = (plaka: string, compartmentLabel: string): string => {
+    const slug = plaka.replace(/\s+/g, "-").toLowerCase();
+    const compKey = getCompartmentKey(compartmentLabel);
+    return `${APP_BASE_URL}/arac/${slug}/${compKey}`;
+  };
+
+  // Initial load
   useEffect(() => {
-    async function loadData() {
+    setMounted(true)
+    async function loadInitialData() {
       try {
         setLoading(true)
-        const { data: inv } = await api.from('inventory').select('*')
-        const { data: vehInv } = await api.from('vehicle_inventory').select('*')
-        const { data: vehs } = await api.from('vehicles').select('*')
         
-        if (inv) setInventory(inv)
-        if (vehInv) setVehicleInventory(vehInv)
+        // 1. Fetch vehicles
+        const { data: vehs } = await api.from('vehicles').select('*')
         if (vehs) {
-          // Sort vehicles by plate
-          const sortedVehs = [...vehs].sort((a, b) => a.plaka.localeCompare(b.plaka, 'tr'))
+          const sortedVehs = [...vehs].sort((a: Vehicle, b: Vehicle) => a.plaka.localeCompare(b.plaka, 'tr'))
           setVehicles(sortedVehs)
         }
+
+        // 2. Fetch master inventory to populate cache
+        const { data: masterInv } = await api.from('inventory').select('id, malzeme_adi')
+        if (masterInv) {
+          const cache: Record<string, number> = {};
+          masterInv.forEach((item: InventoryItem) => {
+            cache[item.malzeme_adi.toUpperCase()] = item.id;
+          });
+          setInventoryCache(cache)
+        }
+
+        // 3. Select first vehicle by default
+        if (vehs && vehs.length > 0) {
+          const defaultPlate = vehs[0].plaka;
+          setSelectedPlaka(defaultPlate);
+        }
       } catch (err) {
-        console.error("Envanter yükleme hatası:", err)
+        console.error("Envanter başlangıç yükleme hatası:", err)
       } finally {
         setLoading(false)
       }
     }
-    loadData()
+    loadInitialData()
   }, [])
 
-  // Create a mapping of inventory_id -> array of { plaka, adet }
-  const distributionMap = useMemo(() => {
-    const map: Record<number, { plaka: string; adet: number }[]> = {}
-    vehicleInventory.forEach(item => {
-      const invId = item.inventory_id
-      if (!map[invId]) {
-        map[invId] = []
-      }
-      map[invId].push({ plaka: item.plaka, adet: item.adet })
-    })
-    // Sort distribution lists by plate
-    Object.keys(map).forEach(key => {
-      map[Number(key)].sort((a, b) => a.plaka.localeCompare(b.plaka, 'tr'))
-    })
-    return map
-  }, [vehicleInventory])
-
-  // Filter inventory by search query (case-insensitive Turkish comparison)
-  const filteredInventoryBySearch = useMemo(() => {
-    if (!searchQuery.trim()) return []
-    const q = searchQuery.toLowerCase().replace(/i/g, 'i').replace(/I/g, 'ı')
-    return inventory.filter(item => {
-      const name = item.malzeme_adi.toLowerCase().replace(/i/g, 'i').replace(/I/g, 'ı')
-      return name.includes(q)
-    })
-  }, [inventory, searchQuery])
-
-  // Filtered items when a specific vehicle is selected
-  const vehicleZimmetList = useMemo(() => {
-    if (!selectedPlaka) return []
-    // Get all items in vehicle_inventory for this plaka
-    const items = vehicleInventory.filter(vi => vi.plaka === selectedPlaka && vi.adet > 0)
+  // Load rows when selectedPlaka changes
+  useEffect(() => {
+    if (!selectedPlaka) return;
     
-    // Join with inventory names
-    return items.map((item, idx) => {
-      const invDetails = inventory.find(inv => inv.id === item.inventory_id)
-      return {
-        sira: idx + 1,
-        malzeme_adi: invDetails ? invDetails.malzeme_adi : `Bilinmeyen Malzeme (ID: ${item.inventory_id})`,
-        adet: item.adet
-      }
-    }).sort((a, b) => a.malzeme_adi.localeCompare(b.malzeme_adi, 'tr'))
-  }, [selectedPlaka, vehicleInventory, inventory])
+    async function loadVehicleRows() {
+      try {
+        setLoadingRows(true)
+        // Fetch rows
+        const { data: vehInv } = await api.from('vehicle_inventory').select('*').eq('plaka', selectedPlaka)
+        const { data: masterInv } = await api.from('inventory').select('id, malzeme_adi')
+        
+        if (vehInv && masterInv) {
+          const cache: Record<string, number> = {};
+          masterInv.forEach((item: InventoryItem) => {
+            cache[item.malzeme_adi.toUpperCase()] = item.id;
+          });
+          setInventoryCache(cache);
 
-  // PDF Export
-  const handleExportPDF = () => {
-    const doc = new jsPDF()
-    const timestamp = new Date().toLocaleDateString('tr-TR')
-    
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(16)
-    doc.text("SİVAS BELEDİYESİ İTFAİYE MÜDÜRLÜĞÜ", 14, 20)
-    
-    doc.setFontSize(12)
-    doc.setFont("Helvetica", "normal")
-    
-    if (selectedPlaka) {
-      doc.text(`Taktik Araç Zimmet ve Envanter Raporu`, 14, 28)
-      doc.text(`Araç Plakası: ${selectedPlaka}`, 14, 34)
-      doc.text(`Rapor Tarihi: ${timestamp}`, 14, 40)
-      
-      const body = vehicleZimmetList.map(item => [
-        item.sira.toString(),
-        item.malzeme_adi,
-        item.adet.toString()
-      ])
+          const mapped: InventoryRow[] = vehInv.map((item: any) => {
+            const matchingInv = masterInv.find((i: any) => i.id === item.inventory_id);
+            return {
+              internalId: Math.random().toString(36).substring(7),
+              id: item.id,
+              plaka: item.plaka,
+              bolme_kapak: item.bolme_kapak || "Araç İçi",
+              malzeme_adi: matchingInv ? matchingInv.malzeme_adi : `Bilinmeyen Malzeme (ID: ${item.inventory_id})`,
+              adet: item.adet || 0,
+              durum: item.durum || "Tam"
+            };
+          });
 
-      autoTable(doc, {
-        head: [["Sıra No", "Malzeme Cinsi", "Zimmetli Adet"]],
-        body: body,
-        startY: 46,
-        theme: "grid",
-        headStyles: { fillColor: [15, 23, 42] },
-        styles: { font: "Helvetica" }
-      })
-      doc.save(`Envanter_Raporu_${selectedPlaka.replace(/\s+/g, '_')}.pdf`)
-    } else if (searchQuery.trim()) {
-      doc.text(`Malzeme Dağılım ve Arama Sonuçları Raporu`, 14, 28)
-      doc.text(`Arama Kriteri: "${searchQuery}"`, 14, 34)
-      doc.text(`Rapor Tarihi: ${timestamp}`, 14, 40)
+          // Extract and dedup any unique compartments from database rows
+          const uniqueLocs = Array.from(new Set(mapped.map(row => row.bolme_kapak)));
+          const mergedOptions = Array.from(new Set([...DEFAULT_COMPARTMENTS, ...uniqueLocs]));
+          setCompartmentOptions(mergedOptions);
 
-      const body: string[][] = []
-      let sira = 1
-      filteredInventoryBySearch.forEach(item => {
-        const dists = distributionMap[item.id] || []
-        const distStr = dists.map(d => `${d.plaka} (${d.adet})`).join(', ') || 'Araçlarda Yok'
-        body.push([
-          sira.toString(),
-          item.malzeme_adi,
-          item.merkez.toString(),
-          item.esentepe.toString(),
-          item.organize.toString(),
-          item.depo.toString(),
-          distStr,
-          item.toplam.toString()
-        ])
-        sira++
-      })
+          // Sort table rows by bolme_kapak, then by name
+          mapped.sort((a, b) => {
+            const locComp = a.bolme_kapak.localeCompare(b.bolme_kapak, 'tr');
+            if (locComp !== 0) return locComp;
+            return a.malzeme_adi.localeCompare(b.malzeme_adi, 'tr');
+          });
 
-      autoTable(doc, {
-        head: [["Sıra", "Malzeme Cinsi", "Merkez", "Esentepe", "OSB", "Depo", "Araç Dağılımları (Plaka-Adet)", "Toplam"]],
-        body: body,
-        startY: 46,
-        theme: "grid",
-        headStyles: { fillColor: [15, 23, 42] },
-        styles: { font: "Helvetica", fontSize: 8 }
-      })
-      doc.save(`Arama_Sonuclari_Envanter_${timestamp.replace(/\./g, '_')}.pdf`)
-    } else {
-      doc.text(`Genel Stok ve Malzeme Matrisi Raporu`, 14, 28)
-      doc.text(`Rapor Tarihi: ${timestamp}`, 14, 34)
-
-      const body = inventory.map((item, idx) => [
-        (idx + 1).toString(),
-        item.malzeme_adi,
-        item.merkez.toString(),
-        item.esentepe.toString(),
-        item.organize.toString(),
-        item.depo.toString(),
-        item.toplam.toString()
-      ])
-
-      autoTable(doc, {
-        head: [["Sıra", "Malzeme Cinsi", "Merkez", "Esentepe", "OSB", "Depo", "Genel Toplam"]],
-        body: body,
-        startY: 40,
-        theme: "grid",
-        headStyles: { fillColor: [15, 23, 42] },
-        styles: { font: "Helvetica", fontSize: 9 }
-      })
-      doc.save(`Genel_Stok_Matrisi_${timestamp.replace(/\./g, '_')}.pdf`)
-    }
-  }
-
-  // Excel Export
-  const handleExportExcel = () => {
-    const wb = XLSX.utils.book_new()
-    const timestamp = new Date().toLocaleDateString('tr-TR')
-
-    if (selectedPlaka) {
-      const data = vehicleZimmetList.map(item => ({
-        "Sıra No": item.sira,
-        "Malzeme Cinsi": item.malzeme_adi,
-        "Zimmet Miktarı (Adet)": item.adet
-      }))
-      const ws = XLSX.utils.json_to_sheet(data)
-      XLSX.utils.book_append_sheet(wb, ws, selectedPlaka.substring(0, 30))
-      XLSX.writeFile(wb, `Envanter_Raporu_${selectedPlaka.replace(/\s+/g, '_')}.xlsx`)
-    } else if (searchQuery.trim()) {
-      const data = filteredInventoryBySearch.map((item, idx) => {
-        const dists = distributionMap[item.id] || []
-        const distStr = dists.map(d => `${d.plaka}: ${d.adet} ad.`).join(' | ') || '-'
-        return {
-          "Sıra No": idx + 1,
-          "Malzeme Adı": item.malzeme_adi,
-          "Merkez Ana Depo": item.merkez,
-          "Esentepe Şubesi": item.esentepe,
-          "Organize Sanayi Şubesi": item.organize,
-          "Depo Stok": item.depo,
-          "Araç Zimmet Dağılımları": distStr,
-          "Toplam Stok": item.toplam
+          setTableRows(mapped);
+        } else {
+          setTableRows([]);
         }
-      })
-      const ws = XLSX.utils.json_to_sheet(data)
-      XLSX.utils.book_append_sheet(wb, ws, "Arama Sonuçları")
-      XLSX.writeFile(wb, `Arama_Sonuclari_Envanter_${timestamp.replace(/\./g, '_')}.xlsx`)
-    } else {
-      const data = inventory.map((item, idx) => ({
-        "Sıra No": idx + 1,
-        "Malzeme Adı": item.malzeme_adi,
-        "Merkez Ana Depo": item.merkez,
-        "Esentepe Şubesi": item.esentepe,
-        "Organize Sanayi Şubesi": item.organize,
-        "Depo Stok": item.depo,
-        "Genel Toplam": item.toplam
-      }))
-      const ws = XLSX.utils.json_to_sheet(data)
-      XLSX.utils.book_append_sheet(wb, ws, "Genel Stok Matrisi")
-      XLSX.writeFile(wb, `Genel_Stok_Matrisi_${timestamp.replace(/\./g, '_')}.xlsx`)
+      } catch (err) {
+        console.error("Araç envanter yükleme hatası:", err)
+      } finally {
+        setLoadingRows(false)
+      }
+    }
+    loadVehicleRows()
+  }, [selectedPlaka])
+
+  // Field change handler
+  const handleFieldChange = (internalId: string, field: keyof InventoryRow, value: any) => {
+    setTableRows(prev => prev.map(row => 
+      row.internalId === internalId ? { ...row, [field]: value } : row
+    ));
+  };
+
+  // Add new row handler
+  const handleAddNewItem = () => {
+    setTableRows(prev => [
+      ...prev,
+      {
+        internalId: Math.random().toString(36).substring(7),
+        plaka: selectedPlaka,
+        bolme_kapak: "Araç İçi",
+        malzeme_adi: "",
+        adet: 1,
+        durum: "Tam"
+      }
+    ]);
+  };
+
+  // Delete row handler
+  const handleDeleteItem = (internalId: string) => {
+    setTableRows(prev => prev.filter(row => row.internalId !== internalId));
+  };
+
+  // Save changes to database
+  const saveInventoryToDB = async () => {
+    setIsSaving(true)
+    setSaveSuccess(false)
+    
+    try {
+      // 1. Gather all unique malzeme_adi, create new inventory master items if they don't exist
+      const cache = { ...inventoryCache };
+      
+      for (const row of tableRows) {
+        const matName = row.malzeme_adi.trim();
+        if (!matName) continue;
+        
+        const matUpper = matName.toUpperCase();
+        if (!cache[matUpper]) {
+          // Dynamic insert into master inventory
+          const insertRes = await api.insert('inventory', { malzeme_adi: matName });
+          if (insertRes.error) {
+            throw new Error(`Yeni master malzeme "${matName}" eklenirken hata oluştu: ${insertRes.error}`);
+          }
+          if (insertRes.data && insertRes.data[0]) {
+            cache[matUpper] = insertRes.data[0].id;
+          }
+        }
+      }
+      setInventoryCache(cache);
+
+      // 2. Prepare database insert rows
+      const dbRows = tableRows
+        .filter(row => row.malzeme_adi.trim() !== "")
+        .map(row => {
+          const matUpper = row.malzeme_adi.trim().toUpperCase();
+          return {
+            plaka: selectedPlaka,
+            inventory_id: cache[matUpper],
+            adet: Number(row.adet),
+            durum: row.durum || "Tam",
+            bolme_kapak: row.bolme_kapak || "Araç İçi"
+          };
+        });
+
+      // 3. Clear old records for selected vehicle in vehicle_inventory
+      const removeRes = await api.remove('vehicle_inventory', { plaka: selectedPlaka });
+      if (removeRes.error) {
+        throw new Error(`Eski envanter silinirken hata oluştu: ${removeRes.error}`);
+      }
+
+      // 4. Batch insert new records into vehicle_inventory
+      if (dbRows.length > 0) {
+        const insertRes = await api.insert('vehicle_inventory', dbRows);
+        if (insertRes.error) {
+          throw new Error(`Envanter kaydedilirken hata oluştu: ${insertRes.error}`);
+        }
+      }
+
+      // 5. Rebuild bolmeler JSON for backward compatibility
+      const newBolmeler: Record<string, any[]> = {};
+      dbRows.forEach(row => {
+        const key = getCompartmentKey(row.bolme_kapak);
+        if (!newBolmeler[key]) newBolmeler[key] = [];
+        
+        // Find matching master name
+        const masterName = tableRows.find(
+          r => r.bolme_kapak === row.bolme_kapak && getCompartmentKey(r.bolme_kapak) === key && cache[r.malzeme_adi.trim().toUpperCase()] === row.inventory_id
+        )?.malzeme_adi || "Bilinmeyen Malzeme";
+
+        newBolmeler[key].push({
+          malzeme: masterName,
+          adet: row.adet,
+          durum: row.durum
+        });
+      });
+
+      const vehicleUpdateRes = await api.update('vehicles', { bolmeler: newBolmeler }, { plaka: selectedPlaka });
+      if (vehicleUpdateRes.error) {
+        console.warn("⚠️ bolmeler JSON update warning:", vehicleUpdateRes.error);
+      }
+
+      // 6. Save audit log
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'inventory_update',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: selectedPlaka,
+          details: {
+            total_items: dbRows.length,
+            compartments: Object.keys(newBolmeler),
+          },
+        }),
+      }).catch(err => console.error('[AuditLog] Envanter güncelleme logu gönderilemedi:', err))
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert("Hata oluştu: " + err.message)
+    } finally {
+      setIsSaving(false)
     }
   }
+
+  // Print engine handler
+  const handlePrint = () => {
+    const printArea = document.getElementById('print-area-qr')
+    if (!printArea) return
+
+    const clone = printArea.cloneNode(true) as HTMLElement
+    clone.className = 'print-area-container'
+    clone.id = 'print-area-live'
+    document.body.appendChild(clone)
+
+    setTimeout(() => {
+      window.print()
+      setTimeout(() => {
+        const live = document.getElementById('print-area-live')
+        if (live) document.body.removeChild(live)
+      }, 500)
+    }, 400)
+  }
+
+  // Get distinct compartments in current table rows
+  const distinctCompartments = useMemo(() => {
+    const set = new Set(tableRows.map(row => row.bolme_kapak));
+    return Array.from(set).filter(Boolean);
+  }, [tableRows]);
+
+  const printCompartments = printFilter === "all" ? distinctCompartments : [printFilter];
 
   return (
     <PageGuard pageId="envanter">
       <div className="flex flex-col min-h-screen space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8">
         
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 pb-4 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 pb-4 print:hidden gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
               <Combine className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-              Malzeme & Envanter Kontrol Matrisi
+              QR & Envanter Yönetimi
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Sivas İtfaiye envanterindeki 130 kalem ekipmanın şube, depo ve araç bazlı taktiksel dağılımı.
+              Araç malzemelerini canlı düzenleyin, sistem QR etiketlerini toplu şekilde yazdırın.
             </p>
           </div>
           
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button 
-              onClick={handleExportPDF} 
-              variant="outline" 
-              className="flex-1 sm:flex-none h-11 border-white/10 bg-slate-900/60 hover:bg-slate-900 text-slate-200"
-              disabled={loading}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+            <select 
+              value={printFilter} 
+              onChange={e => setPrintFilter(e.target.value)} 
+              className="h-11 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-900/80 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shrink-0 font-medium font-mono min-h-[44px]"
             >
-              <FileText className="w-4 h-4 mr-2 text-rose-400" />
-              PDF İndir
-            </Button>
+              <option value="all">Tüm Bölmeler</option>
+              {distinctCompartments.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
             <Button 
-              onClick={handleExportExcel} 
-              variant="outline" 
-              className="flex-1 sm:flex-none h-11 border-white/10 bg-slate-900/60 hover:bg-slate-900 text-slate-200"
-              disabled={loading}
+              onClick={handlePrint} 
+              variant="default" 
+              className="w-full sm:w-auto h-11 shrink-0 font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_-3px_rgba(249,115,22,0.4)] border border-orange-500/30 min-h-[44px]"
             >
-              <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" />
-              Excel İndir
+              <Printer className="w-4 h-4 mr-2" />
+              Etiketleri Yazdır
             </Button>
           </div>
         </div>
 
         {/* Filters and Inputs Controls */}
-        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl">
+        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
           <CardContent className="p-5 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
             
-            {/* 1. Eldiven Uyumlu Arama Çubuğu */}
-            <div className="flex-1 relative">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">MALZEME VEYA EKİPMAN ARAMA</label>
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <Input
-                  type="text"
-                  placeholder="Ekipman adı girin (Örn: Balta, Hortum, Elbise)..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    if (e.target.value) setSelectedPlaka("") // Clear vehicle selection when typing
-                  }}
-                  className="pl-11 h-12 bg-slate-950/80 border-white/10 text-slate-100 text-sm md:text-base font-semibold focus:border-cyan-500/50 focus:ring-cyan-500/50 rounded-xl"
-                />
-              </div>
-            </div>
-
-            {/* Separator / OR */}
-            <div className="flex items-center justify-center font-mono text-[10px] font-bold text-slate-500 uppercase px-2">
-              <span>VEYA</span>
-            </div>
-
-            {/* 2. Araç Bazlı Filtreleme Süzgeci */}
-            <div className="w-full md:w-80">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">ARAÇ BAZLI ENVANTER SÜZGECİ</label>
+            {/* 1. Target Plate Select Dropdown */}
+            <div className="flex-1">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
               <div className="relative">
                 <select
                   value={selectedPlaka}
-                  onChange={(e) => {
-                    setSelectedPlaka(e.target.value)
-                    if (e.target.value) setSearchQuery("") // Clear search when selecting vehicle
-                  }}
+                  onChange={(e) => setSelectedPlaka(e.target.value)}
                   className="w-full h-12 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
                 >
-                  <option value="">-- Tüm Araçlar / Filtre Yok --</option>
+                  <option value="">-- Araç Seçin --</option>
                   {vehicles.map(v => (
                     <option key={v.plaka} value={v.plaka}>
                       🚗 {v.plaka} {v.model ? `(${v.model})` : ''}
@@ -325,201 +410,217 @@ export default function EnvanteriPage() {
               </div>
             </div>
 
+            {/* Separator / Arrow */}
+            <div className="flex items-center justify-center pt-4 md:pt-6 px-2">
+              <ArrowRight className="text-cyan-500/40 w-5 h-5 hidden md:block" />
+            </div>
+
+            {/* 2. Durum Bilgisi Counter Box */}
+            <div className="flex-1 bg-slate-950/40 p-3 rounded-xl border border-white/5 border-dashed flex justify-between items-center h-12">
+              <div>
+                <p className="text-[9px] font-bold text-slate-500 uppercase font-mono leading-none mb-1">Durum Bilgisi</p>
+                <p className="text-xs text-slate-300 font-semibold leading-none">Sistemde Kayıtlı Toplam Malzeme</p>
+              </div>
+              <span className="font-mono bg-rose-500/10 text-rose-400 border border-rose-500/25 px-2.5 py-1 rounded text-xs font-bold shrink-0">
+                {tableRows.length} Adet
+              </span>
+            </div>
+
           </CardContent>
         </Card>
 
         {/* Dynamic Display Area */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+          <div className="flex flex-col items-center justify-center py-20 space-y-4 print:hidden">
             <Combine className="w-12 h-12 text-cyan-400 animate-spin" />
             <p className="text-slate-400 font-mono text-sm tracking-wider">ENVANTER VERİLERİ ÇEKİLİYOR...</p>
           </div>
-        ) : searchQuery.trim() ? (
-          
-          /* ═══ 1. SENARYO: ARAMA AKTİFKEN DİNAMİK DAĞILIM KARTLARI ═══ */
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 px-1">
-              <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
-              <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Arama Sonuçları: {filteredInventoryBySearch.length} Kalem Eşleşti
-              </span>
-            </div>
-
-            {filteredInventoryBySearch.length === 0 ? (
-              <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl">
-                <p className="text-slate-500 italic text-sm">Aradığınız kriterlere uygun malzeme kaydı bulunamadı.</p>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredInventoryBySearch.map(item => {
-                  const dists = distributionMap[item.id] || []
-                  
-                  return (
-                    <Card key={item.id} className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden flex flex-col justify-between">
-                      <div>
-                        {/* Material Header */}
-                        <CardHeader className="bg-slate-950/40 border-b border-white/5 p-4 flex flex-row justify-between items-center">
-                          <CardTitle className="text-base font-bold text-slate-100 tracking-tight flex items-center gap-2">
-                            <Layers className="w-4 h-4 text-cyan-400" />
-                            {item.malzeme_adi}
-                          </CardTitle>
-                          <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-2.5 py-0.5 rounded text-xs font-extrabold">
-                            T: {item.toplam} Adet
-                          </span>
-                        </CardHeader>
-
-                        {/* Inventory distribution data */}
-                        <CardContent className="p-4 space-y-4">
-                          
-                          {/* Station/Branch Stocks */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[10px] font-bold tracking-wider uppercase">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                              Şube ve Depo Stokları
-                            </div>
-                            <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                              <div className="bg-slate-900/60 p-2.5 rounded-xl border border-white/5">
-                                <p className="text-slate-500 font-mono text-[9px] font-bold uppercase">Merkez</p>
-                                <p className="text-slate-200 font-mono font-bold mt-1 text-sm">{item.merkez}</p>
-                              </div>
-                              <div className="bg-slate-900/60 p-2.5 rounded-xl border border-white/5">
-                                <p className="text-slate-500 font-mono text-[9px] font-bold uppercase">Esentepe</p>
-                                <p className="text-slate-200 font-mono font-bold mt-1 text-sm">{item.esentepe}</p>
-                              </div>
-                              <div className="bg-slate-900/60 p-2.5 rounded-xl border border-white/5">
-                                <p className="text-slate-500 font-mono text-[9px] font-bold uppercase">OSB</p>
-                                <p className="text-slate-200 font-mono font-bold mt-1 text-sm">{item.organize}</p>
-                              </div>
-                              <div className="bg-slate-900/60 p-2.5 rounded-xl border border-white/5">
-                                <p className="text-slate-500 font-mono text-[9px] font-bold uppercase">Depo</p>
-                                <p className="text-slate-200 font-mono font-bold mt-1 text-sm">{item.depo}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Vehicle distribution list */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[10px] font-bold tracking-wider uppercase">
-                              <Truck className="w-3.5 h-3.5 text-slate-400" />
-                              Taktik Araç Zimmet Dağılımı
-                            </div>
-                            
-                            {dists.length === 0 ? (
-                              <div className="bg-slate-900/20 py-4 text-center rounded-xl border border-white/5 border-dashed text-xs text-slate-500 italic">
-                                Araç üzerinde aktif zimmet bulunmamaktadır.
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {dists.map(dist => (
-                                  <div key={dist.plaka} className="bg-slate-900/40 px-3 py-2 rounded-xl border border-white/5 flex items-center justify-between">
-                                    <span className="font-mono text-xs text-slate-300 font-bold">{dist.plaka}</span>
-                                    <span className="font-mono text-xs text-cyan-400 font-extrabold bg-cyan-400/5 px-2 py-0.5 rounded border border-cyan-400/10">
-                                      {dist.adet}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                        </CardContent>
-                      </div>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-        ) : selectedPlaka ? (
-          
-          /* ═══ 2. SENARYO: ARAÇ SEÇİLİYKEN RESMİ KURUM NİZAMINDA TABLO ═══ */
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
-            <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
-                <ClipboardList className="w-5 h-5 text-cyan-400" />
-                <span>Araç Zimmet Listesi - {selectedPlaka}</span>
-              </CardTitle>
-              <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-3 py-1 rounded-lg text-xs font-bold">
-                Toplam Çeşitlilik: {vehicleZimmetList.length} Kalem
-              </span>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
-                    <tr>
-                      <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
-                      <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi (Cihaz / Donanım)</th>
-                      <th className="px-5 py-3.5 text-right font-semibold w-32">Zimmet Miktarı (Adet)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 font-medium">
-                    {vehicleZimmetList.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="py-12 text-center text-slate-500 italic font-mono text-xs">
-                          Bu araca zimmetli herhangi bir operasyonel malzeme bulunmamaktadır.
-                        </td>
-                      </tr>
-                    ) : (
-                      vehicleZimmetList.map((item) => (
-                        <tr key={item.sira} className="hover:bg-white/5 transition-colors duration-150">
-                          <td className="px-5 py-3.5 text-slate-400 font-mono text-xs">{item.sira}</td>
-                          <td className="px-5 py-3.5 text-slate-200 font-bold">{item.malzeme_adi}</td>
-                          <td className="px-5 py-3.5 text-right text-cyan-400 font-mono font-bold text-sm">{item.adet}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
+        ) : !selectedPlaka ? (
+          <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl print:hidden">
+            <p className="text-slate-500 italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası seçin.</p>
           </Card>
-
         ) : (
           
-          /* ═══ 3. SENARYO: HİÇBİR FİLTRE AKTİF DEĞİLKEN GENEL STOK MATRİSİ ═══ */
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
-            <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5">
+          /* ═══ TABLO YÖNETİCİSİ PANELİ ═══ */
+          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl print:hidden">
+            <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
               <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
-                <Layers className="w-5 h-5 text-cyan-400" />
-                <span>Sivas İtfaiyesi Genel Stok Matrisi</span>
+                <Combine className="w-4 h-4 text-cyan-400" />
+                <span>Tablo Yöneticisi (Anlık Düzenleme)</span>
               </CardTitle>
+              <Button 
+                onClick={handleAddNewItem} 
+                size="sm" 
+                variant="secondary" 
+                className="font-bold border border-white/10 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs rounded-lg px-3 py-1.5"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1 text-cyan-400"/>
+                Yeni Satır
+              </Button>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-800">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
-                    <tr>
-                      <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
-                      <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi</th>
-                      <th className="px-5 py-3.5 text-center font-semibold">Merkez</th>
-                      <th className="px-5 py-3.5 text-center font-semibold">Esentepe</th>
-                      <th className="px-5 py-3.5 text-center font-semibold">OSB</th>
-                      <th className="px-5 py-3.5 text-center font-semibold">Depo</th>
-                      <th className="px-5 py-3.5 text-right font-semibold w-32">Toplam Stok</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 font-medium">
-                    {inventory.map((item, idx) => (
-                      <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
-                        <td className="px-5 py-2.5 text-slate-400 font-mono text-xs">{idx + 1}</td>
-                        <td className="px-5 py-2.5 text-slate-200 font-bold">{item.malzeme_adi}</td>
-                        <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.merkez}</td>
-                        <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.esentepe}</td>
-                        <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.organize}</td>
-                        <td className="px-5 py-2.5 text-center font-mono text-slate-300">{item.depo}</td>
-                        <td className="px-5 py-2.5 text-right text-cyan-400 font-mono font-extrabold text-sm">{item.toplam}</td>
+              
+              {loadingRows ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                  <p className="text-slate-500 font-mono text-xs">Araç envanter matrisi yükleniyor...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-sm min-w-[700px]">
+                    <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
+                      <tr>
+                        <th className="px-5 py-3.5 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
+                        <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
+                        <th className="px-5 py-3.5 text-left font-semibold w-24">ADET</th>
+                        <th className="px-5 py-3.5 text-left font-semibold w-40">DURUM</th>
+                        <th className="px-5 py-3.5 text-center font-semibold w-20">SİL</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-medium">
+                      {tableRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                            Bu araca ait malzeme kaydı bulunamadı. "Yeni Satır" butonuna basarak envanter ekleyin.
+                          </td>
+                        </tr>
+                      ) : (
+                        tableRows.map((row) => (
+                          <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
+                            {/* Compartment select */}
+                            <td className="px-5 py-2.5 align-middle">
+                              <select
+                                value={row.bolme_kapak}
+                                onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
+                                className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono"
+                              >
+                                {compartmentOptions.map(option => (
+                                  <option key={option} value={option}>{option}</option>
+                                ))}
+                              </select>
+                            </td>
+
+                            {/* Material Name input */}
+                            <td className="px-5 py-2.5 align-middle">
+                              <Input 
+                                placeholder="Malzeme ismi..."
+                                value={row.malzeme_adi}
+                                onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
+                                className="bg-slate-950/60 border-white/10 text-slate-200 text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-full"
+                              />
+                            </td>
+
+                            {/* Quantity input */}
+                            <td className="px-5 py-2.5 align-middle">
+                              <Input 
+                                type="number"
+                                min="1"
+                                value={row.adet}
+                                onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
+                                className="bg-slate-950/60 border-white/10 text-slate-200 font-mono text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-20 text-center"
+                              />
+                            </td>
+
+                            {/* Status select */}
+                            <td className="px-5 py-2.5 align-middle">
+                              <select
+                                value={row.durum}
+                                onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
+                                className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono font-bold"
+                              >
+                                {DURUM_OPTIONS.map(opt => (
+                                  <option key={opt.value} value={opt.value} className={opt.colorClass}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+
+                            {/* Delete button */}
+                            <td className="px-5 py-2.5 text-center align-middle">
+                              <button 
+                                onClick={() => handleDeleteItem(row.internalId)}
+                                className="h-10 w-10 flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors mx-auto border border-transparent hover:border-rose-500/20 min-h-[44px]"
+                                title="Satırı Kaldır"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
+            
+            {/* Footer with neon red save button */}
+            <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
+              {saveSuccess && (
+                <span className="text-xs font-mono font-bold text-emerald-400 animate-in fade-in duration-200 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25 justify-center">
+                  ✓ VERİTABANINA YAZILDI VE MÜHÜRLENDİ
+                </span>
+              )}
+              <Button 
+                onClick={saveInventoryToDB} 
+                disabled={isSaving || loadingRows} 
+                className="font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_-3px_rgba(225,29,72,0.4)] border border-rose-500/30 px-6 min-h-[44px] transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2"/>
+                    Kaydet
+                  </>
+                )}
+              </Button>
+            </div>
           </Card>
         )}
 
-        {/* Global Hardware Safe Area Masking Block / Bottom Navigation Shield */}
+        {/* --- Hidden QR print element (window.print() clone source) --- */}
+        {mounted && selectedPlaka && (
+          <div id="print-area-qr" style={{ display: 'none' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem', color: 'black', borderBottom: '6px solid black', paddingBottom: '0.5rem' }}>
+                  SİVAS BELEDİYESİ İTFAİYE MÜDÜRLÜĞÜ
+                </h1>
+                <p style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2rem', color: 'black' }}>
+                  Araç QR Kod & Envanter Dizin Etiketleri (Araç Plakası: {selectedPlaka})
+                </p>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+                  {printCompartments.map(comp => (
+                    <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '2rem', textAlign: 'center', breakInside: 'avoid' as any, pageBreakInside: 'avoid' }}>
+                       <h2 style={{ fontSize: '2rem', fontWeight: 950, background: 'black', color: 'white', padding: '0.75rem 2rem', borderRadius: '9999px', marginBottom: '2rem', whiteSpace: 'nowrap' }}>
+                          {selectedPlaka}
+                       </h2>
+                       
+                       <div style={{ background: 'white', padding: '1rem', border: '3px solid black' }}>
+                         <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={240} level={"H"} />
+                       </div>
+                       
+                       <div style={{ marginTop: '2rem', borderTop: '4px solid black', width: '100%', paddingTop: '1rem' }}>
+                         <h3 style={{ fontSize: '1.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'black' }}>
+                           {comp}
+                         </h3>
+                         <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', fontFamily: 'monospace', marginTop: '0.75rem', letterSpacing: '0.2em', color: 'rgba(0,0,0,0.7)', fontWeight: 800 }}>
+                           Sivas İtfaiyesi Lojistik
+                         </p>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* Global Hardware Safe Area Spacer Shield */}
         <div 
           className="w-full block md:hidden pointer-events-none clear-both h-28" 
           aria-hidden="true" 

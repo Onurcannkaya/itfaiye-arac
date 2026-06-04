@@ -297,6 +297,12 @@ export async function POST() {
       )
     `);
 
+    log("Dropping old vehicle_inventory table if exists...");
+    await query(`DROP TABLE IF EXISTS public.vehicle_inventory CASCADE`);
+
+    log("Dropping old inventory table if exists...");
+    await query(`DROP TABLE IF EXISTS public.inventory CASCADE`);
+
     log("Creating inventory table...");
     await query(`
       CREATE TABLE IF NOT EXISTS public.inventory (
@@ -317,17 +323,13 @@ export async function POST() {
         plaka VARCHAR(20) NOT NULL REFERENCES public.vehicles(plaka) ON DELETE CASCADE,
         inventory_id INTEGER NOT NULL REFERENCES public.inventory(id) ON DELETE CASCADE,
         adet INTEGER DEFAULT 0,
-        CONSTRAINT uq_plaka_inventory UNIQUE(plaka, inventory_id)
+        durum VARCHAR(50) DEFAULT 'Tam',
+        bolme_kapak VARCHAR(100) DEFAULT 'Araç İçi',
+        CONSTRAINT uq_plaka_inventory_bolme UNIQUE(plaka, inventory_id, bolme_kapak)
       )
     `);
 
     // ── 2. Delete existing data ─────────────────────────────────────────
-    log("Deleting existing vehicle_inventory...");
-    await query(`DELETE FROM public.vehicle_inventory`);
-
-    log("Deleting existing inventory...");
-    await query(`DELETE FROM public.inventory`);
-
     log("Deleting existing personnel...");
     await query(`DELETE FROM public.personnel`);
 
@@ -617,7 +619,7 @@ export async function POST() {
           }
 
           // Insert into public.inventory
-          const insertInvRes = await query(`
+          await query(`
             INSERT INTO public.inventory (malzeme_adi, merkez, esentepe, organize, depo, toplam)
             VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (malzeme_adi) DO UPDATE SET
@@ -626,30 +628,201 @@ export async function POST() {
               organize = EXCLUDED.organize,
               depo = EXCLUDED.depo,
               toplam = EXCLUDED.toplam
-            RETURNING id
           `, [materialName, merkezVal, esentepeVal, organizeVal, depoVal, toplamVal]);
-
-          const invId = insertInvRes.rows[0]?.id;
-          if (invId) {
-            // Insert into public.vehicle_inventory
-            for (let c = 2; c < row.length; c++) {
-              const mapping = colMappings[c];
-              if (mapping && mapping.type === 'vehicle') {
-                const val = parseVal(row[c]);
-                if (val > 0) {
-                  await query(`
-                    INSERT INTO public.vehicle_inventory (plaka, inventory_id, adet)
-                    VALUES ($1, $2, $3)
-                    ON CONFLICT (plaka, inventory_id) DO UPDATE SET adet = EXCLUDED.adet
-                  `, [mapping.plaka, invId, val]);
-                }
-              }
-            }
-          }
           seededInventoryCount++;
         }
       }
-      log(`Seeded ${seededInventoryCount} inventory items from Excel.`);
+      log(`Seeded ${seededInventoryCount} master inventory items from Excel.`);
+
+      // ── 8.2 Seed individual vehicle inventories ──────────────────────
+      log("Seeding individual vehicle inventories from sheets...");
+      const excludeSheets = ['S   T   O   K', 'garaj', 'Sayfa2', 'Sayfa26'];
+      const vehicleSheets = workbook.SheetNames.filter((name: string) => !excludeSheets.includes(name));
+
+      const extractPlate = (sheetName: string, rows: any[][]) => {
+        let plateMatch = sheetName.match(/(58\s+[A-Z]+\s+\d+)/i);
+        if (plateMatch) return plateMatch[1].replace(/\s+/g, ' ').trim().toUpperCase();
+
+        for (let i = 0; i < Math.min(4, rows.length); i++) {
+          const rowStr = JSON.stringify(rows[i]);
+          const match = rowStr.match(/(58\s+[A-Z]+\s+\d+)/i);
+          if (match) {
+            return match[1].replace(/\s+/g, ' ').trim().toUpperCase();
+          }
+        }
+        if (sheetName === 'yeni İveco') return '58 AEL 289';
+        if (sheetName === 'RENAULT') return '58 AGF 355';
+        return null;
+      };
+
+      const extractQuantity = (val: any) => {
+        if (val === undefined || val === null) return 1;
+        if (typeof val === 'number') return val;
+        const str = String(val).trim().toUpperCase();
+        const match = str.match(/^(\d+)/);
+        if (match) {
+          return parseInt(match[1], 10);
+        }
+        return 1;
+      };
+
+      const normalizeLocation = (loc: any) => {
+        if (!loc) return '';
+        return String(loc)
+          .replace(/[\r\n]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      // Create a cache of material_name -> id
+      const inventoryCache: Record<string, number> = {};
+      const allInvRes = await query(`SELECT id, malzeme_adi FROM public.inventory`);
+      allInvRes.rows.forEach((r: any) => {
+        inventoryCache[r.malzeme_adi.toUpperCase()] = r.id;
+      });
+
+      let vehicleInventoryInserted = 0;
+
+      for (const sheetName of vehicleSheets) {
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        const plaka = extractPlate(sheetName, jsonData);
+        if (!plaka) {
+          log(`Skipping sheet ${sheetName}: Could not extract plate`);
+          continue;
+        }
+
+        // Find header row
+        let headerRowIdx = -1;
+        for (let r = 0; r < Math.min(12, jsonData.length); r++) {
+          const row = jsonData[r];
+          if (row && row.length >= 2) {
+            const col0 = String(row[0] || '').toUpperCase();
+            const col1 = String(row[1] || '').toUpperCase();
+            if ((col0.includes('S.N') || col0.includes('S. NO') || col0.includes('NO')) && 
+                (col1.includes('MALZEME') || col1.includes('CİNSİ') || col1.includes('ADI'))) {
+              headerRowIdx = r;
+              break;
+            }
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          log(`Skipping sheet ${sheetName}: Could not find header row`);
+          continue;
+        }
+
+        const sheetHeaders = jsonData[headerRowIdx];
+        let qtyColIdx = 2;
+        let locColIdx = -1;
+
+        for (let c = 2; c < sheetHeaders.length; c++) {
+          const head = String(sheetHeaders[c] || '').toUpperCase();
+          if (head.includes('MİKTAR') || head.includes('ADET') || head.includes('ADEDİ')) {
+            qtyColIdx = c;
+          }
+          if (head.includes('BULUNDUĞU') || head.includes('YER')) {
+            locColIdx = c;
+          }
+        }
+
+        let currentLocation = 'Araç İçi';
+
+        for (let r = headerRowIdx + 1; r < jsonData.length; r++) {
+          const row = jsonData[r];
+          if (!row || row.length === 0) continue;
+
+          const matName = String(row[1] || '').trim();
+          if (!matName) continue;
+
+          const qtyVal = row[qtyColIdx];
+          const locVal = locColIdx !== -1 ? String(row[locColIdx] || '').trim() : '';
+
+          if (locVal) {
+            currentLocation = normalizeLocation(locVal);
+          }
+
+          const qty = extractQuantity(qtyVal);
+          
+          const matUpper = matName.toUpperCase();
+          let invId = inventoryCache[matUpper];
+          
+          if (!invId) {
+            // Dynamic insert
+            const insRes = await query(`
+              INSERT INTO public.inventory (malzeme_adi)
+              VALUES ($1)
+              ON CONFLICT (malzeme_adi) DO UPDATE SET malzeme_adi = EXCLUDED.malzeme_adi
+              RETURNING id
+            `, [matName]);
+            invId = insRes.rows[0].id;
+            inventoryCache[matUpper] = invId;
+          }
+
+          await query(`
+            INSERT INTO public.vehicle_inventory (plaka, inventory_id, adet, durum, bolme_kapak)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (plaka, inventory_id, bolme_kapak)
+            DO UPDATE SET adet = EXCLUDED.adet, durum = EXCLUDED.durum
+          `, [plaka, invId, qty, 'Tam', currentLocation]);
+
+          vehicleInventoryInserted++;
+        }
+      }
+      log(`Seeded ${vehicleInventoryInserted} individual vehicle inventory rows.`);
+
+      // ── 8.3 Rebuild vehicles.bolmeler JSON for backward compatibility ──
+      log("Rebuilding vehicles.bolmeler JSON column for deep link compatibility...");
+      const COMPARTMENT_NAMES_SEDI: Record<string, string> = {
+        kabin_ici: "Kabin İçi",
+        arac_ici: "Araç İçi",
+        sol_on_kapak: "Sol Ön Kapak",
+        sol_orta_kapak: "Sol Orta Kapak",
+        sol_arka_kapak: "Sol Arka Kapak",
+        sag_on_kapak: "Sağ Ön Kapak",
+        sag_orta_kapak: "Sağ Orta Kapak",
+        sag_arka_kapak: "Sağ Arka Kapak",
+        arac_ustu: "Araç Üstü",
+        arka_bolme: "Arka Bölme",
+        arka_kapak: "Arka Kapak",
+        sol_dolap: "Sol Malzeme Dolabı",
+        sag_dolap: "Sağ Malzeme Dolabı",
+        bagaj_ici: "Bagaj İçi",
+        kasa_ici: "Kasa İçi",
+      };
+
+      const allVehInv = await query(`
+        SELECT vi.plaka, vi.adet, vi.durum, vi.bolme_kapak, i.malzeme_adi
+        FROM public.vehicle_inventory vi
+        JOIN public.inventory i ON vi.inventory_id = i.id
+      `);
+
+      const vehicleMap: Record<string, Record<string, any[]>> = {};
+      allVehInv.rows.forEach((row: any) => {
+        const plaka = row.plaka;
+        if (!vehicleMap[plaka]) vehicleMap[plaka] = {};
+        
+        const rawLoc = row.bolme_kapak || "Araç İçi";
+        const key = Object.keys(COMPARTMENT_NAMES_SEDI).find(
+          k => COMPARTMENT_NAMES_SEDI[k].toLowerCase() === rawLoc.toLowerCase()
+        ) || rawLoc.replace(/\s+/g, "_").toLowerCase();
+        
+        if (!vehicleMap[plaka][key]) vehicleMap[plaka][key] = [];
+        vehicleMap[plaka][key].push({
+          malzeme: row.malzeme_adi,
+          adet: row.adet,
+          durum: row.durum || "Tam"
+        });
+      });
+
+      for (const [plaka, bolmeler] of Object.entries(vehicleMap)) {
+        await query(
+          `UPDATE public.vehicles SET bolmeler = $1 WHERE plaka = $2`,
+          [JSON.stringify(bolmeler), plaka]
+        );
+      }
+      log("Updated vehicles.bolmeler JSON field for all vehicles.");
     } else {
       log(`Excel file NOT found at: ${xlsPath}`);
     }
