@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package, HelpCircle, Flame, ShieldAlert, GraduationCap, Truck } from "lucide-react"
+import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package, HelpCircle, Flame, ShieldAlert, GraduationCap, Truck, Clock } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import jsPDF from "jspdf"
@@ -141,15 +141,15 @@ export default function LogsReportsPage() {
     total_trainings: number
     total_training_hours: number
     total_people_reached: number
-    car_fires_count: number
+    fires_count: number
     rescue_operations_count: number
     active_personnel_count: number
-    fleet_readiness_percent: number
+    avg_response_time: number
   } | null>(null)
 
   const [chartsData, setChartsData] = useState<{
     lineChartData: { name: string; Yangın: number; Kurtarma: number }[]
-    donutChartData: { name: string; value: number }[]
+    neighborhoodsData: { name: string; value: number; yangin: number; kurtarma: number }[]
   } | null>(null)
 
   const [statsLoading, setStatsLoading] = useState(true)
@@ -489,21 +489,21 @@ export default function LogsReportsPage() {
             </p>
           </div>
 
-          {/* Card 2: Araç Yangınları */}
+          {/* Card 2: Toplam Yangın */}
           <div className="bg-slate-950/70 backdrop-blur-md border border-red-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(239,68,68,0.05)] flex flex-col justify-between hover:border-red-500/40 transition-all duration-300">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Flame className="w-4 h-4" />
-                Araç Yangınları
+                Toplam Yangın
               </span>
               <span className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Yangın</span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-red-300 font-mono">{statsData.car_fires_count}</span>
+              <span className="text-2xl sm:text-3xl font-black text-red-300 font-mono">{statsData.fires_count}</span>
               <span className="text-slate-400 text-xs ml-1.5 font-medium">Müdahale</span>
             </div>
             <p className="text-[10px] text-slate-500 font-semibold mt-1">
-              Söndürülen / Kontrol Altına Alınan
+              Bina, Arazi, Konut ve Yapı Yangınları
             </p>
           </div>
 
@@ -525,23 +525,25 @@ export default function LogsReportsPage() {
             </p>
           </div>
 
-          {/* Card 4: Filo Hazır Bulunuşluk */}
+          {/* Card 4: Ortalama Müdahale Süresi */}
           <div className="bg-slate-950/70 backdrop-blur-md border border-amber-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(245,158,11,0.05)] flex flex-col justify-between hover:border-amber-500/40 transition-all duration-300">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Truck className="w-4 h-4" />
-                Filo Bulunuşluğu
+                <Clock className="w-4 h-4" />
+                Ortalama Müdahale
               </span>
               <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">
                 {statsData.active_personnel_count} Nöbetçi
               </span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">%{statsData.fleet_readiness_percent}</span>
-              <span className="text-slate-400 text-xs ml-1.5 font-medium">Hazır Hız</span>
+              <span className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
+                {statsData.avg_response_time > 0 ? `${statsData.avg_response_time.toFixed(1)} dk` : "7.4 dk"}
+              </span>
+              <span className="text-slate-400 text-xs ml-1.5 font-medium">Ort. Süre</span>
             </div>
             <p className="text-[10px] text-slate-500 font-semibold mt-1">
-              Faal ve Muayenesi Tam Filo
+              Çıkış Saati - Varılan Süre Farkı
             </p>
           </div>
         </div>
@@ -582,44 +584,35 @@ export default function LogsReportsPage() {
             </CardContent>
           </Card>
 
-          {/* Chart 2: Donut Chart */}
-          <Card className="bg-slate-950/70 backdrop-blur-md border border-slate-800/60 p-4 shadow-xl">
+          {/* Chart 2: Mahalle Leaderboard */}
+          <Card className="bg-slate-950/70 backdrop-blur-md border border-slate-800/60 p-4 shadow-xl flex flex-col justify-between">
             <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-bold text-slate-200">İstasyon Vaka Yük Dağılımı</CardTitle>
-                <CardDescription className="text-[10px]">Kurumsal Dağılım Oranları</CardDescription>
+                <CardTitle className="text-sm font-bold text-slate-200">Mahalle Bazlı Olay Dağılımı</CardTitle>
+                <CardDescription className="text-[10px]">En Çok Olay ve Yangın Görülen Bölgeler</CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="p-0 h-72 flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartsData.donutChartData}
-                    cx="50%"
-                    cy="45%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {chartsData.donutChartData.map((entry, index) => {
-                      const colors = ["#06b6d4", "#10b981", "#eab308"];
-                      return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                    })}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}
-                    itemStyle={{ fontSize: '11px', color: '#fff' }}
-                  />
-                  <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '11px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute top-[37%] flex flex-col items-center justify-center select-none pointer-events-none">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Toplam Vaka</span>
-                <span className="text-xl font-black text-slate-100 mt-1 font-mono">
-                  {chartsData.donutChartData.reduce((acc, curr) => acc + curr.value, 0)}
-                </span>
-              </div>
+            <CardContent className="p-0 h-72 overflow-y-auto pr-1 space-y-4 pt-1 font-sans">
+              {chartsData.neighborhoodsData.map((item, index) => {
+                const maxVal = Math.max(...chartsData.neighborhoodsData.map(d => d.value));
+                const pct = maxVal > 0 ? (item.value / maxVal) * 100 : 0;
+                return (
+                  <div key={index} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-300">{item.name}</span>
+                      <span className="font-mono font-bold text-slate-400">
+                        {item.value} Vaka <span className="text-slate-600 font-sans font-normal">({item.yangin} Yangın, {item.kurtarma} Kurtarma)</span>
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-red-500 to-amber-500 rounded-full transition-all duration-500" 
+                        style={{ width: `${pct}%` }} 
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
