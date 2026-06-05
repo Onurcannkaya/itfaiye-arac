@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
@@ -408,15 +408,8 @@ export async function POST() {
       )
     `);
 
-    // ── 2. Delete existing data ─────────────────────────────────────────
-    log("Deleting existing personnel...");
-    await query(`DELETE FROM public.personnel`);
-
-    log("Truncating temp_passwords...");
-    await query(`TRUNCATE TABLE public.temp_passwords`);
-
-    log("Deleting existing staff_certifications for Ehliyet...");
-    await query(`DELETE FROM public.staff_certifications WHERE tip = 'Ehliyet'`);
+    // ── 2. Delete existing data (REMOVED and Forbidden per Faz 28.29) ───
+    log("Destructive operations (delete/truncate) removed to protect live personnel records and shift logs.");
 
     // ── 3. Build full personnel list with sicil numbers ─────────────────
     const DEVELOPER: PersonnelEntry = {
@@ -515,58 +508,118 @@ export async function POST() {
       }
     }
 
-    // Hash all passwords (batch for performance)
-    const hashedPasswords: string[] = [];
-    for (const p of personnelWithUsernames) {
-      const hash = await hashPassword(p.plainPassword);
-      hashedPasswords.push(hash);
-    }
-
-    // ── 6. Insert all personnel ─────────────────────────────────────────
-    log("Inserting personnel...");
+    // ── 6. Insert or Update all personnel (Upsert per Faz 28.29) ─────────
+    log("Upserting personnel...");
     let insertedCount = 0;
+    let updatedCount = 0;
 
     for (let i = 0; i < personnelWithUsernames.length; i++) {
       const p = personnelWithUsernames[i];
-      const passwordHash = hashedPasswords[i];
       const posta = postaFromNo(p.posta_no);
       const durum = "Aktif";
 
-      await query(
-        `INSERT INTO public.personnel
-          (sicil_no, ad, soyad, unvan, rol, posta, posta_no, durum, password_hash, view_only, can_approve, can_print, aktif, istasyon, username)
-         VALUES
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-        [
-          p.sicil_no,
-          p.ad,
-          p.soyad,
-          p.unvan,
-          p.rol,
-          posta,
-          p.posta_no,
-          durum,
-          passwordHash,
-          p.view_only,
-          p.can_approve,
-          p.can_print,
-          true, // aktif
-          p.istasyon,
-          p.username,
-        ]
+      // Check if personnel exists by sicil_no
+      const existing = await queryOne(
+        `SELECT id, password_hash, username FROM public.personnel WHERE sicil_no = $1`,
+        [p.sicil_no]
       );
 
-      // Store plain password in temp_passwords
-      await query(
-        `INSERT INTO public.temp_passwords (sicil_no, username, ad, soyad, plain_password)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [p.sicil_no, p.username, p.ad, p.soyad, p.plainPassword]
-      );
+      if (existing) {
+        // Person already exists: protect password, update administrative fields only
+        const finalUsername = existing.username || p.username;
+        await query(
+          `UPDATE public.personnel
+           SET ad = $1, soyad = $2, unvan = $3, rol = $4, posta = $5, posta_no = $6,
+               durum = $7, view_only = $8, can_approve = $9, can_print = $10,
+               aktif = $11, istasyon = $12, username = $13
+           WHERE id = $14`,
+          [
+            p.ad,
+            p.soyad,
+            p.unvan,
+            p.rol,
+            posta,
+            p.posta_no,
+            durum,
+            p.view_only,
+            p.can_approve,
+            p.can_print,
+            true, // aktif
+            p.istasyon,
+            finalUsername,
+            existing.id
+          ]
+        );
 
-      insertedCount++;
+        // Ensure a temp_passwords record exists, but do not overwrite/reset it if already present
+        const existingTemp = await queryOne(
+          `SELECT id FROM public.temp_passwords WHERE sicil_no = $1`,
+          [p.sicil_no]
+        );
+        if (!existingTemp) {
+          const plainPassword = p.sicil_no === "SB5826" ? "1234" : (p.plainPassword || generateRandomPassword());
+          await query(
+            `INSERT INTO public.temp_passwords (sicil_no, username, ad, soyad, plain_password)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (sicil_no) DO NOTHING`,
+            [p.sicil_no, finalUsername, p.ad, p.soyad, plainPassword]
+          );
+        }
+
+        updatedCount++;
+      } else {
+        // Person does not exist: create new username (handle collisions)
+        let baseUsername = generateUsername(p.ad, p.soyad);
+        let finalUsername = baseUsername;
+        let counter = 1;
+        while (true) {
+          const check = await queryOne('SELECT id FROM public.personnel WHERE username = $1', [finalUsername]);
+          if (!check) break;
+          finalUsername = baseUsername + counter;
+          counter++;
+        }
+        p.username = finalUsername;
+
+        const plainPassword = p.sicil_no === "SB5826" ? "1234" : (p.plainPassword || generateRandomPassword());
+        const passwordHash = await hashPassword(plainPassword);
+
+        await query(
+          `INSERT INTO public.personnel
+            (sicil_no, ad, soyad, unvan, rol, posta, posta_no, durum, password_hash, view_only, can_approve, can_print, aktif, istasyon, username)
+           VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          [
+            p.sicil_no,
+            p.ad,
+            p.soyad,
+            p.unvan,
+            p.rol,
+            posta,
+            p.posta_no,
+            durum,
+            passwordHash,
+            p.view_only,
+            p.can_approve,
+            p.can_print,
+            true, // aktif
+            p.istasyon,
+            p.username,
+          ]
+        );
+
+        // Store plain password in temp_passwords
+        await query(
+          `INSERT INTO public.temp_passwords (sicil_no, username, ad, soyad, plain_password)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (sicil_no) DO NOTHING`,
+          [p.sicil_no, p.username, p.ad, p.soyad, plainPassword]
+        );
+
+        insertedCount++;
+      }
     }
 
-    log(`Inserted ${insertedCount} personnel records.`);
+    log(`Personnel upsert finished: ${insertedCount} inserted, ${updatedCount} updated.`);
 
     // ── 7. Seed driver licenses into staff_certifications ───────────────
     log("Seeding driver licenses...");
@@ -596,20 +649,33 @@ export async function POST() {
         continue;
       }
 
-      await query(
-        `INSERT INTO public.staff_certifications (sicil_no, tip, gecerlilik_tarihi, belge_no)
-         VALUES ($1, $2, $3, $4)`,
-        [
-          sicilNo,
-          "Ehliyet",
-          dl.expiry,
-          null, // belge_no not provided
-        ]
+      // Check if existing driver license exists
+      const existingCert = await queryOne(
+        `SELECT id FROM public.staff_certifications WHERE sicil_no = $1 AND tip = 'Ehliyet'`,
+        [sicilNo]
       );
+
+      if (existingCert) {
+        await query(
+          `UPDATE public.staff_certifications SET gecerlilik_tarihi = $1 WHERE id = $2`,
+          [dl.expiry, existingCert.id]
+        );
+      } else {
+        await query(
+          `INSERT INTO public.staff_certifications (sicil_no, tip, gecerlilik_tarihi, belge_no)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            sicilNo,
+            "Ehliyet",
+            dl.expiry,
+            null, // belge_no not provided
+          ]
+        );
+      }
       driverCount++;
     }
 
-    log(`Inserted ${driverCount} driver license records.`);
+    log(`Upserted ${driverCount} driver license records.`);
     if (driverErrors.length > 0) {
       log(`Driver errors: ${driverErrors.join(", ")}`);
     }
