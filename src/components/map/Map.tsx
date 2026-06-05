@@ -218,6 +218,7 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
   const [showSokaklar, setShowSokaklar] = useState(false)
   const [showHidrantlar, setShowHidrantlar] = useState(true)
   const [showPasifVakalar, setShowPasifVakalar] = useState(false)
+  const [showHeatmap, setShowHeatmap] = useState(false)
   const [binalarOpacity, setBinalarOpacity] = useState(0.3)
   const [mahallelerOpacity, setMahallelerOpacity] = useState(1.0)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
@@ -227,6 +228,10 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
   const [onlyArizaliHydrants, setOnlyArizaliHydrants] = useState(false)
   const [showFilo, setShowFilo] = useState(true)
   const [zoomLevel, setZoomLevel] = useState(14)
+
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
+  const [routeDuration, setRouteDuration] = useState<number | null>(null)
+  const selectedIncidentRouteAnimFrameRef = useRef<number | null>(null)
 
   // ─── Filtered Data using Memoization ────────────────
   const filteredIncidents = useMemo(() => {
@@ -272,6 +277,45 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
     }
     return vehicles || [];
   }, [vehicles, onlyActiveIncidents, showFilo]);
+
+  // Find vehicle/station coordinates closest to targetLngLat
+  const getStartCoords = useCallback((targetLngLat: [number, number]): [number, number] => {
+    if (filteredVehicles && filteredVehicles.length > 0) {
+      let nearestCoords: [number, number] = STATION_COORDS;
+      let minDistance = Infinity;
+      filteredVehicles.forEach((veh, i) => {
+        const count = filteredVehicles.length;
+        const angle = (i * 2 * Math.PI) / count;
+        const radius = 0.00035;
+        const coords: [number, number] = [
+          STATION_COORDS[0] + Math.cos(angle) * radius,
+          STATION_COORDS[1] + Math.sin(angle) * radius
+        ];
+        const dist = Math.pow(coords[0] - targetLngLat[0], 2) + Math.pow(coords[1] - targetLngLat[1], 2);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearestCoords = coords;
+        }
+      });
+      return nearestCoords;
+    }
+    return STATION_COORDS;
+  }, [filteredVehicles]);
+
+  // ─── Auto-select incident from focusLocation ───────────
+  useEffect(() => {
+    if (!focusLocation || filteredIncidents.length === 0) return
+    const [focusLat, focusLng] = focusLocation
+    const matchingInc = filteredIncidents.find(inc => {
+      const coords = parseLocation(inc.location)
+      if (!coords) return false
+      const dist = Math.pow(coords[1] - focusLat, 2) + Math.pow(coords[0] - focusLng, 2)
+      return dist < 0.00001
+    })
+    if (matchingInc) {
+      setSelectedIncident(matchingInc)
+    }
+  }, [focusLocation, filteredIncidents])
 
   useEffect(() => {
     onMapClickRef.current = onMapClick
@@ -635,6 +679,9 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       if (routeAnimFrameRef.current) {
         cancelAnimationFrame(routeAnimFrameRef.current)
       }
+      if (selectedIncidentRouteAnimFrameRef.current) {
+        cancelAnimationFrame(selectedIncidentRouteAnimFrameRef.current)
+      }
       map.remove()
       mapRef.current = null
       setMapReady(false)
@@ -731,6 +778,10 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
         </svg>
       `
+      innerEl.addEventListener('click', (e) => {
+        e.stopPropagation()
+        setSelectedIncident(inc)
+      })
       el.appendChild(innerEl)
 
       const statusLabel = isPasif ? (inc.durum || 'PASİF / BİTTİ') : triage.label;
@@ -882,44 +933,46 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
     }
 
     // ─── Render Incidents (Separating active/pasif for clustering) ───
-    const activeIncidents = filteredIncidents.filter(inc => {
-      const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
-      return !isPasif;
-    });
+    if (!showHeatmap) {
+      const activeIncidents = filteredIncidents.filter(inc => {
+        const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
+        return !isPasif;
+      });
 
-    const pasifIncidents = filteredIncidents.filter(inc => {
-      const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
-      return isPasif;
-    });
+      const pasifIncidents = filteredIncidents.filter(inc => {
+        const isPasif = inc.durum === 'BİTTİ' || inc.durum === 'KONTROL ALTINDA' || inc.durum === 'PASİF' || inc.status === 'closed';
+        return isPasif;
+      });
 
-    // 1. Render active incidents (always individual, never clustered)
-    activeIncidents.forEach(inc => {
-      const coords = parseLocation(inc.location)
-      if (!coords) return
-      renderIndividualIncident(inc, coords, false)
-    });
+      // 1. Render active incidents (always individual, never clustered)
+      activeIncidents.forEach(inc => {
+        const coords = parseLocation(inc.location)
+        if (!coords) return
+        renderIndividualIncident(inc, coords, false)
+      });
 
-    // 2. Render pasif incidents (clustered)
-    const pasifIncidentPoints = pasifIncidents.map(inc => {
-      const coords = parseLocation(inc.location);
-      return {
-        id: inc.id,
-        coords: coords || [0, 0] as [number, number],
-        data: inc
-      };
-    }).filter(p => p.coords[0] !== 0 || p.coords[1] !== 0);
+      // 2. Render pasif incidents (clustered)
+      const pasifIncidentPoints = pasifIncidents.map(inc => {
+        const coords = parseLocation(inc.location);
+        return {
+          id: inc.id,
+          coords: coords || [0, 0] as [number, number],
+          data: inc
+        };
+      }).filter(p => p.coords[0] !== 0 || p.coords[1] !== 0);
 
-    const clusteredPasifIncidents = computeClusters(pasifIncidentPoints, zoomLevel, 'incident');
+      const clusteredPasifIncidents = computeClusters(pasifIncidentPoints, zoomLevel, 'incident');
 
-    clusteredPasifIncidents.forEach(item => {
-      if (item.isCluster) {
-        renderClusterMarker(item.coords, item.pointCount, 'incident');
-      } else {
-        const inc = item.points[0];
-        const coords = item.coords;
-        renderIndividualIncident(inc, coords, true);
-      }
-    });
+      clusteredPasifIncidents.forEach(item => {
+        if (item.isCluster) {
+          renderClusterMarker(item.coords, item.pointCount, 'incident');
+        } else {
+          const inc = item.points[0];
+          const coords = item.coords;
+          renderIndividualIncident(inc, coords, true);
+        }
+      });
+    }
 
     // ─── Render Hydrants (Clustered) ───
     hydrantElementsRef.current = []
@@ -965,7 +1018,208 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
       }
     }
 
-  }, [filteredIncidents, filteredHydrants, zoomLevel, mapReady])
+  }, [filteredIncidents, filteredHydrants, zoomLevel, mapReady, showHeatmap])
+
+  // ─── Heatmap Layer Effect ───────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady) return
+
+    const sourceId = 'incidents-heatmap-source'
+    const layerId = 'incidents-heatmap-layer'
+
+    if (showHeatmap) {
+      const features = incidents.map(inc => {
+        const coords = parseLocation(inc.location)
+        if (!coords) return null
+        return {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: coords // [lng, lat]
+          },
+          properties: {
+            id: inc.id,
+            olay_turu: inc.olay_turu
+          }
+        }
+      }).filter(Boolean) as any[]
+
+      const geojson = {
+        type: 'FeatureCollection' as const,
+        features
+      }
+
+      if (map.getSource(sourceId)) {
+        (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geojson)
+      } else {
+        map.addSource(sourceId, { type: 'geojson', data: geojson })
+      }
+
+      if (!map.getLayer(layerId)) {
+        map.addLayer({
+          id: layerId,
+          type: 'heatmap',
+          source: sourceId,
+          maxzoom: 18,
+          paint: {
+            'heatmap-weight': 1,
+            'heatmap-intensity': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              0, 1,
+              18, 3
+            ],
+            'heatmap-color': [
+              'interpolate',
+              ['linear'],
+              ['heatmap-density'],
+              0, 'rgba(0, 0, 0, 0)',
+              0.2, 'rgba(234, 179, 8, 0.4)', // Neon Yellow/Orange low density
+              0.5, 'rgba(249, 115, 22, 0.7)', // Orange medium density
+              0.8, 'rgba(239, 68, 68, 0.95)', // Matte Red high density
+              1.0, 'rgba(220, 38, 38, 1.0)' // Crimson red very high
+            ],
+            'heatmap-radius': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              0, 3,
+              18, 25
+            ],
+            'heatmap-opacity': 0.85
+          }
+        })
+      } else {
+        map.setLayoutProperty(layerId, 'visibility', 'visible')
+      }
+    } else {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', 'none')
+      }
+    }
+  }, [showHeatmap, incidents, mapReady])
+
+  // ─── Selected Incident OSRM Route Effect ──────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady) return
+
+    const sourceId = 'selected-incident-route-source'
+    const layerBgId = 'selected-incident-route-line-bg'
+    const layerAnimatedId = 'selected-incident-route-line-animated'
+
+    if (selectedIncidentRouteAnimFrameRef.current) {
+      cancelAnimationFrame(selectedIncidentRouteAnimFrameRef.current)
+      selectedIncidentRouteAnimFrameRef.current = null
+    }
+
+    if (!selectedIncident) {
+      if (map.getLayer(layerBgId)) map.setLayoutProperty(layerBgId, 'visibility', 'none')
+      if (map.getLayer(layerAnimatedId)) map.setLayoutProperty(layerAnimatedId, 'visibility', 'none')
+      setRouteDuration(null)
+      return
+    }
+
+    const incidentCoords = parseLocation(selectedIncident.location)
+    if (!incidentCoords) {
+      setRouteDuration(null)
+      return
+    }
+
+    const startCoords = getStartCoords(incidentCoords)
+
+    fetch(`https://router.project-osrm.org/route/v1/driving/${startCoords[0]},${startCoords[1]};${incidentCoords[0]},${incidentCoords[1]}?overview=full&geometries=geojson`)
+      .then(res => res.json())
+      .then(data => {
+        if (!mapRef.current) return
+        try {
+          if (!map.getStyle || !map.getStyle()) return
+
+          if (data.routes && data.routes[0]) {
+            const routeGeojson = data.routes[0].geometry
+            const durationSec = data.routes[0].duration
+            const durationMin = Math.max(1, Math.round(durationSec / 60))
+            setRouteDuration(durationMin)
+
+            if (map.getSource(sourceId)) {
+              (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(routeGeojson)
+            } else {
+              map.addSource(sourceId, { type: 'geojson', data: routeGeojson })
+            }
+
+            if (!map.getLayer(layerBgId)) {
+              map.addLayer({
+                id: layerBgId,
+                type: 'line',
+                source: sourceId,
+                paint: {
+                  'line-color': '#06b6d4',
+                  'line-width': 6,
+                  'line-opacity': 0.25
+                }
+              })
+            } else {
+              map.setLayoutProperty(layerBgId, 'visibility', 'visible')
+            }
+
+            if (!map.getLayer(layerAnimatedId)) {
+              map.addLayer({
+                id: layerAnimatedId,
+                type: 'line',
+                source: sourceId,
+                paint: {
+                  'line-color': '#06b6d4',
+                  'line-width': 4.5,
+                  'line-opacity': 0.9,
+                  'line-dasharray': [0, 4, 3]
+                }
+              })
+            } else {
+              map.setLayoutProperty(layerAnimatedId, 'visibility', 'visible')
+            }
+
+            const dashArraySeq = [
+              [0, 4, 3],
+              [0.5, 4, 2.5],
+              [1, 4, 2],
+              [1.5, 4, 1.5],
+              [2, 4, 1],
+              [2.5, 4, 0.5],
+              [3, 4, 0],
+              [0, 0, 3, 4],
+              [0, 0.5, 3, 3.5],
+              [0, 1, 3, 3],
+              [0, 1.5, 3, 2.5],
+              [0, 2, 3, 2],
+              [0, 2.5, 3, 1.5],
+              [0, 3, 3, 1],
+              [0, 3.5, 3, 0.5]
+            ]
+            let step = 0
+
+            const animateDashArray = () => {
+              if (!mapRef.current) return
+              try {
+                if (!map.getStyle || !map.getStyle() || !map.getLayer(layerAnimatedId)) return
+                step = (step + 1) % dashArraySeq.length
+                map.setPaintProperty(layerAnimatedId, 'line-dasharray', dashArraySeq[step])
+                selectedIncidentRouteAnimFrameRef.current = requestAnimationFrame(() => {
+                  setTimeout(animateDashArray, 50)
+                })
+              } catch (e) {
+                console.warn("Incident route animation safely stopped:", e)
+              }
+            }
+            animateDashArray()
+          }
+        } catch (e) {
+          console.error("Error drawing selected incident route:", e)
+        }
+      })
+      .catch(err => console.error("Selected Incident OSRM Route Error:", err))
+  }, [selectedIncident, mapReady, getStartCoords])
 
   // ─── Sync markers for vehicles ────────────────
   useEffect(() => {
@@ -1565,6 +1819,26 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               />
             </div>
           </div>
+
+          {/* Yangın Yoğunluk Analizi (Heatmap) Toggle */}
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
+            <div className="flex items-center gap-2 select-none">
+              <Flame className="w-3.5 h-3.5 text-danger shrink-0 animate-pulse" />
+              <span className="text-[11px] font-semibold text-slate-200">Yoğunluk (Isı Haritası)</span>
+            </div>
+            <div
+              onClick={() => setShowHeatmap(!showHeatmap)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showHeatmap ? 'bg-danger shadow-[0_0_8px_#ef4444]' : 'bg-slate-700/50 border border-slate-600/30'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showHeatmap ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="h-px bg-gradient-to-r from-cyan-500/20 via-slate-800/60 to-transparent my-3" />
@@ -1899,6 +2173,28 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
               />
             </div>
           </div>
+
+          {/* Yangın Yoğunluk Analizi (Heatmap) Toggle (Mobile) */}
+          <div 
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className="min-h-[44px] flex items-center justify-between py-2 cursor-pointer w-full select-none"
+          >
+            <div className="flex items-center gap-3">
+              <Flame className="w-5 h-5 text-danger animate-pulse shrink-0" />
+              <span className="text-sm font-semibold text-slate-200">Yoğunluk (Isı Haritası)</span>
+            </div>
+            <div
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border border-transparent transition-all duration-300 ease-in-out items-center p-0.5 ${
+                showHeatmap ? 'bg-danger shadow-[0_0_8px_#ef4444]' : 'bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showHeatmap ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="h-px bg-slate-800/60 my-2" />
@@ -2136,6 +2432,57 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
           animation: pulse-vehicle-arizali 1.5s infinite ease-in-out;
         }
       `}</style>
+
+      {/* Premium Glassmorphic Incident Detail & OSRM Route Info Card */}
+      {selectedIncident && (
+        <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:w-80 z-[420] bg-slate-950/90 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-4 transition-all duration-300 select-none">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base animate-pulse">🚨</span>
+                <h3 className="font-extrabold text-slate-100 text-sm leading-snug">{selectedIncident.olay_turu}</h3>
+              </div>
+              <p className="text-[10px] text-cyan-400 font-mono tracking-wider mt-0.5">VAKA DETAY & CBS ROTA</p>
+            </div>
+            <button 
+              onClick={() => setSelectedIncident(null)}
+              className="text-slate-400 hover:text-red-400 transition-colors p-1"
+              title="Kapat"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="h-px bg-white/10 my-2" />
+          <div className="space-y-1.5 text-xs text-slate-300">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Mahalle:</span>
+              <span className="font-semibold text-slate-200">{selectedIncident.mahalle || '-'}</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-slate-400">Adres:</span>
+              <span className="text-slate-200 font-medium leading-relaxed">{selectedIncident.adres || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Çıkış Zamanı:</span>
+              <span className="text-slate-200 font-mono">
+                {selectedIncident.cikis_saati ? new Date(selectedIncident.cikis_saati).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}
+              </span>
+            </div>
+            <div className="h-px bg-white/5 my-2" />
+            
+            {/* Lojistik Sayaç */}
+            <div className="bg-cyan-950/30 border border-cyan-500/25 rounded-xl p-2.5 flex items-center justify-between shadow-[0_0_15px_rgba(6,182,212,0.05)]">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wide">Tahmini Müdahale Süresi:</span>
+              </div>
+              <span className="text-sm font-black text-emerald-400 font-mono">
+                {routeDuration !== null ? `${routeDuration} Dakika` : 'Hesaplanıyor...'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
