@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key } from 'lucide-react'
+import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X, BookOpen } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
@@ -29,6 +29,18 @@ export function Topbar() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  const [readIds, setReadIds] = useState<string[]>([])
+  const [deletedIds, setDeletedIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedRead = localStorage.getItem('itfaiye-read-notifications')
+      const storedDeleted = localStorage.getItem('itfaiye-deleted-notifications')
+      if (storedRead) setReadIds(JSON.parse(storedRead))
+      if (storedDeleted) setDeletedIds(JSON.parse(storedDeleted))
+    }
+  }, [])
 
   // Track window size for responsive layout and set mounted to true
   useEffect(() => {
@@ -108,7 +120,7 @@ export function Topbar() {
         <div 
           key={item.id}
           onClick={() => handleNotificationClick(item)}
-          className={`p-4 flex gap-3 transition-colors cursor-pointer group hover:bg-slate-900/40 relative border-b border-slate-800/20 ${triageClass} ${
+          className={`p-4 flex items-start justify-between gap-3 transition-colors cursor-pointer group hover:bg-slate-900/40 relative border-b border-slate-800/20 ${triageClass} ${
             !item.read ? 'opacity-100 font-semibold' : 'opacity-80'
           }`}
         >
@@ -150,23 +162,37 @@ export function Topbar() {
             <p className="text-sm leading-relaxed text-slate-400 line-clamp-2">
               {item.description}
             </p>
+
+            {/* Canlı CBS Haritasını Görüntüle Link */}
+            {item.type === 'urgent' && item.id.startsWith('inc-') && (
+              <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                <Link
+                  href={item.actionUrl || '/yonetim/harita'}
+                  onClick={() => setIsOpen(false)}
+                  className="inline-flex items-center text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 px-2.5 py-1 rounded transition-all animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                >
+                  Canlı CBS Haritasını Görüntüle
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Right Control Overlay */}
-          <div className="absolute right-2 bottom-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => toggleRead(item.id, e)}
-              title={item.read ? "Okunmadı İşaretle" : "Okundu İşaretle"}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded p-1 text-slate-400 hover:text-slate-200 transition-colors"
-            >
-              <Check className="w-3 h-3" />
-            </button>
+          {/* Right Control Actions (Visible on hover, and small [X] always visible) */}
+          <div className="flex flex-col gap-1 shrink-0 self-start mt-0.5">
             <button
               onClick={(e) => removeNotification(item.id, e)}
               title="Sil"
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded p-1 text-slate-400 hover:text-red-500 transition-colors"
+              className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-slate-800/40"
             >
-              <Trash2 className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
+            </button>
+            
+            <button
+              onClick={(e) => toggleRead(item.id, e)}
+              title={item.read ? "Okunmadı İşaretle" : "Okundu İşaretle"}
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-slate-200 p-1 rounded hover:bg-slate-800/40"
+            >
+              <Check className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -186,116 +212,133 @@ export function Topbar() {
   useEffect(() => {
     const fetchNotificationsAndTasks = async () => {
       const items: NotificationItem[] = []
-      const systemDate = new Date('2026-05-20')
+      const now = new Date()
 
-      // 1. Role-specific Dynamic Tasks
-      if (isAuthenticated && user) {
-        if (user.rol === 'Admin' || user.rol === 'Editor' || user.rol === 'Shift_Leader') {
-          items.push({
-            id: 'task-leader-1',
-            title: '📋 Denetim Görevi',
-            description: '1. Posta araç envanter kontrollerini onaylayın.',
-            type: 'warning',
-            time: 'Vardiya Görevi',
-            read: false,
-            actionUrl: '/yonetim/personel'
-          })
-          items.push({
-            id: 'task-leader-2',
-            title: '💨 SCBA Maske Kontrolü',
-            description: 'Solunum cihazı maske sızdırmazlık testlerini sisteme girin.',
-            type: 'info',
-            time: 'Haftalık Plan',
-            read: false,
-            actionUrl: '/scba'
-          })
-        } else {
-          items.push({
-            id: 'task-er-1',
-            title: '📋 Malzeme Testi',
-            description: 'Bugün zimmetli olduğunuz aracın ekipmanlarını kontrol edip onaylayın.',
-            type: 'info',
-            time: 'Vardiya Görevi',
-            read: false,
-            actionUrl: '/yonetim/tarayici'
-          })
-          items.push({
-            id: 'task-er-2',
-            title: '💨 SCBA Tüp Kontrolü',
-            description: 'Solunum tüpünüzün basınç değerini ölçüp kaydedin (hedef >280 bar).',
-            type: 'warning',
-            time: 'Bugün',
-            read: false,
-            actionUrl: '/scba'
-          })
+      // Read read & deleted notifications from localStorage
+      let storedRead: string[] = []
+      let storedDeleted: string[] = []
+      if (typeof window !== 'undefined') {
+        try {
+          storedRead = JSON.parse(localStorage.getItem('itfaiye-read-notifications') || '[]')
+          storedDeleted = JSON.parse(localStorage.getItem('itfaiye-deleted-notifications') || '[]')
+        } catch (e) {
+          console.error(e)
         }
       }
 
       try {
-        // 2. Fetch User-Specific Certifications Alert (SUPABASE)
-        if (isAuthenticated && user?.sicilNo) {
-          const { data: certs } = await api
-            .from('staff_certifications')
-            .select('*')
-            .eq('sicil_no', user.sicilNo)
-
-          if (certs && certs.length > 0) {
-            certs.forEach((c: any) => {
-              if (c.gecerlilik_tarihi) {
-                const expiry = new Date(c.gecerlilik_tarihi)
-                if (expiry < systemDate) {
-                  items.push({
-                    id: `cert-expired-${c.id}`,
-                    title: `⚠️ Süresi Dolan Belge (${c.tip})`,
-                    description: `${c.tip} belgenizin geçerlilik süresi dolmuştur! Lütfen en kısa sürede yenileyin.`,
-                    type: 'urgent',
-                    time: 'Kritik Uyarı',
-                    read: false,
-                    actionUrl: '/yonetim/personel'
-                  })
-                } else {
-                  const diffTime = expiry.getTime() - systemDate.getTime()
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                  if (diffDays <= 30) {
-                    items.push({
-                      id: `cert-warning-${c.id}`,
-                      title: `⚠️ Belge Yenileme Uyarısı (${c.tip})`,
-                      description: `${c.tip} geçerliliğine ${diffDays} gün kaldı. Lütfen yenileme işlemlerini başlatın.`,
-                      type: 'warning',
-                      time: `${diffDays} Gün Kaldı`,
-                      read: false,
-                      actionUrl: '/yonetim/personel'
-                    })
-                  }
-                }
-              }
-            })
-          }
-        }
-
-        // 3. Fetch Active Emergency Incidents (SUPABASE)
+        // 1. Fetch Active Emergency Incidents (SUPABASE)
         const { data: incidents } = await api
           .from('incidents')
           .select('*')
+          .eq('status', 'active')
           .order('cikis_saati', { ascending: false })
-          .limit(2)
 
         if (incidents && incidents.length > 0) {
           incidents.forEach((inc: any) => {
-            items.push({
-              id: `inc-${inc.id}`,
-              title: `🚨 Canlı Olay İhbarı: ${inc.olay_turu}`,
-              description: `${inc.mahalle || 'Sivas'} Mah. adresinde olay raporlandı. Ekipler çıkış yaptı!`,
-              type: 'urgent',
-              time: inc.cikis_saati ? new Date(inc.cikis_saati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Az Önce',
-              read: false,
-              actionUrl: '/yonetim/harita'
-            })
+            const itemId = `inc-${inc.id}`
+            if (!storedDeleted.includes(itemId)) {
+              items.push({
+                id: itemId,
+                title: `🚨 Canlı Olay İhbarı: ${inc.olay_turu}`,
+                description: `${inc.mahalle || 'Sivas'} Adresinde ekipler çıkış yaptı!`,
+                type: 'urgent',
+                time: inc.cikis_saati ? new Date(inc.cikis_saati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Az Önce',
+                read: storedRead.includes(itemId),
+                actionUrl: `/yonetim/harita?incidentId=${inc.id}`
+              })
+            }
           })
         }
+
+        // 2. Fetch Vehicle Inspections (SUPABASE)
+        const { data: vehicles } = await api
+          .from('vehicles')
+          .select('*')
+
+        if (vehicles && vehicles.length > 0) {
+          vehicles.forEach((v: any) => {
+            const dateVal = v.muayeneBitis || v.next_inspection_date
+            if (dateVal) {
+              const expiry = new Date(dateVal)
+              const diffTime = expiry.getTime() - now.getTime()
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+              
+              if (diffDays <= 30) {
+                const itemId = `vehicle-ins-${v.plaka}`
+                if (!storedDeleted.includes(itemId)) {
+                  items.push({
+                    id: itemId,
+                    title: `⚠️ Muayene Gecikmesi: ${v.plaka}`,
+                    description: `Muayene Gecikmesi: ${v.plaka} muayene süresi geçti / dolmak üzere!`,
+                    type: 'warning',
+                    time: diffDays < 0 ? 'Gecikti' : `${diffDays} Gün Kaldı`,
+                    read: storedRead.includes(itemId),
+                    actionUrl: '/yonetim/araclar'
+                  })
+                }
+              }
+            }
+          })
+        }
+
+        // 3. Fetch Staff Certifications (SUPABASE)
+        const { data: certs } = await api
+          .from('staff_certifications')
+          .select('*')
+          .eq('tip', 'Ehliyet')
+
+        const { data: personnel } = await api
+          .from('personnel')
+          .select('*')
+
+        const personnelMap = new Map()
+        if (personnel) {
+          personnel.forEach((p: any) => {
+            personnelMap.set(p.sicil_no, `${p.ad} ${p.soyad}`)
+          })
+        }
+
+        if (certs && certs.length > 0) {
+          certs.forEach((c: any) => {
+            if (c.gecerlilik_tarihi) {
+              const expiry = new Date(c.gecerlilik_tarihi)
+              const diffTime = expiry.getTime() - now.getTime()
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+              
+              if (diffDays <= 90) { // Using 90 days as approaching so early certs in DB can be warning targets
+                const itemId = `cert-license-${c.id}`
+                if (!storedDeleted.includes(itemId)) {
+                  const fullName = personnelMap.get(c.sicil_no) || c.sicil_no
+                  items.push({
+                    id: itemId,
+                    title: `🪪 Ehliyet Geçerlilik: ${fullName}`,
+                    description: `Ehliyet Geçerlilik: ${fullName} sürücü belgesi süresi yaklaşıyor!`,
+                    type: 'info',
+                    time: diffDays < 0 ? 'Süresi Doldu' : `${diffDays} Gün Kaldı`,
+                    read: storedRead.includes(itemId),
+                    actionUrl: '/yonetim/personel'
+                  })
+                }
+              }
+            }
+          })
+        }
+
       } catch (err) {
         console.error('[Topbar] Canlı bildirimler yüklenirken hata oluştu:', err)
       }
+
+      // Sort notifications so that:
+      // 1. Unread notifications are at the top, then read.
+      // 2. Urgent (incidents) are at the top, then Warning (inspections), then Info (certifications).
+      items.sort((a, b) => {
+        if (a.read !== b.read) {
+          return a.read ? 1 : -1
+        }
+        const priority = { urgent: 0, warning: 1, info: 2, success: 3 }
+        return priority[a.type] - priority[b.type]
+      })
 
       setNotifications(items)
     }
@@ -305,7 +348,7 @@ export function Topbar() {
     // Auto-refresh notifications every 30 seconds to keep incidents live
     const interval = setInterval(fetchNotificationsAndTasks, 30000)
     return () => clearInterval(interval)
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, readIds, deletedIds])
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -324,22 +367,62 @@ export function Topbar() {
   const unreadCount = notifications.filter(n => !n.read).length
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    setNotifications(prev => {
+      const updated = prev.map(n => ({ ...n, read: true }))
+      const allIds = updated.map(n => n.id)
+      if (typeof window !== 'undefined') {
+        const storedRead = JSON.parse(localStorage.getItem('itfaiye-read-notifications') || '[]')
+        const newRead = Array.from(new Set([...storedRead, ...allIds]))
+        localStorage.setItem('itfaiye-read-notifications', JSON.stringify(newRead))
+        setReadIds(newRead)
+      }
+      return updated
+    })
   }
 
   const toggleRead = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n))
+    setNotifications(prev => {
+      const item = prev.find(n => n.id === id)
+      if (!item) return prev
+      const willBeRead = !item.read
+      if (typeof window !== 'undefined') {
+        let storedRead = JSON.parse(localStorage.getItem('itfaiye-read-notifications') || '[]')
+        if (willBeRead) {
+          storedRead = Array.from(new Set([...storedRead, id]))
+        } else {
+          storedRead = storedRead.filter((x: string) => x !== id)
+        }
+        localStorage.setItem('itfaiye-read-notifications', JSON.stringify(storedRead))
+        setReadIds(storedRead)
+      }
+      return prev.map(n => n.id === id ? { ...n, read: willBeRead } : n)
+    })
   }
 
   const removeNotification = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setNotifications(prev => prev.filter(n => n.id !== id))
+    if (typeof window !== 'undefined') {
+      const storedDeleted = JSON.parse(localStorage.getItem('itfaiye-deleted-notifications') || '[]')
+      const newDeleted = Array.from(new Set([...storedDeleted, id]))
+      localStorage.setItem('itfaiye-deleted-notifications', JSON.stringify(newDeleted))
+      setDeletedIds(newDeleted)
+    }
   }
 
   const handleNotificationClick = (item: NotificationItem) => {
     // Mark as read
-    setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, read: true } : n))
+    setNotifications(prev => {
+      const updated = prev.map(n => n.id === item.id ? { ...n, read: true } : n)
+      if (typeof window !== 'undefined') {
+        const storedRead = JSON.parse(localStorage.getItem('itfaiye-read-notifications') || '[]')
+        const newRead = Array.from(new Set([...storedRead, item.id]))
+        localStorage.setItem('itfaiye-read-notifications', JSON.stringify(newRead))
+        setReadIds(newRead)
+      }
+      return updated
+    })
     setIsOpen(false)
     if (item.actionUrl) {
       router.push(item.actionUrl)
@@ -402,7 +485,7 @@ export function Topbar() {
                     {unreadCount > 0 && (
                       <button 
                         onClick={markAllAsRead}
-                        className="text-[11px] text-primary hover:text-primary-hover font-semibold transition-colors flex items-center gap-1 shrink-0"
+                        className="text-[11px] text-red-500 hover:text-red-400 font-bold transition-all flex items-center gap-1 shrink-0 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] border border-red-500/20 hover:border-red-500/50 bg-red-950/20 px-2.5 py-1 rounded-md"
                       >
                         <Check className="w-3.5 h-3.5" /> Tümünü Okundu İşaretle
                       </button>
@@ -450,7 +533,7 @@ export function Topbar() {
                   {unreadCount > 0 && (
                     <button 
                       onClick={markAllAsRead}
-                      className="text-[11px] text-primary hover:text-primary-hover font-semibold transition-colors flex items-center gap-1"
+                      className="text-[11px] text-red-500 hover:text-red-400 font-bold transition-all flex items-center gap-1 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] border border-red-500/20 hover:border-red-500/50 bg-red-950/20 px-2.5 py-1 rounded-md"
                     >
                       <Check className="w-3.5 h-3.5" /> Tümünü Okundu İşaretle
                     </button>
@@ -466,7 +549,7 @@ export function Topbar() {
               </div>
               
               {/* Content Container */}
-              <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-900/60">
+              <div className="max-h-[450px] overflow-y-auto divide-y divide-slate-900/60">
                 {renderNotificationsList()}
               </div>
 
@@ -509,6 +592,14 @@ export function Topbar() {
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2">Hesap İşlemleri</p>
                 </div>
                 <div className="p-1.5 space-y-1">
+                  <Link 
+                    href="/yonetim/kilavuz"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                  >
+                    <BookOpen className="w-4 h-4 text-cyan-400" />
+                    <span>Kullanım Kılavuzu</span>
+                  </Link>
                   <Link 
                     href="/sifre-degistir"
                     onClick={() => setIsProfileOpen(false)}

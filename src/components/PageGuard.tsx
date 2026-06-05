@@ -36,11 +36,14 @@ export function mapUserToPermissionRole(user: any): string {
 }
 
 interface PageGuardProps {
-  pageId: 'harita' | 'personel_yonetimi' | 'arac_bakim' | 'envanter' | 'raporlar' | 'egitimler' | 'hizmet_basvurulari' | 'gorevler';
+  pageId: 'harita' | 'personel_yonetimi' | 'arac_bakim' | 'envanter' | 'raporlar' | 'egitimler' | 'hizmet_basvurulari' | 'gorevler' | 'kilavuz';
   children: React.ReactNode;
 }
 
 export default function PageGuard({ pageId, children }: PageGuardProps) {
+  if (pageId === 'kilavuz') {
+    return <>{children}</>;
+  }
   const { user, isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState<boolean>(true);

@@ -44,6 +44,9 @@ export interface Personnel {
   ilkyardim_sertifika_tarihi?: string;
   ehliyet_gecerlilik_tarihi?: string;
   scba_sertifika_tarihi?: string;
+  view_only?: boolean;
+  can_approve?: boolean;
+  can_print?: boolean;
 }
 
 export interface StaffCertification {

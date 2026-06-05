@@ -51,6 +51,8 @@ export default function PersonelYonetimPage() {
   const [resettingPassword, setResettingPassword] = useState(false)
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState<string | null>(null)
 
+  const currentUserCanPrint = currentUser ? (permissions[currentUser.sicilNo]?.can_print ?? (currentUser.rol === 'Admin' || currentUser.rol === 'Editor')) : false
+
   // Fetch personnel from Supabase
   const fetchPersonnel = useCallback(async () => {
     setLoading(true)
@@ -85,7 +87,10 @@ export default function PersonelYonetimPage() {
             durum: p.durum || 'Görevde',
             ehliyet_gecerlilik_tarihi: ehliyet?.gecerlilik_tarihi || undefined,
             ilkyardim_sertifika_tarihi: ilkyardim?.gecerlilik_tarihi || undefined,
-            scba_sertifika_tarihi: scba?.gecerlilik_tarihi || undefined
+            scba_sertifika_tarihi: scba?.gecerlilik_tarihi || undefined,
+            view_only: p.view_only ?? true,
+            can_approve: p.can_approve ?? false,
+            can_print: p.can_print ?? false
           }
         })
         setPersonnel(mapped)
@@ -334,16 +339,17 @@ export default function PersonelYonetimPage() {
 
   // TOGGLE PERMISSION — Supabase UPDATE (debounced)
   const togglePermission = async (sicilNo: string, perm: 'view_only' | 'can_approve' | 'can_print') => {
-    const current = permissions[sicilNo]
-    if (!current) return
-
+    const current = permissions[sicilNo] || { view_only: true, can_approve: false, can_print: false }
     const newValue = !current[perm]
     
-    // Optimistic UI update
+    // Optimistic UI update for permissions map
     setPermissions(prev => ({
       ...prev,
-      [sicilNo]: { ...prev[sicilNo], [perm]: newValue }
+      [sicilNo]: { ...current, [perm]: newValue }
     }))
+
+    // Optimistic UI update for personnel array
+    setPersonnel(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, [perm]: newValue } : p))
 
     // Push to Supabase
     try {
@@ -368,8 +374,9 @@ export default function PersonelYonetimPage() {
       // Rollback on error
       setPermissions(prev => ({
         ...prev,
-        [sicilNo]: { ...prev[sicilNo], [perm]: !newValue }
+        [sicilNo]: { ...current, [perm]: !newValue }
       }))
+      setPersonnel(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, [perm]: !newValue } : p))
     }
   }
 
@@ -900,7 +907,11 @@ export default function PersonelYonetimPage() {
             {filteredPersonnel.map(person => {
               const isAdmin = person.rol === "Admin" || person.rol === "Editor"
               const isLeader = person.unvan.includes("Çavuş") || person.unvan.includes("Amir") || person.unvan.includes("Müdür")
-              const perms = permissions[person.sicil_no] || { view_only: true, can_approve: false, can_print: false }
+              const perms = permissions[person.sicil_no] || {
+                view_only: person.view_only ?? true,
+                can_approve: person.can_approve ?? false,
+                can_print: person.can_print ?? false
+              }
               return (
                 <div key={person.sicil_no} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                   
@@ -1239,14 +1250,16 @@ export default function PersonelYonetimPage() {
                             >
                               <Copy className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => handlePrintSinglePassword(selectedPerson, resetPasswordSuccess)}
-                              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded transition-colors cursor-pointer"
-                              type="button"
-                              title="Yazdır / İndir"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </button>
+                            {currentUserCanPrint && (
+                              <button
+                                onClick={() => handlePrintSinglePassword(selectedPerson, resetPasswordSuccess)}
+                                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded transition-colors cursor-pointer"
+                                type="button"
+                                title="Yazdır / İndir"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                           <p className="text-[10px] text-muted-foreground">Kullanıcı bu şifreyle giriş yaptıktan sonra şifresini değiştirmelidir.</p>
                         </div>
