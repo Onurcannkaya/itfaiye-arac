@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer, Download } from "lucide-react"
+import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer } from "lucide-react"
 import { api } from "@/lib/api"
 import { type Personnel } from "@/types"
 import { cn, calculateRemainingDays } from "@/lib/utils"
@@ -39,9 +39,6 @@ export default function PersonelYonetimPage() {
   // Certifications
   const [certifications, setCertifications] = useState<any[]>([])
 
-  // Vehicles
-  const [dbVehicles, setDbVehicles] = useState<any[]>([])
-
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPerson, setSelectedPerson] = useState<Personnel | null>(null)
@@ -50,10 +47,11 @@ export default function PersonelYonetimPage() {
   const [ehliyetDate, setEhliyetDate] = useState("")
   const [ilkyardimDate, setIlkyardimDate] = useState("")
   const [scbaDate, setScbaDate] = useState("")
-  const [activeShift, setActiveShift] = useState(1)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [resettingPassword, setResettingPassword] = useState(false)
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState<string | null>(null)
+
+  const currentUserCanPrint = currentUser ? (permissions[currentUser.sicilNo]?.can_print ?? (currentUser.rol === 'Admin' || currentUser.rol === 'Editor')) : false
 
   // Fetch personnel from Supabase
   const fetchPersonnel = useCallback(async () => {
@@ -73,11 +71,6 @@ export default function PersonelYonetimPage() {
         setCertifications(certData)
       }
 
-      const { data: vehData, error: vehErr } = await api.from('vehicles').select('*')
-      if (!vehErr && vehData) {
-        setDbVehicles(vehData)
-      }
-
       if (data && data.length > 0) {
         const mapped: Personnel[] = data.map((p: any) => {
           const ehliyet = certData?.find((c: any) => c.sicil_no === p.sicil_no && c.tip === 'Ehliyet')
@@ -94,7 +87,10 @@ export default function PersonelYonetimPage() {
             durum: p.durum || 'Görevde',
             ehliyet_gecerlilik_tarihi: ehliyet?.gecerlilik_tarihi || undefined,
             ilkyardim_sertifika_tarihi: ilkyardim?.gecerlilik_tarihi || undefined,
-            scba_sertifika_tarihi: scba?.gecerlilik_tarihi || undefined
+            scba_sertifika_tarihi: scba?.gecerlilik_tarihi || undefined,
+            view_only: p.view_only ?? true,
+            can_approve: p.can_approve ?? false,
+            can_print: p.can_print ?? false
           }
         })
         setPersonnel(mapped)
@@ -343,16 +339,17 @@ export default function PersonelYonetimPage() {
 
   // TOGGLE PERMISSION — Supabase UPDATE (debounced)
   const togglePermission = async (sicilNo: string, perm: 'view_only' | 'can_approve' | 'can_print') => {
-    const current = permissions[sicilNo]
-    if (!current) return
-
+    const current = permissions[sicilNo] || { view_only: true, can_approve: false, can_print: false }
     const newValue = !current[perm]
     
-    // Optimistic UI update
+    // Optimistic UI update for permissions map
     setPermissions(prev => ({
       ...prev,
-      [sicilNo]: { ...prev[sicilNo], [perm]: newValue }
+      [sicilNo]: { ...current, [perm]: newValue }
     }))
+
+    // Optimistic UI update for personnel array
+    setPersonnel(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, [perm]: newValue } : p))
 
     // Push to Supabase
     try {
@@ -377,8 +374,9 @@ export default function PersonelYonetimPage() {
       // Rollback on error
       setPermissions(prev => ({
         ...prev,
-        [sicilNo]: { ...prev[sicilNo], [perm]: !newValue }
+        [sicilNo]: { ...current, [perm]: !newValue }
       }))
+      setPersonnel(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, [perm]: !newValue } : p))
     }
   }
 
@@ -581,98 +579,7 @@ export default function PersonelYonetimPage() {
     }
   }, [certifications])
 
-  // Group active shift staff
-  const activeShiftStaff = useMemo(() => {
-    return personnel.filter(p => p.posta_no === activeShift)
-  }, [personnel, activeShift])
-
-  // Dynamic vehicles selection matching user database content (Sivas plates)
-  const dynamicVehicles = useMemo(() => {
-    const arazoz = dbVehicles.find(v => (v.arac_tipi || '').toLowerCase().includes('arazöz')) || 
-                  dbVehicles.find(v => v.plaka === '58 FP 968') || 
-                  dbVehicles.find(v => v.plaka === '58 ACT 367') ||
-                  { plaka: '58 FP 968', arac_tipi: 'BMC Fatih Arazöz' };
-                  
-    const kurtarma = dbVehicles.find(v => (v.arac_tipi || '').toLowerCase().includes('kurtarma') || (v.arac_tipi || '').toLowerCase().includes('müdahale')) || 
-                    dbVehicles.find(v => v.plaka === '58 TH 257') || 
-                    dbVehicles.find(v => v.plaka === '58 TH 256') ||
-                    { plaka: '58 TH 257', arac_tipi: '5 Nolu Arama-Kurtarma' };
-                    
-    const merdivenli = dbVehicles.find(v => (v.arac_tipi || '').toLowerCase().includes('merdivenli') || (v.arac_tipi || '').toLowerCase().includes('metre') || (v.arac_tipi || '').toLowerCase().includes('man')) || 
-                      dbVehicles.find(v => v.plaka === '58 AEH 221') || 
-                      { plaka: '58 AEH 221', arac_tipi: '42 Metre MAN' };
-                      
-    return { arazoz, kurtarma, merdivenli };
-  }, [dbVehicles]);
-
-  // Centralized Akıllı Araç & Rota Eşleştirme Dağıtımı (Faz 11.2)
-  const vehicleAllocations = useMemo(() => {
-    const assigned = new Set<string>()
-
-    // 1. Şoförleri Atama (Her araç için benzersiz şoför)
-    const activeDrivers = activeShiftStaff.filter(p => {
-      const cert = certifications.find(c => c.sicil_no === p.sicil_no && c.tip === 'Ehliyet')
-      if (!cert || !cert.gecerlilik_tarihi) return false
-      return new Date(cert.gecerlilik_tarihi) >= new Date('2026-05-20')
-    })
-    
-    const arazozSofor = activeDrivers.find(d => !assigned.has(d.sicil_no))
-    if (arazozSofor) assigned.add(arazozSofor.sicil_no)
-
-    const kurtarmaSofor = activeDrivers.find(d => !assigned.has(d.sicil_no))
-    if (kurtarmaSofor) assigned.add(kurtarmaSofor.sicil_no)
-
-    const merdivenliSofor = activeDrivers.find(d => !assigned.has(d.sicil_no))
-    if (merdivenliSofor) assigned.add(merdivenliSofor.sicil_no)
-
-    // 2. Ekip Amirlerini Atama (Shift Leader, Çavuş, Amir unvanları)
-    const leaders = activeShiftStaff.filter(p => 
-      !assigned.has(p.sicil_no) && (
-        p.rol === 'Admin' || 
-        p.rol === 'Editor' || 
-        p.rol === 'Shift_Leader' ||
-        p.unvan.includes('Çavuş') || 
-        p.unvan.includes('Amir')
-      )
-    )
-
-    const arazozAmir = leaders.find(l => !assigned.has(l.sicil_no))
-    if (arazozAmir) assigned.add(arazozAmir.sicil_no)
-
-    const kurtarmaAmir = leaders.find(l => !assigned.has(l.sicil_no))
-    if (kurtarmaAmir) assigned.add(kurtarmaAmir.sicil_no)
-
-    // 3. Kurtarma Uzmanı Atama (SCBA veya İlkyardım sertifikası olan)
-    const specialists = activeShiftStaff.filter(p => {
-      if (assigned.has(p.sicil_no)) return false
-      const scba = certifications.find(c => c.sicil_no === p.sicil_no && c.tip === 'SCBA')
-      const iy = certifications.find(c => c.sicil_no === p.sicil_no && c.tip === 'İlkyardım')
-      const today = new Date('2026-05-20')
-      return (scba?.gecerlilik_tarihi && new Date(scba.gecerlilik_tarihi) >= today) || 
-             (iy?.gecerlilik_tarihi && new Date(iy.gecerlilik_tarihi) >= today)
-    })
-
-    const kurtarmaUzman = specialists.find(s => !assigned.has(s.sicil_no))
-    if (kurtarmaUzman) assigned.add(kurtarmaUzman.sicil_no)
-
-    // 4. Müdahale Eri, Erişim Personeli ve Kule Elemanı (Geriye kalan boşta personel)
-    const remainingStaff = activeShiftStaff.filter(p => !assigned.has(p.sicil_no))
-
-    const arazozEr = remainingStaff[0]
-    if (arazozEr) assigned.add(arazozEr.sicil_no)
-
-    const merdivenliErisim = remainingStaff.find(p => !assigned.has(p.sicil_no))
-    if (merdivenliErisim) assigned.add(merdivenliErisim.sicil_no)
-
-    const merdivenliKule = remainingStaff.find(p => !assigned.has(p.sicil_no))
-    if (merdivenliKule) assigned.add(merdivenliKule.sicil_no)
-
-    return {
-      arazoz: { amir: arazozAmir, sofor: arazozSofor, er: arazozEr },
-      kurtarma: { amir: kurtarmaAmir, sofor: kurtarmaSofor, uzman: kurtarmaUzman },
-      merdivenli: { erisim: merdivenliErisim, sofor: merdivenliSofor, kule: merdivenliKule }
-    }
-  }, [activeShiftStaff, certifications])
+  // Shift management structures removed in favor of direct profile focus
 
   const criticalPersonnel = useMemo(() => {
     interface CriticalIssue {
@@ -868,208 +775,7 @@ export default function PersonelYonetimPage() {
         </CardContent>
       </Card>
 
-      {/* Aktif Vardiya ve Araç Eşleştirme Şeması */}
-      <Card className="border-slate-800 bg-slate-950/40 backdrop-blur-md shadow-xl">
-        <CardHeader className="pb-3 border-b border-border/50 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-red-500 animate-pulse" />
-            <div>
-              <CardTitle className="text-base font-bold text-slate-100">Aktif Vardiya & Araç Eşleştirme Şeması</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">Posta bazlı araç müdahale ekiplerinin anlık zimmet ve yeterlilik durumu.</p>
-            </div>
-          </div>
-          
-          <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1">
-            {[1, 2, 3].map(postaNum => (
-              <button
-                key={postaNum}
-                onClick={() => setActiveShift(postaNum)}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
-                  activeShift === postaNum 
-                    ? "bg-red-500 text-white shadow-lg" 
-                    : "text-slate-400 hover:text-slate-200"
-                )}
-              >
-                {postaNum}. Posta
-              </button>
-            ))}
-          </div>
-        </CardHeader>
-        
-        <CardContent className="p-4 sm:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Vehicle 1: Arazöz */}
-            {(() => {
-              const { amir, sofor, er } = vehicleAllocations.arazoz
-              
-              return (
-                <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/10 backdrop-blur-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-red-500/10 p-2 rounded-lg text-red-500">
-                          <Truck className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-200 text-sm">{dynamicVehicles.arazoz.plaka}</h3>
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{dynamicVehicles.arazoz.arac_tipi}</span>
-                        </div>
-                       </div>
-                       <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px]">Aktif</Badge>
-                     </div>
-                     
-                     <div className="space-y-2 text-xs">
-                       <div className="flex justify-between items-center py-1 border-b border-slate-800/40">
-                         <span className="text-slate-400">Ekip Amiri:</span>
-                         <span className="font-semibold text-slate-200">{amir ? `${amir.ad} ${amir.soyad}` : 'Atanmamış'}</span>
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-1 border-b border-slate-800/40">
-                         <span className="text-slate-400">Şoför:</span>
-                         {sofor ? (
-                           <span className="font-semibold text-emerald-400">{sofor.ad} {sofor.soyad}</span>
-                         ) : (
-                           <span className="font-semibold text-red-500 animate-pulse flex items-center gap-1">
-                             <AlertTriangle className="w-3.5 h-3.5" /> Sürücü Eksik!
-                           </span>
-                         )}
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-1">
-                         <span className="text-slate-400">Müdahale Eri:</span>
-                         <span className="font-semibold text-slate-200">{er ? `${er.ad} ${er.soyad}` : 'Atanmamış'}</span>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div className="mt-4 pt-3 border-t border-slate-800/40 flex justify-between items-center text-[10px] text-slate-500">
-                     <span>Posta Kadrosu: {activeShiftStaff.length} kişi</span>
-                     <span>Ağır Söndürme</span>
-                   </div>
-                 </div>
-               )
-             })()}
-             
-             {/* Vehicle 2: Kurtarma */}
-             {(() => {
-               const { amir, sofor, uzman: er } = vehicleAllocations.kurtarma
-               const hasScba = er ? certifications.some(c => c.sicil_no === er.sicil_no && c.tip === 'SCBA' && new Date(c.gecerlilik_tarihi) >= new Date('2026-05-20')) : false
-               
-               return (
-                 <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/10 backdrop-blur-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
-                   <div>
-                     <div className="flex justify-between items-start mb-4">
-                       <div className="flex items-center gap-2">
-                         <div className="bg-blue-500/10 p-2 rounded-lg text-blue-500">
-                           <ShieldCheck className="w-5 h-5" />
-                         </div>
-                         <div>
-                           <h3 className="font-bold text-slate-200 text-sm">{dynamicVehicles.kurtarma.plaka}</h3>
-                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{dynamicVehicles.kurtarma.arac_tipi}</span>
-                         </div>
-                       </div>
-                       <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px]">Aktif</Badge>
-                     </div>
-                     
-                     <div className="space-y-2 text-xs">
-                       <div className="flex justify-between items-center py-1 border-b border-slate-800/40">
-                         <span className="text-slate-400">Kurtarma Amiri:</span>
-                         <span className="font-semibold text-slate-200">{amir ? `${amir.ad} ${amir.soyad}` : 'Atanmamış'}</span>
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-1 border-b border-slate-800/40">
-                         <span className="text-slate-400">Şoför:</span>
-                         {sofor ? (
-                           <span className="font-semibold text-emerald-400">{sofor.ad} {sofor.soyad}</span>
-                         ) : (
-                           <span className="font-semibold text-red-500 animate-pulse flex items-center gap-1">
-                             <AlertTriangle className="w-3.5 h-3.5" /> Sürücü Eksik!
-                           </span>
-                         )}
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-1">
-                         <span className="text-slate-400">Kurtarma Uzmanı:</span>
-                         {er ? (
-                           <span className="font-semibold text-slate-200 flex items-center gap-1">
-                             {er.ad} {er.soyad}
-                             {hasScba && (
-                               <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[8px] px-1 py-0 h-4">SCBA</Badge>
-                             )}
-                           </span>
-                         ) : (
-                           <span className="font-semibold text-slate-400">Atanmamış</span>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div className="mt-4 pt-3 border-t border-slate-800/40 flex justify-between items-center text-[10px] text-slate-500">
-                     <span>Posta Kadrosu: {activeShiftStaff.length} kişi</span>
-                     <span>Hızlı Müdahale / Kaza</span>
-                   </div>
-                 </div>
-               )
-             })()}
-             
-             {/* Vehicle 3: Merdivenli */}
-             {(() => {
-               const { erisim, sofor, kule } = vehicleAllocations.merdivenli
-               
-               return (
-                 <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/10 backdrop-blur-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]">
-                   <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-xl pointer-events-none" />
-                   <div>
-                     <div className="flex justify-between items-start mb-4">
-                       <div className="flex items-center gap-2">
-                         <div className="bg-orange-500/10 p-2 rounded-lg text-orange-500">
-                           <SlidersHorizontal className="w-5 h-5" />
-                         </div>
-                         <div>
-                           <h3 className="font-bold text-slate-200 text-sm">{dynamicVehicles.merdivenli.plaka}</h3>
-                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{dynamicVehicles.merdivenli.arac_tipi}</span>
-                         </div>
-                       </div>
-                       <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px]">Aktif</Badge>
-                     </div>
-                     
-                     <div className="space-y-2 text-xs">
-                       <div className="flex justify-between items-center py-1 border-b border-slate-800/40">
-                         <span className="text-slate-400">Erişim Personeli:</span>
-                         <span className="font-semibold text-slate-200">{erisim ? `${erisim.ad} ${erisim.soyad}` : 'Atanmamış'}</span>
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-1 border-b border-slate-800/40">
-                         <span className="text-slate-400">Şoför:</span>
-                         {sofor ? (
-                           <span className="font-semibold text-emerald-400">{sofor.ad} {sofor.soyad}</span>
-                         ) : (
-                           <span className="font-semibold text-red-500 animate-pulse flex items-center gap-1">
-                             <AlertTriangle className="w-3.5 h-3.5" /> Sürücü Eksik!
-                           </span>
-                         )}
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-1">
-                         <span className="text-slate-400">Kule Elemanı:</span>
-                         <span className="font-semibold text-slate-200">{kule ? `${kule.ad} ${kule.soyad}` : 'Atanmamış'}</span>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div className="mt-4 pt-3 border-t border-slate-800/40 flex justify-between items-center text-[10px] text-slate-500">
-                     <span>Posta Kadrosu: {activeShiftStaff.length} kişi</span>
-                     <span>Yüksek İrtifa</span>
-                   </div>
-                 </div>
-               )
-             })()}
-           </div>
-         </CardContent>
-       </Card>
+
 
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-warning text-sm">
@@ -1201,7 +907,11 @@ export default function PersonelYonetimPage() {
             {filteredPersonnel.map(person => {
               const isAdmin = person.rol === "Admin" || person.rol === "Editor"
               const isLeader = person.unvan.includes("Çavuş") || person.unvan.includes("Amir") || person.unvan.includes("Müdür")
-              const perms = permissions[person.sicil_no] || { view_only: true, can_approve: false, can_print: false }
+              const perms = permissions[person.sicil_no] || {
+                view_only: person.view_only ?? true,
+                can_approve: person.can_approve ?? false,
+                can_print: person.can_print ?? false
+              }
               return (
                 <div key={person.sicil_no} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                   
@@ -1540,14 +1250,16 @@ export default function PersonelYonetimPage() {
                             >
                               <Copy className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => handlePrintSinglePassword(selectedPerson, resetPasswordSuccess)}
-                              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded transition-colors cursor-pointer"
-                              type="button"
-                              title="Yazdır / İndir"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </button>
+                            {currentUserCanPrint && (
+                              <button
+                                onClick={() => handlePrintSinglePassword(selectedPerson, resetPasswordSuccess)}
+                                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded transition-colors cursor-pointer"
+                                type="button"
+                                title="Yazdır / İndir"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                           <p className="text-[10px] text-muted-foreground">Kullanıcı bu şifreyle giriş yaptıktan sonra şifresini değiştirmelidir.</p>
                         </div>

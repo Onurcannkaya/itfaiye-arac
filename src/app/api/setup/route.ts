@@ -128,7 +128,7 @@ const MEMUR_LIST_RAW: Omit<PersonnelEntry, "sicil_no">[] = [
   { ad: "Ahmet", soyad: "Çelimli", unvan: "Amir", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
   { ad: "Ahmet", soyad: "Yıldız", unvan: "Amir", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
   { ad: "İrfan", soyad: "Kandur", unvan: "Amir", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
-  { ad: "Seyfi Ali", soyad: "Gül", unvan: "Amir", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
+  { ad: "Seyfi Ali", soyad: "Gül", unvan: "Amir", rol: "Admin", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
   { ad: "Ahmet", soyad: "Boztaş", unvan: "Amir", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
   { ad: "Ebubekir", soyad: "Kuzgun", unvan: "İdari İşler", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
   { ad: "Bilal", soyad: "Demir", unvan: "Baş Şoför", rol: "Editor", posta_no: 0, istasyon: "Merkez İstasyonu", view_only: false, can_approve: true, can_print: true },
