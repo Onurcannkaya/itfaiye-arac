@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package, HelpCircle } from "lucide-react"
+import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package, HelpCircle, Flame, ShieldAlert, GraduationCap, Truck } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import * as XLSX from "xlsx"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell } from "recharts"
 
 type UnifiedLog = {
   id: string
@@ -134,6 +135,40 @@ export default function LogsReportsPage() {
   const [logs, setLogs] = useState<UnifiedLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+
+  // Stats Dashboard States
+  const [statsData, setStatsData] = useState<{
+    total_trainings: number
+    total_training_hours: number
+    total_people_reached: number
+    car_fires_count: number
+    rescue_operations_count: number
+    active_personnel_count: number
+    fleet_readiness_percent: number
+  } | null>(null)
+
+  const [chartsData, setChartsData] = useState<{
+    lineChartData: { name: string; Yangın: number; Kurtarma: number }[]
+    donutChartData: { name: string; value: number }[]
+  } | null>(null)
+
+  const [statsLoading, setStatsLoading] = useState(true)
+
+  const fetchStats = async () => {
+    setStatsLoading(true)
+    try {
+      const res = await fetch("/api/reports/stats")
+      const data = await res.json()
+      if (data.success) {
+        setStatsData(data.stats)
+        setChartsData(data.charts)
+      }
+    } catch (err) {
+      console.error("Error fetching stats:", err)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
 
   // Filters
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "7days">("7days")
@@ -377,6 +412,7 @@ export default function LogsReportsPage() {
   useEffect(() => {
     fetchLogs()
     fetchShiftLogs()
+    fetchStats()
   }, [dateFilter]) // Auto-fetch on date toggle
 
   // Handle manual search trigger for text inputs
@@ -384,6 +420,7 @@ export default function LogsReportsPage() {
     if (e) e.preventDefault()
     fetchLogs()
     fetchShiftLogs()
+    fetchStats()
   }
 
   const clearFilters = () => {
@@ -394,6 +431,7 @@ export default function LogsReportsPage() {
     setTimeout(() => {
       fetchLogs()
       fetchShiftLogs()
+      fetchStats()
     }, 0)
   }
 
@@ -423,6 +461,169 @@ export default function LogsReportsPage() {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Sistem Logları ve Raporlar</h1>
         <p className="text-muted-foreground mt-1 text-sm">Tüm araç kontrolleri ve envanter sayımlarının birleştirilmiş görünümü.</p>
       </div>
+
+      {/* Dynamic Stats Cards */}
+      {statsLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 bg-slate-900/40 border border-slate-800/50 rounded-2xl animate-pulse"></div>
+          ))}
+        </div>
+      ) : statsData && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Toplam Eğitim */}
+          <div className="bg-slate-950/70 backdrop-blur-md border border-cyan-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(6,182,212,0.05)] flex flex-col justify-between hover:border-cyan-500/40 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4" />
+                Toplam Eğitim
+              </span>
+              <span className="text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Faaliyet</span>
+            </div>
+            <div className="mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-cyan-300 font-mono">{statsData.total_trainings}</span>
+              <span className="text-slate-400 text-xs ml-1.5 font-medium">Kayıt</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+              {statsData.total_training_hours} Saat Eğitim / {statsData.total_people_reached} Kişi
+            </p>
+          </div>
+
+          {/* Card 2: Araç Yangınları */}
+          <div className="bg-slate-950/70 backdrop-blur-md border border-red-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(239,68,68,0.05)] flex flex-col justify-between hover:border-red-500/40 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Flame className="w-4 h-4" />
+                Araç Yangınları
+              </span>
+              <span className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Yangın</span>
+            </div>
+            <div className="mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-red-300 font-mono">{statsData.car_fires_count}</span>
+              <span className="text-slate-400 text-xs ml-1.5 font-medium">Müdahale</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+              Söndürülen / Kontrol Altına Alınan
+            </p>
+          </div>
+
+          {/* Card 3: Kurtarma Operasyonları */}
+          <div className="bg-slate-950/70 backdrop-blur-md border border-emerald-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(16,185,129,0.05)] flex flex-col justify-between hover:border-emerald-500/40 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4" />
+                Kurtarma Operasyonları
+              </span>
+              <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Kurtarma</span>
+            </div>
+            <div className="mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono">{statsData.rescue_operations_count}</span>
+              <span className="text-slate-400 text-xs ml-1.5 font-medium">Vaka</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+              Trafik Kazası ve Afet Müdahale
+            </p>
+          </div>
+
+          {/* Card 4: Filo Hazır Bulunuşluk */}
+          <div className="bg-slate-950/70 backdrop-blur-md border border-amber-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(245,158,11,0.05)] flex flex-col justify-between hover:border-amber-500/40 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Truck className="w-4 h-4" />
+                Filo Bulunuşluğu
+              </span>
+              <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                {statsData.active_personnel_count} Nöbetçi
+              </span>
+            </div>
+            <div className="mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">%{statsData.fleet_readiness_percent}</span>
+              <span className="text-slate-400 text-xs ml-1.5 font-medium">Hazır Hız</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+              Faal ve Muayenesi Tam Filo
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Charts Grid */}
+      {statsLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-80 bg-slate-900/40 border border-slate-800/50 rounded-2xl"></div>
+          ))}
+        </div>
+      ) : chartsData && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Chart 1: Line Chart */}
+          <Card className="bg-slate-950/70 backdrop-blur-md border border-slate-800/60 p-4 shadow-xl">
+            <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-200">Son 6 Ay Vaka Trendleri</CardTitle>
+                <CardDescription className="text-[10px]">Yangın ve Kurtarma Vakalarının Aylık Dağılımı</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartsData.lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}
+                    labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '11px' }}
+                    itemStyle={{ fontSize: '11px' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                  <Line type="monotone" dataKey="Yangın" stroke="#ef4444" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="Kurtarma" stroke="#10b981" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Chart 2: Donut Chart */}
+          <Card className="bg-slate-950/70 backdrop-blur-md border border-slate-800/60 p-4 shadow-xl">
+            <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-200">İstasyon Vaka Yük Dağılımı</CardTitle>
+                <CardDescription className="text-[10px]">Kurumsal Dağılım Oranları</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 h-72 flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartsData.donutChartData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {chartsData.donutChartData.map((entry, index) => {
+                      const colors = ["#06b6d4", "#10b981", "#eab308"];
+                      return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                    })}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}
+                    itemStyle={{ fontSize: '11px', color: '#fff' }}
+                  />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '11px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute top-[37%] flex flex-col items-center justify-center select-none pointer-events-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Toplam Vaka</span>
+                <span className="text-xl font-black text-slate-100 mt-1 font-mono">
+                  {chartsData.donutChartData.reduce((acc, curr) => acc + curr.value, 0)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* FILTERS */}
       <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
