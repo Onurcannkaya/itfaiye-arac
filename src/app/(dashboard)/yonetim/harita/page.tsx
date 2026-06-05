@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import PageGuard from "@/components/PageGuard"
 import dynamic from "next/dynamic"
 import { api } from "@/lib/api"
@@ -100,8 +101,10 @@ const parseLocation = (loc: any): [number, number] | null => {
   return null
 }
 
-export default function HaritaPage() {
+function HaritaContent() {
   const { user } = useAuthStore()
+  const searchParams = useSearchParams()
+  const incidentId = searchParams.get('incidentId')
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [hydrants, setHydrants] = useState<Hydrant[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
@@ -194,6 +197,21 @@ export default function HaritaPage() {
       setLoading(false)
     }
   }
+
+  // Focus on incident if incidentId is passed in URL query params
+  useEffect(() => {
+    if (incidentId && incidents.length > 0) {
+      const targetInc = incidents.find(i => String(i.id) === String(incidentId))
+      if (targetInc) {
+        const coords = parseLocation(targetInc.location)
+        if (coords) {
+          // Focus on target incident: [lat, lng] -> [coords[1], coords[0]]
+          setFocusLocation([coords[1], coords[0]])
+          console.log('[URL Param] Fokuslanılan Vaka:', targetInc)
+        }
+      }
+    }
+  }, [incidentId, incidents])
 
   const handleUpdateHydrantStatus = async (id: string, newStatus: string) => {
     try {
@@ -709,5 +727,18 @@ export default function HaritaPage() {
 
     </div>
     </PageGuard>
+  )
+}
+
+export default function HaritaPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full h-[calc(100vh-8rem)] flex flex-col items-center justify-center bg-surface/50 border rounded-xl border-dashed">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+        <span className="text-sm font-medium text-muted-foreground">Harita Yükleniyor...</span>
+      </div>
+    }>
+      <HaritaContent />
+    </Suspense>
   )
 }
