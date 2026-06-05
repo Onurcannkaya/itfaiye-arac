@@ -18,7 +18,8 @@ import {
   Truck, 
   FileSpreadsheet, 
   Search,
-  Warehouse
+  Warehouse,
+  HelpCircle
 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuthStore } from "@/lib/authStore"
@@ -89,6 +90,18 @@ const DURUM_OPTIONS = [
   { value: "Arızalı", label: "Arızalı (Bakımda)", colorClass: "text-rose-400" },
   { value: "Kayıp/Yok", label: "Kayıp / Yok", colorClass: "text-slate-400" }
 ];
+
+function InfoTooltip({ content }: { content: string }) {
+  return (
+    <div className="relative group inline-block ml-1.5 align-middle">
+      <HelpCircle className="w-4 h-4 text-slate-400 hover:text-cyan-400 cursor-help transition-colors" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block bg-slate-950/95 backdrop-blur-md text-slate-200 text-xs rounded-xl p-2.5 w-64 border border-slate-800 shadow-2xl z-50 transition-all text-center leading-normal font-sans font-medium whitespace-normal">
+        {content}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-950" />
+      </div>
+    </div>
+  )
+}
 
 export default function EnvanteriPage() {
   const { user } = useAuthStore()
@@ -587,6 +600,7 @@ export default function EnvanteriPage() {
                 <Printer className="w-4 h-4 mr-2" />
                 Etiketleri Yazdır
               </Button>
+              <InfoTooltip content="Bu butona basarak seçili aracın içindeki tüm malzemelerin QR kodlu etiketlerini tek tıkla yazdırabilirsiniz." />
             </div>
           )}
 
@@ -861,6 +875,7 @@ export default function EnvanteriPage() {
                         </>
                       )}
                     </Button>
+                    <InfoTooltip content="Bu butona basarak girdiğiniz sayım veya değişiklik bilgilerini anında sisteme kaydedebilirsiniz." />
                   </div>
                 </Card>
               )}

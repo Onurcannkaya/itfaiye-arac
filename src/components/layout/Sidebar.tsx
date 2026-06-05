@@ -17,7 +17,8 @@ import {
   FileText, 
   ShieldAlert, 
   History,
-  Combine
+  Combine,
+  BookOpen
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useAuthStore } from '@/lib/authStore'
@@ -69,6 +70,7 @@ export function Sidebar() {
         { href: "/yonetim/olaylar", label: "Olay & Vaka Raporları", icon: FileText, visible: !isEr },
         { href: "/yonetim/yetkiler", label: "Yetki & Rol Matrisi", icon: ShieldAlert, visible: user?.rol === 'Admin' || user?.unvan === 'Müdür' },
         { href: "/yonetim/raporlar", label: "Sistem Raporları & Loglar", icon: History, visible: !isEr },
+        { href: "/yonetim/kilavuz", label: "Kullanım Kılavuzu", icon: BookOpen, visible: true },
       ]
     }
   ]

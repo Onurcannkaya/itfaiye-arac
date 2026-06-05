@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X } from 'lucide-react'
+import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X, BookOpen } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
@@ -592,6 +592,14 @@ export function Topbar() {
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2">Hesap İşlemleri</p>
                 </div>
                 <div className="p-1.5 space-y-1">
+                  <Link 
+                    href="/yonetim/kilavuz"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                  >
+                    <BookOpen className="w-4 h-4 text-cyan-400" />
+                    <span>Kullanım Kılavuzu</span>
+                  </Link>
                   <Link 
                     href="/sifre-degistir"
                     onClick={() => setIsProfileOpen(false)}

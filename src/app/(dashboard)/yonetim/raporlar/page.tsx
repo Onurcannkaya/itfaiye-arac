@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package } from "lucide-react"
+import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package, HelpCircle } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import jsPDF from "jspdf"
@@ -116,6 +116,18 @@ function groupInventoryLogs(logs: UnifiedLog[]): (UnifiedLog | GroupedLog)[] {
 
 function isGroupedLog(item: UnifiedLog | GroupedLog): item is GroupedLog {
   return 'items' in item && Array.isArray(item.items)
+}
+
+function InfoTooltip({ content }: { content: string }) {
+  return (
+    <div className="relative group inline-block ml-1.5 align-middle">
+      <HelpCircle className="w-4 h-4 text-slate-400 hover:text-cyan-400 cursor-help transition-colors" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block bg-slate-950/95 backdrop-blur-md text-slate-200 text-xs rounded-xl p-2.5 w-64 border border-slate-800 shadow-2xl z-50 transition-all text-center leading-normal font-sans font-medium whitespace-normal">
+        {content}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-950" />
+      </div>
+    </div>
+  )
 }
 
 export default function LogsReportsPage() {
@@ -699,23 +711,29 @@ export default function LogsReportsPage() {
               Personel mesai giriş-çıkış logları ve aktif çalışma süreleri.
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleExportPDF} 
-              className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-semibold gap-1.5"
-            >
-              <span>📄</span> PDF İndir
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleExportExcel} 
-              className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-semibold gap-1.5"
-            >
-              <span>📊</span> Excel İndir
-            </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExportPDF} 
+                className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-semibold gap-1.5"
+              >
+                <span>📄</span> PDF İndir
+              </Button>
+              <InfoTooltip content="Bu butona basarak personel görev başlangıç ve devir-teslim listesini PDF dosyası olarak bilgisayarınıza indirebilirsiniz." />
+            </div>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExportExcel} 
+                className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-semibold gap-1.5"
+              >
+                <span>📊</span> Excel İndir
+              </Button>
+              <InfoTooltip content="Bu butona basarak personel görev başlangıç ve devir-teslim listesini Excel (XLSX) dosyası olarak bilgisayarınıza indirebilirsiniz." />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
