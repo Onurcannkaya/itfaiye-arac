@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy } from "lucide-react"
+import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer, Download } from "lucide-react"
 import { api } from "@/lib/api"
 import { type Personnel } from "@/types"
 import { cn, calculateRemainingDays } from "@/lib/utils"
@@ -399,6 +399,72 @@ export default function PersonelYonetimPage() {
     setResetPasswordSuccess(null)
 
     setIsEditModalOpen(true)
+  }
+
+  const handlePrintSinglePassword = (person: any, newPassword: string) => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Geçici Şifre Teslim Formu</title>
+          <style>
+            body { font-family: 'Times New Roman', Times, serif; padding: 40px; color: #333; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .header h1 { font-size: 20px; margin: 5px 0; text-transform: uppercase; }
+            .header h2 { font-size: 16px; margin: 5px 0; font-weight: normal; }
+            .content { margin-top: 30px; font-size: 14px; line-height: 1.6; }
+            .password-box { text-align: center; margin: 30px 0; padding: 20px; border: 2px dashed #333; background: #f9f9f9; }
+            .footer { margin-top: 80px; display: flex; justify-content: space-between; font-size: 14px; }
+            .signature-box { text-align: center; width: 200px; }
+            .signature-line { margin-top: 60px; border-top: 1px solid #333; padding-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>T.C. SİVAS BELEDİYESİ</h1>
+            <h2>İtfaiye Müdürlüğü Bilgi İşlem Birimi</h2>
+            <h2 style="font-weight: bold; margin-top: 15px;">BİREYSEL GEÇİCİ ŞİFRE TESLİM TUTANAĞI</h2>
+          </div>
+          <div class="content">
+            <p><strong>Tarih:</strong> ${new Date().toLocaleDateString('tr-TR')}</p>
+            <p><strong>Teslim Eden Amir:</strong> ${currentUser?.ad} ${currentUser?.soyad}</p>
+            <p>
+              Aşağıda bilgileri bulunan personele ait sisteme giriş geçici şifresi oluşturulmuş olup,
+              ilk girişte şifresini değiştirmesi gerektiği tebliğ edilerek şifre bilgisi kapalı zarf/teslim tutanağı ile kendisine/sorumlu amirine teslim edilmiştir.
+            </p>
+            
+            <div class="password-box">
+              <p style="margin: 0 0 10px 0; font-size: 16px;"><strong>Personel Bilgileri</strong></p>
+              <p style="margin: 5px 0;">Ad Soyad: <strong>${person.ad} ${person.soyad}</strong></p>
+              <p style="margin: 5px 0;">Sicil No: <strong>${person.sicil_no}</strong></p>
+              <p style="margin: 15px 0 5px 0; font-size: 16px;"><strong>Geçici Şifre</strong></p>
+              <p style="margin: 0; font-size: 24px; font-family: monospace; font-weight: bold; letter-spacing: 3px; color: #b45309;">${newPassword}</p>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="signature-box">
+              <strong>TESLİM EDEN</strong>
+              <div style="font-size: 12px; margin-top: 5px;">${currentUser?.ad} ${currentUser?.soyad}</div>
+              <div class="signature-line">İmza</div>
+            </div>
+            <div class="signature-box">
+              <strong>TESLİM ALAN</strong>
+              <div style="font-size: 12px; margin-top: 5px;">${person.ad} ${person.soyad} / Sorumlu Amir</div>
+              <div class="signature-line">İmza</div>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() { window.close(); };
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
   }
 
   const handleResetPassword = async (sicil_no: string) => {
@@ -1473,6 +1539,14 @@ export default function PersonelYonetimPage() {
                               type="button"
                             >
                               <Copy className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handlePrintSinglePassword(selectedPerson, resetPasswordSuccess)}
+                              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded transition-colors cursor-pointer"
+                              type="button"
+                              title="Yazdır / İndir"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
                             </button>
                           </div>
                           <p className="text-[10px] text-muted-foreground">Kullanıcı bu şifreyle giriş yaptıktan sonra şifresini değiştirmelidir.</p>

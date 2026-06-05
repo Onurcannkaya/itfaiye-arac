@@ -362,6 +362,20 @@ export async function POST() {
       )
     `);
 
+    log("Creating personnel_shifts_log table...");
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.personnel_shifts_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        personnel_id UUID NOT NULL REFERENCES public.personnel(id) ON DELETE CASCADE,
+        personel_ad_soyad VARCHAR NOT NULL,
+        istasyon VARCHAR NOT NULL,
+        posta VARCHAR NOT NULL,
+        giris_tarihi TIMESTAMPTZ NOT NULL,
+        cikis_tarihi TIMESTAMPTZ DEFAULT NULL,
+        durum VARCHAR NOT NULL CHECK (durum IN ('GÖREVDE', 'TAMAMLANDI'))
+      )
+    `);
+
     log("Dropping old vehicle_inventory table if exists...");
     await query(`DROP TABLE IF EXISTS public.vehicle_inventory CASCADE`);
 

@@ -53,18 +53,29 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
 
     const fetchLatestDutyStatus = async () => {
       try {
-        const res = await api
-          .from<DutyLog>('duty_logs')
-          .select('*')
+        // Query the personnel ID first
+        const personnelRes = await api
+          .from('personnel')
+          .select('id')
           .eq('sicil_no', user.sicilNo)
-          .order('timestamp', { ascending: false })
-          .limit(1);
+          .single();
 
-        const logs = res.data as DutyLog[] | null;
-        if (logs && Array.isArray(logs) && logs.length > 0) {
-          const latest = logs[0];
-          if (latest.action === 'START_DUTY') {
-            setDutyStatus('AKTIF');
+        if (personnelRes.data?.id) {
+          const res = await api
+            .from('personnel_shifts_log')
+            .select('*')
+            .eq('personnel_id', personnelRes.data.id)
+            .order('giris_tarihi', { ascending: false })
+            .limit(1);
+
+          const logs = res.data as any[] | null;
+          if (logs && Array.isArray(logs) && logs.length > 0) {
+            const latest = logs[0];
+            if (latest.durum === 'GÖREVDE' && !latest.cikis_tarihi) {
+              setDutyStatus('AKTIF');
+            } else {
+              setDutyStatus('TAMAMLANDI');
+            }
           } else {
             setDutyStatus('TAMAMLANDI');
           }
@@ -144,30 +155,37 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
     setBtnLoading(true);
     setStatus("idle");
 
-    const nextAction = dutyStatus === 'AKTIF' ? 'END_DUTY' : 'START_DUTY';
+    const endpoint = dutyStatus === 'AKTIF' ? '/api/shift-log/end' : '/api/shift-log/start';
     const nextStatus = dutyStatus === 'AKTIF' ? 'TAMAMLANDI' : 'AKTIF';
-    const lat = coords?.lat || 0;
-    const lng = coords?.lng || 0;
 
     try {
-      const logData: DutyLog = {
-        sicil_no: user.sicilNo,
-        action: nextAction,
-        timestamp: new Date().toISOString(),
-        latitude: lat,
-        longitude: lng
-      };
+      const authHeaders: Record<string, string> = {};
+      const authData = localStorage.getItem('sivas-itfaiye-auth');
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        if (parsed.state?.token) {
+          authHeaders['Authorization'] = `Bearer ${parsed.state.token}`;
+        }
+      }
 
-      const res = await api.insert('duty_logs', logData);
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders
+        }
+      });
 
-      if (res.error) {
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
         setStatus("error");
-        setMessage(`Kayıt hatası: ${res.error}`);
+        setMessage(`Kayıt hatası: ${data.error || 'Bilinmeyen hata'}`);
       } else {
         setDutyStatus(nextStatus);
         setStatus("success");
         setMessage(
-          nextAction === 'START_DUTY'
+          dutyStatus !== 'AKTIF'
             ? "Vardiyanız başarıyla başlatıldı. İyi nöbetler!"
             : "Vardiyanız başarıyla sonlandırıldı. İyi istirahatler!"
         );

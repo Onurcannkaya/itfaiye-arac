@@ -29,7 +29,8 @@ const ALLOWED_TABLES = [
   'vehicle_maintenances', 'fire_hydrants', 'spatial_addresses',
   'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks',
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
-  'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory'
+  'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
+  'personnel_shifts_log'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -125,6 +126,25 @@ async function ensureDutyLogsTableExists() {
     `);
   } catch (err) {
     console.error('ensureDutyLogsTableExists hatası:', err);
+  }
+}
+
+async function ensurePersonnelShiftsLogTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.personnel_shifts_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        personnel_id UUID NOT NULL REFERENCES public.personnel(id) ON DELETE CASCADE,
+        personel_ad_soyad VARCHAR NOT NULL,
+        istasyon VARCHAR NOT NULL,
+        posta VARCHAR NOT NULL,
+        giris_tarihi TIMESTAMPTZ NOT NULL,
+        cikis_tarihi TIMESTAMPTZ DEFAULT NULL,
+        durum VARCHAR NOT NULL CHECK (durum IN ('GÖREVDE', 'TAMAMLANDI'))
+      )
+    `);
+  } catch (err) {
+    console.error('ensurePersonnelShiftsLogTableExists hatası:', err);
   }
 }
 
@@ -465,6 +485,9 @@ export async function GET(
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
     }
+    if (table === 'personnel_shifts_log') {
+      await ensurePersonnelShiftsLogTableExists();
+    }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
       await autoSeedVehiclesIfEmpty();
@@ -545,6 +568,9 @@ export async function POST(
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
+    }
+    if (table === 'personnel_shifts_log') {
+      await ensurePersonnelShiftsLogTableExists();
     }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
@@ -670,6 +696,9 @@ export async function PATCH(
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
+    }
+    if (table === 'personnel_shifts_log') {
+      await ensurePersonnelShiftsLogTableExists();
     }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
@@ -820,6 +849,9 @@ export async function DELETE(
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
+    }
+    if (table === 'personnel_shifts_log') {
+      await ensurePersonnelShiftsLogTableExists();
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
