@@ -29,7 +29,8 @@ import {
   Box,
   Plus,
   Search,
-  X
+  X,
+  Loader2
 } from "lucide-react"
 import { InventoryList } from "@/components/vehicle/InventoryList"
 import { Vehicle3DSchematic } from "@/components/vehicle/Vehicle3DSchematic"
@@ -42,6 +43,8 @@ import { QRCodeSVG } from "qrcode.react"
 import { APP_BASE_URL } from "@/lib/constants"
 import { useAuthStore } from "@/lib/authStore"
 import { InventoryAddEditModal } from "@/components/inventory/InventoryAddEditModal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
+import { Button } from "@/components/ui/Button"
 import { InventoryItem, Vehicle } from "@/types"
 export interface AracBakimGecmisi {
   id: number;
@@ -99,6 +102,18 @@ export default function VehicleDetailPage() {
   const [activeCompartment, setActiveCompartment] = useState<string | null>(null)
   const [showTimeline, setShowTimeline] = useState(false)
   const [maintenanceLogs, setMaintenanceLogs] = useState<AracBakimGecmisi[]>([])
+
+  // Manuel Bakım Giriş Modalı States
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false)
+  const [isSavingMaintenance, setIsSavingMaintenance] = useState(false)
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    tip: 'tamir' as 'tamir' | 'yag_bakimi',
+    islem_turu: 'Arıza/Tamir',
+    tarih: new Date().toISOString().split('T')[0],
+    aciklama: '',
+    maliyet: '',
+    kilometre: ''
+  })
 
   // Arama Barı States
   const [searchQuery, setSearchQuery] = useState("")
@@ -298,6 +313,66 @@ export default function VehicleDetailPage() {
   const handleOpenAddModal = () => {
     setModalItem(null)
     setIsModalOpen(true)
+  }
+
+  const handleSaveMaintenance = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!vehicle) return
+    if (!maintenanceForm.aciklama.trim()) {
+      alert("Lütfen bir açıklama girin.")
+      return
+    }
+
+    setIsSavingMaintenance(true)
+    try {
+      const formattedDesc = `${maintenanceForm.islem_turu}: ${maintenanceForm.aciklama.trim()} ${maintenanceForm.kilometre ? `(KM: ${maintenanceForm.kilometre})` : ''}`
+      const payload = {
+        plaka: vehicle.plaka,
+        tarih: maintenanceForm.tarih,
+        tip: (maintenanceForm.islem_turu === 'Yağ Değişimi' || maintenanceForm.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' as const : 'tamir' as const,
+        aciklama: formattedDesc,
+        maliyet: Number(maintenanceForm.maliyet) || 0,
+        durum: 'Onaylandı'
+      }
+
+      const { error } = await api.insert('arac_bakim_gecmisi', payload)
+      if (error) throw error
+
+      // Audit log: Bakım kaydı ekleme logu
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'vehicle_maintenance_add',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: vehicle.plaka,
+          details: { tip: payload.tip, aciklama: formattedDesc, maliyet: payload.maliyet },
+        }),
+      }).catch(err => console.error('[AuditLog] Bakım ekleme logu gönderilemedi:', err))
+
+      // Refresh chronological logs
+      const { data: logs } = await api.from<AracBakimGecmisi>('arac_bakim_gecmisi')
+        .eq('plaka', vehicle.plaka)
+        .order('tarih', { ascending: false }) as { data: AracBakimGecmisi[] | null; error: unknown }
+      setMaintenanceLogs(logs || [])
+
+      // Reset form & close modal
+      setMaintenanceForm({
+        tip: 'tamir',
+        islem_turu: 'Arıza/Tamir',
+        tarih: new Date().toISOString().split('T')[0],
+        aciklama: '',
+        maliyet: '',
+        kilometre: ''
+      })
+      setIsMaintenanceModalOpen(false)
+    } catch (err: any) {
+      console.error("Bakım ekleme hatası:", err)
+      alert("Kayıt oluşturulurken bir hata oluştu.")
+    } finally {
+      setIsSavingMaintenance(false)
+    }
   }
 
   const handleOpenEditModal = (item: InventoryItem) => {
@@ -1244,10 +1319,20 @@ export default function VehicleDetailPage() {
       {/* Cam Morfolojili Premium Bakım & Tamir Kronolojisi Zaman Çizelgesi */}
       <Card className="bg-slate-955/40 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.05)] overflow-hidden transition-all duration-300 print:hidden mt-8">
         <CardHeader className="pb-3 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <CardTitle className="text-base flex items-center gap-2 font-mono text-cyan-400">
-            <History className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] animate-pulse" />
-            <span>📋 KRONOLOJİK BAKIM & TAMİR ZAMAN ÇİZELGESİ</span>
-          </CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-base flex items-center gap-2 font-mono text-cyan-400">
+              <History className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] animate-pulse" />
+              <span>📋 KRONOLOJİK BAKIM & TAMİR ZAMAN ÇİZELGESİ</span>
+            </CardTitle>
+            {!isEr && (
+              <Button
+                onClick={() => setIsMaintenanceModalOpen(true)}
+                className="bg-cyan-500/10 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-500/30 text-cyan-400 text-xs font-bold px-3 py-1 h-7 rounded-lg transition duration-150 flex items-center gap-1 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" /> Manuel Bakım Ekle
+              </Button>
+            )}
+          </div>
           <div className="text-xs text-slate-400 font-mono">
             Toplam: <span className="text-cyan-400 font-bold">{maintenanceLogs.length}</span> Kayıt Bildirildi
           </div>
@@ -1361,6 +1446,119 @@ export default function VehicleDetailPage() {
           currentCompartment={activeCompartment || ""}
           availableCompartments={compartKeys}
         />
+      )}
+
+      {isMaintenanceModalOpen && vehicle && (
+        <Dialog open={isMaintenanceModalOpen} onOpenChange={setIsMaintenanceModalOpen}>
+          <DialogContent className="w-[94vw] sm:w-full sm:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
+            <DialogHeader className="p-5 border-b border-slate-900 bg-slate-900/20 shrink-0">
+              <DialogTitle className="flex items-center gap-2 text-lg text-slate-100">
+                <Wrench className="w-5 h-5 text-cyan-400" />
+                Manuel Bakım & Tamir Ekle
+              </DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={handleSaveMaintenance} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+                <div className="bg-slate-900/30 p-3 rounded-xl border border-slate-850/60 text-xs text-slate-400 flex items-center gap-2 font-mono">
+                  <span>🚒 Plaka:</span>
+                  <span className="font-bold text-slate-200">{vehicle.plaka}</span>
+                  <span>| Model:</span>
+                  <span className="font-bold text-slate-200">{vehicle.marka} {vehicle.model}</span>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase text-slate-400">İşlem Türü</label>
+                  <select 
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    value={maintenanceForm.islem_turu}
+                    onChange={(e) => setMaintenanceForm(prev => ({ ...prev, islem_turu: e.target.value }))}
+                  >
+                    <option value="Periyodik Bakım">Periyodik Bakım</option>
+                    <option value="Arıza/Tamir">Arıza/Tamir</option>
+                    <option value="Yağ Değişimi">Yağ Değişimi</option>
+                    <option value="Lastik">Lastik Değişimi</option>
+                    <option value="Kaza/Hasar">Kaza/Hasar</option>
+                    <option value="Diğer">Diğer İşlem</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-slate-400">İşlem Tarihi</label>
+                    <input 
+                      type="date"
+                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background font-mono"
+                      value={maintenanceForm.tarih}
+                      onChange={(e) => setMaintenanceForm(prev => ({ ...prev, tarih: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-slate-400">Araç Kilometresi (KM)</label>
+                    <input 
+                      type="number"
+                      placeholder="Örn: 124500"
+                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background font-mono"
+                      value={maintenanceForm.kilometre}
+                      onChange={(e) => setMaintenanceForm(prev => ({ ...prev, kilometre: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase text-slate-400">Maliyet (₺ TRY)</label>
+                  <input 
+                    type="number"
+                    placeholder="Örn: 4500"
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background font-mono"
+                    value={maintenanceForm.maliyet}
+                    onChange={(e) => setMaintenanceForm(prev => ({ ...prev, maliyet: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase text-slate-400">Açıklama / Detaylar</label>
+                  <textarea 
+                    rows={4}
+                    placeholder="Yapılan işlemler, değişen parçalar vb..."
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background min-h-[80px]"
+                    value={maintenanceForm.aciklama}
+                    onChange={(e) => setMaintenanceForm(prev => ({ ...prev, aciklama: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => setIsMaintenanceModalOpen(false)} 
+                  disabled={isSavingMaintenance} 
+                  className="w-full sm:w-auto h-10"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSavingMaintenance} 
+                  className="w-full sm:w-auto min-w-[140px] h-10 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold"
+                >
+                  {isSavingMaintenance ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Kaydediliyor...
+                    </span>
+                  ) : (
+                    "Kaydı Ekle"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Hidden Print Area */}

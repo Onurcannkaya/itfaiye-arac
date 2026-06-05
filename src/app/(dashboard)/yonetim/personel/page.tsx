@@ -544,6 +544,38 @@ export default function PersonelYonetimPage() {
     }
   }
 
+  const handleDeactivatePersonnel = async (sicil_no: string) => {
+    if (!window.confirm("Bu personelin teşkilat ile ilişiğini kesmek ve sistemden kaldırmak istediğinize emin misiniz?")) {
+      return
+    }
+    setIsSavingEdit(true)
+    try {
+      const { error: updateErr } = await api.update('personnel', { aktif: false }, { sicil_no })
+      if (updateErr) throw updateErr
+
+      // Audit log: Personel ilişik kesme logu
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'personnel_deactivate',
+          actor_sicil_no: currentUser?.sicilNo || 'unknown',
+          actor_name: currentUser ? `${currentUser.ad} ${currentUser.soyad}` : 'Bilinmeyen',
+          target: sicil_no,
+          details: { status: 'deactivated' },
+        }),
+      }).catch(err => console.error('[AuditLog] Personel ilişik kesme logu gönderilemedi:', err))
+
+      await fetchPersonnel()
+      setIsEditModalOpen(false)
+    } catch (err) {
+      console.error("Personel ilişik kesme hatası:", err)
+      alert("Personel ilişiği kesilirken bir hata oluştu.")
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
   const getCertStatus = useCallback((personSicil: string, certType: string) => {
     const cert = certifications.find(c => c.sicil_no === personSicil && c.tip === certType)
     if (!cert || !cert.gecerlilik_tarihi) {
@@ -1287,6 +1319,15 @@ export default function PersonelYonetimPage() {
           )}
           
           <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
+            <Button 
+              type="button"
+              variant="danger" 
+              onClick={() => selectedPerson && handleDeactivatePersonnel(selectedPerson.sicil_no)} 
+              disabled={isSavingEdit || !selectedPerson} 
+              className="mr-auto bg-red-950/40 border border-red-500/30 hover:bg-red-900/40 text-red-400 text-xs font-semibold h-10"
+            >
+              İlişiğini Kes (Sistemden Kaldır)
+            </Button>
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingEdit} className="w-full sm:w-auto h-10">
               İptal
             </Button>
