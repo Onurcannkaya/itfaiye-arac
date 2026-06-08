@@ -27,8 +27,10 @@ function getUnvanPriority(unvan: string): number {
 function sortByHierarchy(list: Personnel[]): Personnel[] {
   return [...list].sort((a, b) => {
     // Raporlu, İzinli veya Dış Görev olanları listenin en altına grupla
-    const isAbsentA = a.durum === 'İzinli' || a.durum === 'Raporlu' || (a.durum || '').toLowerCase().includes('dış görev');
-    const isAbsentB = b.durum === 'İzinli' || b.durum === 'Raporlu' || (b.durum || '').toLowerCase().includes('dış görev');
+    const durumA = (a.durum || '').toLowerCase();
+    const durumB = (b.durum || '').toLowerCase();
+    const isAbsentA = durumA.includes('izinli') || durumA.includes('raporlu') || durumA.includes('dış görev');
+    const isAbsentB = durumB.includes('izinli') || durumB.includes('raporlu') || durumB.includes('dış görev');
     
     if (isAbsentA !== isAbsentB) {
       return isAbsentA ? 1 : -1;
@@ -97,11 +99,31 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
     (user.unvan || '').toLowerCase().includes('çavuş')
   )
 
+  // Durum açıklamasına göre personelin geçici görev yaptığı aktif istasyonu bulur
+  const getActiveIstasyon = (p: Personnel): string => {
+    if (p.durum && p.durum.startsWith('Geçici Şube Görevi')) {
+      const parts = p.durum.split(' - ');
+      if (parts.length > 1) {
+        const branchName = parts[1].toLowerCase();
+        if (branchName.includes('esentepe')) {
+          return 'Esentepe Şubesi';
+        }
+        if (branchName.includes('organize') || branchName.includes('osb')) {
+          return 'Organize Sanayi Bölgesi Şubesi';
+        }
+        if (branchName.includes('merkez')) {
+          return 'Merkez İtfaiye Müdürlüğü';
+        }
+      }
+    }
+    return p.istasyon || '';
+  };
+
   // Group personnel by station, then sort each group
   const groupedStations = useMemo(() => {
     return STATION_GROUPS.map(station => ({
       ...station,
-      personnel: sortByHierarchy(list.filter(p => station.match(p.istasyon))),
+      personnel: sortByHierarchy(list.filter(p => station.match(getActiveIstasyon(p)))),
     })).filter(g => g.personnel.length > 0)
   }, [list])
 
@@ -124,8 +146,29 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
   const handleStatusChange = async (sicilNo: string, newStatus: string) => {
     setUpdatingId(sicilNo)
     try {
-      setList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: newStatus } : p))
-      await api.update('personnel', { durum: newStatus }, { sicil_no: sicilNo })
+      let finalStatus = newStatus;
+      
+      if (newStatus !== 'Hazır') {
+        let promptMsg = "Lütfen bu durum değişikliği için bir açıklama giriniz:";
+        let defaultVal = "";
+        
+        if (newStatus === 'Geçici Şube Görevi') {
+          promptMsg = "Lütfen geçici görevlendirilen şubeyi yazınız (Esentepe, Organize veya Merkez):";
+          defaultVal = "Esentepe Şubesi";
+        }
+        
+        const reason = window.prompt(promptMsg, defaultVal);
+        if (reason !== null) {
+          finalStatus = reason.trim() ? `${newStatus} - ${reason.trim()}` : newStatus;
+        } else if (newStatus === 'Geçici Şube Görevi') {
+          // İptal edilirse işlemi sonlandır
+          setUpdatingId(null);
+          return;
+        }
+      }
+
+      setList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: finalStatus } : p))
+      await api.update('personnel', { durum: finalStatus }, { sicil_no: sicilNo })
     } catch (err) {
       console.error("Status update error:", err)
       alert("Durum güncellenemedi.")
@@ -178,7 +221,8 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
               </thead>
               <tbody>
                 {station.personnel.map((p) => {
-                  const isAbsent = p.durum === 'İzinli' || p.durum === 'Raporlu' || (p.durum || '').toLowerCase().includes('dış görev')
+                  const durumLower = (p.durum || '').toLowerCase()
+                  const isAbsent = durumLower.includes('izinli') || durumLower.includes('raporlu') || durumLower.includes('dış görev')
                   const isLeader = p.unvan?.toLowerCase().includes('başçavuş') || 
                                    p.unvan?.toLowerCase().includes('çavuş') || 
                                    p.rol === 'Admin' || p.rol === 'Editor'
@@ -208,27 +252,67 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {isAuthorized ? (
-                            <select
-                              value={p.durum || "Hazır Kıta"}
-                              disabled={isCellUpdating}
-                              onChange={(e) => handleStatusChange(p.sicil_no, e.target.value)}
-                              className={`rounded bg-slate-900 border text-xs focus:ring-1 focus:outline-none p-1 font-semibold ${
-                                isAbsent 
-                                  ? 'border-red-500/30 text-red-400 focus:ring-red-500' 
-                                  : 'border-emerald-500/30 text-emerald-400 focus:ring-emerald-500'
-                              }`}
-                            >
-                              <option value="Hazır Kıta" className="bg-slate-950 text-emerald-400">Hazır Kıta</option>
-                              <option value="Geçici Şube Görevi" className="bg-slate-950 text-cyan-400">Geçici Şube Görevi</option>
-                              <option value="İzinli" className="bg-slate-950 text-amber-500">İzinli</option>
-                              <option value="Raporlu" className="bg-slate-950 text-rose-500">Raporlu</option>
-                              <option value="Dış Görev (Stadyum/Etkinlik)" className="bg-slate-950 text-blue-400">Dış Görev (Stadyum/Etkinlik)</option>
-                            </select>
+                            <>
+                              <select
+                                value={
+                                  p.durum && p.durum.startsWith('Geçici Şube Görevi')
+                                    ? 'Geçici Şube Görevi'
+                                    : p.durum && p.durum.startsWith('İzinli')
+                                      ? 'İzinli'
+                                      : p.durum && p.durum.startsWith('Raporlu')
+                                        ? 'Raporlu'
+                                        : p.durum && p.durum.startsWith('Dış Görev')
+                                          ? 'Dış Görev (Stadyum/Etkinlik)'
+                                          : 'Hazır'
+                                }
+                                disabled={isCellUpdating}
+                                onChange={(e) => handleStatusChange(p.sicil_no, e.target.value)}
+                                className={`rounded bg-slate-900 border text-xs focus:ring-1 focus:outline-none p-1 font-semibold ${
+                                  isAbsent 
+                                    ? 'border-red-500/30 text-red-400 focus:ring-red-500' 
+                                    : 'border-emerald-500/30 text-emerald-400 focus:ring-emerald-500'
+                                }`}
+                              >
+                                <option value="Hazır" className="bg-slate-950 text-emerald-400">Hazır</option>
+                                <option value="Geçici Şube Görevi" className="bg-slate-950 text-cyan-400">Geçici Şube Görevi</option>
+                                <option value="İzinli" className="bg-slate-950 text-amber-500">İzinli</option>
+                                <option value="Raporlu" className="bg-slate-950 text-rose-500">Raporlu</option>
+                                <option value="Dış Görev (Stadyum/Etkinlik)" className="bg-slate-950 text-blue-400">Dış Görev (Stadyum/Etkinlik)</option>
+                              </select>
+
+                              {p.durum && !p.durum.startsWith('Hazır') && (
+                                <button
+                                  type="button"
+                                  title={p.durum}
+                                  onClick={async () => {
+                                    const parts = p.durum?.split(' - ') || [];
+                                    const base = parts[0] || 'Açıklama';
+                                    const currentReason = parts[1] || '';
+                                    const newReason = window.prompt(`[${base}] Durum açıklamasını düzenleyin:`, currentReason);
+                                    if (newReason !== null) {
+                                      const updatedStatus = newReason.trim() ? `${base} - ${newReason.trim()}` : base;
+                                      setUpdatingId(p.sicil_no);
+                                      try {
+                                        setList(prev => prev.map(x => x.sicil_no === p.sicil_no ? { ...x, durum: updatedStatus } : x));
+                                        await api.update('personnel', { durum: updatedStatus }, { sicil_no: p.sicil_no });
+                                      } catch (err) {
+                                        alert("Açıklama güncellenemedi.");
+                                      } finally {
+                                        setUpdatingId(null);
+                                      }
+                                    }
+                                  }}
+                                  className="px-2 py-1 text-[10px] font-bold text-slate-300 hover:text-white bg-slate-800 border border-slate-700 rounded transition-colors cursor-pointer"
+                                >
+                                  Açıklama
+                                </button>
+                              )}
+                            </>
                           ) : (
                             isAbsent ? (
                               <Badge variant="danger" className="scale-90 text-[10px]">{p.durum}</Badge>
                             ) : (
-                              <Badge variant="success" className="scale-90 bg-success/20 text-success border-success/30 text-[10px]">{p.durum || 'Hazır Kıta'}</Badge>
+                              <Badge variant="success" className="scale-90 bg-success/20 text-success border-success/30 text-[10px]">{p.durum || 'Hazır'}</Badge>
                             )
                           )}
                           {isCellUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />}
