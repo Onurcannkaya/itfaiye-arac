@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/authStore"
 import { Personnel } from "@/types"
@@ -75,15 +75,19 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
           const gorev = row.gorev_yeri === "KULE" ? "112" : row.gorev_yeri
           
           if (row.saat_araligi === "TÜM GÜN") {
-            if (newMatrix["TÜM GÜN"] && newMatrix["TÜM GÜN"][gorev]) {
-              newMatrix["TÜM GÜN"][gorev] = {
-                id: row.id,
-                sicil: row.personel_sicil
-              }
+            if (!newMatrix["TÜM GÜN"]) {
+              newMatrix["TÜM GÜN"] = {}
+            }
+            newMatrix["TÜM GÜN"][gorev] = {
+              id: row.id,
+              sicil: row.personel_sicil
             }
           } else {
             // Geriye dönük uyumluluk: eski saatlik kule veya santral kayıtları varsa tüm güne eşle
-            if (gorev === "SANTRAL" || gorev === "112") {
+            if (gorev === "SANTRAL" || gorev === "112" || gorev.startsWith("SANTRAL_") || gorev.startsWith("112_")) {
+              if (!newMatrix["TÜM GÜN"]) {
+                newMatrix["TÜM GÜN"] = {}
+              }
               newMatrix["TÜM GÜN"][gorev] = {
                 id: row.id,
                 sicil: row.personel_sicil
@@ -103,6 +107,87 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       console.error("Hourly shifts fetch error:", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Get dynamic keys sorted logically
+  const santralKeys = useMemo(() => {
+    const keys = Object.keys(matrix["TÜM GÜN"] || {}).filter(k => k === "SANTRAL" || k.startsWith("SANTRAL_"))
+    if (!keys.includes("SANTRAL")) {
+      keys.push("SANTRAL")
+    }
+    return keys.sort((a, b) => {
+      if (a === "SANTRAL") return -1
+      if (b === "SANTRAL") return 1
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    })
+  }, [matrix])
+
+  const representativeKeys = useMemo(() => {
+    const keys = Object.keys(matrix["TÜM GÜN"] || {}).filter(k => k === "112" || k.startsWith("112_"))
+    if (!keys.includes("112")) {
+      keys.push("112")
+    }
+    return keys.sort((a, b) => {
+      if (a === "112") return -1
+      if (b === "112") return 1
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    })
+  }, [matrix])
+
+  const handleAddSantralSlot = () => {
+    let nextIndex = 2
+    while (matrix["TÜM GÜN"]?.[`SANTRAL_${nextIndex}`]) {
+      nextIndex++
+    }
+    const newKey = `SANTRAL_${nextIndex}`
+    setMatrix(prev => ({
+      ...prev,
+      "TÜM GÜN": {
+        ...prev["TÜM GÜN"],
+        [newKey]: { sicil: "" }
+      }
+    }))
+  }
+
+  const handleAdd112Slot = () => {
+    let nextIndex = 2
+    while (matrix["TÜM GÜN"]?.[`112_${nextIndex}`]) {
+      nextIndex++
+    }
+    const newKey = `112_${nextIndex}`
+    setMatrix(prev => ({
+      ...prev,
+      "TÜM GÜN": {
+        ...prev["TÜM GÜN"],
+        [newKey]: { sicil: "" }
+      }
+    }))
+  }
+
+  const handleDeleteSlot = async (place: string) => {
+    const cellKey = `TÜM GÜN-${place}`
+    setSavingCell(cellKey)
+    try {
+      const currentCell = matrix["TÜM GÜN"]?.[place]
+      if (currentCell && currentCell.id) {
+        await api.remove("hourly_shifts", { id: currentCell.id })
+      }
+      
+      setMatrix(prev => {
+        const copy = { ...prev }
+        if (copy["TÜM GÜN"]) {
+          const newWholeDay = { ...copy["TÜM GÜN"] }
+          delete newWholeDay[place]
+          copy["TÜM GÜN"] = newWholeDay
+        }
+        return copy
+      })
+    } catch (err) {
+      console.error("Delete slot error:", err)
+      alert("Nöbetçi silinemedi.")
+    } finally {
+      setSavingCell(null)
     }
   }
 
@@ -197,86 +282,154 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
 
       {/* 24 Saatlik Sabit Görevler */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-white/10 bg-slate-950/40">
-        {/* Santral Nöbetçisi */}
-        <div className="space-y-2">
+        {/* Santral Nöbetçileri */}
+        <div className="space-y-3">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
             <Building className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Nöbetçi Santral Operatörü (24 Saat Nöbet Boyunca)</span>
+            <span>Nöbetçi Santral Operatörleri (24 Saat Nöbet Boyunca)</span>
           </label>
-          <div className="relative">
-            {isAuthorized ? (
-              <select
-                value={matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil || ""}
-                disabled={savingCell === "TÜM GÜN-SANTRAL"}
-                onChange={(e) => handleCellChange("TÜM GÜN", "SANTRAL", e.target.value)}
-                className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
-              >
-                <option value="">Santral Görevlisi Seçiniz</option>
-                {personnel.map(p => (
-                  <option key={p.sicil_no} value={p.sicil_no}>
-                    {p.ad} {p.soyad} ({p.unvan || 'Er'})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
-                {matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil ? (
-                  (() => {
-                    const p = personnel.find(per => per.sicil_no === matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil)
-                    return p ? `${p.ad} ${p.soyad} (${p.unvan})` : matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil
-                  })()
-                ) : (
-                  "Atama Yok"
-                )}
-              </div>
-            )}
-            {savingCell === "TÜM GÜN-SANTRAL" && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-              </div>
-            )}
+          
+          <div className="space-y-2">
+            {santralKeys.map((key, index) => {
+              const currentVal = matrix["TÜM GÜN"]?.[key]?.sicil || ""
+              const isSaving = savingCell === `TÜM GÜN-${key}`
+              const isExtra = key !== "SANTRAL"
+
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    {isAuthorized ? (
+                      <select
+                        value={currentVal}
+                        disabled={isSaving}
+                        onChange={(e) => handleCellChange("TÜM GÜN", key, e.target.value)}
+                        className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
+                      >
+                        <option value="">{index === 0 ? "Santral Görevlisi Seçiniz" : `Ekstra Santral Görevlisi #${index}`}</option>
+                        {personnel.map(p => (
+                          <option key={p.sicil_no} value={p.sicil_no}>
+                            {p.ad} {p.soyad} ({p.unvan || 'Er'})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
+                        {currentVal ? (
+                          (() => {
+                            const p = personnel.find(per => per.sicil_no === currentVal)
+                            return p ? `${p.ad} ${p.soyad} (${p.unvan})` : currentVal
+                          })()
+                        ) : (
+                          "Atama Yok"
+                        )}
+                      </div>
+                    )}
+                    {isSaving && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                      </div>
+                    )}
+                  </div>
+                  {isAuthorized && isExtra && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSlot(key)}
+                      disabled={isSaving}
+                      className="h-11 px-3 flex items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 cursor-pointer shrink-0 text-xs font-bold"
+                      title="Nöbetçiyi Sil"
+                    >
+                      Sil
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
+
+          {isAuthorized && (
+            <button
+              type="button"
+              onClick={handleAddSantralSlot}
+              className="w-full py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/5 text-xs font-bold transition-all cursor-pointer"
+            >
+              + Ekstra Santral Nöbetçisi Ekle
+            </button>
+          )}
         </div>
 
-        {/* 112 Nöbetçisi */}
-        <div className="space-y-2">
+        {/* 112 Nöbetçileri */}
+        <div className="space-y-3">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
             <MapPin className="w-3.5 h-3.5 text-danger" />
-            <span>Nöbetçi 112 Temsilcisi (24 Saat Nöbet Boyunca)</span>
+            <span>Nöbetçi 112 Temsilcileri (24 Saat Nöbet Boyunca)</span>
           </label>
-          <div className="relative">
-            {isAuthorized ? (
-              <select
-                value={matrix["TÜM GÜN"]?.["112"]?.sicil || ""}
-                disabled={savingCell === "TÜM GÜN-112"}
-                onChange={(e) => handleCellChange("TÜM GÜN", "112", e.target.value)}
-                className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
-              >
-                <option value="">112 Görevlisi Seçiniz</option>
-                {personnel.map(p => (
-                  <option key={p.sicil_no} value={p.sicil_no}>
-                    {p.ad} {p.soyad} ({p.unvan || 'Er'})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
-                {matrix["TÜM GÜN"]?.["112"]?.sicil ? (
-                  (() => {
-                    const p = personnel.find(per => per.sicil_no === matrix["TÜM GÜN"]?.["112"]?.sicil)
-                    return p ? `${p.ad} ${p.soyad} (${p.unvan})` : matrix["TÜM GÜN"]?.["112"]?.sicil
-                  })()
-                ) : (
-                  "Atama Yok"
-                )}
-              </div>
-            )}
-            {savingCell === "TÜM GÜN-112" && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-              </div>
-            )}
+          
+          <div className="space-y-2">
+            {representativeKeys.map((key, index) => {
+              const currentVal = matrix["TÜM GÜN"]?.[key]?.sicil || ""
+              const isSaving = savingCell === `TÜM GÜN-${key}`
+              const isExtra = key !== "112"
+
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    {isAuthorized ? (
+                      <select
+                        value={currentVal}
+                        disabled={isSaving}
+                        onChange={(e) => handleCellChange("TÜM GÜN", key, e.target.value)}
+                        className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
+                      >
+                        <option value="">{index === 0 ? "112 Görevlisi Seçiniz" : `Ekstra 112 Görevlisi #${index}`}</option>
+                        {personnel.map(p => (
+                          <option key={p.sicil_no} value={p.sicil_no}>
+                            {p.ad} {p.soyad} ({p.unvan || 'Er'})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
+                        {currentVal ? (
+                          (() => {
+                            const p = personnel.find(per => per.sicil_no === currentVal)
+                            return p ? `${p.ad} ${p.soyad} (${p.unvan})` : currentVal
+                          })()
+                        ) : (
+                          "Atama Yok"
+                        )}
+                      </div>
+                    )}
+                    {isSaving && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                      </div>
+                    )}
+                  </div>
+                  {isAuthorized && isExtra && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSlot(key)}
+                      disabled={isSaving}
+                      className="h-11 px-3 flex items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 cursor-pointer shrink-0 text-xs font-bold"
+                      title="Nöbetçiyi Sil"
+                    >
+                      Sil
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
+
+          {isAuthorized && (
+            <button
+              type="button"
+              onClick={handleAdd112Slot}
+              className="w-full py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-danger/30 text-danger hover:bg-danger/5 text-xs font-bold transition-all cursor-pointer"
+            >
+              + Ekstra 112 Temsilcisi Ekle
+            </button>
+          )}
         </div>
       </div>
 
