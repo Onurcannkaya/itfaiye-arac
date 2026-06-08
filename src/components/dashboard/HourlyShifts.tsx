@@ -26,7 +26,7 @@ const HOURS = [
   "06:00 - 08:00"
 ]
 
-const PLACES = ["SANTRAL", "KULE", "NIZAMIYE"]
+const PLACES = ["NIZAMIYE"]
 
 export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
   const { user } = useAuthStore()
@@ -64,12 +64,35 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
         })
       })
 
+      // Sabit 24 saatlik görevleri başlat
+      newMatrix["TÜM GÜN"] = {
+        "SANTRAL": { sicil: "" },
+        "112": { sicil: "" }
+      }
+
       if (data && Array.isArray(data)) {
         data.forEach((row: any) => {
-          if (newMatrix[row.saat_araligi] && newMatrix[row.saat_araligi][row.gorev_yeri]) {
-            newMatrix[row.saat_araligi][row.gorev_yeri] = {
-              id: row.id,
-              sicil: row.personel_sicil
+          const gorev = row.gorev_yeri === "KULE" ? "112" : row.gorev_yeri
+          
+          if (row.saat_araligi === "TÜM GÜN") {
+            if (newMatrix["TÜM GÜN"] && newMatrix["TÜM GÜN"][gorev]) {
+              newMatrix["TÜM GÜN"][gorev] = {
+                id: row.id,
+                sicil: row.personel_sicil
+              }
+            }
+          } else {
+            // Geriye dönük uyumluluk: eski saatlik kule veya santral kayıtları varsa tüm güne eşle
+            if (gorev === "SANTRAL" || gorev === "112") {
+              newMatrix["TÜM GÜN"][gorev] = {
+                id: row.id,
+                sicil: row.personel_sicil
+              }
+            } else if (newMatrix[row.saat_araligi] && newMatrix[row.saat_araligi][gorev]) {
+              newMatrix[row.saat_araligi][gorev] = {
+                id: row.id,
+                sicil: row.personel_sicil
+              }
             }
           }
         })
@@ -172,28 +195,101 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
         </div>
       </div>
 
+      {/* 24 Saatlik Sabit Görevler */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-white/10 bg-slate-950/40">
+        {/* Santral Nöbetçisi */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Building className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Nöbetçi Santral Operatörü (24 Saat Nöbet Boyunca)</span>
+          </label>
+          <div className="relative">
+            {isAuthorized ? (
+              <select
+                value={matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil || ""}
+                disabled={savingCell === "TÜM GÜN-SANTRAL"}
+                onChange={(e) => handleCellChange("TÜM GÜN", "SANTRAL", e.target.value)}
+                className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
+              >
+                <option value="">Santral Görevlisi Seçiniz</option>
+                {personnel.map(p => (
+                  <option key={p.sicil_no} value={p.sicil_no}>
+                    {p.ad} {p.soyad} ({p.unvan || 'Er'})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
+                {matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil ? (
+                  (() => {
+                    const p = personnel.find(per => per.sicil_no === matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil)
+                    return p ? `${p.ad} ${p.soyad} (${p.unvan})` : matrix["TÜM GÜN"]?.["SANTRAL"]?.sicil
+                  })()
+                ) : (
+                  "Atama Yok"
+                )}
+              </div>
+            )}
+            {savingCell === "TÜM GÜN-SANTRAL" && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 112 Nöbetçisi */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <MapPin className="w-3.5 h-3.5 text-danger" />
+            <span>Nöbetçi 112 Temsilcisi (24 Saat Nöbet Boyunca)</span>
+          </label>
+          <div className="relative">
+            {isAuthorized ? (
+              <select
+                value={matrix["TÜM GÜN"]?.["112"]?.sicil || ""}
+                disabled={savingCell === "TÜM GÜN-112"}
+                onChange={(e) => handleCellChange("TÜM GÜN", "112", e.target.value)}
+                className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
+              >
+                <option value="">112 Görevlisi Seçiniz</option>
+                {personnel.map(p => (
+                  <option key={p.sicil_no} value={p.sicil_no}>
+                    {p.ad} {p.soyad} ({p.unvan || 'Er'})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
+                {matrix["TÜM GÜN"]?.["112"]?.sicil ? (
+                  (() => {
+                    const p = personnel.find(per => per.sicil_no === matrix["TÜM GÜN"]?.["112"]?.sicil)
+                    return p ? `${p.ad} ${p.soyad} (${p.unvan})` : matrix["TÜM GÜN"]?.["112"]?.sicil
+                  })()
+                ) : (
+                  "Atama Yok"
+                )}
+              </div>
+            )}
+            {savingCell === "TÜM GÜN-112" && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Grid Matrix Table */}
       <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-slate-950/20">
         <table className="w-full border-collapse text-sm text-left">
           <thead className="text-[10px] text-slate-400 uppercase bg-slate-950/60 border-b border-white/10 font-bold tracking-wider">
             <tr>
               <th className="px-4 py-3 text-center border-r border-white/5 w-[180px]">Saat Aralığı</th>
-              <th className="px-4 py-3 text-center border-r border-white/5">
-                <div className="flex items-center justify-center gap-2">
-                  <Building className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Santral Nöbeti</span>
-                </div>
-              </th>
-              <th className="px-4 py-3 text-center border-r border-white/5">
-                <div className="flex items-center justify-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-danger" />
-                  <span>Kule Nöbeti</span>
-                </div>
-              </th>
               <th className="px-4 py-3 text-center">
                 <div className="flex items-center justify-center gap-2">
                   <Shield className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Nizamiye Nöbeti</span>
+                  <span>Nizamiye Nöbeti (2 Saatlik Döngü)</span>
                 </div>
               </th>
             </tr>
@@ -213,7 +309,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                   const isSaving = savingCell === cellKey
 
                   return (
-                    <td key={place} className="px-4 py-2 border-r border-white/5 last:border-r-0 text-center">
+                    <td key={place} className="px-4 py-2 text-center">
                       <div className="relative w-full max-w-[240px] mx-auto">
                         {isAuthorized ? (
                           <select
