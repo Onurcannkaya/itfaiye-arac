@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import PageGuard from "@/components/PageGuard"
 import dynamic from "next/dynamic"
@@ -108,6 +108,7 @@ function HaritaContent() {
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [hydrants, setHydrants] = useState<Hydrant[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
+  const [personnelList, setPersonnelList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // Search Engine State
@@ -122,12 +123,15 @@ function HaritaContent() {
   const [interactionMode, setInteractionMode] = useState<'idle' | 'add_incident' | 'add_hydrant'>('idle')
   
   // Modals Data State
-  const [showModal, setShowModal] = useState<'none' | 'incident' | 'hydrant'>('none')
+  const [showModal, setShowModal] = useState<'none' | 'incident' | 'hydrant' | 'mufreze_cikis'>('none')
   const [clickedCoords, setClickedCoords] = useState<{lat: number, lng: number} | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Incident Form
+  // Incident Form & Dispatch States
   const [incidentForm, setIncidentForm] = useState({ olay_turu: "Ev Yangını", mahalle: "", adres: "" })
+  const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
+  const [selectedVehiclePlaka, setSelectedVehiclePlaka] = useState<string>("")
+  const [checkedPersonnel, setCheckedPersonnel] = useState<string[]>([])
   
   // Hydrant Form
   const [hydrantForm, setHydrantForm] = useState({ no: "", tip: "Yer üstü", durum: "Aktif", mahalle: "" })
@@ -138,6 +142,40 @@ function HaritaContent() {
   const [isIncidentSearching, setIsIncidentSearching] = useState(false)
   const [hasIncidentSearched, setHasIncidentSearched] = useState(false)
   const incidentSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ─── Nöbetçi Posta & Personel Hesaplama ───────────────────
+  const activePostaNumber = useMemo(() => {
+    const referenceDate = new Date("2026-06-04");
+    referenceDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - referenceDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    const index = ((1 + (diffDays % 3) + 3) % 3) + 1;
+    return index;
+  }, []);
+
+  const activePostaPersonnel = useMemo(() => {
+    return personnelList.filter(p => p.posta_no === activePostaNumber && p.aktif !== false);
+  }, [personnelList, activePostaNumber]);
+
+  const sortedMufrezePersonnel = useMemo(() => {
+    const activeVeh = vehicles.find(v => v.plaka === selectedVehiclePlaka);
+    const station = activeVeh?.istasyon || "";
+    const vStationWord = station.toLowerCase().split(' ')[0];
+    
+    return [...activePostaPersonnel].sort((a, b) => {
+      const matchA = (a.istasyon || '').toLowerCase().split(' ')[0] === vStationWord;
+      const matchB = (b.istasyon || '').toLowerCase().split(' ')[0] === vStationWord;
+      if (matchA !== matchB) {
+        return matchA ? -1 : 1;
+      }
+      return (a.ad || '').localeCompare(b.ad || '', 'tr');
+    });
+  }, [activePostaPersonnel, selectedVehiclePlaka, vehicles]);
 
   useEffect(() => {
     fetchData()
@@ -187,10 +225,12 @@ function HaritaContent() {
       const { data: incData } = await api.from('incidents').select('*').neq('location', null)
       const { data: hydData } = await api.from('fire_hydrants').select('*')
       const { data: vehData } = await api.from('vehicles').select('*')
+      const { data: persData } = await api.from('personnel').select('*').eq('aktif', true)
 
       if (incData) setIncidents(incData)
       if (hydData) setHydrants(hydData)
       if (vehData) setVehicles(vehData)
+      if (persData) setPersonnelList(persData)
     } catch (err) {
       console.error(err)
     } finally {
@@ -346,11 +386,16 @@ function HaritaContent() {
     setHasFetchedAddress(false)
     
     let fetchedAddress = ""
+    let fetchedMahalle = ""
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
       const data = await res.json()
-      if (data && data.display_name) {
-        fetchedAddress = data.display_name
+      if (data) {
+        fetchedAddress = data.display_name || ""
+        if (data.address) {
+          fetchedMahalle = data.address.suburb || data.address.neighbourhood || data.address.village || data.address.quarter || data.address.district || ""
+          fetchedMahalle = fetchedMahalle.replace(/\s*Mahallesi$/i, "").trim()
+        }
         setHasFetchedAddress(true)
       }
     } catch (e) {
@@ -358,14 +403,130 @@ function HaritaContent() {
     }
 
     if (interactionMode === 'add_incident') {
-      setIncidentForm(prev => ({ ...prev, adres: fetchedAddress || "" }))
-      setShowModal('incident')
+      try {
+        const locationWKT = `POINT(${lng} ${lat})`
+        const draftPayload = {
+          olay_turu: "Müfreze Çıkışı (Hazırlanıyor)",
+          mahalle: fetchedMahalle || "Alibaba",
+          adres: fetchedAddress || "İhbar Konumu",
+          location: locationWKT,
+          ihbar_saati: new Date().toISOString(),
+          cikis_saati: new Date().toISOString(),
+          status: "active",
+          kullanilan_su_ton: 0,
+          kullanilan_kopuk_litre: 0,
+          kullanilan_kkt_kg: 0
+        }
+        const res = await api.insert('incidents', draftPayload)
+        if (res && res.data) {
+          const insertedRow = Array.isArray(res.data) ? res.data[0] : res.data
+          if (insertedRow && insertedRow.id) {
+            setActiveIncidentId(insertedRow.id)
+            setIncidentForm({
+              olay_turu: "Ev Yangını",
+              mahalle: fetchedMahalle || "Alibaba",
+              adres: fetchedAddress || "İhbar Konumu"
+            })
+            
+            // Auto-select first active vehicle if available
+            if (vehicles.length > 0) {
+              const activeVeh = vehicles.find(v => (v.durum || '').toLowerCase() === 'aktif') || vehicles[0]
+              setSelectedVehiclePlaka(activeVeh.plaka)
+              
+              // Filter personnel of the same station
+              const station = activeVeh.istasyon || ""
+              const defChecked = personnelList
+                .filter(p => p.posta_no === activePostaNumber && p.aktif !== false)
+                .filter(p => {
+                  if (!station) return true
+                  const vStationWord = station.toLowerCase().split(' ')[0]
+                  const pStationWord = (p.istasyon || '').toLowerCase().split(' ')[0]
+                  return vStationWord === pStationWord
+                })
+                .map(p => p.sicil_no)
+              setCheckedPersonnel(defChecked)
+            } else {
+              setSelectedVehiclePlaka("")
+              setCheckedPersonnel([])
+            }
+            
+            setShowModal('mufreze_cikis')
+          }
+        }
+      } catch (err) {
+        console.error("Draft incident creation error:", err)
+        alert("Konum işaretlenirken hata oluştu.")
+      }
     } else if (interactionMode === 'add_hydrant') {
       setShowModal('hydrant')
     }
     
     // Reset mode back to idle after click
     setInteractionMode('idle')
+  }
+
+  const handleVehicleChange = (plaka: string) => {
+    setSelectedVehiclePlaka(plaka)
+    const activeVeh = vehicles.find(v => v.plaka === plaka)
+    if (activeVeh) {
+      const station = activeVeh.istasyon || ""
+      const defChecked = activePostaPersonnel
+        .filter(p => {
+          if (!station) return true
+          const vStationWord = station.toLowerCase().split(' ')[0]
+          const pStationWord = (p.istasyon || '').toLowerCase().split(' ')[0]
+          return vStationWord === pStationWord
+        })
+        .map(p => p.sicil_no)
+      setCheckedPersonnel(defChecked)
+    }
+  }
+
+  const handleSaveMufrezeCikis = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeIncidentId) return
+    setIsSubmitting(true)
+    try {
+      const payload = {
+        olay_turu: incidentForm.olay_turu,
+        mahalle: incidentForm.mahalle,
+        adres: incidentForm.adres,
+        ek16_araclar: JSON.stringify([selectedVehiclePlaka]),
+        ek16_personel: JSON.stringify(checkedPersonnel),
+        cikis_saati: new Date().toISOString()
+      }
+
+      const { error: updErr } = await api.update('incidents', payload, { id: activeIncidentId })
+      if (updErr) throw updErr
+
+      // Link vehicle to incident
+      if (selectedVehiclePlaka) {
+        await api.insert('incident_vehicles', {
+          incident_id: activeIncidentId,
+          plaka: selectedVehiclePlaka,
+          gorev_turu: "Müdahale Aracı"
+        })
+      }
+
+      // Link personnel to incident
+      if (checkedPersonnel.length > 0) {
+        const pPayload = checkedPersonnel.map(sicil_no => ({
+          incident_id: activeIncidentId,
+          sicil_no,
+          gorev: "Müdahale Personeli"
+        }))
+        await api.insert('incident_personnel', pPayload)
+      }
+
+      setShowModal('none')
+      setActiveIncidentId(null)
+      fetchData() // Refresh map data
+    } catch (err) {
+      console.error("Mufreze cikis error:", err)
+      alert("Müfreze çıkış kaydı oluşturulurken hata oluştu.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Save to DB
@@ -718,6 +879,165 @@ function HaritaContent() {
                 <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                   Sisteme Ekle
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+      
+      {showModal === 'mufreze_cikis' && (
+        <div className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
+          <Card className="w-full sm:max-w-lg shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col border border-white/10 bg-slate-900/90 text-white">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-4">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-danger">
+                <Flame className="w-5 h-5 animate-pulse text-danger" /> 
+                Müfreze Çıkış Paneli (Vaka No: {activeIncidentId})
+              </h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px] hover:bg-white/10 text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <form onSubmit={handleSaveMufrezeCikis} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Olay Türü</label>
+                <select 
+                  name="olay_turu" 
+                  value={incidentForm.olay_turu} 
+                  onChange={(e) => setIncidentForm({...incidentForm, olay_turu: e.target.value})} 
+                  required 
+                  className="flex h-11 w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-danger focus:border-transparent"
+                >
+                  <optgroup label="🔴 Kritik (Seviye 3)" className="bg-slate-900 text-danger">
+                    <option value="Ev Yangını">Ev Yangını</option>
+                    <option value="Bina/Fabrika Yangını">Bina/Fabrika Yangını</option>
+                    <option value="Sıkışmalı Trafik Kazası">Sıkışmalı Trafik Kazası</option>
+                    <option value="KBRN Sızıntısı">KBRN Sızıntısı</option>
+                  </optgroup>
+                  <optgroup label="🟡 Orta (Seviye 2)" className="bg-slate-900 text-amber-500">
+                    <option value="Araç Yangını">Araç Yangını</option>
+                    <option value="İşyeri Yangını">İşyeri Yangını</option>
+                    <option value="Kurtarma Operasyonları">Kurtarma Operasyonları</option>
+                  </optgroup>
+                  <optgroup label="🟢 Düşük (Seviye 1)" className="bg-slate-900 text-emerald-500">
+                    <option value="Çöp Yangını">Çöp Yangını</option>
+                    <option value="Ot/Anız Yangını">Ot/Anız Yangını</option>
+                    <option value="Kapı Açma">Kapı Açma</option>
+                    <option value="Hayvan Kurtarma">Hayvan Kurtarma</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Mahalle</label>
+                  <Input 
+                    value={incidentForm.mahalle} 
+                    onChange={(e) => setIncidentForm({...incidentForm, mahalle: e.target.value})} 
+                    required 
+                    className="h-11 rounded-xl bg-slate-950/80 border-white/10 text-white placeholder:text-slate-600 focus:ring-danger" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Adres / Konum Detayı</label>
+                  <Input 
+                    value={incidentForm.adres} 
+                    onChange={(e) => setIncidentForm({...incidentForm, adres: e.target.value})} 
+                    required 
+                    className="h-11 rounded-xl bg-slate-950/80 border-white/10 text-white placeholder:text-slate-600 focus:ring-danger" 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Çıkış Yapacak Araç</label>
+                <select 
+                  value={selectedVehiclePlaka} 
+                  onChange={(e) => handleVehicleChange(e.target.value)} 
+                  required 
+                  className="flex h-11 w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-danger focus:border-transparent"
+                >
+                  <option value="" disabled>Araç Seçiniz</option>
+                  {vehicles.map(v => (
+                    <option key={v.plaka} value={v.plaka} className="bg-slate-900">
+                      {v.plaka} - {v.arac_tipi} ({v.istasyon || 'İstasyonsuz'}) - {v.durum === 'Bakımda' || v.status === 'maintenance' ? '🔴 BAKIMDA' : '🟢 AKTİF'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2 flex-1 flex flex-col min-h-[200px]">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex justify-between items-center">
+                  <span>Aktif Nöbetçi Personeller (Posta {activePostaNumber})</span>
+                  <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-slate-300">
+                    Seçili: {checkedPersonnel.length}
+                  </span>
+                </label>
+                
+                <div className="flex-1 overflow-y-auto border border-white/10 rounded-xl bg-slate-950/60 p-2 space-y-1.5 max-h-[250px]">
+                  {sortedMufrezePersonnel.length === 0 ? (
+                    <div className="text-center text-xs text-slate-500 py-6">Aktif nöbetçi posta personeli bulunamadı.</div>
+                  ) : (
+                    sortedMufrezePersonnel.map(p => {
+                      const isChecked = checkedPersonnel.includes(p.sicil_no);
+                      const activeVeh = vehicles.find(v => v.plaka === selectedVehiclePlaka);
+                      const isSameStation = activeVeh && p.istasyon && 
+                        p.istasyon.toLowerCase().split(' ')[0] === activeVeh.istasyon.toLowerCase().split(' ')[0];
+                      
+                      return (
+                        <label 
+                          key={p.id} 
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border ${
+                            isChecked 
+                              ? 'bg-danger/10 border-danger/40 text-white' 
+                              : isSameStation 
+                                ? 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200' 
+                                : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCheckedPersonnel(prev => [...prev, p.sicil_no]);
+                                } else {
+                                  setCheckedPersonnel(prev => prev.filter(id => id !== p.sicil_no));
+                                }
+                              }}
+                              className="rounded border-slate-700 bg-slate-900 text-danger focus:ring-danger w-4 h-4"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-semibold">{p.ad} {p.soyad}</span>
+                              <span className="text-[10px] opacity-75">{p.sicil_no} - {p.rol}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                              {p.istasyon || 'İstasyon Belirtilmemiş'}
+                            </span>
+                            {isSameStation && (
+                              <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                Aynı Şube
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex justify-end gap-2 shrink-0">
+                <Button type="button" variant="outline" onClick={() => setShowModal('none')} className="border-white/10 text-slate-300 hover:bg-white/10">
+                  İptal
+                </Button>
+                <Button type="submit" className="bg-danger hover:bg-danger/90 text-white font-semibold" disabled={isSubmitting || !selectedVehiclePlaka}>
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Flame className="w-4 h-4 mr-2" />}
+                  Müfreze Çıkışını Başlat
                 </Button>
               </div>
             </form>

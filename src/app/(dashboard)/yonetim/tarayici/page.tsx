@@ -127,26 +127,84 @@ export default function TarayiciPage() {
     rawValue?: string
   }
 
-  const handleScan = useCallback((results: ScanResult[]) => {
+  const handleScan = useCallback(async (results: ScanResult[]) => {
     if (!results?.length || mode !== "scanning") return
 
     const rawValue = results[0]?.rawValue
     if (!rawValue) return
-
-    const parsed = parseQRContent(rawValue)
-    if (!parsed) {
-      setErrorMsg("Geçersiz QR kodu. Lütfen araç etiketini okutun.")
-      setMode("error")
-      return
-    }
 
     // Vibrate on successful scan
     if (typeof navigator !== "undefined" && navigator.vibrate) {
       navigator.vibrate(100)
     }
 
+    const trimmed = rawValue.trim()
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (uuidRegex.test(trimmed)) {
+      setManualLoading(true)
+      try {
+        const { data: allVehicles, error } = await api.from("vehicles").select("plaka,bolmeler")
+        if (error || !allVehicles) throw new Error("Araç envanteri sorgulanamadı.")
+        
+        let foundVehiclePlaka = null
+        let foundCompartment = null
+        let foundMaterialName = null
+
+        for (const v of allVehicles as any[]) {
+          if (!v.bolmeler) continue
+          let compartments: any = {}
+          if (typeof v.bolmeler === 'string') {
+            try { compartments = JSON.parse(v.bolmeler); } catch { continue; }
+          } else {
+            compartments = v.bolmeler
+          }
+
+          for (const [compName, items] of Object.entries(compartments)) {
+            if (Array.isArray(items)) {
+              for (const item of items) {
+                if (item && typeof item === 'object') {
+                  const isMatch = Object.values(item).some(val => typeof val === 'string' && val.toLowerCase() === trimmed.toLowerCase())
+                  if (isMatch) {
+                    foundVehiclePlaka = v.plaka
+                    foundCompartment = compName
+                    foundMaterialName = item.malzeme || "Malzeme"
+                    break
+                  }
+                }
+              }
+            }
+            if (foundVehiclePlaka) break
+          }
+          if (foundVehiclePlaka) break
+        }
+
+        if (foundVehiclePlaka && foundCompartment) {
+          const plakaSlug = foundVehiclePlaka.replace(/\s+/g, "-").toLowerCase()
+          alert(`Malzeme Bulundu: "${foundMaterialName}"\nAraç: ${foundVehiclePlaka}\nBölme: ${foundCompartment}`)
+          router.push(`/arac/${plakaSlug}/${foundCompartment}`)
+        } else {
+          setErrorMsg(`"${trimmed}" ID'li malzeme hiçbir araçta veya bölmede bulunamadı.`)
+          setMode("error")
+        }
+      } catch (err) {
+        setErrorMsg("Malzeme aranırken bir veritabanı hatası oluştu.")
+        setMode("error")
+      } finally {
+        setManualLoading(false)
+      }
+      return
+    }
+
+    const parsed = parseQRContent(rawValue)
+    if (!parsed) {
+      setErrorMsg("Geçersiz QR kodu. Lütfen araç veya malzeme etiketini okutun.")
+      setMode("error")
+      return
+    }
+
     lookupVehicle(parsed.plaka, parsed.compartment)
-  }, [mode, lookupVehicle])
+  }, [mode, lookupVehicle, router])
 
   // ─── Manual Plaka Search ───────────────────────────────────
   const handleManualSearch = async () => {

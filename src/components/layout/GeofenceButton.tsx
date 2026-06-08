@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 // Sivas Ana İtfaiye Binası Koordinatları (39.7388, 37.0025)
 const STATION_LAT = 39.7388
 const STATION_LNG = 37.0025
-const MAX_DISTANCE_METERS = 50
+const MAX_DISTANCE_METERS = 150
 
 interface GeofenceButtonProps {
   isMobile?: boolean

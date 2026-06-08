@@ -54,6 +54,14 @@ export async function POST(request: NextRequest) {
           [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
         );
 
+        // 4. Update service_applications if it exists
+        await query(
+          `UPDATE public.service_applications 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE takip_kodu = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+        ).catch(() => {});
+
       } else if (typeof id === 'string' && id.startsWith('yangin-')) {
         // Special table ID
         const serialId = parseInt(id.split('-')[1], 10);
@@ -80,6 +88,58 @@ export async function POST(request: NextRequest) {
            WHERE basvuran_tc = $5`,
           [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
         );
+
+        // 4. Update service_applications if it exists
+        await query(
+          `UPDATE public.service_applications 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE takip_kodu = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+        ).catch(() => {});
+
+      } else if (typeof id === 'string' && id.startsWith('service-')) {
+        // service_applications table ID
+        const serialId = parseInt(id.split('-')[1], 10);
+        
+        // 1. Fetch tracking code
+        const row = await query<{ takip_kodu: string }>('SELECT takip_kodu FROM public.service_applications WHERE id = $1', [serialId]);
+        if (row.rows.length === 0) {
+          throw new Error('Hizmet uygunluk başvurusu bulunamadı.');
+        }
+        const trackingCode = row.rows[0].takip_kodu;
+
+        // 2. Update service_applications
+        await query(
+          `UPDATE public.service_applications 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE id = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, serialId]
+        );
+
+        // 3. Update main table
+        await query(
+          `UPDATE public.citizen_requests 
+           SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+           WHERE basvuran_tc = $5`,
+          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+        );
+
+        // 4. Update special compat tables
+        if (trackingCode.startsWith('SVS-BACA-')) {
+          await query(
+            `UPDATE public.baca_temizlik_basvurulari 
+             SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+             WHERE takip_kodu = $5`,
+            [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+          );
+        } else if (trackingCode.startsWith('SVS-YANGIN-')) {
+          await query(
+            `UPDATE public.yangin_rapor_basvurulari 
+             SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+             WHERE takip_kodu = $5`,
+            [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+          );
+        }
 
       } else {
         // UUID - Direct table ID (citizen_requests)
@@ -115,6 +175,14 @@ export async function POST(request: NextRequest) {
               [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
             );
           }
+
+          // Update service_applications as well
+          await query(
+            `UPDATE public.service_applications 
+             SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
+             WHERE takip_kodu = $5`,
+            [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+          ).catch(() => {});
         }
       }
 

@@ -27,6 +27,7 @@ import {
 import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
 import { ShiftList } from "@/components/dashboard/ShiftList"
+import { HourlyShifts } from "@/components/dashboard/HourlyShifts"
 import { Personnel } from "@/types"
 import {
   ResponsiveContainer,
@@ -209,6 +210,7 @@ export default function DashboardPage() {
   const [vehicles, setVehicles] = useState<VehicleInfo[]>([])
   const [activeIncidentsList, setActiveIncidentsList] = useState<ActiveIncidentDetail[]>([])
   const [personnelList, setPersonnelList] = useState<Personnel[]>([])
+  const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly'>('daily')
 
   // ─── PostGIS WKB parser helpers for real-time focus ─────────
   const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -756,17 +758,46 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL) ═══════════ */}
+      {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL & SAATLİK KULE NÖBETİ) ═══════════ */}
       <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl">
-        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20">
-          <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-100">
-            <Users className="w-4 h-4 text-cyan-500" />
-            <span>{activePostaNumber}. Posta Canlı Nöbetçi Personel Listesi</span>
-          </h2>
-          <Badge variant="outline" className="text-xs bg-slate-950/40 text-slate-300 border-slate-800">{sortedPersonnel.length} Personel</Badge>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20">
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-cyan-500" />
+            <h2 className="text-sm sm:text-base font-bold text-slate-100">
+              {activePostaNumber}. Posta Nöbet ve Karargah Yönetimi
+            </h2>
+          </div>
+          
+          {/* Tab Selector */}
+          <div className="flex p-0.5 bg-slate-950 border border-slate-800 rounded-lg shrink-0">
+            <button
+              onClick={() => setActiveShiftTab('daily')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                activeShiftTab === 'daily'
+                  ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold shadow-md'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              Günlük Nöbet Listesi
+            </button>
+            <button
+              onClick={() => setActiveShiftTab('hourly')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                activeShiftTab === 'hourly'
+                  ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold shadow-md'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              Saatlik Karargah Nöbet Çizelgesi
+            </button>
+          </div>
         </div>
         <CardContent className="p-4 sm:p-5">
-          <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
+          {activeShiftTab === 'daily' ? (
+            <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
+          ) : (
+            <HourlyShifts personnel={sortedPersonnel} activePosta={activePostaNumber} />
+          )}
         </CardContent>
       </Card>
 

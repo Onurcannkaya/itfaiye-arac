@@ -30,7 +30,7 @@ const ALLOWED_TABLES = [
   'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks',
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
-  'personnel_shifts_log'
+  'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -145,6 +145,71 @@ async function ensurePersonnelShiftsLogTableExists() {
     `);
   } catch (err) {
     console.error('ensurePersonnelShiftsLogTableExists hatası:', err);
+  }
+}
+
+async function ensureServiceApplicationsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.service_applications (
+        id SERIAL PRIMARY KEY,
+        takip_kodu VARCHAR(50) UNIQUE NOT NULL,
+        talep_turu VARCHAR(100) NOT NULL,
+        basvuran_tc VARCHAR(11) NOT NULL,
+        basvuran_ad VARCHAR(100) NOT NULL,
+        basvuran_soyad VARCHAR(100) NOT NULL,
+        basvuran_dogum_yili INTEGER NOT NULL,
+        irtibat_tel VARCHAR(20) NOT NULL,
+        adres TEXT NOT NULL,
+        bina_tipi VARCHAR(100),
+        isyeri_adi_turu VARCHAR(200),
+        durum VARCHAR(50) DEFAULT 'BEKLEMEDE',
+        islem_yapan_amir VARCHAR(150),
+        atanan_ekip VARCHAR(150),
+        islem_tarihi TIMESTAMPTZ,
+        red_gerekcesi TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+  } catch (err) {
+    console.error('ensureServiceApplicationsTableExists hatası:', err);
+  }
+}
+
+async function ensureTempOtpsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.temp_otps (
+        id SERIAL PRIMARY KEY,
+        phone VARCHAR(20) NOT NULL,
+        tc VARCHAR(11) NOT NULL,
+        otp VARCHAR(6) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '5 minutes',
+        used BOOLEAN DEFAULT FALSE
+      )
+    `);
+  } catch (err) {
+    console.error('ensureTempOtpsTableExists hatası:', err);
+  }
+}
+
+async function ensureHourlyShiftsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.hourly_shifts (
+        id SERIAL PRIMARY KEY,
+        tarih DATE NOT NULL DEFAULT CURRENT_DATE,
+        posta INTEGER NOT NULL,
+        saat_araligi VARCHAR(50) NOT NULL,
+        gorev_yeri VARCHAR(100) NOT NULL,
+        personel_sicil VARCHAR(50) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(tarih, saat_araligi, gorev_yeri)
+      )
+    `);
+  } catch (err) {
+    console.error('ensureHourlyShiftsTableExists hatası:', err);
   }
 }
 
@@ -488,6 +553,15 @@ export async function GET(
     if (table === 'personnel_shifts_log') {
       await ensurePersonnelShiftsLogTableExists();
     }
+    if (table === 'service_applications') {
+      await ensureServiceApplicationsTableExists();
+    }
+    if (table === 'temp_otps') {
+      await ensureTempOtpsTableExists();
+    }
+    if (table === 'hourly_shifts') {
+      await ensureHourlyShiftsTableExists();
+    }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
       await autoSeedVehiclesIfEmpty();
@@ -571,6 +645,15 @@ export async function POST(
     }
     if (table === 'personnel_shifts_log') {
       await ensurePersonnelShiftsLogTableExists();
+    }
+    if (table === 'service_applications') {
+      await ensureServiceApplicationsTableExists();
+    }
+    if (table === 'temp_otps') {
+      await ensureTempOtpsTableExists();
+    }
+    if (table === 'hourly_shifts') {
+      await ensureHourlyShiftsTableExists();
     }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
@@ -699,6 +782,15 @@ export async function PATCH(
     }
     if (table === 'personnel_shifts_log') {
       await ensurePersonnelShiftsLogTableExists();
+    }
+    if (table === 'service_applications') {
+      await ensureServiceApplicationsTableExists();
+    }
+    if (table === 'temp_otps') {
+      await ensureTempOtpsTableExists();
+    }
+    if (table === 'hourly_shifts') {
+      await ensureHourlyShiftsTableExists();
     }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
@@ -852,6 +944,15 @@ export async function DELETE(
     }
     if (table === 'personnel_shifts_log') {
       await ensurePersonnelShiftsLogTableExists();
+    }
+    if (table === 'service_applications') {
+      await ensureServiceApplicationsTableExists();
+    }
+    if (table === 'temp_otps') {
+      await ensureTempOtpsTableExists();
+    }
+    if (table === 'hourly_shifts') {
+      await ensureHourlyShiftsTableExists();
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();

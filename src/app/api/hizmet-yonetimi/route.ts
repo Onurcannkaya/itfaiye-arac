@@ -103,22 +103,34 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const citizenRequests = await queryMany<CitizenRequestRow>('SELECT * FROM public.citizen_requests');
     const bacaRequests = await queryMany<BacaRow>('SELECT * FROM public.baca_temizlik_basvurulari');
     const yanginRequests = await queryMany<YanginRow>('SELECT * FROM public.yangin_rapor_basvurulari');
+    const serviceApplications = await queryMany<any>('SELECT * FROM public.service_applications').catch(() => []);
 
     // 3. Map and unify all requests
     const unifiedRequests: CitizenRequestRow[] = [];
 
-    // Map existing citizen_requests
-    citizenRequests.forEach((req) => {
+    // Map service_applications first to prioritize NVİ verified applications
+    serviceApplications.forEach((req) => {
       unifiedRequests.push({
-        id: String(req.id),
+        id: `service-${req.id}`,
         talep_turu: req.talep_turu,
-        basvuru_tarihi: req.basvuru_tarihi || req.created_at,
-        basvuran_tc: req.basvuran_tc || '11111111111',
-        basvuran_ad_soyad: req.basvuran_ad_soyad,
+        basvuru_tarihi: req.created_at,
+        basvuran_tc: req.basvuran_tc,
+        basvuran_ad_soyad: `${req.basvuran_ad} ${req.basvuran_soyad}`,
         irtibat_tel: req.irtibat_tel,
         adres: req.adres,
-        baca_detaylari: req.baca_detaylari || undefined,
-        isyeri_detaylari: req.isyeri_detaylari || undefined,
+        baca_detaylari: req.talep_turu.includes('Baca') ? {
+          kat_sayisi: 1,
+          daire_sayisi: 1,
+          yakit_tipi: 'Doğalgaz',
+          baca_tipi: req.bina_tipi
+        } : undefined,
+        isyeri_detaylari: !req.talep_turu.includes('Baca') ? {
+          faaliyet_konusu: req.isyeri_adi_turu || '',
+          alan_m2: 100,
+          yangin_dolabi: 'Mevcut',
+          acil_cikis: '1 Adet',
+          bina_tipi: req.bina_tipi
+        } : undefined,
         durum: req.durum || 'BEKLEMEDE',
         created_at: req.created_at,
         islem_yapan_amir: req.islem_yapan_amir || undefined,
@@ -126,6 +138,39 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         islem_tarihi: req.islem_tarihi || undefined,
         red_gerekcesi: req.red_gerekcesi || undefined
       });
+    });
+
+    // Map existing citizen_requests
+    citizenRequests.forEach((req) => {
+      const exists = unifiedRequests.some(r => r.basvuran_tc === req.basvuran_tc);
+      if (!exists) {
+        unifiedRequests.push({
+          id: String(req.id),
+          talep_turu: req.talep_turu,
+          basvuru_tarihi: req.basvuru_tarihi || req.created_at,
+          basvuran_tc: req.basvuran_tc || '11111111111',
+          basvuran_ad_soyad: req.basvuran_ad_soyad,
+          irtibat_tel: req.irtibat_tel,
+          adres: req.adres,
+          baca_detaylari: req.baca_detaylari || undefined,
+          isyeri_detaylari: req.isyeri_detaylari || undefined,
+          durum: req.durum || 'BEKLEMEDE',
+          created_at: req.created_at,
+          islem_yapan_amir: req.islem_yapan_amir || undefined,
+          atanan_ekip: req.atanan_ekip || undefined,
+          islem_tarihi: req.islem_tarihi || undefined,
+          red_gerekcesi: req.red_gerekcesi || undefined
+        });
+      } else {
+        const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.basvuran_tc);
+        if (index !== -1) {
+          unifiedRequests[index].durum = req.durum || unifiedRequests[index].durum;
+          unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
+          unifiedRequests[index].atanan_ekip = req.atanan_ekip || unifiedRequests[index].atanan_ekip;
+          unifiedRequests[index].islem_tarihi = req.islem_tarihi || unifiedRequests[index].islem_tarihi;
+          unifiedRequests[index].red_gerekcesi = req.red_gerekcesi || unifiedRequests[index].red_gerekcesi;
+        }
+      }
     });
 
     // Map and append baca_temizlik_basvurulari if they don't already exist in unified list
