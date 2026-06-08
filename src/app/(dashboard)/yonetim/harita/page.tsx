@@ -539,6 +539,12 @@ function HaritaContent() {
       const { error: updErr } = await api.update('incidents', payload, { id: activeIncidentId })
       if (updErr) throw updErr
 
+      // Delete existing vehicles and personnel linkages first to prevent unique constraint violations
+      await Promise.all([
+        api.remove('incident_vehicles', { incident_id: activeIncidentId }),
+        api.remove('incident_personnel', { incident_id: activeIncidentId })
+      ]);
+
       // Link vehicles to incident
       if (selectedVehiclePlakas.length > 0) {
         const vPayload = selectedVehiclePlakas.map(plaka => ({
@@ -603,6 +609,48 @@ function HaritaContent() {
       alert("Kayıt oluşturulurken hata oluştu.")
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteIncident = (id: string) => {
+    setIncidents(prev => prev.filter(inc => String(inc.id) !== String(id)))
+  }
+
+  const handleEditIncident = async (incident: Incident) => {
+    setActiveIncidentId(incident.id)
+    setIncidentForm({
+      olay_turu: incident.olay_turu || "Ev Yangını",
+      mahalle: incident.mahalle || "",
+      adres: incident.adres || ""
+    })
+
+    try {
+      // Fetch currently linked vehicles
+      const { data: vData } = await api.from('incident_vehicles')
+        .select('plaka')
+        .eq('incident_id', incident.id)
+      
+      if (vData && Array.isArray(vData)) {
+        setSelectedVehiclePlakas(vData.map(v => v.plaka))
+      } else {
+        setSelectedVehiclePlakas([])
+      }
+
+      // Fetch currently linked personnel
+      const { data: pData } = await api.from('incident_personnel')
+        .select('sicil_no')
+        .eq('incident_id', incident.id)
+
+      if (pData && Array.isArray(pData)) {
+        setCheckedPersonnel(pData.map(p => p.sicil_no))
+      } else {
+        setCheckedPersonnel([])
+      }
+
+      // Open the dispatch/mufreze_cikis modal
+      setShowModal('mufreze_cikis')
+    } catch (err) {
+      console.error("Error loading incident links for edit:", err)
     }
   }
 
@@ -752,6 +800,8 @@ function HaritaContent() {
             onMapClick={handleMapClick} 
             focusLocation={focusLocation}
             onUpdateHydrantStatus={handleUpdateHydrantStatus}
+            onDeleteIncident={handleDeleteIncident}
+            onEditIncident={handleEditIncident}
           />
           
         </CardContent>

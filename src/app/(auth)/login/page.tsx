@@ -3,7 +3,7 @@ import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
-import { Loader2, ShieldAlert, LogIn, Flame, FileText, CheckCircle2, Copy, Check, Info, X, Users } from "lucide-react"
+import { Loader2, ShieldAlert, LogIn, Flame, FileText, CheckCircle2, Copy, Check, Info, X, Users, GraduationCap } from "lucide-react"
 import Image from "next/image"
 import { useAuthStore } from "@/lib/authStore"
 
@@ -18,28 +18,29 @@ function LoginForm() {
 
   // Vatandaş Hizmetleri Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'baca' | 'olur'>('baca')
+  const [activeTab, setActiveTab] = useState<'baca' | 'olur' | 'egitim' | 'yangin_raporu'>('baca')
   const [citizenLoading, setCitizenLoading] = useState(false)
   const [citizenError, setCitizenError] = useState("")
   const [trackingCode, setTrackingCode] = useState("")
   const [copied, setCopied] = useState(false)
 
-  // Baca Form State (KVKK Temizliği Yapıldı)
-  const [bacaName, setBacaName] = useState("")
-  const [bacaPhone, setBacaPhone] = useState("")
-  const [bacaAddress, setBacaAddress] = useState("")
-  const [bacaType, setBacaType] = useState("Konut")
+  // Ortak Kimlik Doğrulama Alanları
+  const [citizenTc, setCitizenTc] = useState("")
+  const [citizenAd, setCitizenAd] = useState("")
+  const [citizenSoyad, setCitizenSoyad] = useState("")
+  const [citizenDogumYili, setCitizenDogumYili] = useState("")
+  const [citizenPhone, setCitizenPhone] = useState("")
+  const [citizenAddress, setCitizenAddress] = useState("")
 
-  // Olur Raporu Form State (KVKK Temizliği Yapıldı)
-  const [olurName, setOlurName] = useState("")
-  const [olurPhone, setOlurPhone] = useState("")
-  const [olurAddress, setOlurAddress] = useState("")
+  // Sekme Özel Alanları
+  const [bacaType, setBacaType] = useState("Konut")
   const [olurType, setOlurType] = useState("İşyeri")
   const [olurBizName, setOlurBizName] = useState("")
-  const [olurTc, setOlurTc] = useState("")
-  const [olurAd, setOlurAd] = useState("")
-  const [olurSoyad, setOlurSoyad] = useState("")
-  const [olurDogumYili, setOlurDogumYili] = useState("")
+  const [egitimTuru, setEgitimTuru] = useState("Yangın Önleme ve Temel Yangın Eğitimi")
+  const [egitimKisiSayisi, setEgitimKisiSayisi] = useState("30")
+  const [yanginAciklama, setYanginAciklama] = useState("")
+  const [yanginBinaTipi, setYanginBinaTipi] = useState("Konut")
+
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [otpCode, setOtpCode] = useState("")
   const [simulatedOtp, setSimulatedOtp] = useState("")
@@ -85,13 +86,15 @@ function LoginForm() {
     setCitizenLoading(true)
 
     try {
-      if (activeTab === 'baca') {
+      if (!isOtpSent) {
+        // 1. Aşama: Bilgileri Nüfus ve Vatandaşlık İşlerine doğrulat ve OTP üret
         const payload = {
-          type: 'baca_temizligi',
-          ad_soyad: bacaName,
-          telefon: bacaPhone,
-          adres: bacaAddress,
-          bina_tipi: bacaType
+          action: 'send-otp',
+          tc: citizenTc,
+          ad: citizenAd,
+          soyad: citizenSoyad,
+          dogum_yili: citizenDogumYili,
+          telefon: citizenPhone
         };
 
         const res = await fetch('/api/citizen-requests', {
@@ -102,85 +105,87 @@ function LoginForm() {
 
         const data = await res.json();
         if (!res.ok || data.error) {
-          setCitizenError(data.error || "Başvuru sırasında bir hata oluştu.");
+          setCitizenError(data.error || "Kimlik doğrulama veya OTP gönderim hatası.");
+          return;
+        }
+
+        setSimulatedOtp(data.otp);
+        setIsOtpSent(true);
+      } else {
+        // 2. Aşama: OTP Doğrula ve Başvuruyu Kaydet
+        let typeVal = 'baca_temizligi';
+        let extraPayload = {};
+        if (activeTab === 'olur') {
+          typeVal = 'yangin_olur_raporu';
+          extraPayload = {
+            bina_tipi: olurType,
+            isyeri_adi_turu: olurBizName
+          };
+        } else if (activeTab === 'egitim') {
+          typeVal = 'egitim_talebi';
+          extraPayload = {
+            bina_tipi: 'Eğitim Kurumu',
+            isyeri_adi_turu: egitimTuru,
+            kisi_sayisi: Number(egitimKisiSayisi) || 30
+          };
+        } else if (activeTab === 'yangin_raporu') {
+          typeVal = 'yangin_raporu';
+          extraPayload = {
+            bina_tipi: yanginBinaTipi,
+            isyeri_adi_turu: yanginAciklama
+          };
+        } else {
+          // baca
+          typeVal = 'baca_temizligi';
+          extraPayload = {
+            bina_tipi: bacaType
+          };
+        }
+
+        const payload = {
+          action: 'verify-and-save',
+          otp: otpCode,
+          type: typeVal,
+          tc: citizenTc,
+          ad: citizenAd,
+          soyad: citizenSoyad,
+          dogum_yili: citizenDogumYili,
+          telefon: citizenPhone,
+          adres: citizenAddress,
+          ...extraPayload
+        };
+
+        const res = await fetch('/api/citizen-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          setCitizenError(data.error || "OTP doğrulama veya başvuru kaydetme hatası.");
           return;
         }
 
         setTrackingCode(data.trackingCode);
-        setBacaName("");
-        setBacaPhone("");
-        setBacaAddress("");
+        
+        // Formu sıfırla
+        setCitizenTc("");
+        setCitizenAd("");
+        setCitizenSoyad("");
+        setCitizenDogumYili("");
+        setCitizenPhone("");
+        setCitizenAddress("");
         setBacaType("Konut");
-      } else {
-        // İtfaiye Olur Raporu (Ruhsat Uygunluk) NVİ + SMS OTP Akışı
-        if (!isOtpSent) {
-          // 1. Aşama: Bilgileri Nüfus ve Vatandaşlık İşlerine doğrulat ve OTP üret
-          const payload = {
-            action: 'send-otp',
-            tc: olurTc,
-            ad: olurAd,
-            soyad: olurSoyad,
-            dogum_yili: olurDogumYili,
-            telefon: olurPhone
-          };
-
-          const res = await fetch('/api/citizen-requests', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            setCitizenError(data.error || "Kimlik doğrulama veya OTP gönderim hatası.");
-            return;
-          }
-
-          setSimulatedOtp(data.otp);
-          setIsOtpSent(true);
-        } else {
-          // 2. Aşama: OTP Doğrula ve Başvuruyu Kaydet
-          const payload = {
-            action: 'verify-and-save',
-            otp: otpCode,
-            type: 'yangin_olur_raporu',
-            tc: olurTc,
-            ad: olurAd,
-            soyad: olurSoyad,
-            dogum_yili: olurDogumYili,
-            telefon: olurPhone,
-            adres: olurAddress,
-            bina_tipi: olurType,
-            isyeri_adi_turu: olurBizName
-          };
-
-          const res = await fetch('/api/citizen-requests', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            setCitizenError(data.error || "OTP doğrulama veya başvuru kaydetme hatası.");
-            return;
-          }
-
-          setTrackingCode(data.trackingCode);
-          
-          // Formu sıfırla
-          setOlurTc("");
-          setOlurAd("");
-          setOlurSoyad("");
-          setOlurDogumYili("");
-          setOlurPhone("");
-          setOlurAddress("");
-          setOlurType("İşyeri");
-          setOlurBizName("");
-          setOtpCode("");
-          setIsOtpSent(false);
-          setSimulatedOtp("");
-        }
+        setOlurType("İşyeri");
+        setOlurBizName("");
+        setEgitimTuru("Yangın Önleme ve Temel Yangın Eğitimi");
+        setEgitimKisiSayisi("30");
+        setYanginAciklama("");
+        setYanginBinaTipi("Konut");
+        setOtpCode("");
+        setIsOtpSent(false);
+        setSimulatedOtp("");
       }
     } catch (err: unknown) {
       setCitizenError("İnternet veya sunucu bağlantı hatası oluştu.")
@@ -446,8 +451,8 @@ function LoginForm() {
               ) : (
                 /* Form Gösterimi */
                 <div className="space-y-4 w-full box-border">
-                  {/* Sekme Seçiciler */}
-                  <div className="grid grid-cols-2 p-0.5 bg-slate-950 border border-slate-800 rounded-lg">
+                  {/* Sekme Seçiciler (2x2 Grid) */}
+                  <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg">
                     <button 
                       type="button"
                       onClick={() => { setActiveTab('baca'); setCitizenError(""); }}
@@ -472,8 +477,32 @@ function LoginForm() {
                       <FileText className="w-3 h-3" />
                       İtfaiye Olur Raporu
                     </button>
+                    <button 
+                      type="button"
+                      onClick={() => { setActiveTab('egitim'); setCitizenError(""); }}
+                      className={`py-1.5 px-2 text-[10px] font-bold rounded-md flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                        activeTab === 'egitim' 
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <GraduationCap className="w-3 h-3" />
+                      Eğitim Talebi
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => { setActiveTab('yangin_raporu'); setCitizenError(""); }}
+                      className={`py-1.5 px-2 text-[10px] font-bold rounded-md flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                        activeTab === 'yangin_raporu' 
+                          ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md' 
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <ShieldAlert className="w-3 h-3" />
+                      Yangın Raporu
+                    </button>
                   </div>
-
+ 
                   <form onSubmit={handleCitizenSubmit} className="space-y-3 w-full box-border">
                     {citizenError && (
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[10px]">
@@ -482,140 +511,98 @@ function LoginForm() {
                       </div>
                     )}
 
-                    {activeTab === 'baca' ? (
-                      /* BACA FORMU */
+                    {!isOtpSent ? (
                       <>
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ad Soyad</label>
-                          <Input 
-                            placeholder="Adınızı ve Soyadınızı Yazınız" 
-                            value={bacaName}
-                            onChange={(e) => setBacaName(e.target.value)}
-                            required
-                            className="h-9 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1 col-span-2">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">T.C. Kimlik No</label>
+                            <Input 
+                              placeholder="11 haneli T.C. Kimlik No" 
+                              value={citizenTc}
+                              onChange={(e) => setCitizenTc(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                              required
+                              maxLength={11}
+                              className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ad (NVİ)</label>
+                            <Input 
+                              placeholder="Adınız" 
+                              value={citizenAd}
+                              onChange={(e) => setCitizenAd(e.target.value)}
+                              required
+                              className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Soyad (NVİ)</label>
+                            <Input 
+                              placeholder="Soyadınız" 
+                              value={citizenSoyad}
+                              onChange={(e) => setCitizenSoyad(e.target.value)}
+                              required
+                              className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Doğum Yılı</label>
+                            <Input 
+                              placeholder="Örn: 1990" 
+                              value={citizenDogumYili}
+                              onChange={(e) => setCitizenDogumYili(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                              required
+                              maxLength={4}
+                              className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İrtibat Telefonu</label>
+                            <Input 
+                              type="tel"
+                              placeholder="Telefon Numaranız" 
+                              value={citizenPhone}
+                              onChange={(e) => setCitizenPhone(e.target.value)}
+                              required
+                              className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
+                            />
+                          </div>
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İrtibat Telefonu</label>
-                          <Input 
-                            type="tel"
-                            placeholder="Telefon Numaranızı Giriniz" 
-                            value={bacaPhone}
-                            onChange={(e) => setBacaPhone(e.target.value)}
-                            required
-                            className="h-9 bg-slate-950/60 border-slate-800 focus:border-red-500 focus:ring-red-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Temizlik Yapılacak Adres</label>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Açık Adres</label>
                           <textarea 
-                            placeholder="Temizlik yapılacak binanın tam açık adresi..." 
-                            value={bacaAddress}
-                            onChange={(e) => setBacaAddress(e.target.value)}
+                            placeholder="Açık adresiniz..." 
+                            value={citizenAddress}
+                            onChange={(e) => setCitizenAddress(e.target.value)}
                             required
                             rows={2}
-                            className="w-full bg-slate-950/60 border border-slate-800 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/20 rounded-md text-slate-100 text-[11px] p-2.5 placeholder-slate-600 resize-none font-sans box-border"
+                            className="w-full bg-slate-950/60 border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] p-2.5 placeholder-slate-600 resize-none font-sans box-border"
                           />
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Bina Tipi</label>
-                          <select 
-                            value={bacaType}
-                            onChange={(e) => setBacaType(e.target.value)}
-                            className="w-full h-9 bg-slate-950/60 border border-slate-800 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/20 rounded-md text-slate-100 text-[11px] px-2 font-sans box-border"
-                          >
-                            <option value="Konut" className="bg-slate-950">Müstakil Ev</option>
-                            <option value="Apartman" className="bg-slate-950">Apartman / Site</option>
-                            <option value="İşyeri" className="bg-slate-950">İşyeri / Fabrika</option>
-                            <option value="Kamu Binası" className="bg-slate-950">Kamu Kuruluşu</option>
-                          </select>
-                        </div>
+                        {/* Sekme Özel Alanları */}
+                        {activeTab === 'baca' && (
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Bina Tipi</label>
+                            <select 
+                              value={bacaType}
+                              onChange={(e) => setBacaType(e.target.value)}
+                              className="w-full h-9 bg-slate-950/60 border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] px-2 font-sans box-border"
+                            >
+                              <option value="Konut" className="bg-slate-950">Müstakil Ev</option>
+                              <option value="Apartman" className="bg-slate-950">Apartman / Site</option>
+                              <option value="İşyeri" className="bg-slate-950">İşyeri / Fabrika</option>
+                              <option value="Kamu Binası" className="bg-slate-950">Kamu Kuruluşu</option>
+                            </select>
+                          </div>
+                        )}
 
-                        <Button 
-                          type="submit" 
-                          className="w-full h-10 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-bold rounded-lg transition-all shadow-lg active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5 border-0 text-[11px] cursor-pointer box-border" 
-                          disabled={citizenLoading}
-                        >
-                          {citizenLoading ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              Gönderiliyor...
-                            </>
-                          ) : (
-                            <>
-                              <Flame className="w-3.5 h-3.5 animate-pulse" />
-                              Baca Temizlik Başvurusu Yap
-                            </>
-                          )}
-                        </Button>
-                      </>
-                    ) : (
-                      /* OLUR RAPORU FORMU */
-                      <>
-                        {!isOtpSent ? (
+                        {activeTab === 'olur' && (
                           <>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="space-y-1 col-span-2">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">T.C. Kimlik No</label>
-                                <Input 
-                                  placeholder="11 haneli T.C. Kimlik No" 
-                                  value={olurTc}
-                                  onChange={(e) => setOlurTc(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                                  required
-                                  maxLength={11}
-                                  className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ad (NVİ)</label>
-                                <Input 
-                                  placeholder="Adınız" 
-                                  value={olurAd}
-                                  onChange={(e) => setOlurAd(e.target.value)}
-                                  required
-                                  className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Soyad (NVİ)</label>
-                                <Input 
-                                  placeholder="Soyadınız" 
-                                  value={olurSoyad}
-                                  onChange={(e) => setOlurSoyad(e.target.value)}
-                                  required
-                                  className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Doğum Yılı</label>
-                                <Input 
-                                  placeholder="Örn: 1990" 
-                                  value={olurDogumYili}
-                                  onChange={(e) => setOlurDogumYili(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                                  required
-                                  maxLength={4}
-                                  className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İrtibat Telefonu</label>
-                                <Input 
-                                  type="tel"
-                                  placeholder="Telefon Numaranız" 
-                                  value={olurPhone}
-                                  onChange={(e) => setOlurPhone(e.target.value)}
-                                  required
-                                  className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
-                                />
-                              </div>
-                            </div>
-
                             <div className="space-y-1">
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İşyeri Unvanı ve Faaliyet Türü</label>
                               <Input 
@@ -626,19 +613,6 @@ function LoginForm() {
                                 className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
                               />
                             </div>
-
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İşyeri Adresi</label>
-                              <textarea 
-                                placeholder="İşyerinin tam açık adresi..." 
-                                value={olurAddress}
-                                onChange={(e) => setOlurAddress(e.target.value)}
-                                required
-                                rows={2}
-                                className="w-full bg-slate-950/60 border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] p-2.5 placeholder-slate-600 resize-none font-sans box-border"
-                              />
-                            </div>
-
                             <div className="space-y-1">
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Bina Yapı Tipi</label>
                               <select 
@@ -652,75 +626,131 @@ function LoginForm() {
                                 <option value="Konut" className="bg-slate-950">Mesken / Ortak Alan</option>
                               </select>
                             </div>
-
-                            <Button 
-                              type="submit" 
-                              className="w-full h-10 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-bold rounded-lg transition-all shadow-lg active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5 border-0 text-[11px] cursor-pointer box-border" 
-                              disabled={citizenLoading}
-                            >
-                              {citizenLoading ? (
-                                <>
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  Kimlik Doğrulanıyor...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 className="w-3.5 h-3.5 animate-pulse" />
-                                  Kimliği Doğrula & SMS Kodu Gönder
-                                </>
-                              )}
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            {/* SMS OTP Simülasyon Ekranı */}
-                            <div className="bg-cyan-500/10 border border-cyan-500/30 p-3.5 rounded-xl text-cyan-400 text-xs font-mono text-center flex flex-col gap-2 my-2 animate-in slide-in-from-top-2">
-                              <span className="font-extrabold uppercase tracking-widest text-[9px] text-cyan-300">Simüle Edilen SMS Paneli</span>
-                              <span className="text-[11px] leading-relaxed text-slate-100">
-                                Sivas Bld: <span className="font-black text-white px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-sm tracking-wider">{simulatedOtp}</span> doğrulama kodu ile Ruhsat Uygunluk başvurunuzu tamamlayabilirsiniz.
-                              </span>
-                            </div>
-
-                            <div className="space-y-2 py-2">
-                              <label className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center block">6 Haneli SMS Doğrulama Kodu</label>
-                              <Input 
-                                type="text"
-                                placeholder="SMS Kodunu Giriniz" 
-                                value={otpCode}
-                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                required
-                                maxLength={6}
-                                className="h-11 bg-slate-950/80 border-cyan-500/40 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-base font-black text-center tracking-widest placeholder-slate-700 pl-3 w-full box-border"
-                              />
-                            </div>
-
-                            <Button 
-                              type="submit" 
-                              className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-lg transition-all shadow-lg active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5 border-0 text-xs cursor-pointer box-border" 
-                              disabled={citizenLoading || otpCode.length < 6}
-                            >
-                              {citizenLoading ? (
-                                <>
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  Başvuru Kaydediliyor...
-                                </>
-                              ) : (
-                                <>
-                                  <FileText className="w-3.5 h-3.5" />
-                                  Başvuruyu Tamamla ve Gönder
-                                </>
-                              )}
-                            </Button>
-
-                            <button
-                              type="button"
-                              onClick={() => { setIsOtpSent(false); setOtpCode(""); }}
-                              className="w-full mt-2 text-center text-[10px] text-slate-400 hover:text-slate-200 transition-colors bg-transparent border-0 cursor-pointer"
-                            >
-                              ← Bilgileri Düzenle / Yeniden Kod İste
-                            </button>
                           </>
                         )}
+
+                        {activeTab === 'egitim' && (
+                          <>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Eğitim Türü</label>
+                              <select 
+                                value={egitimTuru}
+                                onChange={(e) => setEgitimTuru(e.target.value)}
+                                className="w-full h-9 bg-slate-950/60 border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] px-2 font-sans box-border"
+                              >
+                                <option value="Yangın Önleme ve Temel Yangın Eğitimi" className="bg-slate-950">Yangın Önleme ve Temel Yangın Eğitimi</option>
+                                <option value="Arama Kurtarma Eğitimi" className="bg-slate-950">Arama Kurtarma Eğitimi</option>
+                                <option value="İlkyardım ve Afet Bilinci" className="bg-slate-950">İlkyardım ve Afet Bilinci</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Planlanan Katılımcı Sayısı</label>
+                              <Input 
+                                type="number" 
+                                placeholder="Örn: 30" 
+                                value={egitimKisiSayisi}
+                                onChange={(e) => setEgitimKisiSayisi(e.target.value)}
+                                required
+                                className="h-9 bg-slate-950/60 border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] pl-3 w-full box-border"
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {activeTab === 'yangin_raporu' && (
+                          <>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Rapor Talep Gerekçesi / Açıklama</label>
+                              <textarea 
+                                placeholder="Yangın olayının tarihi ve detaylı gerekçe açıklaması..." 
+                                value={yanginAciklama}
+                                onChange={(e) => setYanginAciklama(e.target.value)}
+                                required
+                                rows={2}
+                                className="w-full bg-slate-950/60 border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] p-2.5 placeholder-slate-600 resize-none font-sans box-border"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Bina Yapı Tipi</label>
+                              <select 
+                                value={yanginBinaTipi}
+                                onChange={(e) => setYanginBinaTipi(e.target.value)}
+                                className="w-full h-9 bg-slate-950/60 border border-slate-800 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 rounded-md text-slate-100 text-[11px] px-2 font-sans box-border"
+                              >
+                                <option value="Konut" className="bg-slate-950">Müstakil Ev / Apartman</option>
+                                <option value="İşyeri" className="bg-slate-950">İşyeri / Ticari Alan</option>
+                                <option value="Fabrika" className="bg-slate-950">Fabrika / Depo / Sanayi</option>
+                              </select>
+                            </div>
+                          </>
+                        )}
+
+                        <Button 
+                          type="submit" 
+                          className="w-full h-10 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-bold rounded-lg transition-all shadow-lg active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5 border-0 text-[11px] cursor-pointer box-border" 
+                          disabled={citizenLoading}
+                        >
+                          {citizenLoading ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              Kimlik Doğrulanıyor...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 animate-pulse" />
+                              Kimliği Doğrula & SMS Kodu Gönder
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {/* SMS OTP Simülasyon Ekranı */}
+                        <div className="bg-cyan-500/10 border border-cyan-500/30 p-3.5 rounded-xl text-cyan-400 text-xs font-mono text-center flex flex-col gap-2 my-2 animate-in slide-in-from-top-2">
+                          <span className="font-extrabold uppercase tracking-widest text-[9px] text-cyan-300">Simüle Edilen SMS Paneli</span>
+                          <span className="text-[11px] leading-relaxed text-slate-100">
+                            Sivas Bld: <span className="font-black text-white px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-sm tracking-wider">{simulatedOtp}</span> doğrulama kodu ile başvurunuzu tamamlayabilirsiniz.
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 py-2">
+                          <label className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center block">6 Haneli SMS Doğrulama Kodu</label>
+                          <Input 
+                            type="text"
+                            placeholder="SMS Kodunu Giriniz" 
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            required
+                            maxLength={6}
+                            className="h-11 bg-slate-950/80 border-cyan-500/40 focus:border-cyan-500 focus:ring-cyan-500/20 rounded-md text-slate-100 text-base font-black text-center tracking-widest placeholder-slate-700 pl-3 w-full box-border"
+                          />
+                        </div>
+
+                        <Button 
+                          type="submit" 
+                          className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-lg transition-all shadow-lg active:scale-[0.98] mt-2 flex items-center justify-center gap-1.5 border-0 text-xs cursor-pointer box-border" 
+                          disabled={citizenLoading || otpCode.length < 6}
+                        >
+                          {citizenLoading ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              Başvuru Kaydediliyor...
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="w-3.5 h-3.5" />
+                              Başvuruyu Tamamla ve Gönder
+                            </>
+                          )}
+                        </Button>
+
+                        <button
+                          type="button"
+                          onClick={() => { setIsOtpSent(false); setOtpCode(""); }}
+                          className="w-full mt-2 text-center text-[10px] text-slate-400 hover:text-slate-200 transition-colors bg-transparent border-0 cursor-pointer"
+                        >
+                          ← Bilgileri Düzenle / Yeniden Kod İste
+                        </button>
                       </>
                     )}
                   </form>

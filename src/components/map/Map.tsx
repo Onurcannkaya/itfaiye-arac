@@ -4,9 +4,12 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as turf from '@turf/turf'
-import { Layers, Building2, Map as MapIcon, Milestone, Droplets, X, Flame } from 'lucide-react'
+import { Layers, Building2, Map as MapIcon, Milestone, Droplets, X, Flame, Edit, Trash2, Loader2 } from 'lucide-react'
 import { getTriageInfo } from '@/lib/utils'
 import { Vehicle } from '@/types'
+import { api } from '@/lib/api'
+import { useAuthStore } from '@/lib/authStore'
+import { Badge } from '@/components/ui/Badge'
 
 
 
@@ -47,6 +50,8 @@ interface MapProps {
   onMapClick: (lat: number, lng: number) => void
   focusLocation: [number, number] | null
   onUpdateHydrantStatus?: (id: string, newStatus: string) => void
+  onDeleteIncident?: (id: string) => void
+  onEditIncident?: (incident: Incident) => void
 }
 
 const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -199,7 +204,7 @@ function computeClusters<T extends { id: string }>(
   return clusters
 }
 
-export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, focusLocation, onUpdateHydrantStatus }: MapProps) {
+export default function Map({ incidents, hydrants, vehicles = [], mode, onMapClick, focusLocation, onUpdateHydrantStatus, onDeleteIncident, onEditIncident }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
@@ -232,6 +237,88 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
   const [routeDuration, setRouteDuration] = useState<number | null>(null)
   const selectedIncidentRouteAnimFrameRef = useRef<number | null>(null)
+
+  const { user } = useAuthStore()
+  const [dispatchedVehicles, setDispatchedVehicles] = useState<any[]>([])
+  const [dispatchedPersonnel, setDispatchedPersonnel] = useState<any[]>([])
+  const [detailsLoading, setDetailsLoading] = useState(false)
+
+  const isAuthorized = user && (
+    user.rol === 'Admin' || 
+    user.rol === 'Santral' ||
+    (user.unvan || '').toLowerCase().includes('amir') || 
+    (user.unvan || '').toLowerCase().includes('çavuş') ||
+    (user.unvan || '').toLowerCase().includes('santral')
+  )
+
+  useEffect(() => {
+    if (!selectedIncident || !selectedIncident.id) {
+      setDispatchedVehicles([]);
+      setDispatchedPersonnel([]);
+      return;
+    }
+
+    const fetchIncidentDetails = async () => {
+      setDetailsLoading(true);
+      try {
+        // 1. Fetch Dispatched Vehicles
+        const { data: vData } = await api.from("incident_vehicles")
+          .select("*")
+          .eq("incident_id", selectedIncident.id);
+        
+        if (vData && Array.isArray(vData)) {
+          const matched = vData.map(v => {
+            const vInfo = (vehicles || []).find(item => item.plaka === v.plaka);
+            return {
+              plaka: v.plaka,
+              marka: vInfo?.marka || '',
+              model: vInfo?.model || '',
+              arac_tipi: vInfo?.arac_tipi || ''
+            };
+          });
+          setDispatchedVehicles(matched);
+        } else {
+          setDispatchedVehicles([]);
+        }
+
+        // 2. Fetch Dispatched Personnel
+        const { data: pData } = await api.from("incident_personnel")
+          .select("*")
+          .eq("incident_id", selectedIncident.id);
+
+        if (pData && Array.isArray(pData) && pData.length > 0) {
+          const sicilNos = pData.map(p => p.sicil_no);
+          
+          const { data: personnelList } = await api.from("personnel")
+            .select("*")
+            .in("sicil_no", sicilNos);
+          
+          if (personnelList && Array.isArray(personnelList)) {
+            const matchedP = pData.map(p => {
+              const pInfo = personnelList.find(item => item.sicil_no === p.sicil_no);
+              return {
+                sicil_no: p.sicil_no,
+                ad: pInfo?.ad || '',
+                soyad: pInfo?.soyad || '',
+                unvan: pInfo?.unvan || ''
+              };
+            });
+            setDispatchedPersonnel(matchedP);
+          } else {
+            setDispatchedPersonnel([]);
+          }
+        } else {
+          setDispatchedPersonnel([]);
+        }
+      } catch (err) {
+        console.error("Error fetching incident details:", err);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
+    fetchIncidentDetails();
+  }, [selectedIncident, vehicles]);
 
   // ─── Filtered Data using Memoization ────────────────
   const filteredIncidents = useMemo(() => {
@@ -2468,18 +2555,116 @@ export default function Map({ incidents, hydrants, vehicles, mode, onMapClick, f
                 {selectedIncident.cikis_saati ? new Date(selectedIncident.cikis_saati).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}
               </span>
             </div>
+            {/* Sevk Edilen Araçlar ve Personeller */}
+            <div className="h-px bg-white/5 my-2" />
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wide">Görevli Ekip & Araçlar:</div>
+              {detailsLoading ? (
+                <div className="flex items-center gap-1.5 text-slate-400 py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                  <span>Bilgiler Yükleniyor...</span>
+                </div>
+              ) : (
+                <div className="max-h-[140px] overflow-y-auto space-y-2 pr-1 select-text">
+                  {/* Araçlar */}
+                  {dispatchedVehicles.length > 0 ? (
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-semibold mb-1">Araçlar:</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dispatchedVehicles.map(v => (
+                          <Badge key={v.plaka} variant="outline" className="text-[10px] border-cyan-500/20 text-cyan-300 bg-cyan-950/15 py-0.5 font-mono">
+                            {v.plaka} {v.arac_tipi ? `(${v.arac_tipi})` : ''}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-slate-500 italic">Sevk edilen araç yok.</div>
+                  )}
+
+                  {/* Personeller */}
+                  {dispatchedPersonnel.length > 0 ? (
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-semibold mb-1">Personel:</div>
+                      <div className="flex flex-col gap-1 bg-slate-900/30 p-1.5 rounded-lg border border-white/5">
+                        {dispatchedPersonnel.map(p => (
+                          <div key={p.sicil_no} className="text-[11px] text-slate-300 flex justify-between">
+                            <span>{p.ad} {p.soyad}</span>
+                            <span className="text-slate-500 text-[10px]">{p.unvan || 'Er'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-slate-500 italic">Sevk edilen personel yok.</div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="h-px bg-white/5 my-2" />
             
             {/* Lojistik Sayaç */}
-            <div className="bg-cyan-950/30 border border-cyan-500/25 rounded-xl p-2.5 flex items-center justify-between shadow-[0_0_15px_rgba(6,182,212,0.05)]">
+            <div className="bg-cyan-950/30 border border-cyan-500/25 rounded-xl p-2.5 flex items-center justify-between shadow-[0_0_15px_rgba(6,182,212,0.05)] mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
-                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wide">Tahmini Müdahale Süresi:</span>
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wide">Müdahale Süresi:</span>
               </div>
               <span className="text-sm font-black text-emerald-400 font-mono">
-                {routeDuration !== null ? `${routeDuration} Dakika` : 'Hesaplanıyor...'}
+                {routeDuration !== null ? `${routeDuration} Dk` : 'Hesaplanıyor...'}
               </span>
             </div>
+
+            {/* Düzenle & Sil Butonları */}
+            {isAuthorized && (
+              <>
+                <div className="h-px bg-white/5 my-2" />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onEditIncident) {
+                        onEditIncident(selectedIncident);
+                      }
+                    }}
+                    className="flex-1 py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    Düzenle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm("Bu vaka kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) return;
+                      try {
+                        // Delete child records first to satisfy foreign key constraints
+                        await Promise.all([
+                          api.remove('incident_vehicles', { incident_id: selectedIncident.id }),
+                          api.remove('incident_personnel', { incident_id: selectedIncident.id }),
+                          api.remove('incident_media', { incident_id: selectedIncident.id })
+                        ]);
+                        
+                        // Delete main incident record
+                        const { error } = await api.remove('incidents', { id: selectedIncident.id });
+                        if (error) throw error;
+                        
+                        if (onDeleteIncident) {
+                          onDeleteIncident(selectedIncident.id);
+                        }
+                        setSelectedIncident(null);
+                      } catch (err) {
+                        console.error("Incident delete error:", err);
+                        alert("Vaka silinemedi.");
+                      }
+                    }}
+                    className="py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Sil
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

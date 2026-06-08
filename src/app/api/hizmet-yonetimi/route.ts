@@ -108,6 +108,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // 3. Map and unify all requests
     const unifiedRequests: CitizenRequestRow[] = [];
 
+    const mapStatus = (durum: string | undefined): string => {
+      const d = durum || 'BEKLEMEDE';
+      if (d === 'true') return 'ONAYLANDI';
+      if (d === 'false') return 'REDDEDİLDİ';
+      return d;
+    };
+
     // Map service_applications first to prioritize NVİ verified applications
     serviceApplications.forEach((req) => {
       unifiedRequests.push({
@@ -124,14 +131,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           yakit_tipi: 'Doğalgaz',
           baca_tipi: req.bina_tipi
         } : undefined,
-        isyeri_detaylari: !req.talep_turu.includes('Baca') ? {
+        isyeri_detaylari: req.talep_turu.includes('Eğitim') ? {
+          egitim_turu: req.isyeri_adi_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
+          kisi_sayisi: 30,
+          egitim_tarihi: new Date(req.created_at).toISOString().split('T')[0]
+        } : req.talep_turu.includes('Yangın Raporu') ? {
+          yangin_nedeni: req.isyeri_adi_turu || 'Yangın Raporu Talebi',
+          bina_tipi: req.bina_tipi || 'Konut'
+        } : !req.talep_turu.includes('Baca') ? {
           faaliyet_konusu: req.isyeri_adi_turu || '',
           alan_m2: 100,
           yangin_dolabi: 'Mevcut',
           acil_cikis: '1 Adet',
           bina_tipi: req.bina_tipi
         } : undefined,
-        durum: req.durum || 'BEKLEMEDE',
+        durum: mapStatus(req.durum),
         created_at: req.created_at,
         islem_yapan_amir: req.islem_yapan_amir || undefined,
         atanan_ekip: req.atanan_ekip || undefined,
@@ -154,7 +168,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           adres: req.adres,
           baca_detaylari: req.baca_detaylari || undefined,
           isyeri_detaylari: req.isyeri_detaylari || undefined,
-          durum: req.durum || 'BEKLEMEDE',
+          durum: mapStatus(req.durum),
           created_at: req.created_at,
           islem_yapan_amir: req.islem_yapan_amir || undefined,
           atanan_ekip: req.atanan_ekip || undefined,
@@ -164,7 +178,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       } else {
         const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.basvuran_tc);
         if (index !== -1) {
-          unifiedRequests[index].durum = req.durum || unifiedRequests[index].durum;
+          unifiedRequests[index].durum = mapStatus(req.durum) || unifiedRequests[index].durum;
           unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
           unifiedRequests[index].atanan_ekip = req.atanan_ekip || unifiedRequests[index].atanan_ekip;
           unifiedRequests[index].islem_tarihi = req.islem_tarihi || unifiedRequests[index].islem_tarihi;
@@ -191,7 +205,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             yakit_tipi: 'Doğalgaz',
             baca_tipi: req.bina_tipi
           },
-          durum: req.durum || 'BEKLEMEDE',
+          durum: mapStatus(req.durum),
           created_at: req.created_at,
           islem_yapan_amir: req.islem_yapan_amir || undefined,
           atanan_ekip: req.atanan_ekip || undefined,
@@ -202,7 +216,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         // If it exists, make sure we sync the extra details if they were updated in special table
         const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.takip_kodu);
         if (index !== -1) {
-          unifiedRequests[index].durum = req.durum || unifiedRequests[index].durum;
+          unifiedRequests[index].durum = mapStatus(req.durum) || unifiedRequests[index].durum;
           unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
           unifiedRequests[index].atanan_ekip = req.atanan_ekip || unifiedRequests[index].atanan_ekip;
           unifiedRequests[index].islem_tarihi = req.islem_tarihi || unifiedRequests[index].islem_tarihi;
@@ -230,7 +244,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             acil_cikis: '1 Adet',
             bina_tipi: req.bina_tipi
           },
-          durum: req.durum || 'BEKLEMEDE',
+          durum: mapStatus(req.durum),
           created_at: req.created_at,
           islem_yapan_amir: req.islem_yapan_amir || undefined,
           atanan_ekip: req.atanan_ekip || undefined,
@@ -241,7 +255,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         // If it exists, make sure we sync the extra details if they were updated in special table
         const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.takip_kodu);
         if (index !== -1) {
-          unifiedRequests[index].durum = req.durum || unifiedRequests[index].durum;
+          unifiedRequests[index].durum = mapStatus(req.durum) || unifiedRequests[index].durum;
           unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
           unifiedRequests[index].atanan_ekip = req.atanan_ekip || unifiedRequests[index].atanan_ekip;
           unifiedRequests[index].islem_tarihi = req.islem_tarihi || unifiedRequests[index].islem_tarihi;
@@ -255,7 +269,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Calculate dynamic counts including manuals
     const totalBaca = unifiedRequests.filter(r => r.talep_turu.includes('Baca')).length;
-    const totalYangin = unifiedRequests.filter(r => r.talep_turu.includes('Uygunluk') || r.talep_turu.includes('Ruhsat')).length;
+    const totalYangin = unifiedRequests.filter(r => r.talep_turu.includes('Uygunluk') || r.talep_turu.includes('Ruhsat') || r.talep_turu.includes('Yangın Raporu')).length;
     const totalEgitim = unifiedRequests.filter(r => r.talep_turu.includes('Eğitim')).length;
 
     // Total simulated revenue based on approved applications
@@ -264,7 +278,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .reduce((sum, r) => {
         if (r.talep_turu.includes('Baca')) return sum + 650;
         if (r.talep_turu.includes('Eğitim')) return sum + 1200;
-        return sum + 2450; // İtfaiye Uygunluk Raporu / Ruhsat
+        return sum + 2450; // İtfaiye Uygunluk Raporu / Ruhsat / Yangın Raporu
       }, 0);
 
     return NextResponse.json({

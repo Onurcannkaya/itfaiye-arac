@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           `UPDATE public.service_applications 
            SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
            WHERE takip_kodu = $5`,
-          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+          [durum === 'ONAYLANDI' ? 'true' : durum === 'REDDEDİLDİ' ? 'false' : durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
         ).catch(() => {});
 
       } else if (typeof id === 'string' && id.startsWith('yangin-')) {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
           `UPDATE public.service_applications 
            SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
            WHERE takip_kodu = $5`,
-          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+          [durum === 'ONAYLANDI' ? 'true' : durum === 'REDDEDİLDİ' ? 'false' : durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
         ).catch(() => {});
 
       } else if (typeof id === 'string' && id.startsWith('service-')) {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
           `UPDATE public.service_applications 
            SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
            WHERE id = $5`,
-          [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, serialId]
+          [durum === 'ONAYLANDI' ? 'true' : durum === 'REDDEDİLDİ' ? 'false' : durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, serialId]
         );
 
         // 3. Update main table
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
             `UPDATE public.service_applications 
              SET durum = $1, islem_yapan_amir = $2, atanan_ekip = $3, red_gerekcesi = $4, islem_tarihi = NOW() 
              WHERE takip_kodu = $5`,
-            [durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
+            [durum === 'ONAYLANDI' ? 'true' : durum === 'REDDEDİLDİ' ? 'false' : durum, islem_yapan_amir || null, atanan_ekip || null, red_gerekcesi || null, trackingCode]
           ).catch(() => {});
         }
       }

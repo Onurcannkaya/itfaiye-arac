@@ -107,13 +107,31 @@ export default function PersonelProfilPage() {
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">{personel.ad} {personel.soyad}</h1>
-            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
               <Badge variant="outline" className="font-mono bg-surface">{personel.sicil_no}</Badge>
               <span>{personel.unvan}</span>
               <span className="opacity-50">|</span>
               <span className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${personel.aktif ? 'bg-success' : 'bg-danger'}`} />
-                {personel.aktif ? 'Aktif Görevde' : 'Pasif'}
+                {personel.aktif ? 'Sistemde Aktif' : 'Sistemde Pasif'}
+              </span>
+              <span className="opacity-50">|</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Günlük Durum:</span>
+                {(() => {
+                  const durumLower = (personel.durum || '').toLowerCase();
+                  let variant: 'success' | 'danger' | 'warning' | 'outline' = 'success';
+                  if (durumLower.includes('izinli') || durumLower.includes('raporlu')) {
+                    variant = 'danger';
+                  } else if (durumLower.includes('geçici') || durumLower.includes('gecici') || durumLower.includes('dış') || durumLower.includes('dis')) {
+                    variant = 'warning';
+                  }
+                  return (
+                    <Badge variant={variant} className="text-[11px] font-semibold px-2 py-0.5">
+                      {personel.durum || 'Hazır'}
+                    </Badge>
+                  );
+                })()}
               </span>
             </div>
           </div>
@@ -177,6 +195,10 @@ export default function PersonelProfilPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Doğum Tarihi</p>
                     <p className="font-medium">{details?.dogum_tarihi ? new Date(details.dogum_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Günlük Nöbet Durumu</p>
+                    <p className="font-medium text-cyan-400">{personel.durum || 'Hazır'}</p>
                   </div>
                 </div>
               </CardContent>

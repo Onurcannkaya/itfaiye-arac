@@ -54,6 +54,8 @@ interface CitizenRequest {
     kisi_sayisi?: number;
     egitim_tarihi?: string;
     egitim_turu?: string;
+    yangin_nedeni?: string;
+    bina_tipi?: string;
   };
   durum: string;
   created_at: string;
@@ -262,7 +264,7 @@ export default function HizmetlerPage() {
 
   // Calculated values for KPI Metrics
   const bacaCount = requests.filter(r => r.talep_turu.includes('Baca')).length
-  const yanginCount = requests.filter(r => r.talep_turu.includes('Uygunluk') || r.talep_turu.includes('Ruhsat')).length
+  const yanginCount = requests.filter(r => r.talep_turu.includes('Uygunluk') || r.talep_turu.includes('Ruhsat') || r.talep_turu.includes('Yangın Raporu')).length
   const egitimCount = requests.filter(r => r.talep_turu.includes('Eğitim')).length
   
   // Total simulated revenue based on approved applications
@@ -373,6 +375,16 @@ export default function HizmetlerPage() {
           <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Eğitim Türü</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.egitim_turu || '-'}</td></tr>
           <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Katılımcı Sayısı</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.kisi_sayisi || '-'}</td></tr>
           <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Planlanan Tarih</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.egitim_tarihi || '-'}</td></tr>
+        `;
+      }
+    } else if (req.talep_turu.includes('Yangın Raporu')) {
+      konuText = 'Yangın Raporu Talebi Hk.';
+      govdeText = `Aşağıda detayları belirtilen olay ile ilgili düzenlenen resmi Yangın Raporunun tarafıma verilmesini talep ediyorum. Gereğinin yapılmasını arz ederim.`;
+      if (req.isyeri_detaylari) {
+        const id = req.isyeri_detaylari;
+        teknikBilgi = `
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Yangın Nedeni/Detayı</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.yangin_nedeni || '-'}</td></tr>
+          <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Bina Yapı Tipi</td><td style="padding:6px 12px;border:1px solid #ccc;">${id.bina_tipi || '-'}</td></tr>
         `;
       }
     } else {
@@ -907,6 +919,22 @@ export default function HizmetlerPage() {
                   <div className="space-y-3 bg-purple-950/20 p-4 rounded-xl border border-purple-950/40">
                     <h3 className="font-bold text-xs uppercase tracking-wider text-purple-400 border-b border-purple-500/20 pb-1.5 flex items-center gap-1.5">
                       <GraduationCap className="w-4 h-4" /> Eğitim ve Tatbikat Organizasyon Detayları
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                      {Object.entries(selectedRequest.isyeri_detaylari).map(([key, val]) => (
+                        <div key={key} className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-900">
+                          <span className="text-zinc-500 block text-[10px] uppercase tracking-wide font-bold">{key.replace('_', ' ')}</span>
+                          <span className="font-bold text-zinc-300 mt-0.5 block">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedRequest.talep_turu === 'Yangın Raporu' && selectedRequest.isyeri_detaylari && (
+                  <div className="space-y-3 bg-yellow-950/20 p-4 rounded-xl border border-yellow-950/40">
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-yellow-400 border-b border-yellow-500/20 pb-1.5 flex items-center gap-1.5">
+                      <FileText className="w-4 h-4" /> Yangın Raporu Başvuru Detayları
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                       {Object.entries(selectedRequest.isyeri_detaylari).map(([key, val]) => (

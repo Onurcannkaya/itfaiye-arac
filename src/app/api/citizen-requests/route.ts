@@ -257,6 +257,22 @@ export async function POST(request: NextRequest) {
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [trackingCode, `${ad.trim()} ${soyad.trim()}`, telefon.trim(), adres.trim(), bina_tipi.trim(), isyeri_adi_turu?.trim() || '']
         );
+      } else if (type === 'egitim_talebi') {
+        const pattern = `SVS-EGITIM-${year}-%`;
+        const countRes = await queryOne<{ count: string }>(
+          'SELECT COUNT(*) as count FROM public.service_applications WHERE takip_kodu LIKE $1',
+          [pattern]
+        );
+        const count = countRes ? parseInt(countRes.count, 10) : 0;
+        trackingCode = `SVS-EGITIM-${year}-${String(count + 1).padStart(3, '0')}`;
+      } else if (type === 'yangin_raporu') {
+        const pattern = `SVS-YRAPOR-${year}-%`;
+        const countRes = await queryOne<{ count: string }>(
+          'SELECT COUNT(*) as count FROM public.service_applications WHERE takip_kodu LIKE $1',
+          [pattern]
+        );
+        const count = countRes ? parseInt(countRes.count, 10) : 0;
+        trackingCode = `SVS-YRAPOR-${year}-${String(count + 1).padStart(3, '0')}`;
       } else {
         const pattern = `SVS-BACA-${year}-%`;
         const countRes = await queryOne<{ count: string }>(
@@ -275,13 +291,18 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Yeni service_applications tablosuna ekle
+      let talepTuruVal = 'Baca Temizliği';
+      if (type === 'yangin_olur_raporu') talepTuruVal = 'İtfaiye Uygunluk Raporu';
+      else if (type === 'egitim_talebi') talepTuruVal = 'Eğitim Talebi';
+      else if (type === 'yangin_raporu') talepTuruVal = 'Yangın Raporu';
+
       const serviceRes = await query(
         `INSERT INTO public.service_applications (
           takip_kodu, talep_turu, basvuran_tc, basvuran_ad, basvuran_soyad, basvuran_dogum_yili, irtibat_tel, adres, bina_tipi, isyeri_adi_turu, durum
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'BEKLEMEDE') RETURNING *`,
         [
           trackingCode,
-          type === 'yangin_olur_raporu' ? 'İtfaiye Uygunluk Raporu' : 'Baca Temizliği',
+          talepTuruVal,
           tc.trim(),
           ad.trim(),
           soyad.trim(),
@@ -295,15 +316,24 @@ export async function POST(request: NextRequest) {
 
       // 3. citizen_requests tablosuna da kaydet
       try {
-        const detaylar = type === 'yangin_olur_raporu' 
-          ? { faaliyet_konusu: isyeri_adi_turu?.trim() || '', alan_m2: 100, yangin_dolabi: 'Mevcut', acil_cikis: '1 Adet', bina_tipi: bina_tipi.trim() }
-          : { kat_sayisi: 1, daire_sayisi: 1, yakit_tipi: 'Doğalgaz', baca_tipi: bina_tipi.trim() };
+        let detaylar: any = {};
+        if (type === 'yangin_olur_raporu') {
+          detaylar = { faaliyet_konusu: isyeri_adi_turu?.trim() || '', alan_m2: 100, yangin_dolabi: 'Mevcut', acil_cikis: '1 Adet', bina_tipi: bina_tipi.trim() };
+        } else if (type === 'egitim_talebi') {
+          detaylar = { egitim_tarihi: new Date().toISOString().split('T')[0], kisi_sayisi: Number(body.kisi_sayisi) || 30, egitim_turu: isyeri_adi_turu?.trim() || 'Yangın Önleme ve Temel Yangın Eğitimi' };
+        } else if (type === 'yangin_raporu') {
+          detaylar = { yangin_nedeni: isyeri_adi_turu?.trim() || 'Yangın Raporu Talebi', bina_tipi: bina_tipi.trim() };
+        } else {
+          detaylar = { kat_sayisi: 1, daire_sayisi: 1, yakit_tipi: 'Doğalgaz', baca_tipi: bina_tipi.trim() };
+        }
+
+        const detailsField = (type === 'yangin_olur_raporu' || type === 'egitim_talebi' || type === 'yangin_raporu') ? 'isyeri_detaylari' : 'baca_detaylari';
 
         await query(
-          `INSERT INTO public.citizen_requests (talep_turu, basvuru_tarihi, basvuran_tc, basvuran_ad_soyad, irtibat_tel, adres, durum, ${type === 'yangin_olur_raporu' ? 'isyeri_detaylari' : 'baca_detaylari'})
+          `INSERT INTO public.citizen_requests (talep_turu, basvuru_tarihi, basvuran_tc, basvuran_ad_soyad, irtibat_tel, adres, durum, ${detailsField})
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [
-            type === 'yangin_olur_raporu' ? 'İtfaiye Uygunluk Raporu' : 'Baca Temizliği',
+            talepTuruVal,
             new Date().toISOString(),
             trackingCode,
             `${ad.trim()} ${soyad.trim()}`,
@@ -317,9 +347,14 @@ export async function POST(request: NextRequest) {
         console.error('[citizen-requests] citizen_requests tablosuna yedekleme başarısız:', err);
       }
 
+      let successMsg = 'Baca temizliği başvurunuz başarıyla alınmıştır.';
+      if (type === 'yangin_olur_raporu') successMsg = 'İtfaiye olur raporu başvurunuz başarıyla alınmıştır.';
+      else if (type === 'egitim_talebi') successMsg = 'Eğitim talebi başvurunuz başarıyla alınmıştır.';
+      else if (type === 'yangin_raporu') successMsg = 'Yangın raporu başvurunuz başarıyla alınmıştır.';
+
       return NextResponse.json({
         success: true,
-        message: type === 'yangin_olur_raporu' ? 'İtfaiye olur raporu başvurunuz başarıyla alınmıştır.' : 'Baca temizliği başvurunuz başarıyla alınmıştır.',
+        message: successMsg,
         trackingCode,
         data: serviceRes.rows[0]
       });
