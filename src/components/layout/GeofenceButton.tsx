@@ -8,9 +8,12 @@ import { api } from '@/lib/api'
 import { DutyLog } from '@/types'
 import { cn } from '@/lib/utils'
 
-// Sivas Ana İtfaiye Binası Koordinatları (39.7388, 37.0025)
-const STATION_LAT = 39.7388
-const STATION_LNG = 37.0025
+// Sivas İtfaiyesi Resmi İstasyon Koordinatları (Geofence Matrix)
+const STATIONS = [
+  { name: "Merkez İstasyon Yerleşkesi", lat: 39.7339522, lng: 37.0209312 },
+  { name: "Esentepe Şubesi Yerleşkesi", lat: 39.748762, lng: 36.988576 },
+  { name: "Organize Sanayi (OSB) Şubesi Yerleşkesi", lat: 39.786707, lng: 37.085315 }
+]
 const MAX_DISTANCE_METERS = 150
 
 interface GeofenceButtonProps {
@@ -92,7 +95,7 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
     fetchLatestDutyStatus();
   }, [user?.sicilNo]);
 
-  // 2. Periodic location check every 15 seconds
+  // 2. Continuous GPS Tracking and 3-Station Geofence Matrix
   useEffect(() => {
     if (!navigator.geolocation) {
       setStatus("error");
@@ -100,55 +103,71 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
       return;
     }
 
-    const checkLocation = () => {
-      navigator.geolocation.getCurrentPosition(
-        (position: GeolocationPosition) => {
-          const { latitude, longitude } = position.coords;
-          const lat = latitude || 0;
-          const lng = longitude || 0;
-          setCoords({ lat, lng });
-
-          const dist = calculateDistance(lat, lng, STATION_LAT, STATION_LNG);
-          setDistance(dist);
-          setPermissionDenied(false);
-
-          if (dist > MAX_DISTANCE_METERS) {
-            setStatus("error");
-            setMessage(`Binaya çok uzaksınız (${Math.round(dist)}m). Nöbet butonları pasif!`);
-          } else {
-            setStatus("idle");
-            setMessage("");
-          }
-        },
-        (error: GeolocationPositionError) => {
-          console.error('[GeofenceButton] Konum alma hatası:', error);
-          setStatus("error");
-          if (error.code === error.PERMISSION_DENIED) {
-            setMessage("Konum izni verilmedi.");
-            setPermissionDenied(true);
-          } else {
-            setMessage("Konum alınamadı. Lütfen tekrar deneyin.");
-          }
-          setDistance(null);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
+    const geoOptions = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
     };
 
-    // Run location check immediately on mount
-    checkLocation();
+    const handleSuccess = (position: GeolocationPosition) => {
+      const { latitude, longitude } = position.coords;
+      const lat = latitude || 0;
+      const lng = longitude || 0;
+      setCoords({ lat, lng });
 
-    // Check location every 15 seconds
-    const intervalId = setInterval(checkLocation, 15000);
+      // Find the nearest fire station in the geofence matrix
+      let minDistance = Infinity;
+      STATIONS.forEach(station => {
+        const dist = calculateDistance(lat, lng, station.lat, station.lng);
+        if (dist < minDistance) {
+          minDistance = dist;
+        }
+      });
 
-    return () => clearInterval(intervalId);
+      setDistance(minDistance);
+      setPermissionDenied(false);
+
+      if (minDistance > MAX_DISTANCE_METERS) {
+        setStatus("error");
+        const formattedDist = minDistance >= 1000 ? `${(minDistance / 1000).toFixed(1)} km` : `${Math.round(minDistance)}m`;
+        setMessage(`Yerleşke Dışındasınız (${formattedDist})`);
+      } else {
+        setStatus("idle");
+        setMessage("");
+      }
+    };
+
+    const handleError = (error: GeolocationPositionError) => {
+      console.error('[GeofenceButton] Konum alma hatası:', error);
+      setStatus("error");
+      if (error.code === error.PERMISSION_DENIED) {
+        setMessage("Konum izni verilmedi.");
+        setPermissionDenied(true);
+      } else {
+        setMessage("Konum alınamadı. Sinyal aranıyor...");
+      }
+      setDistance(null);
+    };
+
+    // First instant check
+    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, geoOptions);
+
+    // Continuous real-time tracking
+    const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, geoOptions);
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
 
   const handleToggleDuty = async () => {
     if (!user?.sicilNo) return;
     if (distance === null || distance > MAX_DISTANCE_METERS) {
       setStatus("error");
-      setMessage("İstasyon sınırları dışında işlem yapılamaz!");
+      const formattedDist = distance !== null 
+        ? (distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`)
+        : "Bilinmiyor";
+      setMessage(`Yerleşke Dışındasınız (${formattedDist})`);
       return;
     }
 
@@ -227,17 +246,18 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
     }
 
     if (distance === null || distance > MAX_DISTANCE_METERS) {
+      const formattedDist = distance !== null 
+        ? (distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`)
+        : "Bilinmiyor";
       return (
         <button
           type="button"
           disabled
-          className="bg-slate-900 border border-red-500/20 text-slate-500 opacity-60 w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 font-semibold cursor-not-allowed text-sm"
+          className="bg-slate-900 border border-red-500/20 text-slate-500/80 opacity-70 w-full min-h-[48px] rounded-xl flex items-center justify-center gap-2 font-semibold cursor-not-allowed text-sm"
         >
           <span>🛑</span>
           <span>
-            {dutyStatus === 'AKTIF'
-              ? 'Görevi Bitir (İstasyon Dışındasınız)'
-              : 'Görevi Başlat (İstasyon Dışındasınız)'}
+            Yerleşke Dışındasınız ({formattedDist})
           </span>
         </button>
       )
@@ -282,7 +302,7 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
           <MapPin className="w-3.5 h-3.5 mr-1" />
           {distance <= MAX_DISTANCE_METERS 
             ? `İstasyondasınız (${Math.round(distance)}m)` 
-            : `Mesafe: ${Math.round(distance)}m`
+            : `Yerleşke Dışındasınız (${distance >= 1000 ? `${(distance / 1000).toFixed(1)} km` : `${Math.round(distance)}m`})`
           }
         </span>
       )}

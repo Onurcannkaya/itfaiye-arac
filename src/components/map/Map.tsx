@@ -977,46 +977,86 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
       hydrantElementsRef.current.push({ el: innerEl, coords })
     }
 
-    // Helper: Render Station Marker
-    const renderFireStation = () => {
-      const stationEl = document.createElement('div')
-      stationEl.className = 'map-marker-station'
-      stationEl.style.cssText = `
-        width: 44px; height: 44px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `
-      stationEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(249,115,22,0.6));">
-          <path d="M50 5 L90 20 L90 55 C90 75 75 90 50 95 C25 90 10 75 10 55 L10 20 Z" fill="url(#station-grad)" stroke="#ffffff" stroke-width="3"/>
-          <path d="M35 80 L35 45 L65 45 L65 80 Z" fill="#ffffff" opacity="0.2"/>
-          <path d="M50 25 C60 38 60 55 50 68 C40 55 40 38 50 25 Z" fill="#ffffff"/>
-          <path d="M50 35 C55 45 55 55 50 62 C45 55 45 45 50 35 Z" fill="#f97316"/>
-          <defs>
-            <linearGradient id="station-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ea580c" />
-              <stop offset="100%" stop-color="#b91c1c" />
-            </linearGradient>
-          </defs>
-        </svg>
-      `
+    // Helper: Render Fire Station Markers
+    const renderFireStations = () => {
+      const stations = [
+        {
+          name: "Merkez İstasyon Yerleşkesi",
+          desc: "Sivas Belediyesi İtfaiye Müdürlüğü",
+          addr: "Yenişehir, Merkez",
+          coords: STATION_COORDS // [37.0209312, 39.7339522]
+        },
+        {
+          name: "Esentepe Şubesi Yerleşkesi",
+          desc: "Sivas Belediyesi İtfaiye Esentepe Şubesi",
+          addr: "Tuzlugöl Mahallesi, Merkez",
+          coords: [36.988576, 39.748762] as [number, number]
+        },
+        {
+          name: "Organize Sanayi (OSB) Şubesi Yerleşkesi",
+          desc: "Sivas Belediyesi İtfaiye OSB Şubesi",
+          addr: "1. OSB, Kılavuz, Merkez",
+          coords: [37.085315, 39.786707] as [number, number]
+        }
+      ]
 
-      const stationPopup = new maplibregl.Popup({ offset: 20 }).setHTML(`
-        <div style="font-family:system-ui;padding:4px 0;color:#e2e8f0;">
-          <h3 style="font-weight:700;color:#f97316;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px;margin-bottom:4px">Merkez İtfaiye İstasyonu</h3>
-          <p style="font-size:12px;margin:2px 0;color:#cbd5e1;">Sivas Belediyesi İtfaiye Müdürlüğü</p>
-          <p style="font-size:11px;color:#94a3b8;margin-top:2px">Yenişehir, Merkez</p>
-        </div>
-      `)
+      stations.forEach(station => {
+        const stationEl = document.createElement('div')
+        stationEl.className = 'map-marker-station'
+        stationEl.style.cssText = `
+          width: 44px; height: 44px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `
+        const gradientId = `station-grad-neon-${station.name.replace(/\s+/g, '-')}`
+        stationEl.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(239,68,68,0.7));">
+            <!-- Neon red outer ring with self-contained CSS spin animation -->
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#ef4444" stroke-width="3" class="station-neon-ring" style="stroke-dasharray: 4, 2;"/>
+            <!-- Outer shield border -->
+            <path d="M50 8 L86 22 L86 52 C86 70 73 85 50 90 C27 85 14 70 14 52 L14 22 Z" fill="url(#${gradientId})" stroke="#ffffff" stroke-width="2"/>
+            <!-- Inner details -->
+            <path d="M35 78 L35 48 L65 48 L65 78 Z" fill="#ffffff" opacity="0.15"/>
+            <path d="M50 22 C58 34 58 50 50 62 C42 50 42 34 50 22 Z" fill="#ffffff"/>
+            <path d="M50 30 C53 38 53 47 50 54 C47 47 47 38 50 30 Z" fill="#ef4444"/>
+            <defs>
+              <style>
+                @keyframes station-spin {
+                  from { transform: rotate(0deg); transform-origin: 50px 50px; }
+                  to { transform: rotate(360deg); transform-origin: 50px 50px; }
+                }
+                .station-neon-ring {
+                  animation: station-spin 12s linear infinite;
+                }
+              </style>
+              <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ef4444" />
+                <stop offset="100%" stop-color="#991b1b" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `
 
-      const stationMarker = new maplibregl.Marker({ element: stationEl })
-        .setLngLat(STATION_COORDS)
-        .setPopup(stationPopup)
-        .addTo(map)
+        const stationPopup = new maplibregl.Popup({ offset: 20 }).setHTML(`
+          <div style="font-family:system-ui;padding:6px;color:#e2e8f0;background:#0f172a;border-radius:8px;">
+            <h3 style="font-weight:800;color:#ef4444;font-size:14px;border-bottom:1px solid rgba(239,68,68,0.2);padding-bottom:4px;margin-bottom:4px">${station.name}</h3>
+            <p style="font-size:12px;margin:2px 0;color:#cbd5e1;font-weight:500;">${station.desc}</p>
+            <p style="font-size:11px;color:#94a3b8;margin-top:2px;display:flex;align-items:center;gap:4px;">
+              <span>📍</span>
+              <span>${station.addr}</span>
+            </p>
+          </div>
+        `)
 
-      markersRef.current.push(stationMarker)
+        const stationMarker = new maplibregl.Marker({ element: stationEl })
+          .setLngLat(station.coords)
+          .setPopup(stationPopup)
+          .addTo(map)
+
+        markersRef.current.push(stationMarker)
+      })
     }
 
     // ─── Render Incidents (Separating active/pasif for clustering) ───
@@ -1085,8 +1125,8 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
       }
     });
 
-    // ─── Render Fire Station ───
-    renderFireStation()
+    // ─── Render Fire Stations ───
+    renderFireStations()
 
     // ─── Fit Bounds ───
     if (filteredHydrants.length > 0 && !hasFitBoundsRef.current) {
