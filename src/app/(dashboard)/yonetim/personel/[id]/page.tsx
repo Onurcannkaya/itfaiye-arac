@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import jsPDF from "jspdf"
 import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -31,6 +32,7 @@ export default function PersonelProfilPage() {
   const [stats, setStats] = useState<any[] | null>(null)
   const [totalMissions, setTotalMissions] = useState<number>(0)
   const [statsLoading, setStatsLoading] = useState(true)
+  const [certInfo, setCertInfo] = useState<any | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -77,6 +79,15 @@ export default function PersonelProfilPage() {
           }
         }
 
+        // Fetch Certificate info
+        const cRes = await fetch(`/api/personnel/certificate?id=${sicil_no}`)
+        if (cRes.ok) {
+          const cData = await cRes.json()
+          if (cData.success) {
+            setCertInfo(cData)
+          }
+        }
+
       } catch (err) {
         console.error(err)
       } finally {
@@ -96,6 +107,123 @@ export default function PersonelProfilPage() {
 
   if (!personel) {
     return <div className="p-8 text-center text-danger">Personel bulunamadı!</div>
+  }
+
+  const handlePrintCertificate = () => {
+    if (!certInfo || !personel) return
+
+    // Create a landscape PDF
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const pageW = 297
+    const pageH = 210
+
+    const tr = (str: string) => {
+      if (!str) return ""
+      const map: Record<string, string> = {
+        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
+        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
+      }
+      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
+    }
+
+    // 1. Certificate Borders (Premium double frame)
+    // Outer border (Gold/Bronze color)
+    doc.setDrawColor(218, 165, 32) // Goldenrod
+    doc.setLineWidth(1.5)
+    doc.rect(10, 10, pageW - 20, pageH - 20)
+
+    // Inner border
+    doc.setDrawColor(30, 41, 59) // Slate-900
+    doc.setLineWidth(0.5)
+    doc.rect(12, 12, pageW - 24, pageH - 24)
+
+    // Corner decorative mini-rectangles
+    doc.setDrawColor(218, 165, 32)
+    doc.setFillColor(218, 165, 32)
+    doc.rect(11, 11, 4, 4, "FD")
+    doc.rect(pageW - 15, 11, 4, 4, "FD")
+    doc.rect(11, pageH - 15, 4, 4, "FD")
+    doc.rect(pageW - 15, pageH - 15, 4, 4, "FD")
+
+    // 2. Sivas Fire Department Branding
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(16)
+    doc.setTextColor(30, 41, 59)
+    doc.text("T.C.", pageW / 2, 28, { align: "center" })
+    doc.text("SIVAS BELEDIYE BASKANLIGI", pageW / 2, 35, { align: "center" })
+    
+    doc.setFontSize(13)
+    doc.setFont("Helvetica", "normal")
+    doc.text("ITFAIYE MUDURLUGU EGITIM VE TAHKIKAT AMIRLIGI", pageW / 2, 42, { align: "center" })
+
+    // Decorative horizontal division lines
+    doc.setDrawColor(218, 165, 32)
+    doc.setLineWidth(0.6)
+    doc.line(pageW / 2 - 40, 46, pageW / 2 + 40, 46)
+
+    // 3. Main Title
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(26)
+    doc.setTextColor(190, 24, 24) // Crimson Red
+    doc.text("USTUN HIZMET VE EGITICI SERTIFIKASI", pageW / 2, 62, { align: "center" })
+
+    // 4. Certificate Body Text
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(14)
+    doc.setTextColor(51, 65, 85) // Slate-700
+    doc.text("Sivas Belediyesi Itfaiye Mudurlugu bunyesinde gorev yapan;", pageW / 2, 78, { align: "center" })
+
+    // Personnel Name & Unvan
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(20)
+    doc.setTextColor(15, 23, 42) // Slate-900
+    doc.text(`${tr(personel.ad.toUpperCase())} ${tr(personel.soyad.toUpperCase())}`, pageW / 2, 92, { align: "center" })
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(13)
+    doc.setTextColor(100, 116, 139) // Slate-500
+    doc.text(`Sicil No: ${tr(personel.sicil_no)}   |   Unvan: ${tr(personel.unvan || "Itfaiye Eri")}`, pageW / 2, 100, { align: "center" })
+
+    // Text about education hours
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(13)
+    doc.setTextColor(51, 65, 85)
+    
+    const bodyText = 
+      `Teftis ve egitim kuralları cercevesinde, Sivas ili sınırları icerisindeki dis kurumlara ` +
+      `yonelik icra edilen tamamlanmıs resmi faaliyetlerde toplam ${certInfo.total_hours} saat egitim verdigi ` +
+      `tespit edilmis ve Mudurlugumuzce belirlenen 40 saatlik kurumsal barajı basarıyla asarak bu sertifikayı ` +
+      `almaya hak kazanmıstır.`;
+    
+    const splitText = doc.splitTextToSize(tr(bodyText), pageW - 80)
+    doc.text(splitText, pageW / 2, 116, { align: "center" })
+
+    // Text on dedication
+    doc.setFont("Helvetica", "italic")
+    doc.setFontSize(11)
+    doc.text("Gosterdigi ustun egitimci performansı, disiplin ve kurumsal katkılarından dolayı tesekkur ederiz.", pageW / 2, 140, { align: "center" })
+
+    // 5. Signatures
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(11)
+    doc.setTextColor(15, 23, 42)
+    doc.text("Egitim Sube Amiri", 50, 162, { align: "center" })
+    doc.text("Itfaiye Muduru", pageW - 50, 162, { align: "center" })
+
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(71, 85, 105)
+    doc.text("Imza / Muhur", 50, 167, { align: "center" })
+    doc.text("Imza / Muhur", pageW - 50, 167, { align: "center" })
+
+    // Date at bottom center
+    const currentDate = new Date().toLocaleDateString("tr-TR")
+    doc.setFontSize(10)
+    doc.text(`Duzenleme Tarihi: ${currentDate}`, pageW / 2, 192, { align: "center" })
+
+    // Save PDF
+    const filename = `Sivas_Itfaiye_Egitici_Sertifikasi_${personel.sicil_no}.pdf`
+    doc.save(filename)
   }
 
   const tabs = [
@@ -118,40 +246,65 @@ export default function PersonelProfilPage() {
           <ArrowLeft className="w-4 h-4" /> Personel Listesine Dön
         </button>
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-6">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary text-2xl sm:text-3xl font-bold shrink-0">
-            {personel.ad.charAt(0)}{personel.soyad.charAt(0)}
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">{personel.ad} {personel.soyad}</h1>
-            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
-              <Badge variant="outline" className="font-mono bg-surface">{personel.sicil_no}</Badge>
-              <span>{personel.unvan}</span>
-              <span className="opacity-50">|</span>
-              <span className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${personel.aktif ? 'bg-success' : 'bg-danger'}`} />
-                {personel.aktif ? 'Sistemde Aktif' : 'Sistemde Pasif'}
-              </span>
-              <span className="opacity-50">|</span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Günlük Durum:</span>
-                {(() => {
-                  const durumLower = (personel.durum || '').toLowerCase();
-                  let variant: 'success' | 'danger' | 'warning' | 'outline' = 'success';
-                  if (durumLower.includes('izinli') || durumLower.includes('raporlu')) {
-                    variant = 'danger';
-                  } else if (durumLower.includes('geçici') || durumLower.includes('gecici') || durumLower.includes('dış') || durumLower.includes('dis')) {
-                    variant = 'warning';
-                  }
-                  return (
-                    <Badge variant={variant} className="text-[11px] font-semibold px-2 py-0.5">
-                      {personel.durum || 'Hazır'}
-                    </Badge>
-                  );
-                })()}
-              </span>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary text-2xl sm:text-3xl font-bold shrink-0">
+              {personel.ad.charAt(0)}{personel.soyad.charAt(0)}
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">{personel.ad} {personel.soyad}</h1>
+              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
+                <Badge variant="outline" className="font-mono bg-surface">{personel.sicil_no}</Badge>
+                <span>{personel.unvan}</span>
+                <span className="opacity-50">|</span>
+                <span className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${personel.aktif ? 'bg-success' : 'bg-danger'}`} />
+                  {personel.aktif ? 'Sistemde Aktif' : 'Sistemde Pasif'}
+                </span>
+                <span className="opacity-50">|</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Günlük Durum:</span>
+                  {(() => {
+                    const durumLower = (personel.durum || '').toLowerCase();
+                    let variant: 'success' | 'danger' | 'warning' | 'outline' = 'success';
+                    if (durumLower.includes('izinli') || durumLower.includes('raporlu')) {
+                      variant = 'danger';
+                    } else if (durumLower.includes('geçici') || durumLower.includes('gecici') || durumLower.includes('dış') || durumLower.includes('dis')) {
+                      variant = 'warning';
+                    }
+                    return (
+                      <Badge variant={variant} className="text-[11px] font-semibold px-2 py-0.5">
+                        {personel.durum || 'Hazır'}
+                      </Badge>
+                    );
+                  })()}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Certificate Print Area */}
+          {certInfo && (
+            <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0 bg-slate-950/20 border border-slate-800/40 p-3 rounded-2xl backdrop-blur-md shadow-md">
+              <div className="text-xs font-semibold text-zinc-400">
+                Eğitim Verme Saati: <span className={`font-black ${certInfo.eligible ? "text-emerald-400" : "text-amber-400"}`}>{certInfo.total_hours} / {certInfo.threshold} sa</span>
+              </div>
+              <Button
+                disabled={!certInfo.eligible}
+                onClick={handlePrintCertificate}
+                className={`text-xs font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 transition-all shadow-md ${
+                  certInfo.eligible 
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold shadow-amber-500/20" 
+                    : "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed"
+                }`}
+              >
+                🎓 Resmi Sertifika Bas
+              </Button>
+              {!certInfo.eligible && (
+                <span className="text-[10px] text-zinc-500 font-medium">Sertifika için {Math.max(0, certInfo.threshold - certInfo.total_hours).toFixed(1)} saat daha eğitim vermeli.</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Custom Tabs Navigation */}

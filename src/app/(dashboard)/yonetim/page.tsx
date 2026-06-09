@@ -200,9 +200,69 @@ const activityIcon = (type: ActivityItem["type"]) => {
   }
 }
 
-// ─── Component ──────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
+
+  const [programInfo, setProgramInfo] = useState({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+  const [currentTime, setCurrentTime] = useState("")
+
+  useEffect(() => {
+    const checkProgram = () => {
+      const now = new Date()
+      setCurrentTime(now.toLocaleTimeString("tr-TR"))
+      const day = now.getDay() // 0: Sunday, 6: Saturday
+      if (day === 0) {
+        setProgramInfo({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+        return
+      }
+
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+      const totalMinutesNow = hours * 60 + minutes
+
+      const slots = [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "10:30" },
+        { start: "10:30", end: "11:15" },
+        { start: "11:15", end: "12:00" },
+        { start: "12:00", end: "13:30" },
+        { start: "13:30", end: "15:00" },
+        { start: "15:00", end: "15:30" },
+        { start: "15:30", end: "16:30" },
+        { start: "16:30", end: "16:45" },
+        { start: "16:45", end: "17:30" },
+        { start: "17:30", end: "18:30" },
+        { start: "18:30", end: "20:00" },
+        { start: "20:00", end: "21:00" }
+      ]
+
+      let matched = false
+      for (const slot of slots) {
+        const [startH, startM] = slot.start.split(":").map(Number)
+        const [endH, endM] = slot.end.split(":").map(Number)
+        const startTotal = startH * 60 + startM
+        const endTotal = endH * 60 + endM
+
+        if (totalMinutesNow >= startTotal && totalMinutesNow < endTotal) {
+          setProgramInfo({
+            isOffDuty: false,
+            text: `🟢 ŞU ANKİ PROGRAM: ${slot.start} - ${slot.end} İtfaiye Teorik ve Pratik Eğitimi`
+          })
+          matched = true
+          break
+        }
+      }
+
+      if (!matched) {
+        setProgramInfo({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+      }
+    }
+
+    checkProgram()
+    const interval = setInterval(checkProgram, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const [loading, setLoading] = useState(true)
   const [kpi, setKpi] = useState<KPIData>({
@@ -667,6 +727,31 @@ export default function DashboardPage() {
   // ─── Render ───────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6 max-w-[1600px] mx-auto">
+      {/* Canlı Teşkilat Program Barı */}
+      <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-300 backdrop-blur-md ${
+        programInfo.isOffDuty 
+          ? "border-blue-500/30 bg-blue-950/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]" 
+          : "border-emerald-500/40 bg-emerald-950/25 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] animate-pulse"
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-3 w-3">
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+              programInfo.isOffDuty ? "bg-blue-400" : "bg-emerald-400"
+            }`}></span>
+            <span className={`relative inline-flex rounded-full h-3 w-3 ${
+              programInfo.isOffDuty ? "bg-blue-500" : "bg-emerald-500"
+            }`}></span>
+          </div>
+          <span className="font-semibold text-sm sm:text-base tracking-wide font-mono">
+            {programInfo.text}
+          </span>
+        </div>
+        <div className="text-xs font-mono opacity-80 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5">
+          <Clock className="w-3.5 h-3.5" />
+          <span>{currentTime}</span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>

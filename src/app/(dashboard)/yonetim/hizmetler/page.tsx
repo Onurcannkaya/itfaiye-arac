@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import jsPDF from "jspdf"
 import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -87,6 +88,7 @@ interface ExternalEducation {
   id: string;
   kurum_id?: string | null;
   kurum_adi?: string;
+  kurum_tipi?: string;
   egitim_turu?: string;
   kisi_sayisi?: number;
   planlanan_tarih: string;
@@ -204,6 +206,7 @@ export default function HizmetlerPage() {
     id: '',
     kurum_id: '',
     kurum_adi: '',
+    kurum_tipi: 'Isyeri',
     egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
     kisi_sayisi: '20',
     planlanan_tarih: new Date().toISOString().split('T')[0],
@@ -211,9 +214,10 @@ export default function HizmetlerPage() {
     egitimci_personel_ids: [] as string[],
     durum: 'Beklemede'
   })
+  const [blacklistAcknowledged, setBlacklistAcknowledged] = useState(false)
 
-  // Detect Müdür / Admin role
-  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür'
+  // Detect Müdür / Admin / Amir role
+  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
 
   // Reset tactical menu when selectedRequest changes
   useEffect(() => {
@@ -491,6 +495,120 @@ export default function HizmetlerPage() {
     }
   }
 
+  // Check if current institution is blacklisted
+  const activeBlacklistedInst = useMemo(() => {
+    if (!eduForm.kurum_adi) return null
+    if (eduForm.kurum_id) {
+      const found = blacklistList.find(x => x.id === eduForm.kurum_id && x.aktif_durum === true)
+      if (found) return found
+    }
+    const queryName = eduForm.kurum_adi.trim().toLowerCase()
+    const foundByName = blacklistList.find(x => x.kurum_adi.trim().toLowerCase() === queryName && x.aktif_durum === true)
+    return foundByName || null
+  }, [eduForm.kurum_adi, eduForm.kurum_id, blacklistList])
+
+  // jsPDF results report printing
+  const handlePrintZiyaretRaporu = (edu: any) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = 210
+    const pageH = 297
+    const mL = 15  // margin left
+    const mR = 15  // margin right
+    const contentW = pageW - mL - mR
+
+    const tr = (str: string) => {
+      if (!str) return ""
+      const map: Record<string, string> = {
+        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
+        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
+      }
+      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
+    }
+
+    const dateStr = new Date(edu.planlanan_tarih).toLocaleDateString("tr-TR")
+    const trainerNames = getTrainerNames(edu.egitimci_personel_ids || [])
+
+    // Outer border
+    doc.setDrawColor(40)
+    doc.setLineWidth(0.8)
+    doc.rect(mL - 2, 8, contentW + 4, pageH - 16)
+
+    // Heading
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(14)
+    doc.setTextColor(0)
+    doc.text("T.C. SIVAS BELEDIYE BASKANLIGI", pageW / 2, 20, { align: "center" })
+    doc.setFontSize(11)
+    doc.text("ITFAIYE MUDURLUGU EGITIM VE TAHKIKAT AMIRLIGI", pageW / 2, 26, { align: "center" })
+    doc.setFontSize(12)
+    doc.text("DIS KURUM ZIYARET VE EGITIM SONUC RAPORU", pageW / 2, 33, { align: "center" })
+
+    // Separation line
+    doc.setLineWidth(0.5)
+    doc.line(mL, 37, pageW - mR, 37)
+
+    // Details Table / Form
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(10)
+    
+    let y = 46
+    const drawRow = (label: string, value: string) => {
+      doc.setFont("Helvetica", "bold")
+      doc.text(tr(label), mL + 2, y)
+      doc.setFont("Helvetica", "normal")
+      doc.text(": " + tr(value), mL + 45, y)
+      y += 8
+    }
+
+    drawRow("Rapor Tarihi", dateStr)
+    drawRow("Kurum / Isyeri Adi", edu.kurum_adi)
+    drawRow("Kurum Tipi", edu.kurum_tipi || "Isyeri")
+    drawRow("Egitim Turu", edu.egitim_turu)
+    drawRow("Katilimci Sayisi", `${edu.kisi_sayisi} Kisi`)
+    drawRow("Saat Dilimi", edu.saat_slot || "Belirtilmedi")
+    drawRow("Egitimci Personel", trainerNames)
+    drawRow("Faaliyet Durumu", edu.durum)
+
+    y += 4
+    doc.setLineWidth(0.3)
+    doc.line(mL, y, pageW - mR, y)
+    y += 8
+
+    // Rapor Detay Metni / Matbu Açıklama
+    doc.setFont("Helvetica", "bold")
+    doc.text("DEGERLENDIRME VE SONUC:", mL + 2, y)
+    y += 7
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9.5)
+    
+    const explanationText = 
+      "Sivas Belediyesi Itfaiye Mudurlugu Egitim ve Tahkikat Amirligi ekipleri tarafından, yukarıda bilgileri yer alan kurum/isyeri bunyesinde " + 
+      "planlanan saat dilimi icerisinde resmi dis egitim faaliyeti icra edilmistir. " + 
+      "Egitim kapsamında katılımcılara temel yangın guvenligi, tahliye kuralları ve acil durum eylemleri " + 
+      "hakkında teorik ve pratik bilgilendirme saglanmıs olup, tatbikat basarıyla tamamlanmıstır. Isbu rapor " + 
+      "kurumsal hafıza kaydı amacıyla duzenlenmis ve imza altına alınmıstır.";
+      
+    const splitExplanation = doc.splitTextToSize(tr(explanationText), contentW - 4)
+    doc.text(splitExplanation, mL + 2, y)
+    y += splitExplanation.length * 5 + 15
+
+    // Signature Area
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(10)
+    doc.text("Raporu Duzenleyen", mL + 10, y)
+    doc.text("Itfaiye Muduru", pageW - mR - 40, y)
+    
+    y += 5
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text("Egitimci Personel / Amir", mL + 10, y)
+    doc.text("Imza / Muhur", pageW - mR - 40, y)
+
+    // Save PDF
+    const filename = `Sivas_Itfaiye_Dis_Egitim_Raporu_${edu.id ? edu.id.substring(0,8) : 'yeni'}.pdf`
+    doc.save(filename)
+  }
+
   // Calendar Education Handlers
   const handleSaveEducation = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -498,11 +616,16 @@ export default function HizmetlerPage() {
       alert("Lütfen Kurum Adı giriniz.")
       return
     }
+    if (activeBlacklistedInst && !blacklistAcknowledged) {
+      alert("Lütfen kara listedeki kurum için uyarılı kurum bildirimini onaylayınız.")
+      return
+    }
 
     setIsSavingEdu(true)
     try {
       const payload = {
         kurum_adi: eduForm.kurum_adi,
+        kurum_tipi: eduForm.kurum_tipi,
         egitim_turu: eduForm.egitim_turu,
         kisi_sayisi: Number(eduForm.kisi_sayisi) || 0,
         planlanan_tarih: new Date(eduForm.planlanan_tarih).toISOString(),
@@ -1235,6 +1358,7 @@ export default function HizmetlerPage() {
                         id: '',
                         kurum_id: '',
                         kurum_adi: '',
+                        kurum_tipi: 'Isyeri',
                         egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
                         kisi_sayisi: '20',
                         planlanan_tarih: getYYYYMMDD(new Date()),
@@ -1242,6 +1366,7 @@ export default function HizmetlerPage() {
                         egitimci_personel_ids: [],
                         durum: 'Beklemede'
                       })
+                      setBlacklistAcknowledged(false)
                       setIsProgramModalOpen(true)
                     }}
                   >
@@ -1295,22 +1420,20 @@ export default function HizmetlerPage() {
                                   <div
                                     key={evt.id}
                                     onClick={() => {
-                                      if (isMudur) {
-                                        setEduForm({
-                                          id: evt.id,
-                                          kurum_id: evt.kurum_id || '',
-                                          kurum_adi: evt.kurum_adi || '',
-                                          egitim_turu: evt.egitim_turu || '',
-                                          kisi_sayisi: String(evt.kisi_sayisi || 0),
-                                          planlanan_tarih: formatDateLocal(evt.planlanan_tarih),
-                                          saat_slot: evt.saat_slot,
-                                          egitimci_personel_ids: evt.egitimci_personel_ids || [],
-                                          durum: evt.durum
-                                        })
-                                        setIsProgramModalOpen(true)
-                                      } else {
-                                        alert(`Kurum: ${evt.kurum_adi}\nEğitim: ${evt.egitim_turu}\nEğitimci: ${getTrainerNames(evt.egitimci_personel_ids)}\nDurum: ${evt.durum}`)
-                                      }
+                                      setEduForm({
+                                        id: evt.id,
+                                        kurum_id: evt.kurum_id || '',
+                                        kurum_adi: evt.kurum_adi || '',
+                                        kurum_tipi: evt.kurum_tipi || 'Isyeri',
+                                        egitim_turu: evt.egitim_turu || '',
+                                        kisi_sayisi: String(evt.kisi_sayisi || 0),
+                                        planlanan_tarih: formatDateLocal(evt.planlanan_tarih),
+                                        saat_slot: evt.saat_slot,
+                                        egitimci_personel_ids: evt.egitimci_personel_ids || [],
+                                        durum: evt.durum
+                                      })
+                                      setBlacklistAcknowledged(false)
+                                      setIsProgramModalOpen(true)
                                     }}
                                     className={`p-2 rounded-xl text-left cursor-pointer transition-all hover:scale-[1.02] ${getStatusColor(evt.durum)}`}
                                   >
@@ -1333,6 +1456,7 @@ export default function HizmetlerPage() {
                                         id: '',
                                         kurum_id: '',
                                         kurum_adi: '',
+                                        kurum_tipi: 'Isyeri',
                                         egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
                                         kisi_sayisi: '20',
                                         planlanan_tarih: dateStr,
@@ -1340,6 +1464,7 @@ export default function HizmetlerPage() {
                                         egitimci_personel_ids: [],
                                         durum: 'Beklemede'
                                       })
+                                      setBlacklistAcknowledged(false)
                                       setIsProgramModalOpen(true)
                                     }}
                                     className="w-full h-full min-h-[4rem] rounded-xl border border-dashed border-zinc-800 hover:border-indigo-500/40 hover:bg-indigo-500/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-150 cursor-pointer"
@@ -2142,6 +2267,29 @@ export default function HizmetlerPage() {
               <form onSubmit={handleSaveEducation}>
                 <CardContent className="p-6 space-y-6 max-h-[65vh] overflow-y-auto scrollbar-thin">
                   
+                  {/* Neon Warning Banner */}
+                  {activeBlacklistedInst && (
+                    <div className="space-y-4 my-2">
+                      <div className="border border-red-500/50 bg-red-950/35 text-red-200 p-4 rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.25)] animate-pulse flex flex-col gap-2">
+                        <span className="font-bold text-sm sm:text-base block">
+                          ⚠️ KARA LİSTE: {new Date(activeBlacklistedInst.yasaklama_tarihi).toLocaleDateString('tr-TR')} tarihinde hazırlık yapılmasına rağmen kurum tarafından son dakika iptal edilmiştir! Gerekçe: {activeBlacklistedInst.gerekce}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 bg-red-950/15 border border-red-500/20 p-3.5 rounded-xl">
+                        <input
+                          type="checkbox"
+                          id="blacklist-acknowledge"
+                          checked={blacklistAcknowledged}
+                          onChange={(e) => setBlacklistAcknowledged(e.target.checked)}
+                          className="w-4 h-4 rounded border-red-500/40 text-red-600 focus:ring-red-500/50 bg-zinc-900 cursor-pointer"
+                        />
+                        <label htmlFor="blacklist-acknowledge" className="text-xs sm:text-sm font-semibold text-red-300 cursor-pointer select-none">
+                          Uyarılı Kurum Bildirimini Okudum ve Onaylıyorum
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     
                     {/* Kurum Adı */}
@@ -2152,13 +2300,15 @@ export default function HizmetlerPage() {
                         <input
                           type="text"
                           required
-                          className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                          disabled={!isMudur}
+                          className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold disabled:opacity-50"
                           placeholder="Örn: Organize Sanayi Bölgesi A.Ş. veya okul adı"
                           value={eduForm.kurum_adi}
                           onChange={(e) => setEduForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
                         />
                         <select
-                          className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-2 py-2 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          disabled={!isMudur}
+                          className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-2 py-2 text-xs focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
                           value={eduForm.kurum_id || ''}
                           onChange={(e) => {
                             const val = e.target.value
@@ -2178,11 +2328,30 @@ export default function HizmetlerPage() {
                       </div>
                     </div>
 
+                    {/* Kurum Tipi */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-zinc-400 block">Kurum Tipi <span className="text-red-500">*</span></label>
+                      <select
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.kurum_tipi}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, kurum_tipi: e.target.value }))}
+                      >
+                        <option value="Isyeri">İşyeri</option>
+                        <option value="Okul">Okul</option>
+                        <option value="Kamu Kurumu">Kamu Kurumu</option>
+                        <option value="Itfaiye Ziyaret">İtfaiye Ziyaret</option>
+                        <option value="Ev-Site">Ev-Site</option>
+                        <option value="Ekip Egitimi">Ekip Eğitimi</option>
+                      </select>
+                    </div>
+
                     {/* Eğitim Türü */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-400 block">Eğitim / Tatbikat Türü</label>
                       <select
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
                         value={eduForm.egitim_turu}
                         onChange={(e) => setEduForm(prev => ({ ...prev, egitim_turu: e.target.value }))}
                       >
@@ -2200,7 +2369,8 @@ export default function HizmetlerPage() {
                       <input
                         type="number"
                         min={1}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium disabled:opacity-50"
                         value={eduForm.kisi_sayisi}
                         onChange={(e) => setEduForm(prev => ({ ...prev, kisi_sayisi: e.target.value }))}
                       />
@@ -2211,7 +2381,8 @@ export default function HizmetlerPage() {
                       <label className="text-xs font-bold text-zinc-400 block">Planlanan Tarih</label>
                       <input
                         type="date"
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold disabled:opacity-50"
                         value={eduForm.planlanan_tarih}
                         onChange={(e) => setEduForm(prev => ({ ...prev, planlanan_tarih: e.target.value }))}
                       />
@@ -2221,7 +2392,8 @@ export default function HizmetlerPage() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-400 block">Saat Dilimi</label>
                       <select
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
                         value={eduForm.saat_slot}
                         onChange={(e) => setEduForm(prev => ({ ...prev, saat_slot: e.target.value }))}
                       >
@@ -2235,7 +2407,8 @@ export default function HizmetlerPage() {
                     <div className="space-y-1.5 sm:col-span-2">
                       <label className="text-xs font-bold text-zinc-400 block">Program Onay Durumu</label>
                       <select
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
                         value={eduForm.durum}
                         onChange={(e) => setEduForm(prev => ({ ...prev, durum: e.target.value }))}
                       >
@@ -2257,7 +2430,8 @@ export default function HizmetlerPage() {
                             <label key={p.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-zinc-900 cursor-pointer select-none transition">
                               <input
                                 type="checkbox"
-                                className="rounded bg-zinc-950 border-zinc-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-zinc-900"
+                                disabled={!isMudur}
+                                className="rounded bg-zinc-950 border-zinc-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-zinc-900 disabled:opacity-50"
                                 checked={isChecked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -2287,7 +2461,7 @@ export default function HizmetlerPage() {
                 </CardContent>
 
                 <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex items-center justify-between gap-3">
-                  <div>
+                  <div className="flex items-center gap-2">
                     {eduForm.id && isMudur && (
                       <Button
                         type="button"
@@ -2295,6 +2469,15 @@ export default function HizmetlerPage() {
                         onClick={() => handleDeleteEducation(eduForm.id)}
                       >
                         <Trash2 className="w-4 h-4" /> Programı Sil
+                      </Button>
+                    )}
+                    {eduForm.id && (
+                      <Button
+                        type="button"
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"
+                        onClick={() => handlePrintZiyaretRaporu(eduForm)}
+                      >
+                        <FileText className="w-4 h-4" /> Ziyaret ve Sonuç Raporu Bas
                       </Button>
                     )}
                   </div>
@@ -2308,21 +2491,23 @@ export default function HizmetlerPage() {
                     >
                       Vazgeç
                     </Button>
-                    <Button 
-                      type="submit"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition"
-                      disabled={isSavingEdu}
-                    >
-                      {isSavingEdu ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Kaydediliyor...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-3.5 h-3.5" /> Programı Kaydet
-                        </>
-                      )}
-                    </Button>
+                    {isMudur && (
+                      <Button 
+                        type="submit"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition"
+                        disabled={isSavingEdu || (activeBlacklistedInst !== null && !blacklistAcknowledged)}
+                      >
+                        {isSavingEdu ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Kaydediliyor...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-3.5 h-3.5" /> Programı Kaydet
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </form>

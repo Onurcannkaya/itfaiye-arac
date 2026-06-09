@@ -328,6 +328,7 @@ async function ensureExternalEducationsTableExists() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         kurum_id UUID REFERENCES public.blacklist_institutions(id) ON DELETE SET NULL,
         kurum_adi VARCHAR,
+        kurum_tipi VARCHAR,
         egitim_turu VARCHAR,
         kisi_sayisi INTEGER,
         planlanan_tarih TIMESTAMPTZ,
@@ -338,6 +339,7 @@ async function ensureExternalEducationsTableExists() {
       )
     `);
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS saat_slot VARCHAR;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS kurum_tipi VARCHAR;`);
   } catch (err) {
     console.error('ensureExternalEducationsTableExists hatası:', err);
   }
@@ -785,6 +787,12 @@ export async function POST(
     const insertedRows: any[] = [];
 
     for (const row of rows) {
+      if (table === 'external_educations') {
+        const allowed = ['Isyeri', 'Okul', 'Kamu Kurumu', 'Itfaiye Ziyaret', 'Ev-Site', 'Ekip Egitimi'];
+        if (row.kurum_tipi && !allowed.includes(row.kurum_tipi)) {
+          return NextResponse.json({ error: `Geçersiz kurum tipi: ${row.kurum_tipi}. Şunlardan biri olmalı: ${allowed.join(', ')}` }, { status: 400 });
+        }
+      }
       if (table === 'fire_hydrants' && row.status !== undefined) {
         row.durum = row.status === 'broken' ? 'DEVRE_DIŞI' : 'MEVCUT';
       }
@@ -931,6 +939,12 @@ export async function PATCH(
     const { data, filters } = body;
 
     // Sync durum/status on updates
+    if (table === 'external_educations' && data && data.kurum_tipi !== undefined) {
+      const allowed = ['Isyeri', 'Okul', 'Kamu Kurumu', 'Itfaiye Ziyaret', 'Ev-Site', 'Ekip Egitimi'];
+      if (data.kurum_tipi && !allowed.includes(data.kurum_tipi)) {
+        return NextResponse.json({ error: `Geçersiz kurum tipi: ${data.kurum_tipi}. Şunlardan biri olmalı: ${allowed.join(', ')}` }, { status: 400 });
+      }
+    }
     if (table === 'fire_hydrants' && data && data.status !== undefined) {
       data.durum = data.status === 'broken' ? 'DEVRE_DIŞI' : 'MEVCUT';
     }
