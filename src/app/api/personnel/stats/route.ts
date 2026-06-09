@@ -37,32 +37,30 @@ export async function GET(request: NextRequest) {
       const categories = {
         "Yangın Müdahale": 0,
         "Kurtarma Operasyonu": 0,
-        "Dış Görev": 0,
-        "Lojistik": 0
+        "Dış Görev": 0
       };
 
       let totalMissions = 0;
       for (const row of rows) {
         const type = (row.olay_turu || "").toLowerCase();
         const count = Number(row.count || 0);
-        totalMissions += count;
 
         if (type.includes("yangın") || type.includes("yangin") || type.includes("alev")) {
           categories["Yangın Müdahale"] += count;
+          totalMissions += count;
         } else if (type.includes("kurtarma") || type.includes("kaza") || type.includes("sıkışma") || type.includes("asansör")) {
           categories["Kurtarma Operasyonu"] += count;
+          totalMissions += count;
         } else if (type.includes("dış") || type.includes("dis") || type.includes("görev") || type.includes("gorev") || type.includes("sevk") || type.includes("refakat") || type.includes("baca")) {
           categories["Dış Görev"] += count;
-        } else {
-          categories["Lojistik"] += count;
+          totalMissions += count;
         }
       }
 
       const stats = [
         { subject: "Yangın Müdahale", value: categories["Yangın Müdahale"] },
         { subject: "Kurtarma Operasyonu", value: categories["Kurtarma Operasyonu"] },
-        { subject: "Dış Görev", value: categories["Dış Görev"] },
-        { subject: "Lojistik", value: categories["Lojistik"] }
+        { subject: "Dış Görev", value: categories["Dış Görev"] }
       ];
 
       return NextResponse.json({
