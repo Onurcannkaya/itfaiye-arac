@@ -1,5 +1,5 @@
 "use client"
-import { useState, useCallback, useEffect } from "react"
+import React, { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ScanLine, Camera, AlertTriangle, Search, Loader2, Keyboard, ArrowLeft } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -15,6 +15,31 @@ interface VehicleInfo {
   plaka: string
   arac_tipi: string
   bolmeler: Record<string, unknown[]>
+}
+
+class ScannerErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.warn("[Scanner Boundary] Gracefully handled error:", error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+    return this.props.children
+  }
 }
 
 export default function TarayiciPage() {
@@ -139,56 +164,102 @@ export default function TarayiciPage() {
     }
 
     const trimmed = rawValue.trim()
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
-    if (uuidRegex.test(trimmed)) {
+    // Extract UUID if present (either raw UUID or inside a URL like /zimmet/UUID)
+    const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    const uuidMatch = trimmed.match(uuidRegex);
+    
+    if (uuidMatch) {
+      const scannedUuid = uuidMatch[0].toLowerCase();
       setManualLoading(true)
+      
       try {
-        const { data: allVehicles, error } = await api.from("vehicles").select("plaka,bolmeler")
-        if (error || !allVehicles) throw new Error("Araç envanteri sorgulanamadı.")
-        
-        let foundVehiclePlaka = null
-        let foundCompartment = null
-        let foundMaterialName = null
+        // 1. Search in temporary_assignments table
+        const { data: assignment } = await api
+          .from("temporary_assignments")
+          .select("id,uuid,durum,malzeme_id,birim_adi")
+          .eq("uuid", scannedUuid)
+          .single();
 
-        for (const v of allVehicles as any[]) {
-          if (!v.bolmeler) continue
-          let compartments: any = {}
-          if (typeof v.bolmeler === 'string') {
-            try { compartments = JSON.parse(v.bolmeler); } catch { continue; }
-          } else {
-            compartments = v.bolmeler
+        if (assignment) {
+          // If assignment is active or overdue, redirect to assignment details page
+          if (assignment.durum === "AKTIF" || assignment.durum === "GECIKTI") {
+            router.push(`/zimmet/${scannedUuid}`);
+            return;
           }
+          
+          // If returned (IADE_EDILDI), locate in vehicle_inventory
+          if (assignment.durum === "IADE_EDILDI") {
+            const { data: vehInvList } = await api
+              .from("vehicle_inventory")
+              .select("plaka,bolme_kapak,inventory_id")
+              .eq("inventory_id", assignment.malzeme_id);
+              
+            if (vehInvList && vehInvList.length > 0) {
+              const firstMatch = vehInvList[0];
+              const plakaSlug = firstMatch.plaka.replace(/\s+/g, "-").toLowerCase();
+              const label = firstMatch.bolme_kapak || "Araç İçi";
+              const compKey = Object.entries(COMPARTMENT_NAMES).find(
+                ([_, v]) => v.toLowerCase() === label.toLowerCase()
+              )?.[0] || label.replace(/\s+/g, "_").toLowerCase();
+              
+              alert(`Malzeme Bulundu: İade edilmiş envanter.\nAraç: ${firstMatch.plaka}\nBölme: ${label}`);
+              router.push(`/arac/${plakaSlug}/${compKey}`);
+              return;
+            }
+          }
+        }
 
-          for (const [compName, items] of Object.entries(compartments)) {
-            if (Array.isArray(items)) {
-              for (const item of items) {
-                if (item && typeof item === 'object') {
-                  const isMatch = Object.values(item).some(val => typeof val === 'string' && val.toLowerCase() === trimmed.toLowerCase())
-                  if (isMatch) {
-                    foundVehiclePlaka = v.plaka
-                    foundCompartment = compName
-                    foundMaterialName = item.malzeme || "Malzeme"
-                    break
+        // 2. Fallback: Search all vehicles' bolmeler JSON for the scanned UUID
+        const { data: allVehicles } = await api.from("vehicles").select("plaka,bolmeler")
+        if (allVehicles) {
+          let foundVehiclePlaka = null
+          let foundCompartment = null
+          let foundMaterialName = null
+
+          for (const v of allVehicles as any[]) {
+            if (!v.bolmeler) continue
+            let compartments: any = {}
+            if (typeof v.bolmeler === 'string') {
+              try { compartments = JSON.parse(v.bolmeler); } catch { continue; }
+            } else {
+              compartments = v.bolmeler
+            }
+
+            for (const [compName, items] of Object.entries(compartments)) {
+              if (Array.isArray(items)) {
+                for (const item of items) {
+                  if (item && typeof item === 'object') {
+                    const isMatch = Object.values(item).some(val => 
+                      typeof val === 'string' && val.toLowerCase() === scannedUuid
+                    )
+                    if (isMatch) {
+                      foundVehiclePlaka = v.plaka
+                      foundCompartment = compName
+                      foundMaterialName = item.malzeme || "Malzeme"
+                      break
+                    }
                   }
                 }
               }
+              if (foundVehiclePlaka) break
             }
             if (foundVehiclePlaka) break
           }
-          if (foundVehiclePlaka) break
+
+          if (foundVehiclePlaka && foundCompartment) {
+            const plakaSlug = foundVehiclePlaka.replace(/\s+/g, "-").toLowerCase()
+            alert(`Malzeme Bulundu: "${foundMaterialName}"\nAraç: ${foundVehiclePlaka}\nBölme: ${foundCompartment}`)
+            router.push(`/arac/${plakaSlug}/${foundCompartment}`)
+            return;
+          }
         }
 
-        if (foundVehiclePlaka && foundCompartment) {
-          const plakaSlug = foundVehiclePlaka.replace(/\s+/g, "-").toLowerCase()
-          alert(`Malzeme Bulundu: "${foundMaterialName}"\nAraç: ${foundVehiclePlaka}\nBölme: ${foundCompartment}`)
-          router.push(`/arac/${plakaSlug}/${foundCompartment}`)
-        } else {
-          setErrorMsg(`"${trimmed}" ID'li malzeme hiçbir araçta veya bölmede bulunamadı.`)
-          setMode("error")
-        }
+        setErrorMsg(`"${scannedUuid}" kimlikli malzeme veya zimmet kaydı bulunamadı.`)
+        setMode("error")
       } catch (err) {
-        setErrorMsg("Malzeme aranırken bir veritabanı hatası oluştu.")
+        console.error("Lookup error:", err)
+        setErrorMsg("Tarama verileri sorgulanırken bir veritabanı hatası oluştu.")
         setMode("error")
       } finally {
         setManualLoading(false)
@@ -243,20 +314,36 @@ export default function TarayiciPage() {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 pointer-events-none z-10" />
 
               {cameraError ? (
-                <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
-                  <Camera className="w-16 h-16 text-muted-foreground opacity-50" />
-                  <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-                    Kamera erişimi sağlanamadı.<br />
-                    Lütfen tarayıcı izinlerini kontrol edin veya aşağıdan manuel olarak arama yapın.
-                  </p>
+                <div className="flex flex-col items-center justify-center text-center p-6 space-y-4 h-full w-full bg-slate-950/40">
+                  <Camera className="w-12 h-12 text-cyan-500/80 animate-pulse" />
+                  <div className="px-4 py-3 bg-cyan-950/60 border-2 border-cyan-500/30 rounded-2xl text-cyan-400 font-mono text-xs font-semibold tracking-wider max-w-xs leading-relaxed shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-pulse">
+                    ⚡ KAMERA AKIŞI OPTİMİZE EDİLİYOR...
+                    <div className="text-[10px] text-cyan-400/70 mt-1 font-sans font-medium">
+                      Lütfen Malzeme Kodunu Odaklayın veya Manuel Giriş Yapın
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="w-full h-full relative">
-                  <Scanner
-                    onScan={handleScan}
-                    onError={() => setCameraError(true)}
-                    components={{ finder: false }}
-                  />
+                  <ScannerErrorBoundary
+                    fallback={
+                      <div className="flex flex-col items-center justify-center text-center p-6 space-y-4 h-full w-full bg-slate-950/40">
+                        <Camera className="w-12 h-12 text-cyan-500/80 animate-pulse" />
+                        <div className="px-4 py-3 bg-cyan-950/60 border-2 border-cyan-500/30 rounded-2xl text-cyan-400 font-mono text-xs font-semibold tracking-wider max-w-xs leading-relaxed shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-pulse">
+                          ⚡ KAMERA AKIŞI OPTİMİZE EDİLİYOR...
+                          <div className="text-[10px] text-cyan-400/70 mt-1 font-sans font-medium">
+                            Lütfen Malzeme Kodunu Odaklayın veya Manuel Giriş Yapın
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  >
+                    <Scanner
+                      onScan={handleScan}
+                      onError={() => setCameraError(true)}
+                      components={{ finder: false }}
+                    />
+                  </ScannerErrorBoundary>
 
                   {/* Scan Frame Overlay */}
                   <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
