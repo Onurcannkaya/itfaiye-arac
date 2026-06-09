@@ -240,12 +240,6 @@ export default function EnvanteriPage() {
       // Close assignment modal, clear states
       setAssignmentModalOpen(false);
 
-      // Trigger window.print shortly after DOM updates
-      setTimeout(() => {
-        window.print();
-        setActivePrintAssignment(null);
-      }, 500);
-
     } catch (err: any) {
       console.error(err);
       alert("Zimmet oluşturulurken hata oluştu: " + err.message);
@@ -349,6 +343,39 @@ export default function EnvanteriPage() {
     setMounted(true)
     loadAllData()
   }, [])
+
+  // Effect to handle temporary assignment form printing via cloning
+  useEffect(() => {
+    if (activePrintAssignment) {
+      // Ensure the DOM has rendered the print area element
+      const printArea = document.getElementById('print-area-assignment')
+      if (printArea) {
+        // Remove any existing print container
+        const existing = document.getElementById('print-area-assignment-live')
+        if (existing) {
+          try { document.body.removeChild(existing); } catch (e) {}
+        }
+
+        const clone = printArea.cloneNode(true) as HTMLElement
+        clone.className = 'print-area-container'
+        clone.id = 'print-area-assignment-live'
+        document.body.appendChild(clone)
+        
+        setTimeout(() => {
+          window.print()
+          setTimeout(() => {
+            const live = document.getElementById('print-area-assignment-live')
+            if (live) {
+              try { document.body.removeChild(live); } catch (e) {}
+            }
+            setActivePrintAssignment(null)
+          }, 500)
+        }, 400)
+      } else {
+        setActivePrintAssignment(null)
+      }
+    }
+  }, [activePrintAssignment])
 
   const loadAllData = async () => {
     try {
