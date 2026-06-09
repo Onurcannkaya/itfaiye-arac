@@ -340,6 +340,12 @@ async function ensureExternalEducationsTableExists() {
     `);
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS saat_slot VARCHAR;`);
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS kurum_tipi VARCHAR;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS mahalle VARCHAR;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS yas_grubu VARCHAR;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS teorik_sure_dk INTEGER DEFAULT 0;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS tatbikat_sure_dk INTEGER DEFAULT 0;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS pratik_sure_dk INTEGER DEFAULT 0;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS toplam_sure_saat NUMERIC(5,2) DEFAULT 0;`);
   } catch (err) {
     console.error('ensureExternalEducationsTableExists hatası:', err);
   }

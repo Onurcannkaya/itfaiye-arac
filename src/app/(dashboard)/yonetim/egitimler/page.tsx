@@ -1,662 +1,2049 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import jsPDF from "jspdf"
 import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
 import { Badge } from "@/components/ui/Badge"
-import { Loader2, Calendar, Users, Plus, CheckCircle2, Search, GraduationCap, Printer, X } from "lucide-react"
+import { useAuthStore } from "@/lib/authStore"
 import PageGuard from "@/components/PageGuard"
-import { Personnel } from "@/types"
+import { 
+  Loader2, 
+  FileText, 
+  CheckCircle, 
+  Clock, 
+  User, 
+  Phone, 
+  Brush,
+  ShieldCheck,
+  Calendar,
+  X,
+  FilePlus,
+  AlertTriangle,
+  Trash2,
+  Plus,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  Users,
+  Ban,
+  BarChart3,
+  Info,
+  Printer,
+} from "lucide-react"
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, AreaChart, Area
+} from "recharts"
 
-export interface Activity {
+// --- TypeScript Typings ---
+interface CitizenRequest {
   id: string;
-  faaliyet_turu: string;
-  faaliyet_konusu: string;
-  baslangic_tarihi: string;
-  bitis_tarihi?: string;
-  toplam_sure_saat: number;
-  katilimci_sayisi: number;
-  hedef_kitle?: string;
-  aciklama?: string;
-  created_at?: string;
+  talep_turu: string;
+  basvuru_tarihi: string;
+  basvuran_tc: string;
+  basvuran_ad_soyad: string;
+  irtibat_tel: string;
+  adres: string;
+  baca_detaylari?: Record<string, any>;
+  isyeri_detaylari?: {
+    faaliyet_konusu?: string;
+    alan_m2?: number;
+    yangin_dolabi?: string;
+    acil_cikis?: string;
+    kisi_sayisi?: number;
+    egitim_tarihi?: string;
+    egitim_turu?: string;
+    yangin_nedeni?: string;
+    bina_tipi?: string;
+  };
+  durum: string;
+  created_at: string;
+  updated_at?: string;
+  islem_yapan_amir?: string;
+  atanan_ekip?: string;
+  islem_tarihi?: string;
+  red_gerekcesi?: string;
+  takip_kodu?: string;
 }
 
-export interface PersonnelActivity {
-  id?: string;
-  activity_id: string;
-  sicil_no: string;
-  rol: string;
-  tarih?: string;
-  created_at?: string;
+interface BlacklistInstitution {
+  id: string;
+  kurum_adi: string;
+  vergi_no_or_tc: string;
+  gerekce?: string;
+  yasaklama_tarihi: string;
+  aktif_durum: boolean;
+  created_at: string;
 }
 
-const FAALIYET_TURLERI = ["Eğitim", "Ziyaret", "Tatbikat"]
-const ROLLER = ["Eğitmen", "Katılımcı", "Görevli", "Koordinatör", "Denetmen"]
+interface ExternalEducation {
+  id: string;
+  kurum_id?: string | null;
+  kurum_adi?: string;
+  kurum_tipi?: string;
+  egitim_turu?: string;
+  kisi_sayisi?: number;
+  planlanan_tarih: string;
+  saat_slot: string;
+  egitimci_personel_ids: string[];
+  durum: string;
+  created_at?: string;
+  mahalle?: string;
+  yas_grubu?: string;
+  teorik_sure_dk?: number;
+  pratik_sure_dk?: number;
+  tatbikat_sure_dk?: number;
+  toplam_sure_saat?: number;
+}
+
+// --- Helper Functions ---
+function getMonday(d: Date) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(date.setDate(diff));
+}
+
+function getYYYYMMDD(d: Date) {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getDayName(d: Date) {
+  return d.toLocaleDateString('tr-TR', { weekday: 'long' })
+}
+
+function formatDateLabel(d: Date) {
+  return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+}
+
+function cleanTurkishChars(text: string): string {
+  if (!text) return ""
+  const charMap: Record<string, string> = {
+    'ş': 's', 'Ş': 'S',
+    'ı': 'i', 'İ': 'I',
+    'ğ': 'g', 'Ğ': 'G',
+    'ü': 'u', 'Ü': 'U',
+    'ö': 'o', 'Ö': 'O',
+    'ç': 'c', 'Ç': 'C',
+  }
+  return text.replace(/[şŞıİğĞüÜöÖçÇ]/g, match => charMap[match] || match)
+}
+
+const CALENDAR_SLOTS = [
+  "08:00 - 09:00",
+  "09:00 - 10:00",
+  "10:00 - 10:30",
+  "10:30 - 11:15",
+  "11:15 - 12:00",
+  "12:00 - 13:30",
+  "13:30 - 15:00",
+  "15:00 - 15:30",
+  "15:30 - 16:30",
+  "16:30 - 16:45",
+  "16:45 - 17:30",
+  "17:30 - 18:30",
+  "18:30 - 20:00",
+  "20:00 - 21:00"
+]
 
 export default function EgitimlerPage() {
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [personnelList, setPersonnelList] = useState<Personnel[]>([])
+  const { user } = useAuthStore()
+  const [activeTab, setActiveTab] = useState<'requests' | 'calendar' | 'blacklist' | 'analytics'>('requests')
+
+  // Data States
+  const [requests, setRequests] = useState<CitizenRequest[]>([])
+  const [educations, setEducations] = useState<ExternalEducation[]>([])
+  const [blacklistList, setBlacklistList] = useState<BlacklistInstitution[]>([])
+  const [personnelList, setPersonnelList] = useState<any[]>([])
+
   const [loading, setLoading] = useState(true)
-  const [isAdding, setIsAdding] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [updating, setUpdating] = useState<string | null>(null)
 
-  const [personnelSearch, setPersonnelSearch] = useState("")
-  
-  // Array of {sicil_no, rol}
-  const [selectedPersonnel, setSelectedPersonnel] = useState<{sicil_no: string, rol: string}[]>([])
+  // Search filter
+  const [requestSearch, setRequestSearch] = useState("")
 
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
-  const [selectedActivityAttendees, setSelectedActivityAttendees] = useState<(Personnel & { rol: string })[]>([])
-  const [loadingAttendees, setLoadingAttendees] = useState(false)
+  // Details Modal for Citizen Request
+  const [selectedRequest, setSelectedRequest] = useState<CitizenRequest | null>(null)
+  const [tacticalMode, setTacticalMode] = useState<'NONE' | 'RED' | 'EKIP'>('NONE')
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [selectedCrew, setSelectedCrew] = useState('Merkez İstasyonu A Grubu')
 
-  const [formData, setFormData] = useState({
-    faaliyet_turu: "Eğitim",
-    faaliyet_konusu: "",
-    baslangic_tarihi: "",
-    bitis_tarihi: "",
-    toplam_sure_saat: "",
-    katilimci_sayisi: "",
-    hedef_kitle: "",
-    aciklama: ""
+  // Calendar Navigation
+  const [currentWeekDate, setCurrentWeekDate] = useState<Date>(() => {
+    const d = new Date()
+    return getMonday(d)
   })
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const daysOfWeek = useMemo<Date[]>(() => {
+    const days: Date[] = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(currentWeekDate)
+      day.setDate(currentWeekDate.getDate() + i)
+      days.push(day)
+    }
+    return days
+  }, [currentWeekDate])
 
-  const fetchData = async () => {
+  // Education Planning / Edit Modal
+  const [isProgramModalOpen, setIsProgramModalOpen] = useState(false)
+  const [isSavingEdu, setIsSavingEdu] = useState(false)
+  const [blacklistAcknowledged, setBlacklistAcknowledged] = useState(false)
+  const [eduForm, setEduForm] = useState({
+    id: '',
+    kurum_id: '',
+    kurum_adi: '',
+    kurum_tipi: 'Isyeri',
+    egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+    kisi_sayisi: '20',
+    planlanan_tarih: new Date().toISOString().split('T')[0],
+    saat_slot: '08:00 - 09:00',
+    egitimci_personel_ids: [] as string[],
+    durum: 'Beklemede',
+    mahalle: '',
+    yas_grubu: 'Yetişkin',
+    teorik_sure_dk: '45',
+    pratik_sure_dk: '45'
+  })
+
+  // Blacklist Management
+  const [isSavingBlacklist, setIsSavingBlacklist] = useState(false)
+  const [blacklistForm, setBlacklistForm] = useState({
+    kurum_adi: '',
+    vergi_no_or_tc: '',
+    gerekce: ''
+  })
+  const [queryTcTax, setQueryTcTax] = useState("")
+  const [queryResult, setQueryResult] = useState<BlacklistInstitution | null>(null)
+  const [hasQueried, setHasQueried] = useState(false)
+
+  // Role Checker
+  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
+
+  // Fetch all databases
+  const fetchAll = async () => {
     setLoading(true)
     try {
-      const [actRes, perRes] = await Promise.all([
-        api.from('activities_and_trainings').select('*').order('baslangic_tarihi', { ascending: false }),
+      const [reqRes, eduRes, blRes, perRes] = await Promise.all([
+        fetch('/api/hizmet-yonetimi').then(r => r.json()),
+        api.from('external_educations').select('*'),
+        api.from('blacklist_institutions').select('*').order('created_at', { ascending: false }),
         api.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true })
       ])
-      if (actRes.data) setActivities(actRes.data)
-      if (perRes.data) setPersonnelList(perRes.data)
+
+      if (reqRes?.success && reqRes?.requests) {
+        setRequests(reqRes.requests)
+      }
+      if (eduRes?.data) setEducations(eduRes.data)
+      if (blRes?.data) setBlacklistList(blRes.data)
+      if (perRes?.data) setPersonnelList(perRes.data)
     } catch (err) {
-      console.error(err)
+      console.error("Fetch all egitimler error:", err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleViewDetails = async (activity: Activity) => {
-    setSelectedActivity(activity)
-    setLoadingAttendees(true)
+  useEffect(() => {
+    fetchAll()
+  }, [])
+
+  // Filtered Training Citizen Requests
+  const trainingRequests = useMemo(() => {
+    return requests.filter(r => {
+      const isTraining = r.talep_turu.toLowerCase().includes("eğitim") || r.talep_turu.toLowerCase().includes("egitim")
+      if (!isTraining) return false
+
+      if (requestSearch.trim() !== "") {
+        const s = requestSearch.toLowerCase()
+        return (
+          r.basvuran_ad_soyad.toLowerCase().includes(s) ||
+          (r.basvuran_tc || "").toLowerCase().includes(s) ||
+          r.adres.toLowerCase().includes(s)
+        )
+      }
+      return true
+    })
+  }, [requests, requestSearch])
+
+  // --- Citizen Request Actions ---
+  const handleTacticalAction = async (
+    id: string, 
+    newStatus: 'ONAYLANDI' | 'REDDEDİLDİ' | 'EKİP_ATANDI',
+    extra?: { crew?: string; reason?: string }
+  ) => {
+    setUpdating(id)
     try {
-      const { data, error } = await api.from('personnel_activities')
-        .select('*')
-        .eq('activity_id', activity.id)
-
-      if (error) throw error
-
-      if (data) {
-        // Map sicil_no to full personnel info plus role
-        const attendees = data.map((pa: any) => {
-          const match = personnelList.find(p => p.sicil_no === pa.sicil_no)
-          return {
-            sicil_no: pa.sicil_no,
-            ad: match?.ad || "Bilinmeyen",
-            soyad: match?.soyad || "Personel",
-            unvan: match?.unvan || "Er",
-            rol: pa.rol || "Katılımcı",
-            posta: match?.posta || "",
-            posta_no: match?.posta_no || 0,
-            durum: match?.durum || "Görevde"
-          }
+      const amirStr = user ? `${user.ad} ${user.soyad} (${user.sicilNo || 'Amir'})` : 'Bilinmeyen Amir'
+      const res = await fetch('/api/hizmet-onay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          durum: newStatus,
+          islem_yapan_amir: amirStr,
+          atanan_ekip: extra?.crew || null,
+          red_gerekcesi: extra?.reason || null
         })
-        setSelectedActivityAttendees(attendees)
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        await fetchAll();
+        setSelectedRequest(prev => {
+          if (prev && prev.id === id) {
+            return {
+              ...prev,
+              durum: newStatus,
+              islem_yapan_amir: amirStr,
+              atanan_ekip: extra?.crew || undefined,
+              red_gerekcesi: extra?.reason || undefined,
+              islem_tarihi: new Date().toISOString()
+            };
+          }
+          return prev;
+        });
+
+        setTacticalMode('NONE');
+        setRejectionReason('');
       } else {
-        setSelectedActivityAttendees([])
+        alert('İşlem başarısız: ' + (data.error || 'Bilinmeyen Hata'));
       }
     } catch (err) {
-      console.error("Katılımcılar yüklenirken hata oluştu:", err)
+      console.error('Tactical action error:', err)
+      alert('Sistem bağlantı hatası oluştu.')
     } finally {
-      setLoadingAttendees(false)
+      setUpdating(null)
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const togglePersonnel = (sicil_no: string) => {
-    const existing = selectedPersonnel.find(p => p.sicil_no === sicil_no)
-    if (existing) {
-      setSelectedPersonnel(selectedPersonnel.filter(p => p.sicil_no !== sicil_no))
-    } else {
-      setSelectedPersonnel([...selectedPersonnel, { sicil_no, rol: "Katılımcı" }])
+  const handleDeleteRequest = async (id: string) => {
+    if (!window.confirm("Bu eğitim talebini kalıcı olarak silmek istediğinize emin misiniz?")) {
+      return
+    }
+    setUpdating(id)
+    try {
+      const res = await fetch(`/api/hizmet-onay?id=${id}`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+      if (data.success) {
+        setRequests(prev => prev.filter(r => r.id !== id))
+        if (selectedRequest?.id === id) {
+          setSelectedRequest(null)
+        }
+      } else {
+        alert('Silme işlemi başarısız: ' + (data.error || 'Bilinmeyen Hata'))
+      }
+    } catch (err) {
+      console.error('Delete request error:', err)
+    } finally {
+      setUpdating(null)
     }
   }
 
-  const updatePersonnelRole = (sicil_no: string, newRole: string) => {
-    setSelectedPersonnel(selectedPersonnel.map(p => p.sicil_no === sicil_no ? { ...p, rol: newRole } : p))
-  }
+  // --- Blacklist Check ---
+  const activeBlacklistedInst = useMemo(() => {
+    if (!eduForm.kurum_adi) return null
+    if (eduForm.kurum_id) {
+      const found = blacklistList.find(x => x.id === eduForm.kurum_id && x.aktif_durum === true)
+      if (found) return found
+    }
+    const queryName = eduForm.kurum_adi.trim().toLowerCase()
+    const foundByName = blacklistList.find(x => x.kurum_adi.trim().toLowerCase() === queryName && x.aktif_durum === true)
+    return foundByName || null
+  }, [eduForm.kurum_adi, eduForm.kurum_id, blacklistList])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // --- External Education Handlers ---
+  const handleSaveEducation = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
+    if (!eduForm.kurum_adi) {
+      alert("Lütfen Kurum adını giriniz.")
+      return
+    }
+
+    if (activeBlacklistedInst && !blacklistAcknowledged) {
+      alert("Kara listedeki uyarılı kurum onay kutusunu işaretlemeniz gerekmektedir.")
+      return
+    }
+
+    setIsSavingEdu(true)
+    try {
+      const teorik = Number(eduForm.teorik_sure_dk) || 0
+      const pratik = Number(eduForm.pratik_sure_dk) || 0
+      const toplamSaat = (teorik + pratik) / 60
+
+      const payload = {
+        kurum_id: eduForm.kurum_id || null,
+        kurum_adi: eduForm.kurum_adi,
+        kurum_tipi: eduForm.kurum_tipi,
+        egitim_turu: eduForm.egitim_turu,
+        kisi_sayisi: Number(eduForm.kisi_sayisi) || 20,
+        planlanan_tarih: new Date(eduForm.planlanan_tarih).toISOString(),
+        saat_slot: eduForm.saat_slot,
+        egitimci_personel_ids: eduForm.egitimci_personel_ids,
+        durum: eduForm.durum,
+        mahalle: eduForm.mahalle || 'Merkez',
+        yas_grubu: eduForm.yas_grubu,
+        teorik_sure_dk: teorik,
+        pratik_sure_dk: pratik,
+        tatbikat_sure_dk: pratik, // back-compat
+        toplam_sure_saat: parseFloat(toplamSaat.toFixed(2))
+      }
+
+      let res
+      if (eduForm.id) {
+        // Update
+        res = await api.update('external_educations', payload, { id: eduForm.id })
+      } else {
+        // Insert
+        res = await api.insert('external_educations', [payload])
+      }
+
+      if (res && !res.error) {
+        setIsProgramModalOpen(false)
+        await fetchAll()
+      } else {
+        alert("Kayıt başarısız: " + (res?.error || 'Bilinmeyen Hata'))
+      }
+    } catch (err) {
+      console.error(err)
+      alert("İşlem sırasında hata oluştu.")
+    } finally {
+      setIsSavingEdu(false)
+    }
+  }
+
+  const handleDeleteEducation = async (id: string) => {
+    if (!window.confirm("Bu program kaydını kalıcı olarak silmek istiyor musunuz?")) return
+    try {
+      const res = await api.remove('external_educations', { id })
+      if (res && !res.error) {
+        setIsProgramModalOpen(false)
+        await fetchAll()
+      } else {
+        alert("Silme hatası: " + (res?.error || 'Hata'))
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // --- Blacklist Handlers ---
+  const handleAddBlacklist = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!blacklistForm.kurum_adi || !blacklistForm.vergi_no_or_tc) {
+      alert("Kurum Adı ve Vergi No/TC alanları zorunludur.")
+      return
+    }
+
+    setIsSavingBlacklist(true)
     try {
       const payload = {
-        ...formData,
-        toplam_sure_saat: Number(formData.toplam_sure_saat) || 0,
-        katilimci_sayisi: Number(formData.katilimci_sayisi) || 0,
+        kurum_adi: blacklistForm.kurum_adi,
+        vergi_no_or_tc: blacklistForm.vergi_no_or_tc,
+        gerekce: blacklistForm.gerekce || '',
+        yasaklama_tarihi: new Date().toISOString().split('T')[0],
+        aktif_durum: true
       }
-      
-      const { data: actData, error: actErr } = await api.insert('activities_and_trainings', payload)
-        
-      if (actErr) throw actErr
-
-      if (selectedPersonnel.length > 0) {
-        const pivotPayload = selectedPersonnel.map(p => ({
-          activity_id: actData.id,
-          sicil_no: p.sicil_no,
-          rol: p.rol
-        }))
-        await api.insert('personnel_activities', pivotPayload)
+      const res = await api.insert('blacklist_institutions', [payload])
+      if (res && !res.error) {
+        setBlacklistForm({ kurum_adi: '', vergi_no_or_tc: '', gerekce: '' })
+        await fetchAll()
+        alert("Kurum başarıyla kırmızı bayraklı listeye eklendi.")
+      } else {
+        alert("Kurum ekleme başarısız: " + (res?.error || 'Hata'))
       }
-
-      setIsAdding(false)
-      setSelectedPersonnel([])
-      setFormData({
-        faaliyet_turu: "Eğitim", faaliyet_konusu: "", baslangic_tarihi: "", bitis_tarihi: "",
-        toplam_sure_saat: "", katilimci_sayisi: "", hedef_kitle: "", aciklama: ""
-      })
-      fetchData()
-    } catch (error) {
-      console.error(error)
-      alert("Kayıt sırasında hata oluştu.")
+    } catch (err) {
+      console.error(err)
     } finally {
-      setSubmitting(false)
+      setIsSavingBlacklist(false)
     }
   }
 
-  const filteredPersonnel = personnelList.filter(p => 
-    (p.ad + " " + p.soyad).toLowerCase().includes(personnelSearch.toLowerCase()) ||
-    p.sicil_no.toLowerCase().includes(personnelSearch.toLowerCase())
-  )
+  const handleToggleBlacklist = async (id: string, currentStatus: boolean) => {
+    try {
+      const res = await api.update('blacklist_institutions', { aktif_durum: !currentStatus }, { id })
+      if (res && !res.error) {
+        await fetchAll()
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleDeleteBlacklist = async (id: string) => {
+    if (!window.confirm("Bu kara liste kaydını kalıcı olarak silmek istiyor musunuz?")) return
+    try {
+      const res = await api.remove('blacklist_institutions', { id })
+      if (res && !res.error) {
+        await fetchAll()
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleQueryBlacklist = () => {
+    if (!queryTcTax.trim()) {
+      alert("Lütfen T.C. veya Vergi Numarası girin.")
+      return
+    }
+    const found = blacklistList.find(x => x.vergi_no_or_tc.trim() === queryTcTax.trim())
+    setQueryResult(found || null)
+    setHasQueried(true)
+  }
+
+  // --- jsPDF Official Document Generation (Aksiyon A & Aksiyon B) ---
+  const handlePrintYanginEgitimRaporu = (edu: any) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const clean = (txt: string) => cleanTurkishChars(txt || "")
+
+    // A4 border outlines
+    doc.rect(5, 5, 200, 287)
+    doc.rect(6, 6, 198, 285)
+
+    // Antetli Başlık
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(14)
+    doc.text(clean("T.C. SIVAS BELEDIYESI"), 105, 20, { align: "center" })
+    doc.setFontSize(12)
+    doc.text(clean("ITFAIYE MUDURLUGU"), 105, 26, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(11)
+    doc.text(clean("YANGIN EGITIMI VE TATBIKAT SONUC RAPORU"), 105, 32, { align: "center" })
+
+    doc.line(15, 38, 195, 38)
+
+    // Detay Tablosu
+    doc.setFontSize(10)
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("EGITIM ALAN KURUM / ISYERI BILERI:"), 15, 48)
+    
+    doc.setFont("Helvetica", "normal")
+    doc.text(clean("Kurum Adi:"), 15, 56)
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean(edu.kurum_adi), 55, 56)
+
+    doc.setFont("Helvetica", "normal")
+    doc.text(clean("Kurum Tipi:"), 15, 62)
+    doc.text(clean(edu.kurum_tipi), 55, 62)
+
+    doc.text(clean("Egitim Bolgesi / Mahalle:"), 15, 68)
+    doc.text(clean(edu.mahalle || "Merkez"), 55, 68)
+
+    doc.text(clean("Planlanan Tarih:"), 15, 74)
+    doc.text(clean(new Date(edu.planlanan_tarih).toLocaleDateString('tr-TR')), 55, 74)
+
+    doc.text(clean("Saat Dilimi:"), 15, 80)
+    doc.text(clean(edu.saat_slot), 55, 80)
+
+    doc.text(clean("Katilimci Sayisi:"), 15, 86)
+    doc.text(clean(`${edu.kisi_sayisi || 0} Kisi`), 55, 86)
+
+    doc.text(clean("Teorik Sure (Dakika):"), 15, 92)
+    doc.text(clean(`${edu.teorik_sure_dk || 0} dk`), 55, 92)
+
+    doc.text(clean("Pratik Sure (Dakika):"), 15, 98)
+    doc.text(clean(`${edu.pratik_sure_dk || 0} dk`), 55, 98)
+
+    doc.text(clean("Toplam Sure:"), 15, 104)
+    doc.text(clean(`${(((Number(edu.teorik_sure_dk || 0) + Number(edu.pratik_sure_dk || 0)) / 60)).toFixed(2)} Saat`), 55, 104)
+
+    doc.line(15, 110, 195, 110)
+
+    // Ders Planı checklist
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("DERS PLANI VE EGITIM MADDELERI:"), 15, 120)
+    
+    doc.setFont("Helvetica", "normal")
+    const curriculum = [
+      "[X] 1. Yanma nedir, Yangin kimyasi ve safhalari.",
+      "[X] 2. Yangin siniflari (A, B, C, D, F) ve sondurme metotlari.",
+      "[X] 3. Kimyasal, kopuklu ve sulu tasinabilir sonduruculerin tanitimi.",
+      "[X] 4. YSC kullanim yontemi (PASS: Pim cek, Ateste tut, Sik, Supur).",
+      "[X] 5. Acil durumlarda binadan tahliye, kriz yonetimi ve kacis yollari.",
+      "[X] 6. Uygulamali acik alan yangin sondurme tatbikatinin icrasi."
+    ]
+    
+    let y = 128
+    curriculum.forEach(item => {
+      doc.text(clean(item), 18, y)
+      y += 8
+    })
+
+    doc.line(15, y + 4, 195, y + 4)
+
+    // İmzalar
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("GOREVLI EGITIMCI PERSONELLER:"), 15, y + 14)
+    doc.setFont("Helvetica", "normal")
+    const trainersStr = edu.egitimci_personel_ids && edu.egitimci_personel_ids.length > 0
+      ? edu.egitimci_personel_ids.map((id: string) => {
+          const p = personnelList.find(x => x.id === id || x.sicil_no === id)
+          return p ? `${p.ad} ${p.soyad} (${p.unvan || 'Itfaiye Eri'})` : 'Gorevli Personel'
+        }).join(', ')
+      : 'Gorevli Personel Atanmadi'
+    doc.text(clean(trainersStr), 15, y + 22)
+
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("ONAYLAYAN NOBETCI AMIRI / MUDUR:"), 120, y + 14)
+    doc.setFont("Helvetica", "normal")
+    doc.text(clean(user ? `${user.ad} ${user.soyad}` : "Itfaiye Yetkilisi"), 120, y + 22)
+    doc.text(clean("Sivas Belediyesi Itfaiyesi"), 120, y + 27)
+
+    doc.save(`Yangin_Egitim_Sonuc_Raporu_${clean(edu.kurum_adi).replace(/\s+/g, '_')}.pdf`)
+  }
+
+  const handlePrintZiyaretRaporu = (edu: any) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const clean = (txt: string) => cleanTurkishChars(txt || "")
+
+    doc.rect(5, 5, 200, 287)
+    doc.rect(6, 6, 198, 285)
+
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(14)
+    doc.text(clean("T.C. SIVAS BELEDIYESI"), 105, 20, { align: "center" })
+    doc.setFontSize(12)
+    doc.text(clean("ITFAIYE MUDURLUGU"), 105, 26, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(11)
+    doc.text(clean("ITFAIYE MERKEZI ZIYARET SONUC RAPORU"), 105, 32, { align: "center" })
+
+    doc.line(15, 38, 195, 38)
+
+    doc.setFontSize(10)
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("ZIYARETCI KURUM DETAYLARI:"), 15, 48)
+
+    doc.setFont("Helvetica", "normal")
+    doc.text(clean("Kurum / Ziyaretci Adi:"), 15, 56)
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean(edu.kurum_adi), 55, 56)
+
+    doc.setFont("Helvetica", "normal")
+    doc.text(clean("Ziyaret Tarihi:"), 15, 62)
+    doc.text(clean(new Date(edu.planlanan_tarih).toLocaleDateString('tr-TR')), 55, 62)
+
+    doc.text(clean("Saat Slotu:"), 15, 68)
+    doc.text(clean(edu.saat_slot), 55, 68)
+
+    doc.text(clean("Katilimci Sayisi:"), 15, 74)
+    doc.text(clean(`${edu.kisi_sayisi || 0} Kisi`), 55, 74)
+
+    doc.text(clean("Yas Durumu / Grubu:"), 15, 80)
+    doc.text(clean(edu.yas_grubu || "Karisik"), 55, 80)
+
+    doc.text(clean("Ziyaret Suresi:"), 15, 86)
+    doc.text(clean(`${(((Number(edu.teorik_sure_dk || 0) + Number(edu.pratik_sure_dk || 0)) / 60)).toFixed(2)} Saat`), 55, 86)
+
+    doc.line(15, 92, 195, 92)
+
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("ZIYARET KAPSAMINDA YAPILAN FAALIYETLER VE ARAC TANITIMI:"), 15, 102)
+
+    doc.setFont("Helvetica", "normal")
+    const narrativeLines = [
+      "Sivas Belediyesi Itfaiye Mudurlugu yerleskesinde agirlanan misafirlerimize yonelik,",
+      "itfaiyenin calisma kosullari, acil durum bilincinin kazandirilmasi ve araclarin",
+      "tanitimi amacıyla asagidaki resmi program icra edilmistir:",
+      "",
+      "1. Garaj bolumunde bulunan Arazor, Tanker ve Merdivenli Yangin araclarinin teknik",
+      "   ozellikleri ve bu araclarda bulunan kurtarma techizati yerinde gosterilmistir.",
+      "2. Yangina mudahale sirasinda kullanilan kisisel koruyucu elbiseler (mihfer, mont,",
+      "   cizme) ve solunum cihazlari (SCBA) misafirlere pratik olarak tanitilmistir.",
+      "3. Yas grubuna uygun acil durum bilinclendirme sunumu yapilmis, 112 Acil Cagri",
+      "   numarasinin dogru kullanilmasi onemle vurgulanmistir."
+    ]
+
+    let yOffset = 112
+    narrativeLines.forEach(l => {
+      doc.text(clean(l), 15, yOffset)
+      yOffset += 7
+    })
+
+    doc.line(15, yOffset + 4, 195, yOffset + 4)
+
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("REHBERLIK EDEN SAHA PERSONELLERI:"), 15, yOffset + 14)
+    doc.setFont("Helvetica", "normal")
+    const trainersStr = edu.egitimci_personel_ids && edu.egitimci_personel_ids.length > 0
+      ? edu.egitimci_personel_ids.map((id: string) => {
+          const p = personnelList.find(x => x.id === id || x.sicil_no === id)
+          return p ? `${p.ad} ${p.soyad} (${p.unvan || 'Itfaiye Eri'})` : 'Gorevli Personel'
+        }).join(', ')
+      : 'Gorevli Personel Atanmadi'
+    doc.text(clean(trainersStr), 15, yOffset + 22)
+
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("ONAYLAYAN NOBETCI AMIRI / MUDUR:"), 120, yOffset + 14)
+    doc.setFont("Helvetica", "normal")
+    doc.text(clean(user ? `${user.ad} ${user.soyad}` : "Itfaiye Yetkilisi"), 120, yOffset + 22)
+    doc.text(clean("Sivas Belediyesi Itfaiyesi"), 120, yOffset + 27)
+
+    doc.save(`Itfaiye_Ziyaret_Raporu_${clean(edu.kurum_adi).replace(/\s+/g, '_')}.pdf`)
+  }
+
+  const handlePrintClick = (edu: any) => {
+    if (edu.kurum_tipi === 'Itfaiye Ziyaret') {
+      handlePrintZiyaretRaporu(edu)
+    } else {
+      handlePrintYanginEgitimRaporu(edu)
+    }
+  }
+
+  // --- Weeks Navigation ---
+  const handlePrevWeek = () => {
+    setCurrentWeekDate(prev => {
+      const d = new Date(prev)
+      d.setDate(d.getDate() - 7)
+      return d
+    })
+  }
+
+  const handleTodayWeek = () => {
+    setCurrentWeekDate(getMonday(new Date()))
+  }
+
+  const handleNextWeek = () => {
+    setCurrentWeekDate(prev => {
+      const d = new Date(prev)
+      d.setDate(d.getDate() + 7)
+      return d
+    })
+  }
+
+  // --- Analitik Dashboard Computations ---
+  const analyticsData = useMemo(() => {
+    const totalCount = educations.length
+    const totalParticipants = educations.reduce((acc, curr) => acc + (curr.kisi_sayisi || 0), 0)
+    const totalHours = educations.reduce((acc, curr) => acc + (Number(curr.toplam_sure_saat) || 0), 0)
+    const pendingCount = trainingRequests.filter(x => x.durum === 'BEKLEMEDE' || x.durum === 'Bekliyor').length
+
+    // Kurum Tipi Dağılımı
+    const typeMap: Record<string, number> = {}
+    educations.forEach(edu => {
+      const t = edu.kurum_tipi || 'Diğer'
+      typeMap[t] = (typeMap[t] || 0) + 1
+    })
+    const typeData = Object.keys(typeMap).map(key => ({
+      name: key === 'Isyeri' ? 'İşyeri' : key === 'Kamu Kurumu' ? 'Kamu Kurumu' : key === 'Itfaiye Ziyaret' ? 'İtfaiye Ziyaret' : key === 'Ev-Site' ? 'Ev-Site' : key === 'Ekip Egitimi' ? 'Ekip Eğitimi' : key === 'Okul' ? 'Okul' : key,
+      value: typeMap[key]
+    }))
+
+    // Mahalle bazında (Top 5)
+    const mahalleMap: Record<string, number> = {}
+    educations.forEach(edu => {
+      const m = edu.mahalle || 'Belirtilmemiş'
+      mahalleMap[m] = (mahalleMap[m] || 0) + 1
+    })
+    const mahalleData = Object.keys(mahalleMap)
+      .map(key => ({ name: key, Adet: mahalleMap[key] }))
+      .sort((a, b) => b.Adet - a.Adet)
+      .slice(0, 5)
+
+    // Aylık Trend
+    const monthlyMap: Record<string, number> = {}
+    educations.forEach(edu => {
+      if (edu.planlanan_tarih) {
+        const date = new Date(edu.planlanan_tarih)
+        const month = date.toLocaleString('tr-TR', { month: 'long' })
+        monthlyMap[month] = (monthlyMap[month] || 0) + 1
+      }
+    })
+    const monthlyData = Object.keys(monthlyMap).map(key => ({
+      name: key,
+      'Eğitim Adeti': monthlyMap[key]
+    }))
+
+    return {
+      totalCount,
+      totalParticipants,
+      totalHours: parseFloat(totalHours.toFixed(1)),
+      pendingCount,
+      typeData,
+      mahalleData,
+      monthlyData
+    }
+  }, [educations, trainingRequests])
+
+  const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
   if (loading) {
-    return <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Yükleniyor...</div>
+    return (
+      <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2 min-h-[50vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+        <span className="text-muted-foreground font-semibold">Eğitim Yönetim Sistemi Yükleniyor...</span>
+      </div>
+    )
   }
 
   return (
     <PageGuard pageId="egitimler">
-      <div className="print:hidden flex flex-col h-full space-y-6 max-w-6xl mx-auto pb-12">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col min-h-screen space-y-6 max-w-7xl mx-auto pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8 animate-in fade-in duration-300">
+        
+        {/* Sayfa Üst Bilgi */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
           <div>
-            <h1 className="text-2xl font-bold">Eğitim ve Faaliyetler</h1>
-            <p className="text-muted-foreground text-sm">Kurum içi eğitimler, okul ziyaretleri ve tatbikat kayıtları</p>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Eğitim ve Faaliyet Komuta Merkezi</h1>
+            <p className="text-muted-foreground text-sm mt-1">Sivas İtfaiyesi Kurumsal Eğitim Programları, Ziyaret ve Analitik Yönetimi</p>
           </div>
-          {!isAdding && (
-            <Button onClick={() => setIsAdding(true)} className="gap-2">
-              <Plus className="w-4 h-4" /> Yeni Faaliyet Ekle
+          <div className="flex items-center gap-2">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg"
+              onClick={() => {
+                setEduForm({
+                  id: '',
+                  kurum_id: '',
+                  kurum_adi: '',
+                  kurum_tipi: 'Isyeri',
+                  egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+                  kisi_sayisi: '20',
+                  planlanan_tarih: getYYYYMMDD(new Date()),
+                  saat_slot: '08:00 - 09:00',
+                  egitimci_personel_ids: [],
+                  durum: 'Beklemede',
+                  mahalle: '',
+                  yas_grubu: 'Yetişkin',
+                  teorik_sure_dk: '45',
+                  pratik_sure_dk: '45'
+                })
+                setBlacklistAcknowledged(false)
+                setIsProgramModalOpen(true)
+              }}
+            >
+              <Plus className="w-4 h-4" /> Eğitim Planla
             </Button>
-          )}
+          </div>
         </div>
 
-        {isAdding ? (
-          <Card className="border-border">
-            <CardHeader className="bg-surface/30 border-b flex flex-row items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2"><GraduationCap className="w-5 h-5 text-primary" /> Yeni Faaliyet / Eğitim Formu</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setIsAdding(false)}>İptal</Button>
-            </CardHeader>
-            <CardContent className="p-6">
-              <form onSubmit={handleSubmit} className="space-y-8">
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Faaliyet Türü *</label>
-                    <select name="faaliyet_turu" value={formData.faaliyet_turu} onChange={handleInputChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      {FAALIYET_TURLERI.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Faaliyet Konusu *</label>
-                    <Input name="faaliyet_konusu" placeholder="Örn: Temel Yangın Eğitimi" value={formData.faaliyet_konusu} onChange={handleInputChange} required />
-                  </div>
-                </div>
+        {/* Sekme Butonları */}
+        <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+          <Button
+            variant={activeTab === 'requests' ? 'default' : 'ghost'}
+            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'requests' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+            onClick={() => setActiveTab('requests')}
+          >
+            📋 Kurumsal Eğitim Talepleri ({trainingRequests.length})
+          </Button>
+          <Button
+            variant={activeTab === 'calendar' ? 'default' : 'ghost'}
+            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'calendar' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+            onClick={() => setActiveTab('calendar')}
+          >
+            📅 Saatli Teşkilat Programı
+          </Button>
+          <Button
+            variant={activeTab === 'blacklist' ? 'default' : 'ghost'}
+            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'blacklist' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+            onClick={() => setActiveTab('blacklist')}
+          >
+            🚫 Kara Liste ve Kurum Sorgu
+          </Button>
+          <Button
+            variant={activeTab === 'analytics' ? 'default' : 'ghost'}
+            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            📊 Başkanlık Analiz Paneli
+          </Button>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border rounded-xl bg-surface/30">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Başlangıç Tarihi *</label>
-                    <Input type="datetime-local" name="baslangic_tarihi" value={formData.baslangic_tarihi} onChange={handleInputChange} required />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Bitiş Tarihi</label>
-                    <Input type="datetime-local" name="bitis_tarihi" value={formData.bitis_tarihi} onChange={handleInputChange} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Toplam Süre (Saat)</label>
-                    <Input type="number" step="0.5" min="0" name="toplam_sure_saat" value={formData.toplam_sure_saat} onChange={handleInputChange} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-xl bg-surface/30">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Dış Katılımcı / Ziyaretçi Sayısı</label>
-                    <Input type="number" min="0" name="katilimci_sayisi" value={formData.katilimci_sayisi} onChange={handleInputChange} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold">Hedef Kitle / Kurum Adı</label>
-                    <Input name="hedef_kitle" placeholder="Örn: Sivas Lisesi Öğrencileri" value={formData.hedef_kitle} onChange={handleInputChange} />
-                  </div>
-                  <div className="col-span-1 md:col-span-2 space-y-2">
-                    <label className="text-sm font-semibold">Açıklama</label>
-                    <textarea name="aciklama" rows={3} placeholder="Faaliyet detayları..." value={formData.aciklama} onChange={handleInputChange} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-                  </div>
-                </div>
-
-                {/* Personel Atama (Searchable Multi-Select) */}
-                <div className="space-y-4 border rounded-xl flex flex-col min-h-[350px]">
-                  <div className="p-3 bg-surface border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span className="font-semibold text-sm">Personel Atama (Çoklu Seçim)</span>
-                    <Badge variant="outline">{selectedPersonnel.length} Personel Seçildi</Badge>
-                  </div>
-                  <div className="p-2 border-b">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input placeholder="İsim veya Sicil No ile Ara..." className="h-9 pl-8 text-sm" value={personnelSearch} onChange={e => setPersonnelSearch(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[400px]">
-                    {filteredPersonnel.map(p => {
-                      const sel = selectedPersonnel.find(sp => sp.sicil_no === p.sicil_no)
-                      const isSelected = !!sel
-                      return (
-                        <div key={p.sicil_no} className={`p-3 text-sm rounded-lg border transition-all ${isSelected ? 'bg-primary/5 border-primary/40' : 'bg-background hover:bg-surface border-transparent'}`}>
-                          <div className="flex items-center justify-between cursor-pointer" onClick={() => togglePersonnel(p.sicil_no)}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-primary border-primary text-white' : 'border-input'}`}>
-                                {isSelected && <CheckCircle2 className="w-3 h-3" />}
-                              </div>
-                              <span className={isSelected ? 'font-medium text-primary' : ''}>{p.ad} {p.soyad}</span>
-                              <span className="text-xs opacity-50 ml-1">({p.unvan})</span>
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <div className="mt-3 pl-6">
-                              <select 
-                                value={sel.rol} 
-                                onChange={(e) => updatePersonnelRole(p.sicil_no, e.target.value)}
-                                className="h-8 w-full max-w-[200px] rounded-md border border-input bg-background px-2 text-xs"
-                              >
-                                {ROLLER.map(r => <option key={r} value={r}>{r}</option>)}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Kaydediliyor...</> : 'Faaliyeti Kaydet'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {activities.length === 0 ? (
-              <div className="text-center p-12 border border-dashed rounded-xl text-muted-foreground bg-surface/50">
-                Sistemde henüz bir eğitim veya faaliyet kaydı bulunmamaktadır.
-              </div>
-            ) : (
-              activities.map(act => (
-                <Card key={act.id} className="hover:border-primary/50 transition-colors">
-                  <CardContent className="p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                        act.faaliyet_turu === 'Tatbikat' ? 'bg-danger/10 text-danger' : 
-                        act.faaliyet_turu === 'Eğitim' ? 'bg-blue-500/10 text-blue-500' :
-                        'bg-success/10 text-success'
-                      }`}>
-                        <Calendar className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline">{act.faaliyet_turu}</Badge>
-                          <span className="font-semibold text-lg">{act.faaliyet_konusu}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{act.hedef_kitle}</p>
-                        <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-muted-foreground font-mono">
-                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(act.baslangic_tarihi).toLocaleString('tr-TR')}</span>
-                          {act.toplam_sure_saat > 0 && <span>Süre: {act.toplam_sure_saat} Saat</span>}
-                          {act.katilimci_sayisi > 0 && <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {act.katilimci_sayisi} Katılımcı</span>}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2 items-center shrink-0">
-                      <Button variant="outline" size="sm" onClick={() => handleViewDetails(act)}>
-                        Detayları Gör
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Details Modal */}
-      {selectedActivity && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 print:hidden">
-          <div className="relative w-full max-w-4xl rounded-2xl border border-border bg-surface p-6 shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b pb-4 mb-4">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="w-6 h-6 text-primary animate-pulse" />
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">Faaliyet / Eğitim Detayı</h2>
-                  <p className="text-xs text-muted-foreground font-mono">ID: {selectedActivity.id}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button 
-                  onClick={() => window.print()} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-2 shadow-lg shadow-emerald-950/20"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Resmi Rapor Yazdır</span>
-                </Button>
-                <button 
-                  onClick={() => { setSelectedActivity(null); setSelectedActivityAttendees([]); }} 
-                  className="rounded-full p-2 hover:bg-muted transition-colors border border-transparent hover:border-border"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+        {/* --- TAB 1: Kurumsal Eğitim Talepleri --- */}
+        {activeTab === 'requests' && (
+          <div className="space-y-4">
+            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2">
+              <Search className="w-4 h-4 text-zinc-400 mr-2" />
+              <input
+                type="text"
+                className="bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-sm w-full"
+                placeholder="Vatandaş adı, TC no, veya adresine göre egitim talebi arayın..."
+                value={requestSearch}
+                onChange={(e) => setRequestSearch(e.target.value)}
+              />
             </div>
 
-            <div className="overflow-y-auto grid grid-cols-1 lg:grid-cols-5 gap-6 pr-2 pb-2">
-              <div className="lg:col-span-3 space-y-4">
-                <div className="p-4 border rounded-xl bg-zinc-950/40 space-y-4">
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faaliyet Konusu</span>
-                    <h3 className="text-lg font-bold text-foreground mt-0.5">{selectedActivity.faaliyet_konusu}</h3>
+            <Card className="bg-slate-950 border border-slate-800 overflow-hidden rounded-2xl">
+              <CardContent className="p-0">
+                {trainingRequests.length === 0 ? (
+                  <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
+                    Sistemde bekleyen veya işlenmiş bir kurumsal eğitim talebi bulunmamaktadır.
                   </div>
+                ) : (
+                  <>
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead>
+                          <tr className="border-b border-zinc-800 bg-zinc-900/30 text-zinc-400 font-bold text-xs uppercase">
+                            <th className="p-4">Talep Sahibi / Kurum</th>
+                            <th className="p-4">Eğitim Türü</th>
+                            <th className="p-4">Katılımcı / Tarih</th>
+                            <th className="p-4">Görevli Ekip</th>
+                            <th className="p-4">Durum</th>
+                            <th className="p-4 text-right">Aksiyonlar</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-900">
+                          {trainingRequests.map(req => (
+                            <tr key={req.id} className="hover:bg-zinc-900/30 transition">
+                              <td className="p-4">
+                                <div className="font-bold text-zinc-200">{req.basvuran_ad_soyad}</div>
+                                <div className="text-[10px] text-zinc-500 font-mono">TC: {req.basvuran_tc || 'Girilmemiş'}</div>
+                              </td>
+                              <td className="p-4 font-semibold text-zinc-300">
+                                {req.isyeri_detaylari?.egitim_turu || req.talep_turu}
+                              </td>
+                              <td className="p-4 text-xs text-zinc-400">
+                                <div className="font-bold">{req.isyeri_detaylari?.kisi_sayisi || 30} Kişi</div>
+                                <div>Tarih: {req.isyeri_detaylari?.egitim_tarihi || 'Belirtilmemiş'}</div>
+                              </td>
+                              <td className="p-4 text-zinc-400 font-medium text-xs">
+                                {req.atanan_ekip || 'Atanmadı'}
+                              </td>
+                              <td className="p-4">
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                  req.durum === 'ONAYLANDI' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
+                                  req.durum === 'REDDEDİLDİ' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
+                                  req.durum === 'EKİP_ATANDI' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' :
+                                  'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                                }`}>
+                                  {req.durum}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-indigo-400 hover:text-white"
+                                  onClick={() => setSelectedRequest(req)}
+                                >
+                                  Detay / Karar
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faaliyet Türü</span>
-                      <p className="font-semibold text-primary mt-0.5">{selectedActivity.faaliyet_turu}</p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hedef Kitle / Kurum</span>
-                      <p className="font-semibold text-foreground mt-0.5">{selectedActivity.hedef_kitle || "İç Eğitim"}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/40">
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Başlangıç Tarihi</span>
-                      <p className="text-sm font-mono text-foreground mt-0.5">
-                        {new Date(selectedActivity.baslangic_tarihi).toLocaleString('tr-TR')}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bitiş Tarihi</span>
-                      <p className="text-sm font-mono text-foreground mt-0.5">
-                        {selectedActivity.bitis_tarihi ? new Date(selectedActivity.bitis_tarihi).toLocaleString('tr-TR') : "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/40">
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Toplam Süre</span>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">{selectedActivity.toplam_sure_saat} Saat</p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dış Katılımcı Sayısı</span>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">{selectedActivity.katilimci_sayisi} Kişi</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 border rounded-xl bg-zinc-950/40">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faaliyet Açıklaması / Notlar</span>
-                  <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap leading-relaxed">{selectedActivity.aciklama || "Faaliyet ile ilgili herhangi bir açıklama girilmemiştir."}</p>
-                </div>
-              </div>
-
-              <div className="lg:col-span-2 space-y-4">
-                <div className="p-4 border rounded-xl bg-zinc-950/40 h-full flex flex-col min-h-[250px]">
-                  <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Atanan Personel Listesi</span>
-                    <Badge variant="outline">{selectedActivityAttendees.length} Personel</Badge>
-                  </div>
-
-                  {loadingAttendees ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    </div>
-                  ) : selectedActivityAttendees.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground italic text-center p-4">
-                      Seçili faaliyete atanmış personel bulunmamaktadır.
-                    </div>
-                  ) : (
-                    <div className="flex-1 overflow-y-auto space-y-2 max-h-[40vh] pr-1">
-                      {selectedActivityAttendees.map((att) => (
-                        <div key={att.sicil_no} className="p-2.5 rounded-lg border border-border/60 bg-surface/50 text-xs flex items-center justify-between hover:border-primary/30 transition-all">
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-foreground">{att.ad} {att.soyad}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono">Sicil: {att.sicil_no} | {att.unvan}</p>
+                    {/* Mobil list view */}
+                    <div className="block md:hidden divide-y divide-zinc-900">
+                      {trainingRequests.map(req => (
+                        <div key={req.id} className="p-4 space-y-3 hover:bg-zinc-900/10">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="font-bold text-zinc-200 text-sm block">{req.basvuran_ad_soyad}</span>
+                              <span className="text-[10px] text-zinc-500 block">TC: {req.basvuran_tc}</span>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              req.durum === 'ONAYLANDI' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
+                              req.durum === 'REDDEDİLDİ' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
+                              req.durum === 'EKİP_ATANDI' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' :
+                              'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                            }`}>
+                              {req.durum}
+                            </span>
                           </div>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{att.rol}</Badge>
+                          <div className="text-xs text-zinc-400">
+                            <strong>Eğitim:</strong> {req.isyeri_detaylari?.egitim_turu || req.talep_turu}
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-zinc-500">Kişi: {req.isyeri_detaylari?.kisi_sayisi || 30} | {req.isyeri_detaylari?.egitim_tarihi}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 border-zinc-800 text-zinc-300"
+                              onClick={() => setSelectedRequest(req)}
+                            >
+                              İncele
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* --- TAB 2: Saatli Teşkilat Programı --- */}
+        {activeTab === 'calendar' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950 border border-slate-800 p-4 rounded-2xl shadow-lg">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-800 text-zinc-300 hover:text-white"
+                  onClick={handlePrevWeek}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Önceki Hafta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-800 text-zinc-300 hover:text-white font-bold"
+                  onClick={handleTodayWeek}
+                >
+                  Bu Hafta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-800 text-zinc-300 hover:text-white"
+                  onClick={handleNextWeek}
+                >
+                  Sonraki Hafta <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <div className="text-zinc-200 font-extrabold text-sm sm:text-base">
+                📅 {formatDateLabel(daysOfWeek[0])} - {formatDateLabel(daysOfWeek[6])} {daysOfWeek[0].getFullYear()}
+              </div>
+              <div>
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg"
+                  onClick={() => {
+                    setEduForm({
+                      id: '',
+                      kurum_id: '',
+                      kurum_adi: '',
+                      kurum_tipi: 'Isyeri',
+                      egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+                      kisi_sayisi: '20',
+                      planlanan_tarih: getYYYYMMDD(new Date()),
+                      saat_slot: '08:00 - 09:00',
+                      egitimci_personel_ids: [],
+                      durum: 'Beklemede',
+                      mahalle: '',
+                      yas_grubu: 'Yetişkin',
+                      teorik_sure_dk: '45',
+                      pratik_sure_dk: '45'
+                    })
+                    setBlacklistAcknowledged(false)
+                    setIsProgramModalOpen(true)
+                  }}
+                >
+                  <Plus className="w-4 h-4" /> Yeni Program Planla
+                </Button>
+              </div>
+            </div>
+
+            {/* Matrix Table */}
+            <Card className="bg-slate-950 border border-slate-800 overflow-hidden rounded-2xl">
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full min-w-[1200px] border-collapse table-fixed">
+                  <thead>
+                    <tr className="border-b border-zinc-900 bg-zinc-900/30 text-zinc-400 font-bold text-xs uppercase h-14">
+                      <th className="p-3 text-center border-r border-zinc-900/60 w-36">Saat Dilimi</th>
+                      {daysOfWeek.map((day, idx) => {
+                        const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
+                        return (
+                          <th key={idx} className={`p-3 text-center border-r border-zinc-900/60 ${isToday ? 'bg-indigo-950/20 text-indigo-400 font-black' : ''}`}>
+                            <div className="text-[11px] font-bold opacity-75">{getDayName(day)}</div>
+                            <div className="text-sm font-black mt-0.5">{formatDateLabel(day)}</div>
+                          </th>
+                        )
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-900 text-xs">
+                    {CALENDAR_SLOTS.map((slot) => (
+                      <tr key={slot} className="border-b border-zinc-900/80 min-h-[70px] hover:bg-zinc-900/5 transition">
+                        <td className="p-3 font-mono font-bold text-zinc-500 border-r border-zinc-900/60 text-center bg-zinc-900/10">
+                          {slot}
+                        </td>
+                        {daysOfWeek.map((day, dIdx) => {
+                          const dateStr = getYYYYMMDD(day)
+                          const cellEdus = educations.filter(edu => {
+                            const eduDateStr = getYYYYMMDD(new Date(edu.planlanan_tarih))
+                            return eduDateStr === dateStr && edu.saat_slot === slot
+                          })
+
+                          return (
+                            <td key={dIdx} className="p-2 border-r border-zinc-900/60 vertical-align-top relative group">
+                              <div className="space-y-1.5 min-h-[50px] flex flex-col justify-center">
+                                {cellEdus.map(edu => {
+                                  // Check blacklist for red flag
+                                  const isBlacklisted = blacklistList.some(x => (x.kurum_adi.trim().toLowerCase() === edu.kurum_adi?.trim().toLowerCase() || x.id === edu.kurum_id) && x.aktif_durum)
+                                  return (
+                                    <div
+                                      key={edu.id}
+                                      onClick={() => {
+                                        setEduForm({
+                                          id: edu.id,
+                                          kurum_id: edu.kurum_id || '',
+                                          kurum_adi: edu.kurum_adi || '',
+                                          kurum_tipi: edu.kurum_tipi || 'Isyeri',
+                                          egitim_turu: edu.egitim_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
+                                          kisi_sayisi: String(edu.kisi_sayisi || 20),
+                                          planlanan_tarih: getYYYYMMDD(new Date(edu.planlanan_tarih)),
+                                          saat_slot: edu.saat_slot,
+                                          egitimci_personel_ids: edu.egitimci_personel_ids || [],
+                                          durum: edu.durum,
+                                          mahalle: edu.mahalle || '',
+                                          yas_grubu: edu.yas_grubu || 'Yetişkin',
+                                          teorik_sure_dk: String(edu.teorik_sure_dk || 0),
+                                          pratik_sure_dk: String(edu.pratik_sure_dk || 0)
+                                        })
+                                        setBlacklistAcknowledged(false)
+                                        setIsProgramModalOpen(true)
+                                      }}
+                                      className={`p-2 rounded-xl border cursor-pointer hover:scale-[1.02] hover:shadow-md transition text-left space-y-1 ${
+                                        isBlacklisted ? 'bg-red-950/45 border-red-500/40 text-red-200' :
+                                        edu.durum === 'Tamamlandı' ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' :
+                                        edu.durum === 'Onaylandı' ? 'bg-blue-950/30 border-blue-500/25 text-blue-400' :
+                                        'bg-amber-950/20 border-amber-500/20 text-amber-400'
+                                      }`}
+                                    >
+                                      <div className="font-bold flex items-center justify-between gap-1">
+                                        <span className="line-clamp-1">{edu.kurum_adi}</span>
+                                        {isBlacklisted && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-black shrink-0">KARA LİSTE</span>}
+                                      </div>
+                                      <div className="text-[10px] opacity-75 line-clamp-1">{edu.egitim_turu}</div>
+                                      <div className="flex items-center justify-between text-[9px] opacity-80 pt-0.5">
+                                        <span>👥 {edu.kisi_sayisi} Kişi</span>
+                                        <span>⏱️ {((Number(edu.teorik_sure_dk || 0) + Number(edu.pratik_sure_dk || 0)) / 60).toFixed(1)} sa</span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+
+                                {cellEdus.length === 0 && isMudur && (
+                                  <button
+                                    onClick={() => {
+                                      setEduForm({
+                                        id: '',
+                                        kurum_id: '',
+                                        kurum_adi: '',
+                                        kurum_tipi: 'Isyeri',
+                                        egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+                                        kisi_sayisi: '20',
+                                        planlanan_tarih: dateStr,
+                                        saat_slot: slot,
+                                        egitimci_personel_ids: [],
+                                        durum: 'Beklemede',
+                                        mahalle: '',
+                                        yas_grubu: 'Yetişkin',
+                                        teorik_sure_dk: '45',
+                                        pratik_sure_dk: '45'
+                                      })
+                                      setBlacklistAcknowledged(false)
+                                      setIsProgramModalOpen(true)
+                                    }}
+                                    className="w-full h-8 rounded-lg border border-dashed border-zinc-800 hover:border-indigo-500/50 hover:bg-indigo-950/10 flex items-center justify-center text-zinc-600 hover:text-indigo-400 transition"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* --- TAB 3: Kara Liste ve Kurum Sorgu --- */}
+        {activeTab === 'blacklist' && (
+          <div className="space-y-6">
+            
+            {/* Kurum Sorgulama Paneli */}
+            <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <CardTitle className="text-base font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-2">
+                <Search className="w-5 h-5 text-indigo-400" /> KURUMSAL RİSK / ENGEL SORGULAMA MOTORU
+              </CardTitle>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  className="bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 flex-1 font-semibold"
+                  placeholder="Sorgulamak istediğiniz kurumun T.C. veya Vergi Numarasını girin..."
+                  value={queryTcTax}
+                  onChange={(e) => setQueryTcTax(e.target.value)}
+                />
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-10 px-5 rounded-xl flex items-center gap-1.5"
+                  onClick={handleQueryBlacklist}
+                >
+                  Riski Sorgula
+                </Button>
+              </div>
+
+              {hasQueried && (
+                <div className="mt-5 animate-in fade-in duration-200">
+                  {queryResult ? (
+                    queryResult.aktif_durum ? (
+                      <div className="border border-red-500 bg-red-950/20 text-red-200 p-4 rounded-xl flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                        <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-bold text-sm text-red-400">⚠️ DİKKAT: KURUM KIRMIZI BÜLTEN KATEGORİSİNDEDİR!</h4>
+                          <p className="text-xs text-red-300/80 mt-1">
+                            {queryResult.kurum_adi} (Vergi/TC: {queryResult.vergi_no_or_tc}) kurumu, son dakika iptalleri veya kurallara uymaması nedeniyle engellenmiştir.
+                          </p>
+                          <p className="text-xs font-mono text-red-400 mt-2">
+                            <strong>Kısıtlama Gerekçesi:</strong> {queryResult.gerekce || "Gerekçe belirtilmemiş."}
+                          </p>
+                          <p className="text-[10px] text-red-500 mt-1">Yasaklama Tarihi: {new Date(queryResult.yasaklama_tarihi).toLocaleDateString('tr-TR')}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border border-amber-500 bg-amber-950/20 text-amber-200 p-4 rounded-xl flex items-start gap-3">
+                        <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-bold text-sm text-amber-400">Uyarılı Kurum (Aktif Engel Yok)</h4>
+                          <p className="text-xs mt-1">
+                            {queryResult.kurum_adi} kurumu geçmişte listeye eklenmiş ancak şu an aktif engeli bulunmamaktadır.
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="border border-emerald-500 bg-emerald-950/20 text-emerald-200 p-4 rounded-xl flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-sm text-emerald-400">Temiz Sicil (Herhangi Bir Engel Yok)</h4>
+                        <p className="text-xs mt-1">
+                          Verilen T.C./Vergi numarası ile eşleşen aktif bir idari engel bulunamamıştır. Eğitim faaliyet planı oluşturulabilir.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Kara Liste Oluşturma (Müdür) */}
+              {isMudur && (
+                <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 h-fit">
+                  <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-2 flex items-center gap-1.5">
+                    <Ban className="w-4.5 h-4.5 text-red-400" /> YENİ ENGEL EKLEME PANELİ
+                  </CardTitle>
+                  <form onSubmit={handleAddBlacklist} className="space-y-4 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-zinc-400 font-bold block">Kurum Adı <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                        placeholder="Örn: X Fabrikası Sanayi Ltd."
+                        value={blacklistForm.kurum_adi}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-400 font-bold block">Vergi No / T.C. Kimlik <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                        placeholder="10 veya 11 haneli numara"
+                        value={blacklistForm.vergi_no_or_tc}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, vergi_no_or_tc: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-zinc-400 font-bold block">Kısıtlama / Engel İdari Gerekçesi</label>
+                      <textarea
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                        rows={3}
+                        placeholder="Eğitim saatinde personeli bekletme, haber vermeden son dakika iptali vb."
+                        value={blacklistForm.gerekce}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, gerekce: e.target.value }))}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSavingBlacklist}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl flex items-center justify-center gap-1 shadow-lg shadow-red-600/10"
+                    >
+                      {isSavingBlacklist ? 'Kaydediliyor...' : 'Engellenenlere Ekle'}
+                    </Button>
+                  </form>
+                </Card>
+              )}
+
+              {/* Kara Liste Listesi */}
+              <div className="lg:col-span-2">
+                <Card className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                  <div className="p-4 border-b border-zinc-800 bg-zinc-900/10">
+                    <CardTitle className="text-sm font-black uppercase text-zinc-300">
+                      🚫 ENGELLENEN KURUMLAR VERİ TABANI ({blacklistList.length})
+                    </CardTitle>
+                  </div>
+                  <CardContent className="p-0">
+                    {blacklistList.length === 0 ? (
+                      <div className="text-center p-8 text-zinc-500 text-xs">
+                        Sistemde kayıtlı uyarılı/engelli kurum bulunmamaktadır.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-zinc-900">
+                        {blacklistList.map(bl => (
+                          <div key={bl.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-zinc-900/10 transition">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-zinc-200 text-sm">{bl.kurum_adi}</span>
+                                <span className={`px-2 py-0.5 text-[9px] rounded font-black ${bl.aktif_durum ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                                  {bl.aktif_durum ? 'AKTİF ENGEL' : 'Kaldırıldı'}
+                                </span>
+                              </div>
+                              <div className="text-zinc-500 font-mono text-[10px]">T.C./Vergi No: {bl.vergi_no_or_tc} &nbsp;|&nbsp; Tarih: {new Date(bl.yasaklama_tarihi).toLocaleDateString('tr-TR')}</div>
+                              {bl.gerekce && <div className="text-zinc-400 font-semibold bg-zinc-950/50 p-2 rounded-lg mt-1 border border-zinc-900">{bl.gerekce}</div>}
+                            </div>
+                            <div className="flex items-center gap-2 self-end sm:self-center">
+                              {isMudur && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-8 border-zinc-800 text-[10px] font-bold ${bl.aktif_durum ? 'text-zinc-400 hover:text-white' : 'text-red-400 hover:text-white hover:bg-red-600/10'}`}
+                                    onClick={() => handleToggleBlacklist(bl.id, bl.aktif_durum)}
+                                  >
+                                    {bl.aktif_durum ? 'Engeli Pasife Al' : 'Engeli Aktifleştir'}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 text-red-500 hover:text-white hover:bg-red-600/20"
+                                    onClick={() => handleDeleteBlacklist(bl.id)}
+                                  >
+                                    Sil
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* --- TAB 4: Başkanlık Analiz Paneli --- */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold uppercase">Toplam Eğitim</span>
+                    <h3 className="text-2xl font-black text-indigo-400">{analyticsData.totalCount} Faaliyet</h3>
+                  </div>
+                  <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold uppercase">Eğitim Süresi</span>
+                    <h3 className="text-2xl font-black text-emerald-400">{analyticsData.totalHours} Saat</h3>
+                  </div>
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold uppercase">Eğitilen Vatandaş</span>
+                    <h3 className="text-2xl font-black text-blue-400">{analyticsData.totalParticipants} Vatandaş</h3>
+                  </div>
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+                    <Users className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold uppercase">Bekleyen Başvuru</span>
+                    <h3 className="text-2xl font-black text-amber-400">{analyticsData.pendingCount} Başvuru</h3>
+                  </div>
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Graphs Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Kurum Tipi Dağılımı */}
+              <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
+                  <Users className="w-4.5 h-4.5 text-indigo-400" /> KURUM TİPLERİNE GÖRE DAĞILIM
+                </CardTitle>
+                <div className="h-[250px] w-full mt-4 flex items-center justify-center">
+                  {analyticsData.typeData.length === 0 ? (
+                    <div className="text-zinc-500 text-xs">Yeterli veri bulunmamaktadır.</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={analyticsData.typeData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {analyticsData.typeData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ backgroundColor: '#090d16', border: '1px solid #1e293b' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </Card>
+
+              {/* Mahalle Dağılımı (Top 5) */}
+              <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
+                  <BarChart3 className="w-4.5 h-4.5 text-indigo-400" /> EN ÇOK EĞİTİM VERİLEN TOP 5 MAHALLE
+                </CardTitle>
+                <div className="h-[250px] w-full mt-4">
+                  {analyticsData.mahalleData.length === 0 ? (
+                    <div className="text-zinc-500 text-xs text-center pt-24">Yeterli veri bulunmamaktadır.</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analyticsData.mahalleData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="name" stroke="#64748b" style={{ fontSize: '10px' }} />
+                        <YAxis stroke="#64748b" style={{ fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ backgroundColor: '#090d16', border: '1px solid #1e293b' }} />
+                        <Bar dataKey="Adet" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </Card>
+
+              {/* Aylık Eğitim Sayısı Trendi */}
+              <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl lg:col-span-2">
+                <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
+                  <Clock className="w-4.5 h-4.5 text-indigo-400" /> AYLIK EĞİTİM FAALİYET SAYILARI TRENDİ
+                </CardTitle>
+                <div className="h-[250px] w-full mt-4">
+                  {analyticsData.monthlyData.length === 0 ? (
+                    <div className="text-zinc-500 text-xs text-center pt-24">Yeterli veri bulunmamaktadır.</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={analyticsData.monthlyData}>
+                        <defs>
+                          <linearGradient id="colorEdu" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="name" stroke="#64748b" style={{ fontSize: '10px' }} />
+                        <YAxis stroke="#64748b" style={{ fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ backgroundColor: '#090d16', border: '1px solid #1e293b' }} />
+                        <Area type="monotone" dataKey="Eğitim Adeti" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorEdu)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </Card>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* --- CITIZEN REQUEST DETAIL & ACTION MODAL --- */}
+        {selectedRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2 font-black text-zinc-100">
+                    <GraduationCap className="w-5 h-5 text-indigo-400" /> VATANDAŞ EĞİTİM TALEBİ DETAYLARI
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Eğitim İnceleme Arayüzü</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-zinc-400 hover:text-white"
+                  onClick={() => setSelectedRequest(null)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </CardHeader>
+
+              <CardContent className="p-6 space-y-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-500 font-bold uppercase block">Başvuran Kurum / Kişi</span>
+                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.basvuran_ad_soyad}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-500 font-bold uppercase block">Vergi No / T.C. Kimlik</span>
+                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.basvuran_tc || 'Girilmemiş'}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-500 font-bold uppercase block">İrtibat Telefonu</span>
+                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.irtibat_tel}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-500 font-bold uppercase block">Talep Tarihi</span>
+                    <span className="text-sm font-semibold text-zinc-200 block">
+                      {new Date(selectedRequest.basvuru_tarihi).toLocaleString('tr-TR')}
+                    </span>
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <span className="text-xs text-zinc-500 font-bold uppercase block">Eğitim Talep Edilen Adres</span>
+                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.adres}</span>
+                  </div>
+                </div>
+
+                {/* Eğitim Detayları */}
+                {selectedRequest.isyeri_detaylari && (
+                  <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-xl space-y-2">
+                    <h4 className="text-xs font-black text-indigo-400 uppercase tracking-wider border-b border-indigo-500/10 pb-1 flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5" /> Talep Edilen Eğitim Detayları
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-zinc-500 block">Eğitim Türü:</span>
+                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.egitim_turu || 'Temel Yangın Eğitimi'}</span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block">Planlanan Tarih:</span>
+                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.egitim_tarihi || 'Belirtilmemiş'}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-zinc-500 block">Tahmini Katılımcı Sayısı:</span>
+                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.kisi_sayisi || 30} Kişi</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Karar / Amir Audit Trail */}
+                {selectedRequest.islem_yapan_amir && (
+                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-zinc-500 font-semibold">
+                      <span>İŞLEM YAPAN YETKİLİ</span>
+                      <span>{selectedRequest.islem_tarihi ? new Date(selectedRequest.islem_tarihi).toLocaleString('tr-TR') : ''}</span>
+                    </div>
+                    <div className="text-zinc-300 font-bold">
+                      {selectedRequest.islem_yapan_amir}
+                    </div>
+                    {selectedRequest.red_gerekcesi && (
+                      <div className="bg-red-950/20 border border-red-500/10 p-2.5 rounded-lg text-red-400 mt-2 font-mono">
+                        <span className="font-bold block text-[10px] uppercase text-red-500 mb-0.5">RED GEREKÇESİ:</span>
+                        {selectedRequest.red_gerekcesi}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-Action Panels */}
+                {tacticalMode === 'RED' && (
+                  <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl space-y-3">
+                    <label className="text-xs font-bold text-red-400 block">RED GEREKÇESİNİ YAZIN <span className="text-red-500">*</span></label>
+                    <textarea
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 font-semibold"
+                      rows={3}
+                      placeholder="Gerekçe girin..."
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        className="border-zinc-800 text-zinc-400 text-xs px-3 py-1.5 h-8 font-semibold"
+                        onClick={() => setTacticalMode('NONE')}
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
+                        onClick={() => handleTacticalAction(selectedRequest.id, 'REDDEDİLDİ', { reason: rejectionReason })}
+                      >
+                        Reddet
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {tacticalMode === 'EKIP' && (
+                  <div className="bg-blue-950/20 border border-blue-500/30 p-4 rounded-xl space-y-3">
+                    <label className="text-xs font-bold text-blue-400 block">GÖREVLENDİRİLECEK EKİBİ SEÇİN <span className="text-red-500">*</span></label>
+                    <select
+                      className="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                      value={selectedCrew}
+                      onChange={(e) => setSelectedCrew(e.target.value)}
+                    >
+                      <option value="Eğitim & Önleme Şefliği">Eğitim & Önleme Şefliği</option>
+                      <option value="Merkez İstasyonu A Grubu">Merkez İstasyonu A Grubu</option>
+                      <option value="OSB İstasyonu Eğitim Grubu">OSB İstasyonu Eğitim Grubu</option>
+                    </select>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        className="border-zinc-800 text-zinc-400 text-xs px-3 py-1.5 h-8 font-semibold"
+                        onClick={() => setTacticalMode('NONE')}
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
+                        onClick={() => handleTacticalAction(selectedRequest.id, 'EKİP_ATANDI', { crew: selectedCrew })}
+                      >
+                        Ekip Ata
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+
+              <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  {isMudur && (
+                    <Button
+                      variant="ghost"
+                      className="text-red-500 hover:text-white hover:bg-red-600/10 text-xs font-bold px-3 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                      disabled={updating !== null}
+                      onClick={() => handleDeleteRequest(selectedRequest.id)}
+                    >
+                      <Trash2 className="w-4 h-4" /> Sil
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <Button 
+                    variant="outline" 
+                    className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 h-9 rounded-xl text-xs"
+                    onClick={() => setSelectedRequest(null)}
+                  >
+                    Kapat
+                  </Button>
+
+                  {/* Place on Calendar Integration */}
+                  {selectedRequest.durum === 'ONAYLANDI' && (
+                    <Button
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                      onClick={() => {
+                        const tc = selectedRequest.basvuran_tc;
+                        const matchBlacklist = blacklistList.find(x => x.vergi_no_or_tc === tc);
+                        
+                        setEduForm({
+                          id: '',
+                          kurum_id: matchBlacklist ? matchBlacklist.id : '',
+                          kurum_adi: selectedRequest.basvuran_ad_soyad,
+                          kurum_tipi: 'Isyeri',
+                          egitim_turu: selectedRequest.isyeri_detaylari?.egitim_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
+                          kisi_sayisi: String(selectedRequest.isyeri_detaylari?.kisi_sayisi || 30),
+                          planlanan_tarih: selectedRequest.isyeri_detaylari?.egitim_tarihi || getYYYYMMDD(new Date()),
+                          saat_slot: '10:30 - 11:15',
+                          egitimci_personel_ids: [],
+                          durum: 'Onaylandı',
+                          mahalle: 'Merkez',
+                          yas_grubu: 'Yetişkin',
+                          teorik_sure_dk: '45',
+                          pratik_sure_dk: '45'
+                        })
+                        setBlacklistAcknowledged(false)
+                        setSelectedRequest(null)
+                        setActiveTab('calendar')
+                        setIsProgramModalOpen(true)
+                      }}
+                    >
+                      Takvime Yerleştir
+                    </Button>
+                  )}
+
+                  {isMudur && selectedRequest.durum !== 'ONAYLANDI' && selectedRequest.durum !== 'REDDEDİLDİ' && (
+                    <>
+                      <Button
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                        disabled={updating !== null || tacticalMode === 'RED'}
+                        onClick={() => setTacticalMode('RED')}
+                      >
+                        Reddet
+                      </Button>
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                        disabled={updating !== null || tacticalMode === 'EKIP'}
+                        onClick={() => setTacticalMode('EKIP')}
+                      >
+                        Ekip Ata
+                      </Button>
+                      <Button
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1 shadow-md"
+                        disabled={updating !== null}
+                        onClick={() => handleTacticalAction(selectedRequest.id, 'ONAYLANDI')}
+                      >
+                        {updating === selectedRequest.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Talebi Onayla'}
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Dynamic Official A4 Printable Layout */}
-      {selectedActivity && (
-        <div className="hidden print:block text-black bg-white min-h-screen p-[15mm] font-serif print-container print:w-full print:h-auto text-[13px] leading-relaxed">
-          {/* Header block with Sivas Logos */}
-          <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
-            <img src="/logo-belediye.png" alt="Sivas Belediyesi" className="w-[65px] h-[65px] object-contain" />
-            <div className="text-center flex-1">
-              <h2 className="text-[14px] font-bold tracking-wider leading-tight">T.C.</h2>
-              <h1 className="text-[16px] font-extrabold tracking-widest leading-normal">SİVAS BELEDİYE BAŞKANLIĞI</h1>
-              <h3 className="text-[13px] font-bold tracking-wider leading-tight">İtfaiye Müdürlüğü</h3>
-            </div>
-            <img src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" className="w-[65px] h-[65px] object-contain" />
+        {/* --- EDUCATION PROGRAM EDIT / NEW MODAL --- */}
+        {isProgramModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2 font-black text-zinc-100">
+                    <Calendar className="w-5 h-5 text-indigo-400" /> {eduForm.id ? 'PROGRAM DETAY & DÜZENLEME' : 'YENİ EĞİTİM / ZİYARET PROGRAMLA'}
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">Sivas İtfaiyesi Eğitim ve Ziyaret Program Planlama Sistemi</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-zinc-400 hover:text-white"
+                  onClick={() => setIsProgramModalOpen(false)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </CardHeader>
+              
+              <form onSubmit={handleSaveEducation}>
+                <CardContent className="p-6 space-y-6 max-h-[60vh] overflow-y-auto scrollbar-thin">
+                  
+                  {/* Blacklist Warning */}
+                  {activeBlacklistedInst && (
+                    <div className="space-y-4 my-2">
+                      <div className="border border-red-500/50 bg-red-950/35 text-red-200 p-4 rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse flex flex-col gap-2">
+                        <span className="font-bold text-xs sm:text-sm block">
+                          ⚠️ RISK ALERTI: Bu kurum/vergi no kara listededir! Yasaklama Gerekçesi: {activeBlacklistedInst.gerekce}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 bg-red-950/10 border border-red-500/10 p-3 rounded-xl">
+                        <input
+                          type="checkbox"
+                          id="blacklist-acknowledge"
+                          checked={blacklistAcknowledged}
+                          onChange={(e) => setBlacklistAcknowledged(e.target.checked)}
+                          className="w-4 h-4 rounded border-red-500/40 text-red-600 focus:ring-red-500 bg-zinc-900 cursor-pointer"
+                        />
+                        <label htmlFor="blacklist-acknowledge" className="text-xs font-semibold text-red-300 cursor-pointer select-none">
+                          Kara Liste Uyarısını Okudum ve Onaylıyorum
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    
+                    {/* Kurum Adı */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-zinc-400 font-bold block">Eğitim Alacak Kurum / Grup Adı <span className="text-red-500">*</span></label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          required
+                          disabled={!isMudur}
+                          className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                          placeholder="Örn: Organize Sanayi Fabrikası veya okul adı"
+                          value={eduForm.kurum_adi}
+                          onChange={(e) => setEduForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
+                        />
+                        <select
+                          disabled={!isMudur}
+                          className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-2 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                          value={eduForm.kurum_id || ''}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            const match = blacklistList.find(x => x.id === val)
+                            setEduForm(prev => ({
+                              ...prev,
+                              kurum_id: val,
+                              kurum_adi: match ? match.kurum_adi : prev.kurum_adi
+                            }))
+                          }}
+                        >
+                          <option value="">Kayıtlı Kurum Seç...</option>
+                          {blacklistList.filter(x => !x.aktif_durum).map(x => (
+                            <option key={x.id} value={x.id}>{x.kurum_adi}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Kurum Tipi */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-zinc-400 font-bold block">Kurum Sınıflandırma Tipi <span className="text-red-500">*</span></label>
+                      <select
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.kurum_tipi}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, kurum_tipi: e.target.value }))}
+                      >
+                        <option value="Isyeri">İşyeri</option>
+                        <option value="Okul">Okul</option>
+                        <option value="Kamu Kurumu">Kamu Kurumu</option>
+                        <option value="Itfaiye Ziyaret">İtfaiye Ziyaret (Merkez Tesis Tanıtımı)</option>
+                        <option value="Ev-Site">Ev-Site sakinleri</option>
+                        <option value="Ekip Egitimi">Dahili Ekip Eğitimi / Tatbikatı</option>
+                      </select>
+                    </div>
+
+                    {/* Eğitim Türü */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Eğitim / Tatbikat Kapsamı</label>
+                      <select
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.egitim_turu}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, egitim_turu: e.target.value }))}
+                      >
+                        <option value="Yangın Önleme ve Temel Yangın Eğitimi">Yangın Önleme ve Temel Yangın Eğitimi</option>
+                        <option value="SCBA Maske ve Temiz Hava Cihazı Eğitimi">SCBA Maske ve Temiz Hava Cihazı Eğitimi</option>
+                        <option value="Arama Kurtarma ve Tahliye Tatbikatı">Arama Kurtarma ve Tahliye Tatbikatı</option>
+                        <option value="Endüstriyel Yangın Güvenliği Eğitimi">Endüstriyel Yangın Güvenliği Eğitimi</option>
+                        <option value="Dahili Teşkilat Eğitimi / Tatbikatı">Dahili Teşkilat Eğitimi / Tatbikatı</option>
+                      </select>
+                    </div>
+
+                    {/* Kişi Sayısı */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Katılımcı Sayısı</label>
+                      <input
+                        type="number"
+                        min={1}
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        value={eduForm.kisi_sayisi}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, kisi_sayisi: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Tarih */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Planlanan Tarih</label>
+                      <input
+                        type="date"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.planlanan_tarih}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, planlanan_tarih: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Saat Dilimi */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Saat Dilimi</label>
+                      <select
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.saat_slot}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, saat_slot: e.target.value }))}
+                      >
+                        {CALENDAR_SLOTS.map(slot => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Mahalle */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Eğitim Bölgesi / Mahalle</label>
+                      <input
+                        type="text"
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        placeholder="Örn: Esentepe"
+                        value={eduForm.mahalle}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, mahalle: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Yaş Grubu */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Yaş Grubu</label>
+                      <select
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.yas_grubu}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, yas_grubu: e.target.value }))}
+                      >
+                        <option value="Yetişkin">Yetişkin</option>
+                        <option value="Genç">Genç</option>
+                        <option value="Çocuk">Çocuk</option>
+                        <option value="Karışık">Karışık</option>
+                      </select>
+                    </div>
+
+                    {/* Süre Bilgileri */}
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Teorik Eğitim Süresi (Dakika)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        value={eduForm.teorik_sure_dk}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, teorik_sure_dk: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-bold block">Pratik / Tatbikat Süresi (Dakika)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        value={eduForm.pratik_sure_dk}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, pratik_sure_dk: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Toplam Süre */}
+                    <div className="space-y-1.5 sm:col-span-2 bg-indigo-950/20 border border-indigo-900/30 p-3 rounded-xl flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-indigo-300 block">Toplam Hesaplanan Süre</span>
+                        <span className="text-[10px] text-zinc-500">Teorik ve pratik sürelerin saat cinsinden toplamı</span>
+                      </div>
+                      <span className="text-base font-black text-indigo-400 font-mono">
+                        {((Number(eduForm.teorik_sure_dk || 0) + Number(eduForm.pratik_sure_dk || 0)) / 60).toFixed(2)} Saat
+                      </span>
+                    </div>
+
+                    {/* Onay Durumu */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-zinc-400 font-bold block">Program Durumu</label>
+                      <select
+                        disabled={!isMudur}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        value={eduForm.durum}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, durum: e.target.value }))}
+                      >
+                        <option value="Beklemede">Beklemede (Onay Bekliyor)</option>
+                        <option value="Onaylandı">Onaylandı (Programlı)</option>
+                        <option value="Tamamlandı">Tamamlandı (Eğitim Bitti)</option>
+                        <option value="İptal">İptal Edildi</option>
+                      </select>
+                    </div>
+
+                    {/* Çoklu Eğitmen Seçimi */}
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-zinc-400 font-bold block uppercase tracking-wider">Görevli Eğitmen / Personel Seçimi</label>
+                      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 scrollbar-thin">
+                        {personnelList.map(p => {
+                          const isChecked = eduForm.egitimci_personel_ids.includes(p.id) || eduForm.egitimci_personel_ids.includes(p.sicil_no)
+                          return (
+                            <label key={p.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-zinc-900 cursor-pointer select-none transition">
+                              <input
+                                type="checkbox"
+                                disabled={!isMudur}
+                                className="rounded bg-zinc-950 border-zinc-800 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setEduForm(prev => ({
+                                      ...prev,
+                                      egitimci_personel_ids: [...prev.egitimci_personel_ids, p.id]
+                                    }))
+                                  } else {
+                                    setEduForm(prev => ({
+                                      ...prev,
+                                      egitimci_personel_ids: prev.egitimci_personel_ids.filter(id => id !== p.id && id !== p.sicil_no)
+                                    }))
+                                  }
+                                }}
+                              />
+                              <div className="text-xs font-semibold text-zinc-200">
+                                {p.ad} {p.soyad} <span className="text-[10px] text-zinc-500">({p.unvan || 'Er'})</span>
+                              </div>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                  </div>
+                </CardContent>
+
+                <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    {eduForm.id && isMudur && (
+                      <Button
+                        type="button"
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                        onClick={() => handleDeleteEducation(eduForm.id)}
+                      >
+                        <Trash2 className="w-4 h-4" /> Sil
+                      </Button>
+                    )}
+                    {eduForm.id && (
+                      <Button
+                        type="button"
+                        className="bg-indigo-600/10 hover:bg-indigo-600/25 border border-indigo-500/20 text-indigo-400 font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                        onClick={() => handlePrintClick(eduForm)}
+                      >
+                        <Printer className="w-4 h-4" /> Resmi Rapor Bas
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 text-xs">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 h-9 rounded-xl text-xs"
+                      onClick={() => setIsProgramModalOpen(false)}
+                    >
+                      İptal
+                    </Button>
+                    {isMudur && (
+                      <Button 
+                        type="button"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-md"
+                        disabled={isSavingEdu || (activeBlacklistedInst !== null && !blacklistAcknowledged)}
+                        onClick={handleSaveEducation}
+                      >
+                        {isSavingEdu ? 'Kaydediliyor...' : 'Kaydet'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </Card>
           </div>
+        )}
 
-          {/* Report Title */}
-          <div className="text-center mb-8">
-            <h2 className="text-[15px] font-extrabold underline decoration-double underline-offset-4 tracking-widest uppercase">
-              {selectedActivity.faaliyet_konusu.toLocaleUpperCase("tr-TR")} {selectedActivity.faaliyet_turu.toLocaleUpperCase("tr-TR")} SONUÇ RAPORU
-            </h2>
-          </div>
-
-          {/* Details Table */}
-          <div className="mb-6">
-            <table className="w-full border-collapse border border-black text-[13px]">
-              <tbody>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold w-1/3 bg-gray-50 text-left">Eğitimin / Faaliyetin Konusu</td>
-                  <td className="border border-black px-3 py-2 w-2/3 text-left">{selectedActivity.faaliyet_konusu}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Faaliyet Türü</td>
-                  <td className="border border-black px-3 py-2 text-left">{selectedActivity.faaliyet_turu}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Eğitim / Tatbikat Tarihi ve Saati</td>
-                  <td className="border border-black px-3 py-2 text-left">
-                    {new Date(selectedActivity.baslangic_tarihi).toLocaleString('tr-TR')}
-                    {selectedActivity.bitis_tarihi && ` - ${new Date(selectedActivity.bitis_tarihi).toLocaleString('tr-TR')}`}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Süresi</td>
-                  <td className="border border-black px-3 py-2 text-left">{selectedActivity.toplam_sure_saat} Saat</td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Eğitim Konumu / Hedef Kitle</td>
-                  <td className="border border-black px-3 py-2 text-left">{selectedActivity.hedef_kitle || "Sivas İtfaiye Müdürlüğü"}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Eğitici Personel</td>
-                  <td className="border border-black px-3 py-2 text-left">
-                    {selectedActivityAttendees.filter(a => a.rol === "Eğitmen").map(a => `${a.ad} ${a.soyad} (${a.unvan})`).join(", ") || "Sivas İtfaiye Eğitici Personeli"}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Eğitime Katılım Sayısı</td>
-                  <td className="border border-black px-3 py-2 text-left">
-                    {selectedActivityAttendees.length > 0 ? `${selectedActivityAttendees.length} Personel` : ""}
-                    {selectedActivity.katilimci_sayisi > 0 ? ` + ${selectedActivity.katilimci_sayisi} Dış Katılımcı` : ""}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border border-black px-3 py-2 font-bold bg-gray-50 text-left">Eğitimin İcrası ve Değerlendirmesi</td>
-                  <td className="border border-black px-3 py-2 text-left whitespace-pre-wrap leading-relaxed min-h-[60px] align-top">
-                    {selectedActivity.aciklama || "Belirtilen eğitim ve tatbikat faaliyeti, program çerçevesinde başarıyla tamamlanmış ve hedeflenen kazanımlar elde edilmiştir."}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Attendees table */}
-          <div className="mb-8">
-            <h3 className="text-[13px] font-bold mb-2 border-b border-black pb-1 uppercase tracking-wider text-left">KATILIMCI PERSONEL LİSTESİ</h3>
-            <table className="w-full border-collapse border border-black text-[12px] text-center">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-black px-2 py-1 font-bold w-12 text-center">S.No</th>
-                  <th className="border border-black px-2 py-1 font-bold w-28 text-center">Sicil No</th>
-                  <th className="border border-black px-2 py-1 font-bold text-left pl-3">Adı Soyadı</th>
-                  <th className="border border-black px-2 py-1 font-bold text-center">Unvanı</th>
-                  <th className="border border-black px-2 py-1 font-bold w-36 text-center">İmza Sirküsü Rolü</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedActivityAttendees.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="border border-black px-3 py-3 text-gray-500 italic">
-                      Katılımcı personel kaydı bulunmamaktadır.
-                    </td>
-                  </tr>
-                ) : (
-                  selectedActivityAttendees.map((att, idx) => (
-                    <tr key={att.sicil_no} className="h-6">
-                      <td className="border border-black px-2 py-1 text-center">{idx + 1}</td>
-                      <td className="border border-black px-2 py-1 font-mono text-center">{att.sicil_no}</td>
-                      <td className="border border-black px-2 py-1 font-bold text-left pl-3">{att.ad} {att.soyad}</td>
-                      <td className="border border-black px-2 py-1 text-center">{att.unvan}</td>
-                      <td className="border border-black px-2 py-1 text-center">{att.rol}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Formal closure text */}
-          <p className="text-[11px] text-gray-800 italic mb-10 leading-snug text-left">
-            İşbu eğitim ve faaliyet sonuç raporu, yukarıda belirtilen şartlar dairesinde resmi evrak formatında tanzim edilmiş olup, 
-            aşağıdaki yetkililerce imza altına alınarak resmiyete kavuşturulmuştur.
-          </p>
-
-          {/* Signature blocks - elegant 3 column layout */}
-          <div className="grid grid-cols-3 gap-6 text-center pt-4 border-t border-dashed border-gray-400">
-            <div className="flex flex-col justify-between h-[110px]">
-              <div>
-                <p className="font-bold underline text-[12px]">EĞİTİCİ PERSONEL</p>
-                <p className="text-[10px] text-gray-600">İmza</p>
-              </div>
-              <div className="font-bold text-[12px] leading-tight">
-                <p>
-                  {selectedActivityAttendees.find(a => a.rol === "Eğitmen") 
-                    ? `${selectedActivityAttendees.find(a => a.rol === "Eğitmen")?.ad} ${selectedActivityAttendees.find(a => a.rol === "Eğitmen")?.soyad}`
-                    : "........................"}
-                </p>
-                <p className="text-[10px] text-gray-500 font-normal">
-                  {selectedActivityAttendees.find(a => a.rol === "Eğitmen")?.unvan || "Eğitmen"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between h-[110px]">
-              <div>
-                <p className="font-bold underline text-[12px]">İSTASYON AMİRİ / ÇAVUŞ</p>
-                <p className="text-[10px] text-gray-600">İmza</p>
-              </div>
-              <div className="font-bold text-[12px] leading-tight">
-                <p>
-                  {selectedActivityAttendees.find(a => a.unvan.includes("Çavuş") || a.unvan.includes("Amir"))
-                    ? `${selectedActivityAttendees.find(a => a.unvan.includes("Çavuş") || a.unvan.includes("Amir"))?.ad} ${selectedActivityAttendees.find(a => a.unvan.includes("Çavuş") || a.unvan.includes("Amir"))?.soyad}`
-                    : "........................"}
-                </p>
-                <p className="text-[10px] text-gray-500 font-normal">
-                  {selectedActivityAttendees.find(a => a.unvan.includes("Çavuş") || a.unvan.includes("Amir"))?.unvan || "Nöbetçi Amiri / Çavuş"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between h-[110px]">
-              <div>
-                <p className="font-bold underline text-[12px]">İTFAİYE MÜDÜRÜ</p>
-                <p className="text-[10px] text-gray-600">ONAY</p>
-              </div>
-              <div className="font-bold text-[12px] leading-tight">
-                <p>Onur KAYA</p>
-                <p className="text-[10px] text-gray-500 font-normal">İtfaiye Müdürü</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Global CSS Style Tag for Print Media */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          body, html {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: auto !important;
-          }
-          /* Hide all screen elements by default using visibility */
-          body * {
-            visibility: hidden !important;
-          }
-          /* Make the print container and all its children visible */
-          .print-container,
-          .print-container * {
-            visibility: visible !important;
-          }
-          /* Position the print container at the top left of the printed page */
-          .print-container {
-            display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            margin: 0 !important;
-            padding: 15mm !important;
-          }
-        }
-      `}} />
+      </div>
     </PageGuard>
   )
 }

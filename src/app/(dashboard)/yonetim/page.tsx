@@ -220,21 +220,21 @@ export default function DashboardPage() {
       const minutes = now.getMinutes()
       const totalMinutesNow = hours * 60 + minutes
 
-      const slots = [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "10:30" },
-        { start: "10:30", end: "11:15" },
-        { start: "11:15", end: "12:00" },
-        { start: "12:00", end: "13:30" },
-        { start: "13:30", end: "15:00" },
-        { start: "15:00", end: "15:30" },
-        { start: "15:30", end: "16:30" },
-        { start: "16:30", end: "16:45" },
-        { start: "16:45", end: "17:30" },
-        { start: "17:30", end: "18:30" },
-        { start: "18:30", end: "20:00" },
-        { start: "20:00", end: "21:00" }
+      const slots: { start: string; end: string; label: string; type: string; icon: string }[] = [
+        { start: "08:00", end: "09:00", label: "Posta Devir Teslimi, Araç ve Malzeme Kontrolü", type: "Tatbiki", icon: "🔧" },
+        { start: "09:00", end: "10:00", label: "Spor (Koşu, Kültür Fizik vs.)", type: "Tatbiki", icon: "🏃" },
+        { start: "10:00", end: "10:30", label: "Spor Sonrası Duş, Eğitime Hazırlık", type: "Tatbiki", icon: "🚿" },
+        { start: "10:30", end: "11:15", label: "Eğitim Konusu", type: "Nazari", icon: "📖" },
+        { start: "11:15", end: "12:00", label: "Dinlenme ve Yemek Hazırlığı", type: "Mola", icon: "☕" },
+        { start: "12:00", end: "13:30", label: "Yemek Saati", type: "Mola", icon: "🍽️" },
+        { start: "13:30", end: "15:00", label: "Birey Eğitim Çalışması", type: "Nazari/Tatbiki", icon: "📋" },
+        { start: "15:00", end: "15:30", label: "Dinlenme", type: "Mola", icon: "☕" },
+        { start: "15:30", end: "16:30", label: "Araç ve Malzeme Bakımı, Eksikliklerin Tamamlanması", type: "Tatbiki", icon: "🛠️" },
+        { start: "16:30", end: "16:45", label: "Dinlenme", type: "Mola", icon: "☕" },
+        { start: "16:45", end: "17:30", label: "Eğitim Değerlendirmesi, Eksiklerin Belirlenmesi", type: "Nazari/Tatbiki", icon: "📝" },
+        { start: "17:30", end: "18:30", label: "Dinlenme (Serbest Zaman), Yemek Hazırlığı", type: "Mola", icon: "🏠" },
+        { start: "18:30", end: "20:00", label: "Yemek Saati", type: "Mola", icon: "🍽️" },
+        { start: "20:00", end: "21:00", label: "Görsel Sunumlar", type: "Nazari", icon: "📺" }
       ]
 
       let matched = false
@@ -245,17 +245,28 @@ export default function DashboardPage() {
         const endTotal = endH * 60 + endM
 
         if (totalMinutesNow >= startTotal && totalMinutesNow < endTotal) {
-          setProgramInfo({
-            isOffDuty: false,
-            text: `🟢 ŞU ANKİ PROGRAM: ${slot.start} - ${slot.end} İtfaiye Teorik ve Pratik Eğitimi`
-          })
+          if (slot.start === "10:30" && slot.end === "11:15") {
+            setProgramInfo({
+              isOffDuty: false,
+              text: "🟢 ŞU ANKİ PROGRAM: 10:30 - 11:15 İtfaiye Teorik ve Pratik Eğitimi (Eğitimdesiniz)"
+            })
+          } else {
+            setProgramInfo({
+              isOffDuty: slot.type === 'Mola',
+              text: `${slot.icon} ${slot.start}-${slot.end} | ${slot.label} [${slot.type}]`
+            })
+          }
           matched = true
           break
         }
       }
 
       if (!matched) {
-        setProgramInfo({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+        if (totalMinutesNow >= 21 * 60 || totalMinutesNow < 8 * 60) {
+          setProgramInfo({ isOffDuty: true, text: "🌙 Nöbetçi Posta — Gece Vardiyası (Hazır Kıta Beklemede)" })
+        } else {
+          setProgramInfo({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+        }
       }
     }
 
