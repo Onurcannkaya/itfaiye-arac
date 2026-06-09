@@ -6,6 +6,7 @@ import { api } from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 import { 
   Combine, 
   Trash2, 
@@ -88,7 +89,8 @@ const DURUM_OPTIONS = [
   { value: "Tam", label: "Tam (Eksiksiz)", colorClass: "text-emerald-400" },
   { value: "Eksik", label: "Eksik (Hasarsız)", colorClass: "text-amber-400" },
   { value: "Arızalı", label: "Arızalı (Bakımda)", colorClass: "text-rose-400" },
-  { value: "Kayıp/Yok", label: "Kayıp / Yok", colorClass: "text-slate-400" }
+  { value: "Kayıp/Yok", label: "Kayıp / Yok", colorClass: "text-slate-400" },
+  { value: "🔄 GEÇİCİ ZİMMETTE", label: "🔄 GEÇİCİ ZİMMETTE", colorClass: "text-cyan-400" }
 ];
 
 function InfoTooltip({ content }: { content: string }) {
@@ -114,6 +116,141 @@ export default function EnvanteriPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedPlaka, setSelectedPlaka] = useState<string>("")
   const [tableRows, setTableRows] = useState<InventoryRow[]>([])
+
+  // Temporary Assignment States
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
+  const [assignmentRow, setAssignmentRow] = useState<InventoryRow | null>(null)
+  const [recipientType, setRecipientType] = useState<'PERSONEL' | 'ARAC' | 'DIS_BIRIM'>('PERSONEL')
+  const [recipientName, setRecipientName] = useState("")
+  const [estimatedReturnDate, setEstimatedReturnDate] = useState("")
+  const [activePrintAssignment, setActivePrintAssignment] = useState<any | null>(null)
+  const [phoneInput, setPhoneInput] = useState("")
+  const [costInput, setCostInput] = useState("")
+
+  const handleOpenAssignmentModal = (row: InventoryRow) => {
+    const matUpper = row.malzeme_adi.trim().toUpperCase();
+    const malzemeId = inventoryCache[matUpper];
+    if (!malzemeId) {
+      alert("Lütfen geçici zimmet işlemi yapmadan önce sayfa altındaki 'Kaydet' butonuna basarak envanter değişikliklerini veri tabanına işleyin.");
+      return;
+    }
+    setAssignmentRow(row);
+    setRecipientType('PERSONEL');
+    setRecipientName('');
+    setEstimatedReturnDate('');
+    setPhoneInput('');
+    setCostInput('');
+    setAssignmentModalOpen(true);
+  };
+
+  const handleCreateAssignment = async () => {
+    if (!assignmentRow || !recipientName || !estimatedReturnDate) {
+      alert("Lütfen tüm zorunlu alanları doldurun.");
+      return;
+    }
+
+    const matUpper = assignmentRow.malzeme_adi.trim().toUpperCase();
+    const malzemeId = inventoryCache[matUpper];
+    if (!malzemeId) {
+      alert("Malzeme kimliği bulunamadı.");
+      return;
+    }
+
+    try {
+      // 1. Save assignment to DB
+      const assignmentData = {
+        malzeme_id: malzemeId,
+        teslim_edilen_tip: recipientType,
+        birim_adi: recipientName,
+        teslim_tarihi: new Date().toISOString(),
+        tahmini_iade_tarihi: new Date(estimatedReturnDate).toISOString(),
+        durum: 'AKTIF'
+      };
+
+      const res = await api.insert('temporary_assignments', assignmentData);
+      if (res.error) throw new Error(res.error);
+
+      const createdAssignment = res.data?.[0];
+      if (!createdAssignment) throw new Error("Veritabanından kayıt dönmedi.");
+
+      // 2. Update status of the item locally to '🔄 GEÇİCİ ZİMMETTE'
+      setTableRows(prev => prev.map(r => {
+        if (r.internalId === assignmentRow.internalId) {
+          return { ...r, durum: '🔄 GEÇİCİ ZİMMETTE' };
+        }
+        return r;
+      }));
+
+      // Update in vehicle_inventory immediately
+      if (assignmentRow.id) {
+        await api.update('vehicle_inventory', { durum: '🔄 GEÇİCİ ZİMMETTE' }, { id: assignmentRow.id });
+      }
+
+      // Rebuild bolmeler JSON for vehicles
+      const updatedRows = tableRows.map(r => {
+        if (r.internalId === assignmentRow.internalId) {
+          return { ...r, durum: '🔄 GEÇİCİ ZİMMETTE' };
+        }
+        return r;
+      });
+
+      const newBolmeler: Record<string, any[]> = {};
+      updatedRows
+        .filter(row => row.malzeme_adi.trim() !== "")
+        .forEach(row => {
+          const key = getCompartmentKey(row.bolme_kapak);
+          if (!newBolmeler[key]) newBolmeler[key] = [];
+          newBolmeler[key].push({
+            malzeme: row.malzeme_adi,
+            adet: row.adet,
+            durum: row.durum
+          });
+        });
+
+      await api.update('vehicles', { bolmeler: newBolmeler }, { plaka: selectedPlaka });
+
+      // Save audit log
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'temporary_assignment',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: assignmentRow.malzeme_adi,
+          details: {
+            plaka: selectedPlaka,
+            teslim_edilen_tip: recipientType,
+            birim_adi: recipientName,
+          },
+        }),
+      }).catch(err => console.error('[AuditLog] Zimmet logu gönderilemedi:', err))
+
+      // 3. Trigger printing! Set activePrintAssignment to trigger React rendering & print
+      const printData = {
+        ...createdAssignment,
+        materialName: assignmentRow.malzeme_adi,
+        quantity: assignmentRow.adet,
+        durum_aciklamasi: 'Hasarsız',
+        telefon: phoneInput,
+        ucret: costInput
+      };
+      setActivePrintAssignment(printData);
+
+      // Close assignment modal, clear states
+      setAssignmentModalOpen(false);
+
+      // Trigger window.print shortly after DOM updates
+      setTimeout(() => {
+        window.print();
+        setActivePrintAssignment(null);
+      }, 500);
+
+    } catch (err: any) {
+      console.error(err);
+      alert("Zimmet oluşturulurken hata oluştu: " + err.message);
+    }
+  };
   
   // Vehicle metadata edit states (filo_no and aciklama)
   const [editFiloNo, setEditFiloNo] = useState<string>("")
@@ -770,7 +907,7 @@ export default function EnvanteriPage() {
                               <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
                               <th className="px-5 py-3.5 text-left font-semibold w-24">ADET</th>
                               <th className="px-5 py-3.5 text-left font-semibold w-40">DURUM</th>
-                              <th className="px-5 py-3.5 text-center font-semibold w-20">SİL</th>
+                              <th className="px-5 py-3.5 text-center font-semibold w-40">İŞLEMLER</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/5 font-medium">
@@ -832,11 +969,20 @@ export default function EnvanteriPage() {
                                     </select>
                                   </td>
 
-                                  {/* Delete button */}
-                                  <td className="px-5 py-2.5 text-center align-middle">
+                                  {/* Actions cell */}
+                                  <td className="px-5 py-2.5 text-center align-middle flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={() => handleOpenAssignmentModal(row)}
+                                      disabled={!row.malzeme_adi}
+                                      className="h-10 px-2.5 flex items-center justify-center text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors border border-transparent hover:border-cyan-500/20 text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
+                                      title="Geçici Zimmetle"
+                                    >
+                                      <span>🔄</span>
+                                      <span className="hidden sm:inline">Zimmetle</span>
+                                    </button>
                                     <button 
                                       onClick={() => handleDeleteItem(row.internalId)}
-                                      className="h-10 w-10 flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors mx-auto border border-transparent hover:border-rose-500/20 min-h-[44px]"
+                                      className="h-10 w-10 flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[44px]"
                                       title="Satırı Kaldır"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -1189,6 +1335,224 @@ export default function EnvanteriPage() {
                   ))}
                 </div>
              </div>
+          </div>
+        )}
+
+        {/* --- Temporary Assignment Modal --- */}
+        <Dialog open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen}>
+          <DialogContent className="max-w-md bg-slate-950 border border-slate-800/80 shadow-[0_0_30px_rgba(6,182,212,0.15)] text-slate-100 p-6 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
+                <span>🔄 Malzeme Geçici Zimmet Formu</span>
+              </DialogTitle>
+              <p className="text-xs text-slate-400 mt-1">
+                Seçili malzemeyi başka bir personele, araca ya da dış birime geçici süreliğine zimmetleyin.
+              </p>
+            </DialogHeader>
+
+            <div className="space-y-4 my-4 font-sans text-sm">
+              <div className="bg-slate-900/60 border border-slate-800 p-3 rounded-xl">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">ZİMMETLENECEK MALZEME</span>
+                <p className="font-bold text-slate-200 mt-0.5">{assignmentRow?.malzeme_adi} ({assignmentRow?.adet} Adet)</p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TESLİM EDİLEN TİP</label>
+                <select
+                  value={recipientType}
+                  onChange={(e) => setRecipientType(e.target.value as any)}
+                  className="w-full h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-semibold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                >
+                  <option value="PERSONEL">Personel</option>
+                  <option value="ARAC">Araç</option>
+                  <option value="DIS_BIRIM">Dış Birim</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TESLİM EDİLEN BİRİM / KİŞİ ADI</label>
+                <Input
+                  type="text"
+                  placeholder={recipientType === 'PERSONEL' ? "Personel adını girin..." : recipientType === 'ARAC' ? "Plaka girin..." : "Dış birim/kurum adı..."}
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">İRTİBAT TELEFONU (İSTEĞE BAĞLI)</label>
+                <Input
+                  type="text"
+                  placeholder="Telefon numarası..."
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TAHMİNİ İADE TARİHİ</label>
+                <Input
+                  type="date"
+                  value={estimatedReturnDate}
+                  onChange={(e) => setEstimatedReturnDate(e.target.value)}
+                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TUTAR/ÜCRET (İSTEĞE BAĞLI - TAMİR İÇİNSE)</label>
+                <Input
+                  type="number"
+                  placeholder="Ücret girin (TL)..."
+                  value={costInput}
+                  onChange={(e) => setCostInput(e.target.value)}
+                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setAssignmentModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+                İptal
+              </Button>
+              <Button onClick={handleCreateAssignment} className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                Zimmeti Onayla & Mühürle
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* --- Official Material Delivery Form (Antetli landscape window.print template) --- */}
+        {activePrintAssignment && (
+          <div className="hidden print:block fixed inset-0 bg-white text-black p-8 font-sans z-[9999]" style={{ color: '#000', backgroundColor: '#fff' }}>
+            <style dangerouslySetInnerHTML={{__html: `
+              @page {
+                size: A4 landscape;
+                margin: 8mm;
+              }
+              @media print {
+                body {
+                  color: #000 !important;
+                  background-color: #fff !important;
+                }
+                .print-area-container-assignment {
+                  display: block !important;
+                }
+              }
+            `}} />
+            
+            <div className="w-full border-4 border-black p-6 rounded-3xl relative flex flex-col justify-between" style={{ minHeight: '180mm', border: '4px solid black' }}>
+              
+              {/* Top Header */}
+              <div className="flex justify-between items-start border-b-4 border-black pb-4 mb-4">
+                {/* Left Seal / Logo */}
+                <div className="flex items-center gap-4">
+                  <img src="/logo-belediye.png" className="w-20 h-20 object-contain animate-none" alt="Sivas Belediyesi" />
+                  <div>
+                    <h1 className="text-xl font-black tracking-tight leading-tight">SİVAS BELEDİYESİ</h1>
+                    <h2 className="text-lg font-bold tracking-tight leading-tight">İTFAİYE MÜDÜRLÜĞÜ</h2>
+                  </div>
+                </div>
+                
+                {/* Center Title */}
+                <div className="text-center self-center">
+                  <h2 className="text-2xl font-black tracking-widest border-2 border-black px-6 py-2 rounded-xl">MALZEME TESLİM FORMU</h2>
+                </div>
+
+                {/* Right QR and UUID */}
+                <div className="flex flex-col items-end gap-1">
+                  <div className="bg-white p-1 border-2 border-black">
+                    <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={90} level="H" />
+                  </div>
+                  <span className="font-mono text-[9px] font-bold mt-1">UUID: {activePrintAssignment.uuid}</span>
+                </div>
+              </div>
+
+              {/* Main Form Content */}
+              <div className="grid grid-cols-12 gap-4 flex-1 border-b-4 border-black pb-4 mb-4">
+                {/* Left Info Column */}
+                <div className="col-span-4 border-r-4 border-black pr-4 space-y-4 flex flex-col justify-around">
+                  <div className="border-2 border-black p-3 rounded-xl">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">TESLİM EDİLEN BİRİM / TİP</h3>
+                    <p className="font-bold text-sm">
+                      {activePrintAssignment.teslim_edilen_tip === 'PERSONEL' ? 'PERSONEL' : 
+                       activePrintAssignment.teslim_edilen_tip === 'ARAC' ? 'ARAÇ' : 'DIŞ BİRİM'}
+                    </p>
+                  </div>
+                  <div className="border-2 border-black p-3 rounded-xl">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">TESLİM ALAN</h3>
+                    <p className="font-bold text-sm">{activePrintAssignment.birim_adi}</p>
+                  </div>
+                  <div className="border-2 border-black p-3 rounded-xl">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">TELEFON</h3>
+                    <p className="font-mono text-sm font-semibold">{activePrintAssignment.telefon || '....................................'}</p>
+                  </div>
+                </div>
+
+                {/* Right Table Column */}
+                <div className="col-span-8 flex flex-col justify-between">
+                  <table className="w-full border-collapse border-2 border-black">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-12">S.NO</th>
+                        <th className="border-2 border-black px-3 py-2 text-left text-xs font-bold">MALZEMENİN CİNSİ</th>
+                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-20">MİKTARI</th>
+                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-28">ÇIKIŞ TARİHİ</th>
+                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-28">DÖNÜŞ TARİHİ</th>
+                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-24">HASAR DURUMU</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Row 1: Active Material */}
+                      <tr>
+                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs">1</td>
+                        <td className="border-2 border-black px-3 py-3 text-sm font-bold">{activePrintAssignment.materialName}</td>
+                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-sm">{activePrintAssignment.quantity}</td>
+                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs">
+                          {new Date(activePrintAssignment.teslim_tarihi).toLocaleDateString("tr-TR")}
+                        </td>
+                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs">
+                          {new Date(activePrintAssignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}
+                        </td>
+                        <td className="border-2 border-black px-2 py-3 text-center text-xs font-semibold">{activePrintAssignment.durum_aciklamasi || 'Hasarsız'}</td>
+                      </tr>
+                      {/* Dummy rows for formatting matching the physical form (which has 5 rows) */}
+                      {[2, 3, 4, 5].map(sno => (
+                        <tr key={sno}>
+                          <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs text-gray-300">{sno}</td>
+                          <td className="border-2 border-black px-3 py-3 text-sm text-gray-300">..................................................</td>
+                          <td className="border-2 border-black px-2 py-3 text-center text-gray-300">......</td>
+                          <td className="border-2 border-black px-2 py-3 text-center text-xs text-gray-300">...../...../20.....</td>
+                          <td className="border-2 border-black px-2 py-3 text-center text-xs text-gray-300">...../...../20.....</td>
+                          <td className="border-2 border-black px-2 py-3 text-center text-xs text-gray-300">................</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Signatures & Footer */}
+              <div className="grid grid-cols-3 gap-6 text-center">
+                <div>
+                  <h4 className="text-xs font-bold mb-8">TESLİM EDEN BİRİM / AMİR</h4>
+                  <p className="text-xs font-semibold">İmza / Kaşe</p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold mb-8">TESLİM ALAN PERSONEL</h4>
+                  <p className="text-xs font-semibold">İmza</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-gray-600 mb-6">Malzeme Tamir İçin Çıkış Yapılmışsa Ücreti:</p>
+                  <p className="text-xs font-black">
+                    {activePrintAssignment.ucret ? `${activePrintAssignment.ucret} TL` : '....................................... TL'}
+                  </p>
+                </div>
+              </div>
+
+            </div>
           </div>
         )}
 

@@ -549,7 +549,10 @@ export default function VehicleDetailPage() {
 
   // Count total items and issues safely
   const totalItems = Object.values(vehicle.bolmeler || {}).flat().length
-  const issueItems = Object.values(vehicle.bolmeler || {}).flat().filter((i: unknown) => (i as InventoryItem)?.durum !== "Tam").length
+  const issueItems = Object.values(vehicle.bolmeler || {}).flat().filter((i: unknown) => {
+    const d = (i as InventoryItem)?.durum;
+    return d !== "Tam" && d !== "🔄 GEÇİCİ ZİMMETTE";
+  }).length
 
   // Plaka Filtreleme Logic
   const filteredVehicles = searchQuery.trim() === "" 
@@ -1199,7 +1202,7 @@ export default function VehicleDetailPage() {
                {compartKeys.map(key => {
                  const isActive = activeCompartment === key
                  const itemCount = vehicle.bolmeler?.[key]?.length || 0
-                 const issues = vehicle.bolmeler?.[key]?.filter((i: InventoryItem) => i?.durum !== "Tam")?.length || 0
+                 const issues = vehicle.bolmeler?.[key]?.filter((i: InventoryItem) => i?.durum !== "Tam" && i?.durum !== "🔄 GEÇİCİ ZİMMETTE")?.length || 0
                  const IconComponent = TACTICAL_ICONS[key] || Box
                  return (
                    <button

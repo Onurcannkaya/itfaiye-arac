@@ -30,7 +30,8 @@ const ALLOWED_TABLES = [
   'staff_certifications', 'vw_expiring_certifications', 'unified_system_logs', 'daily_vehicle_checks',
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
-  'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts'
+  'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
+  'temporary_assignments'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -210,6 +211,28 @@ async function ensureHourlyShiftsTableExists() {
     `);
   } catch (err) {
     console.error('ensureHourlyShiftsTableExists hatası:', err);
+  }
+}
+
+async function ensureTemporaryAssignmentsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.temporary_assignments (
+        id SERIAL PRIMARY KEY,
+        uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+        malzeme_id INTEGER NOT NULL REFERENCES public.inventory(id) ON DELETE CASCADE,
+        teslim_edilen_tip VARCHAR(50) NOT NULL CHECK (teslim_edilen_tip IN ('PERSONEL', 'ARAC', 'DIS_BIRIM')),
+        birim_adi VARCHAR(255) NOT NULL,
+        teslim_tarihi TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        tahmini_iade_tarihi TIMESTAMPTZ NOT NULL,
+        durum VARCHAR(50) NOT NULL DEFAULT 'AKTIF' CHECK (durum IN ('AKTIF', 'IADE_EDILDI', 'GECIKTI')),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await query(`ALTER TABLE public.temporary_assignments ADD COLUMN IF NOT EXISTS uuid UUID DEFAULT gen_random_uuid();`);
+    await query(`UPDATE public.temporary_assignments SET uuid = gen_random_uuid() WHERE uuid IS NULL;`);
+  } catch (err) {
+    console.error('ensureTemporaryAssignmentsTableExists hatası:', err);
   }
 }
 
@@ -562,6 +585,14 @@ export async function GET(
     if (table === 'hourly_shifts') {
       await ensureHourlyShiftsTableExists();
     }
+    if (table === 'temporary_assignments') {
+      await ensureTemporaryAssignmentsTableExists();
+      await query(`
+        UPDATE public.temporary_assignments 
+        SET durum = 'GECIKTI' 
+        WHERE durum = 'AKTIF' AND tahmini_iade_tarihi < NOW()
+      `).catch(err => console.error('[temporary_assignments] Auto-update GECIKTI error:', err));
+    }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
       await autoSeedVehiclesIfEmpty();
@@ -654,6 +685,9 @@ export async function POST(
     }
     if (table === 'hourly_shifts') {
       await ensureHourlyShiftsTableExists();
+    }
+    if (table === 'temporary_assignments') {
+      await ensureTemporaryAssignmentsTableExists();
     }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
@@ -791,6 +825,9 @@ export async function PATCH(
     }
     if (table === 'hourly_shifts') {
       await ensureHourlyShiftsTableExists();
+    }
+    if (table === 'temporary_assignments') {
+      await ensureTemporaryAssignmentsTableExists();
     }
     if (table === 'vehicles') {
       await ensureVehicleColumnsExist();
@@ -953,6 +990,9 @@ export async function DELETE(
     }
     if (table === 'hourly_shifts') {
       await ensureHourlyShiftsTableExists();
+    }
+    if (table === 'temporary_assignments') {
+      await ensureTemporaryAssignmentsTableExists();
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();

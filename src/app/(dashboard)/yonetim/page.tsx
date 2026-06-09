@@ -211,6 +211,7 @@ export default function DashboardPage() {
   const [activeIncidentsList, setActiveIncidentsList] = useState<ActiveIncidentDetail[]>([])
   const [personnelList, setPersonnelList] = useState<Personnel[]>([])
   const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly'>('daily')
+  const [overdueAssignments, setOverdueAssignments] = useState<any[]>([])
 
   // ─── PostGIS WKB parser helpers for real-time focus ─────────
   const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -457,6 +458,21 @@ export default function DashboardPage() {
       if (Array.isArray(persData)) {
         setPersonnelList(persData)
       }
+
+      // ── 9. Gecikmiş Geçici Zimmet Sorgulaması ───────────────────
+      const { data: overdueData } = await api
+        .from("temporary_assignments")
+        .select("*")
+        .eq("durum", "GECIKTI")
+      
+      const { data: invData } = await api.from("inventory").select("id,malzeme_adi")
+      const invMap = new Map((invData || []).map((i: any) => [i.id, i.malzeme_adi]))
+      
+      const mappedOverdue = (overdueData || []).map((item: any) => ({
+        ...item,
+        materialName: invMap.get(item.malzeme_id) || `Bilinmeyen Malzeme (ID: ${item.malzeme_id})`
+      }))
+      setOverdueAssignments(mappedOverdue)
     } catch (err) {
       console.error("Dashboard veri hatası:", err)
     } finally {
@@ -714,6 +730,39 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ═══════════ OVERDUE ASSIGNMENTS RED NEON ALERT ═══════════ */}
+      {overdueAssignments.length > 0 && (
+        <div className="border-2 border-red-500/40 bg-red-950/15 shadow-[0_0_25px_rgba(239,68,68,0.25)] rounded-2xl p-5 space-y-3 relative overflow-hidden animate-pulse">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30">
+              <AlertTriangle className="w-6 h-6 text-red-500" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-black text-red-400 tracking-wider">🚨 GECİKMİŞ GEÇİCİ ZİMMET ALARMI</h2>
+              <p className="text-xs text-slate-400">İade tarihi geçen {overdueAssignments.length} adet malzeme tespit edildi!</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 relative z-10">
+            {overdueAssignments.map((assignment) => (
+              <div key={assignment.id} className="bg-slate-950/80 border border-red-500/20 rounded-xl p-3.5 flex flex-col justify-between gap-2 hover:border-red-500/40 transition-colors">
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <p className="text-sm font-bold text-slate-200">{assignment.materialName}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Birim: <span className="text-red-400 font-semibold">{assignment.birim_adi}</span> ({assignment.teslim_edilen_tip})</p>
+                  </div>
+                  <span className="font-mono text-[9px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded">GECİKTİ</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-slate-500 border-t border-slate-900 pt-2 font-mono">
+                  <span>Zimmet: {new Date(assignment.teslim_tarihi).toLocaleDateString("tr-TR")}</span>
+                  <span className="text-red-400/80 font-bold">İade: {new Date(assignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ═══════════ CRITICAL ALERTS ═══════════ */}
       <CriticalAlertsWidget />
