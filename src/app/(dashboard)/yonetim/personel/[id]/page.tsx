@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Input } from "@/components/ui/Input"
 import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity, Shield, ActivitySquare, LogOut, CheckCircle2, Clock, AlertTriangle } from "lucide-react"
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts"
 
 // Types
 type Personel = any; // TODO: Better typing
@@ -27,9 +28,14 @@ export default function PersonelProfilPage() {
   const [activeTab, setActiveTab] = useState("ozet")
   const [loading, setLoading] = useState(true)
 
+  const [stats, setStats] = useState<any[] | null>(null)
+  const [totalMissions, setTotalMissions] = useState<number>(0)
+  const [statsLoading, setStatsLoading] = useState(true)
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
+      setStatsLoading(true)
       
       try {
         // Fetch Main Personnel Info
@@ -61,10 +67,21 @@ export default function PersonelProfilPage() {
         const { data: rData } = await api.from('personnel_records').select('*').eq('sicil_no', sicil_no).order('tarih', { ascending: false })
         if (rData) setRecords(rData)
 
+        // Fetch Personnel Operations Stats
+        const sRes = await fetch(`/api/personnel/stats?personnel_id=${sicil_no}`)
+        if (sRes.ok) {
+          const sData = await sRes.json()
+          if (sData.success) {
+            setStats(sData.stats)
+            setTotalMissions(sData.total || 0)
+          }
+        }
+
       } catch (err) {
         console.error(err)
       } finally {
         setLoading(false)
+        setStatsLoading(false)
       }
     }
     
@@ -165,71 +182,117 @@ export default function PersonelProfilPage() {
         
         {/* ÖZET SEKMESİ */}
         {activeTab === 'ozet' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Genel Bilgiler</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Sicil No</p>
-                    <p className="font-medium">{personel.sicil_no}</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Genel Bilgiler</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Sicil No</p>
+                      <p className="font-medium">{personel.sicil_no}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Rol</p>
+                      <p className="font-medium">{personel.rol}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">E-posta</p>
+                      <p className="font-medium">{personel.posta || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Kan Grubu</p>
+                      <p className="font-medium text-danger">{details?.kan_grubu || 'Belirtilmemiş'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">İşe Başlama Tarihi</p>
+                      <p className="font-medium">{details?.ise_baslama_tarihi ? new Date(details.ise_baslama_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Doğum Tarihi</p>
+                      <p className="font-medium">{details?.dogum_tarihi ? new Date(details.dogum_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Günlük Nöbet Durumu</p>
+                      <p className="font-medium text-cyan-400">{personel.durum || 'Hazır'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Rol</p>
-                    <p className="font-medium">{personel.rol}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">E-posta</p>
-                    <p className="font-medium">{personel.posta || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Kan Grubu</p>
-                    <p className="font-medium text-danger">{details?.kan_grubu || 'Belirtilmemiş'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">İşe Başlama Tarihi</p>
-                    <p className="font-medium">{details?.ise_baslama_tarihi ? new Date(details.ise_baslama_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Doğum Tarihi</p>
-                    <p className="font-medium">{details?.dogum_tarihi ? new Date(details.dogum_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Günlük Nöbet Durumu</p>
-                    <p className="font-medium text-cyan-400">{personel.durum || 'Hazır'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Sistem Yetkileri</CardTitle>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Sistem Yetkileri</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
+                    <div className="flex items-center gap-3">
+                      <Activity className="w-5 h-5 text-muted-foreground" />
+                      <span>Sadece Görüntüler</span>
+                    </div>
+                    <Badge variant={personel.view_only ? "success" : "outline"}>{personel.view_only ? 'Evet' : 'Hayır'}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
+                      <span>Envanter Onaylayabilir</span>
+                    </div>
+                    <Badge variant={personel.can_approve ? "success" : "outline"}>{personel.can_approve ? 'Evet' : 'Hayır'}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                      <span>Barkod Basabilir</span>
+                    </div>
+                    <Badge variant={personel.can_print ? "success" : "outline"}>{personel.can_print ? 'Evet' : 'Hayır'}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-slate-950/40 backdrop-blur-md border border-slate-800 text-slate-100 shadow-xl overflow-hidden">
+              <CardHeader className="border-b border-slate-800/60 pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-cyan-400">
+                  <ActivitySquare className="w-5 h-5 text-cyan-400" />
+                  Operasyonel Görev Dağılım Radarı
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
-                  <div className="flex items-center gap-3">
-                    <Activity className="w-5 h-5 text-muted-foreground" />
-                    <span>Sadece Görüntüler</span>
+              <CardContent className="pt-6 flex flex-col items-center justify-center min-h-[320px]">
+                {statsLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                    <Clock className="w-5 h-5 animate-spin" /> İstatistikler yükleniyor...
                   </div>
-                  <Badge variant={personel.view_only ? "success" : "outline"}>{personel.view_only ? 'Evet' : 'Hayır'}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
-                    <span>Envanter Onaylayabilir</span>
+                ) : totalMissions === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/10 border border-dashed border-slate-800/60 rounded-xl space-y-2">
+                    <AlertTriangle className="w-10 h-10 text-amber-500/80 animate-pulse" />
+                    <h3 className="font-semibold text-slate-200">Kayıtlı Vaka Görevi Bulunmuyor</h3>
+                    <p className="text-xs text-slate-400 max-w-sm">
+                      Bu personelin son dönemde katıldığı herhangi bir aktif itfaiye/kurtarma operasyonu veya dış lojistik görevi kayda geçmemiştir.
+                    </p>
                   </div>
-                  <Badge variant={personel.can_approve ? "success" : "outline"}>{personel.can_approve ? 'Evet' : 'Hayır'}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-muted-foreground" />
-                    <span>Barkod Basabilir</span>
+                ) : (
+                  <div className="w-full h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={stats || []}>
+                        <PolarGrid stroke="#334155" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: '#475569' }} />
+                        <Radar
+                          name="Görev Sayısı"
+                          dataKey="value"
+                          stroke="#06b6d4"
+                          fill="#06b6d4"
+                          fillOpacity={0.2}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                    <div className="text-center text-xs text-slate-400 mt-2">
+                      Toplam Görev Sayısı: <span className="text-cyan-400 font-bold">{totalMissions}</span>
+                    </div>
                   </div>
-                  <Badge variant={personel.can_print ? "success" : "outline"}>{personel.can_print ? 'Evet' : 'Hayır'}</Badge>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

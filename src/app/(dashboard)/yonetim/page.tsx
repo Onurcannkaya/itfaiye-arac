@@ -23,12 +23,14 @@ import {
   Target,
   Map as MapIcon,
   Users,
+  Search,
 } from "lucide-react"
 import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
 import { ShiftList } from "@/components/dashboard/ShiftList"
 import { HourlyShifts } from "@/components/dashboard/HourlyShifts"
 import { Personnel } from "@/types"
+import { Input } from "@/components/ui/Input"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -37,6 +39,10 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
 } from "recharts"
 
 // ─── Types ──────────────────────────────────────────────────
@@ -213,6 +219,12 @@ export default function DashboardPage() {
   const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly'>('daily')
   const [overdueAssignments, setOverdueAssignments] = useState<any[]>([])
 
+  const [justiceStats, setJusticeStats] = useState<any[]>([])
+  const [justiceLoading, setJusticeLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedPersonnelStats, setSelectedPersonnelStats] = useState<any | null>(null)
+  const [lookupLoading, setLookupLoading] = useState(false)
+
   // ─── PostGIS WKB parser helpers for real-time focus ─────────
   const parseWKBPoint = (wkbHex: string): [number, number] | null => {
     if (!wkbHex || typeof wkbHex !== 'string') return null
@@ -281,8 +293,43 @@ export default function DashboardPage() {
     return null
   }
 
+  const fetchJusticeStats = async () => {
+    try {
+      setJusticeLoading(true)
+      const res = await fetch("/api/personnel/stats")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) {
+          setJusticeStats(data.stats || [])
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching justice stats:", err)
+    } finally {
+      setJusticeLoading(false)
+    }
+  }
+
+  const handleSelectPersonnel = async (sicilNo: string) => {
+    setLookupLoading(true)
+    try {
+      const res = await fetch(`/api/personnel/stats?personnel_id=${sicilNo}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) {
+          setSelectedPersonnelStats(data)
+        }
+      }
+    } catch (err) {
+      console.error("Error looking up personnel:", err)
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchDashboardData()
+    fetchJusticeStats()
   }, [])
 
   const fetchDashboardData = async () => {
@@ -957,6 +1004,207 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ═══════════ GÖREV ADALETİ VE ANALİZ RADARI WIDGET ═══════════ */}
+      <Card className="border border-cyan-500/30 bg-slate-950/45 backdrop-blur-md text-slate-100 shadow-2xl relative overflow-hidden my-4 sm:my-5">
+        {/* Neon style corner decoration */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-extrabold flex items-center gap-2 text-cyan-400">
+              <Users className="w-5 h-5 text-cyan-400" />
+              Müfrez Görev Dağılımı ve İdari Adalet Radarı
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Son 30 günde en az göreve çıkan personellerin ve operasyonel dağılımın analizi
+            </p>
+          </div>
+          
+          {/* Search bar */}
+          <div className="relative w-full md:w-80 z-20">
+            <div className="relative">
+              <Input
+                placeholder="Personel ismi veya sicil no aratın..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (selectedPersonnelStats) {
+                    setSelectedPersonnelStats(null);
+                  }
+                }}
+                className="w-full bg-slate-900/60 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-cyan-500 focus:border-cyan-500 text-xs py-1.5 pl-8"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              {searchTerm.trim().length > 0 && selectedPersonnelStats && (
+                <button
+                  onClick={() => {
+                    setSelectedPersonnelStats(null);
+                    setSearchTerm("");
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold"
+                >
+                  Temizle
+                </button>
+              )}
+            </div>
+            
+            {searchTerm.trim().length > 0 && !selectedPersonnelStats && (
+              <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl divide-y divide-slate-800/60 z-30">
+                {justiceStats
+                  ?.filter((p: any) => 
+                    `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((p: any) => (
+                    <button
+                      key={p.sicil_no}
+                      type="button"
+                      onClick={() => handleSelectPersonnel(p.sicil_no)}
+                      className="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 transition-colors flex justify-between items-center"
+                    >
+                      <span className="font-medium">{p.ad} {p.soyad} ({p.sicil_no})</span>
+                      <span className="text-[10px] text-slate-500">{p.unvan}</span>
+                    </button>
+                  ))
+                }
+                {justiceStats?.filter((p: any) => 
+                  `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="px-3 py-3 text-xs text-muted-foreground text-center">Sonuç bulunamadı</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <CardContent className="p-4 sm:p-5">
+          {/* Dynamic lookup details */}
+          {lookupLoading ? (
+            <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground animate-pulse text-xs">
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Detaylar sorgulanıyor...
+            </div>
+          ) : selectedPersonnelStats ? (
+            <div className="border border-cyan-500/20 bg-cyan-950/5 rounded-xl p-4 space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="text-sm font-extrabold text-cyan-400">
+                    {selectedPersonnelStats.personnel.ad} {selectedPersonnelStats.personnel.soyad}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Sicil: <span className="font-mono text-slate-300">{selectedPersonnelStats.personnel.sicil_no}</span> | Ünvan: {selectedPersonnelStats.personnel.unvan} | İstasyon: {selectedPersonnelStats.personnel.istasyon}
+                  </p>
+                </div>
+                <Badge className="bg-cyan-950 text-cyan-400 border-cyan-800 px-2 py-0.5 text-xs font-bold">
+                  Toplam Görev: {selectedPersonnelStats.total}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="space-y-3">
+                  {selectedPersonnelStats.stats.map((s: any) => {
+                    const pct = selectedPersonnelStats.total > 0 ? (s.value / selectedPersonnelStats.total) * 100 : 0;
+                    return (
+                      <div key={s.subject} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">{s.subject}</span>
+                          <span className="text-slate-200 font-semibold">{s.value} Görev</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/50">
+                          <div 
+                            className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
+                            style={{ width: `${pct}%` }} 
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="h-[160px] flex items-center justify-center">
+                  {selectedPersonnelStats.total === 0 ? (
+                    <div className="text-center p-4 border border-dashed border-slate-800 rounded bg-slate-950/20 max-w-xs">
+                      <AlertTriangle className="w-6 h-6 text-amber-500/80 mx-auto mb-1.5 animate-pulse" />
+                      <p className="text-xs font-semibold text-slate-300">Kayıtlı Vaka Görevi Yok</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Bu personel için herhangi bir olay kaydı bulunamadı.</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="65%" data={selectedPersonnelStats.stats}>
+                        <PolarGrid stroke="#1e293b" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 9 }} />
+                        <Radar
+                          name="Görev Dağılımı"
+                          dataKey="value"
+                          stroke="#06b6d4"
+                          fill="#06b6d4"
+                          fillOpacity={0.25}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Top 5 Lowest Active Personnel
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-slate-400 mb-2">
+                Son 30 Günde En Az Göreve Çıkan Aktif Personel Listesi (Kritik İdari Adalet Takibi)
+              </div>
+              
+              {justiceLoading ? (
+                <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground animate-pulse text-xs">
+                  <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Yükleniyor...
+                </div>
+              ) : justiceStats.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground text-xs">
+                  Kayıtlı personel bilgisi yüklenemedi.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  {/* Select first 5 elements */}
+                  {justiceStats.slice(0, 5).map((p: any, idx: number) => (
+                    <div 
+                      key={p.sicil_no} 
+                      onClick={() => handleSelectPersonnel(p.sicil_no)}
+                      className="group border border-slate-800/80 bg-slate-900/30 hover:border-cyan-500/30 hover:bg-slate-900/65 transition-all p-3 rounded-xl cursor-pointer flex flex-col justify-between relative overflow-hidden"
+                    >
+                      {/* Badge counter */}
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-800 text-[10px] text-slate-400 font-bold flex items-center justify-center group-hover:bg-cyan-950 group-hover:text-cyan-400 transition-colors">
+                        #{idx + 1}
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="font-bold text-xs text-slate-200 group-hover:text-cyan-400 transition-colors truncate pr-6">
+                          {p.ad} {p.soyad}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono truncate">
+                          {p.sicil_no}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {p.unvan}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-slate-800/60 space-y-1.5">
+                        <div className="text-[11px] text-slate-300 font-semibold flex justify-between">
+                          <span>Görev Sayısı:</span>
+                          <span className="text-amber-500">{p.last30DaysMissions}</span>
+                        </div>
+                        <span className="inline-block text-[9px] font-bold text-amber-500/90 bg-amber-950/20 border border-amber-900/40 rounded px-1.5 py-0.5 w-full text-center">
+                          Görevlendirme Önerilir
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ═══════════ QUICK LINKS ═══════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
