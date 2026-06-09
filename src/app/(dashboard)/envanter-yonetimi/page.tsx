@@ -1,7 +1,7 @@
 "use client"
 
-import EnvanteriPage from "../yonetim/envanteri/page"
+import EnvanterPage from "../yonetim/envanter/page"
 
 export default function EnvanterYonetimiPageRedirect() {
-  return <EnvanteriPage />
+  return <EnvanterPage />
 }
