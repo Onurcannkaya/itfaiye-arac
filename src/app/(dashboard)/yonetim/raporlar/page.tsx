@@ -2,11 +2,13 @@
 import { useState, useEffect, useMemo } from "react"
 import PageGuard from "@/components/PageGuard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Search, Loader2, Filter, AlertTriangle, CheckCircle2, History, X, ChevronDown, ChevronUp, ListChecks, Package, HelpCircle, Flame, ShieldAlert, GraduationCap, Truck, Clock } from "lucide-react"
 import { api } from "@/lib/api"
+import { useAuthStore } from "@/lib/authStore"
 import { cn } from "@/lib/utils"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
@@ -132,6 +134,396 @@ function InfoTooltip({ content }: { content: string }) {
 }
 
 export default function LogsReportsPage() {
+  const { user } = useAuthStore()
+
+  // Z Raporu (Gün Sonu) States
+  const [dailyReports, setDailyReports] = useState<any[]>([])
+  const [dailyReportsLoading, setDailyReportsLoading] = useState(false)
+  const [zReportModalOpen, setZReportModalOpen] = useState(false)
+  const [selectedZDate, setSelectedZDate] = useState(new Date().toISOString().split('T')[0])
+  const [zFires, setZFires] = useState({ total: 0, ev: 0, isyeri: 0, arazi: 0, diger: 0 })
+  const [zRescues, setZRescues] = useState({ total: 0, trafik_kazasi: 0, su_baskini: 0, hayvan_kurtarma: 0, diger: 0 })
+  const [zAssignmentsCount, setZAssignmentsCount] = useState(0)
+  const [zBrokenVehicles, setZBrokenVehicles] = useState<string[]>([])
+  const [zBascavusNotu, setZBascavusNotu] = useState("")
+  const [zDisGorevCount, setZDisGorevCount] = useState(0)
+  const [zSubmitting, setZSubmitting] = useState(false)
+  const [personnelMap, setPersonnelMap] = useState<Record<string, string>>({})
+  const [personnelListForZ, setPersonnelListForZ] = useState<any[]>([])
+
+  const currentUserFromDb = useMemo(() => {
+    if (!user || !personnelListForZ.length) return null
+    return personnelListForZ.find(p => p.sicil_no === user.sicilNo)
+  }, [user, personnelListForZ])
+
+  // Roles verification for Z-Report creation
+  const isAuthorizedForZReport = useMemo(() => {
+    if (!user) return false
+    const role = user.rol || ""
+    const unvan = user.unvan || ""
+    return role === "Admin" || role === "Editor" || role === "Shift_Leader" || 
+      ["Müdür", "Amir", "Başçavuş", "Çavuş"].includes(unvan)
+  }, [user])
+
+  const fetchDailyReports = async () => {
+    setDailyReportsLoading(true)
+    try {
+      const { data, error } = await api.from('daily_summary_reports').select('*').order('rapor_tarihi', { ascending: false })
+      if (error) throw error
+      setDailyReports(data || [])
+    } catch (err) {
+      console.error("Z Raporları yükleme hatası:", err)
+    } finally {
+      setDailyReportsLoading(false)
+    }
+  }
+
+  const loadPersonnelMap = async () => {
+    try {
+      const { data } = await api.from('personnel').select('id,ad,soyad,unvan,sicil_no')
+      if (data) {
+        setPersonnelListForZ(data)
+        const map: Record<string, string> = {}
+        data.forEach((p: any) => {
+          map[p.id] = `${p.ad} ${p.soyad} (${p.unvan})`
+        })
+        setPersonnelMap(map)
+      }
+    } catch (err) {
+      console.error("Personel haritası yükleme hatası:", err)
+    }
+  }
+
+  const handleZDateChange = async (dateStr: string) => {
+    setSelectedZDate(dateStr)
+    try {
+      // 1. Fetch incidents
+      const { data: incidents } = await api.from('incidents').select('olay_turu,created_at,ihbar_saati')
+      const filteredInc = (incidents || []).filter((inc: any) => {
+        const date = new Date(inc.created_at || inc.ihbar_saati || Date.now()).toISOString().split('T')[0]
+        return date === dateStr
+      })
+      
+      const fires = { total: 0, ev: 0, isyeri: 0, arazi: 0, diger: 0 }
+      const rescues = { total: 0, trafik_kazasi: 0, su_baskini: 0, hayvan_kurtarma: 0, diger: 0 }
+      
+      filteredInc.forEach((inc: any) => {
+        const type = (inc.olay_turu || "").toLowerCase()
+        if (type.includes("yangın") || type.includes("yangin")) {
+          fires.total++
+          if (type.includes("ev")) fires.ev++
+          else if (type.includes("işyeri") || type.includes("isyeri") || type.includes("fabrika")) fires.isyeri++
+          else if (type.includes("ot") || type.includes("anız") || type.includes("arazi") || type.includes("çöp") || type.includes("cop")) fires.arazi++
+          else fires.diger++
+        } else {
+          rescues.total++
+          if (type.includes("kaza") || type.includes("trafik")) rescues.trafik_kazasi++
+          else if (type.includes("su") || type.includes("baskın") || type.includes("baskin")) rescues.su_baskini++
+          else if (type.includes("hayvan")) rescues.hayvan_kurtarma++
+          else rescues.diger++
+        }
+      })
+      setZFires(fires)
+      setZRescues(rescues)
+
+      // 2. Fetch temporary assignments
+      const { data: assignments } = await api.from('temporary_assignments').select('created_at,teslim_tarihi')
+      const filteredAssign = (assignments || []).filter((item: any) => {
+        const date = new Date(item.created_at || item.teslim_tarihi || Date.now()).toISOString().split('T')[0]
+        return date === dateStr
+      })
+      setZAssignmentsCount(filteredAssign.length)
+      setZDisGorevCount(filteredAssign.length)
+
+      // 3. Fetch vehicles in maintenance
+      const { data: vehiclesData } = await api.from('vehicles').select('plaka,status,durum')
+      const broken = (vehiclesData || []).filter((v: any) => {
+        return v.status === 'maintenance' || 
+               (v.durum && (
+                 v.durum.toLowerCase().includes('bakım') || 
+                 v.durum.toLowerCase().includes('arıza') || 
+                 v.durum.toLowerCase().includes('servis') ||
+                 v.durum.toLowerCase().includes('maintenance')
+               ))
+      }).map((v: any) => v.plaka)
+      setZBrokenVehicles(broken)
+
+    } catch (err) {
+      console.error("Z Raporu verisi hesaplanırken hata:", err)
+    }
+  }
+
+  const handleSubmitZReport = async () => {
+    if (!user) {
+      alert("Oturum açık değil.")
+      return
+    }
+    if (!currentUserFromDb) {
+      alert("Kullanıcı veritabanında bulunamadı veya henüz yüklenmedi.")
+      return
+    }
+    setZSubmitting(true)
+    try {
+      const zData = {
+        rapor_tarihi: selectedZDate,
+        devreden_amir_id: currentUserFromDb.id,
+        yangin_sayisi: zFires,
+        kurtarma_sayisi: zRescues,
+        dis_gorev_sayisi: zDisGorevCount,
+        arizali_araclar: zBrokenVehicles,
+        bascavus_notu: zBascavusNotu,
+        onay_durumu: true
+      }
+      
+      const res = await api.insert('daily_summary_reports', zData)
+      if (res.error) throw new Error(res.error)
+      
+      alert("Z Raporu başarıyla mühürlendi ve arşive kaydedildi!")
+      setZReportModalOpen(false)
+      setZBascavusNotu("")
+      fetchDailyReports()
+    } catch (err: any) {
+      console.error(err)
+      alert("Rapor kaydedilirken hata oluştu: " + err.message)
+    } finally {
+      setZSubmitting(false)
+    }
+  }
+
+  // jsPDF Custom Matbu Shift Handover Report Generator
+  const handleExportZReportPDF = async (report: any) => {
+    const doc = new jsPDF()
+    
+    const replaceTrChars = (str: string) => {
+      if (!str) return ""
+      const map: Record<string, string> = {
+        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
+        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
+      }
+      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
+    }
+
+    const dateStr = new Date(report.rapor_tarihi).toLocaleDateString("tr-TR")
+    
+    // Page Header
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(14)
+    doc.text("T.C. SIVAS BELEDİYE BASKANLIGI", 105, 15, { align: "center" })
+    doc.text("ITFAIYE MUDURLUGU GUNLUK NOBET VE VUKUAT DEFTERI", 105, 22, { align: "center" })
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(10)
+    doc.text(`Rapor Tarihi: ${dateStr}`, 14, 32)
+    const amirName = personnelMap[report.devreden_amir_id] || "Bilinmeyen Amir"
+    doc.text(`Devreden Amir: ${replaceTrChars(amirName)}`, 14, 37)
+    doc.text(`Sayfa No: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, 196, 32, { align: "right" })
+    
+    // Header Border Line
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.5)
+    doc.line(14, 40, 196, 40)
+    
+    // Side-by-side columns dividing line
+    doc.line(105, 40, 105, 245)
+    
+    // LEFT COLUMN: SHIFT ROSTER (POSTA MEVCUDU)
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(9)
+    doc.text("POSTA MEVCUDU VE NOBET CIZELGESI", 14, 46)
+    
+    let shiftLogsData: any[] = []
+    let rotasData: any[] = []
+    try {
+      const { data: shifts } = await api.from('personnel_shifts_log').select('*')
+      shiftLogsData = (shifts || []).filter((s: any) => {
+        const sDate = new Date(s.giris_tarihi).toISOString().split('T')[0]
+        return sDate === report.rapor_tarihi
+      })
+      
+      const { data: rotas } = await api.from('hourly_shifts').select('*').eq('tarih', report.rapor_tarihi)
+      rotasData = rotas || []
+    } catch (e) {
+      console.error("PDF data fetch error:", e)
+    }
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(7.5)
+    let leftY = 52
+    
+    doc.setFont("Helvetica", "bold")
+    doc.text("Nobetci Personel Listesi (PDKS):", 14, leftY)
+    doc.setFont("Helvetica", "normal")
+    leftY += 4.5
+    
+    if (shiftLogsData.length === 0) {
+      doc.text("Bu tarihte aktif nobetci kaydi bulunmuyor.", 16, leftY)
+      leftY += 4.5
+    } else {
+      shiftLogsData.slice(0, 20).forEach((s: any) => {
+        if (leftY < 180) {
+          const checkInTime = new Date(s.giris_tarihi).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
+          const text = `• ${checkInTime} | ${s.personel_ad_soyad} (${s.posta}. Posta)`
+          doc.text(replaceTrChars(text), 16, leftY)
+          leftY += 4
+        }
+      })
+    }
+    
+    leftY += 2
+    doc.setFont("Helvetica", "bold")
+    doc.text("Saatlik Nobet Yeri Cizelgesi:", 14, leftY)
+    doc.setFont("Helvetica", "normal")
+    leftY += 4.5
+    
+    if (rotasData.length === 0) {
+      doc.text("Saatlik nobet yerlesim kaydi bulunmuyor.", 16, leftY)
+      leftY += 4.5
+    } else {
+      const groupedRotas: Record<string, string[]> = {}
+      rotasData.forEach((r: any) => {
+        if (!groupedRotas[r.gorev_yeri]) groupedRotas[r.gorev_yeri] = []
+        groupedRotas[r.gorev_yeri].push(`${r.saat_araligi}: ${r.personel_sicil}`)
+      })
+      
+      Object.entries(groupedRotas).slice(0, 4).forEach(([yeri, list]) => {
+        if (leftY < 180) {
+          doc.setFont("Helvetica", "bold")
+          doc.text(`- ${replaceTrChars(yeri)}:`, 16, leftY)
+          doc.setFont("Helvetica", "normal")
+          leftY += 3.5
+          
+          list.slice(0, 4).forEach((txt: string) => {
+            if (leftY < 180) {
+              doc.text(`  ${replaceTrChars(txt)}`, 18, leftY)
+              leftY += 3.5
+            }
+          })
+        }
+      })
+    }
+    
+    // Draw Posta Genel Mevcudu box at the bottom of the left column
+    leftY = 185
+    doc.setDrawColor(120)
+    doc.rect(14, leftY, 85, 28)
+    doc.setFont("Helvetica", "bold")
+    doc.text("POSTA GENEL MEVCUDU RAPORU", 16, leftY + 5)
+    doc.setFont("Helvetica", "normal")
+    doc.text(`Hazir Mevcut (Postadaki Personel): ${shiftLogsData.length} personel`, 16, leftY + 12)
+    doc.text(`Dis Gorev / Zimmet Sayisi: ${report.dis_gorev_sayisi} vaka`, 16, leftY + 18)
+    doc.text(`Toplan Yekun: ${shiftLogsData.length + report.dis_gorev_sayisi} personel`, 16, leftY + 24)
+    
+    // RIGHT COLUMN: VUKUAT FAALİYETLERİ (INCIDENTS)
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(9)
+    doc.text("VUKUAT VE FAALIYET LISTESI (SON 24 SAAT)", 108, 46)
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(8)
+    let rightY = 52
+    
+    doc.setFont("Helvetica", "bold")
+    doc.text("Vukuat Olay Ozetleri:", 108, rightY)
+    doc.setFont("Helvetica", "normal")
+    rightY += 4.5
+    
+    const yStr = `Yangin: ${report.yangin_sayisi.total} (Ev: ${report.yangin_sayisi.ev}, Isy: ${report.yangin_sayisi.isyeri}, Arz: ${report.yangin_sayisi.arazi}, Dgr: ${report.yangin_sayisi.diger})`
+    const kStr = `Kurtarma: ${report.kurtarma_sayisi.total} (Kaza: ${report.kurtarma_sayisi.trafik_kazasi}, Su: ${report.kurtarma_sayisi.su_baskini}, Hayv: ${report.kurtarma_sayisi.hayvan_kurtarma}, Dgr: ${report.kurtarma_sayisi.diger})`
+    
+    doc.text(replaceTrChars(yStr), 110, rightY)
+    rightY += 4
+    doc.text(replaceTrChars(kStr), 110, rightY)
+    rightY += 5.5
+    
+    doc.setFont("Helvetica", "bold")
+    doc.text("Arizali / Bakimdaki Taktik Araclar:", 108, rightY)
+    doc.setFont("Helvetica", "normal")
+    rightY += 4.5
+    
+    if (!report.arizali_araclar || report.arizali_araclar.length === 0) {
+      doc.text("Aktif arizali/bakimda olan taktik arac bulunmamaktadir.", 110, rightY)
+      rightY += 4.5
+    } else {
+      doc.text(`Araclar: ${report.arizali_araclar.join(', ')}`, 110, rightY)
+      rightY += 4.5
+    }
+    
+    rightY += 2
+    doc.setFont("Helvetica", "bold")
+    doc.text("Faaliyet Kayitlari Detayli Listesi:", 108, rightY)
+    doc.setFont("Helvetica", "normal")
+    rightY += 4.5
+    
+    let incidentsData: any[] = []
+    try {
+      const { data: incs } = await api.from('incidents').select('*')
+      incidentsData = (incs || []).filter((inc: any) => {
+        const incDate = new Date(inc.created_at || inc.ihbar_saati || Date.now()).toISOString().split('T')[0]
+        return incDate === report.rapor_tarihi
+      })
+    } catch (e) {
+      console.error("PDF incidents fetch error:", e)
+    }
+    
+    if (incidentsData.length === 0) {
+      doc.text("Bu tarihte herhangi bir vukuat kaydi bulunmamaktadir.", 110, rightY)
+      rightY += 5
+    } else {
+      incidentsData.slice(0, 15).forEach((inc: any, idx: number) => {
+        if (rightY < 180) {
+          const time = new Date(inc.ihbar_saati || inc.created_at).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
+          const text = `${idx + 1}) [${time}] ${inc.olay_turu} - ${inc.mahalle} Mah. - ${inc.hasar_durumu || 'Maddi Hasarli'}`
+          doc.text(replaceTrChars(text), 110, rightY)
+          rightY += 4
+        }
+      })
+    }
+    
+    rightY = 185
+    doc.setFont("Helvetica", "bold")
+    doc.text("Bascavus / Nobetci Amir Notu:", 108, rightY)
+    doc.setFont("Helvetica", "normal")
+    rightY += 4.5
+    
+    const notText = report.bascavus_notu || "Herhangi bir devir notu eklenmemistir."
+    const splitNot = doc.splitTextToSize(replaceTrChars(notText), 85)
+    doc.text(splitNot, 110, rightY)
+    
+    // Divider line at bottom
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.5)
+    doc.line(14, 245, 196, 245)
+    
+    // SIGNATURE BLOCKS
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(8)
+    doc.text("Nobetci Cavus", 35, 252, { align: "center" })
+    doc.text("Nobetci Amir", 105, 252, { align: "center" })
+    doc.text("Itfaiye Muduru", 170, 252, { align: "center" })
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(7)
+    doc.text("Imza / Sicil / Unvan", 35, 256, { align: "center" })
+    doc.text("Imza / Sicil / Unvan", 105, 256, { align: "center" })
+    doc.text("Imza / Onay / Tarih", 170, 256, { align: "center" })
+    
+    // Dotted lines for signature
+    doc.setDrawColor(180)
+    doc.setLineDashPattern([1, 1], 0)
+    doc.line(18, 270, 52, 270)
+    doc.line(88, 270, 122, 270)
+    doc.line(152, 270, 188, 270)
+    doc.setLineDashPattern([], 0)
+    
+    // Digital Control Code
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(8)
+    doc.setTextColor(100)
+    doc.text(`Dijital Dogrulama Kodu: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, 196, 288, { align: "right" })
+    
+    doc.save(`Itfaiye_Z_Raporu_${report.rapor_tarihi}.pdf`)
+  }
+
   const [logs, setLogs] = useState<UnifiedLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -413,6 +805,8 @@ export default function LogsReportsPage() {
     fetchLogs()
     fetchShiftLogs()
     fetchStats()
+    fetchDailyReports()
+    loadPersonnelMap()
   }, [dateFilter]) // Auto-fetch on date toggle
 
   // Handle manual search trigger for text inputs
@@ -545,6 +939,32 @@ export default function LogsReportsPage() {
             <p className="text-[10px] text-slate-500 font-semibold mt-1">
               Çıkış Saati - Varılan Süre Farkı
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* --- MÜFREZ GÜN SONU KONTROLÜ (Z RAPORU) WİDGET --- */}
+      {isAuthorizedForZReport && (
+        <div className="bg-slate-950/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(6,182,212,0.08)] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-bold text-cyan-400 flex items-center gap-2 tracking-tight">
+                <span className="text-lg">📋</span> Müfrez Gün Sonu Kontrolü (Z Raporu)
+              </h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+                24 saatlik nöbet devir-teslim raporunu oluşturun. Seçilen tarihe ait yangın, kurtarma, arızalı araç ve zimmet verileri otomatik hesaplanır.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                handleZDateChange(selectedZDate)
+                setZReportModalOpen(true)
+              }}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.25)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all duration-300 whitespace-nowrap"
+            >
+              🏁 24 Saatlik Z Raporu Oluştur
+            </Button>
           </div>
         </div>
       )}
@@ -999,6 +1419,176 @@ export default function LogsReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      
+      {/* --- GÜN SONU Z RAPORLARI ARŞİVİ --- */}
+      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
+        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-border/50">
+          <CardTitle className="text-lg flex items-center gap-2 text-slate-200">
+            <span>📚</span> Müfrez Z Raporu Arşivi
+          </CardTitle>
+          <CardDescription className="mt-1">
+            Mühürlenmiş 24 saatlik nöbet ve vukuat devir-teslim belgeleri.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {dailyReportsLoading ? (
+            <div className="p-12 text-center text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-cyan-500/50" />
+              <p>Z Raporları yükleniyor...</p>
+            </div>
+          ) : dailyReports.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground font-mono text-xs">
+              Mühürlü Z raporu bulunmamaktadır.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left text-sm text-slate-300">
+                <thead className="bg-slate-900/60 border-b border-border/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground font-mono">
+                  <tr>
+                    <th className="px-6 py-4">Tarih</th>
+                    <th className="px-6 py-4">Devreden Amir</th>
+                    <th className="px-6 py-4 text-center">Yangın (Toplam)</th>
+                    <th className="px-6 py-4 text-center">Kurtarma (Toplam)</th>
+                    <th className="px-6 py-4 text-center">Dış Görev</th>
+                    <th className="px-6 py-4">Arızalı Araçlar</th>
+                    <th className="px-6 py-4 text-center">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30 font-medium">
+                  {dailyReports.map((report) => (
+                    <tr key={report.id} className="hover:bg-muted/10 transition-colors">
+                      <td className="px-6 py-4 font-mono font-bold text-slate-200">
+                        {new Date(report.rapor_tarihi).toLocaleDateString("tr-TR")}
+                      </td>
+                      <td className="px-6 py-4 text-slate-300">
+                        {personnelMap[report.devreden_amir_id] || "Bilinmeyen Amir"}
+                      </td>
+                      <td className="px-6 py-4 text-center text-red-400 font-mono font-bold">
+                        {report.yangin_sayisi?.total || 0}
+                      </td>
+                      <td className="px-6 py-4 text-center text-emerald-400 font-mono font-bold">
+                        {report.kurtarma_sayisi?.total || 0}
+                      </td>
+                      <td className="px-6 py-4 text-center text-cyan-400 font-mono font-bold">
+                        {report.dis_gorev_sayisi || 0}
+                      </td>
+                      <td className="px-6 py-4 text-slate-400 text-xs">
+                        {report.arizali_araclar && report.arizali_araclar.length > 0
+                          ? report.arizali_araclar.join(', ')
+                          : "Yok"}
+                      </td>
+                      <td className="px-6 py-4 text-center align-middle">
+                        <Button
+                          onClick={() => handleExportZReportPDF(report)}
+                          variant="outline"
+                          size="sm"
+                          className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-bold gap-1 text-cyan-400"
+                        >
+                          📄 PDF Döküm
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* --- Z RAPORU CREATION MODAL --- */}
+      <Dialog open={zReportModalOpen} onOpenChange={setZReportModalOpen}>
+        <DialogContent className="max-w-2xl bg-slate-950 border border-cyan-500/20 shadow-[0_0_30px_rgba(6,182,212,0.15)] text-slate-100 p-6 rounded-2xl overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
+              <span>🏁 24 Saatlik Müfrez Z Raporu</span>
+            </DialogTitle>
+            <CardDescription className="text-xs text-slate-400 mt-1">
+              İlgili tarihin tüm yangın, kurtarma, arızalı araç ve görev bilgilerini otomatik süzüp resmi nöbet defterine mühürleyin.
+            </CardDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4 font-sans text-sm">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">RAPOR TARİHİ</label>
+              <Input
+                type="date"
+                value={selectedZDate}
+                onChange={(e) => handleZDateChange(e.target.value)}
+                className="bg-slate-900 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+              />
+            </div>
+
+            {/* Aggregated Preview Block */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚒 YANGIN DETAYI</span>
+                <p className="font-bold text-red-400 text-lg mt-0.5">{zFires.total} Yangın</p>
+                <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
+                  Ev: {zFires.ev} | İşyeri: {zFires.isyeri} | Arazi: {zFires.arazi} | Diğer: {zFires.diger}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚨 KURTARMA DETAYI</span>
+                <p className="font-bold text-emerald-400 text-lg mt-0.5">{zRescues.total} Kurtarma</p>
+                <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
+                  Kaza: {zRescues.trafik_kazasi} | Su: {zRescues.su_baskini} | Hayvan: {zRescues.hayvan_kurtarma} | Diğer: {zRescues.diger}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/35 border border-slate-800 rounded-xl">
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🔄 GARAJ & ZİMMET SAYISI</span>
+                <p className="font-bold text-cyan-400 text-lg mt-0.5">{zAssignmentsCount} Devir</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🛠️ ARIZALI/BAKIMDAKİ ARAÇLAR</span>
+                <p className="font-bold text-amber-500 text-sm mt-1 truncate">
+                  {zBrokenVehicles.length > 0 ? zBrokenVehicles.join(', ') : "Yok"}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">DIŞ GÖREV PERSONEL SAYISI (MANUEL AYARLA)</label>
+              <Input
+                type="number"
+                min="0"
+                value={zDisGorevCount}
+                onChange={(e) => setZDisGorevCount(Number(e.target.value))}
+                className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">BAŞÇAVUŞ NÖBET DEVİR NOTU</label>
+              <textarea
+                rows={3}
+                placeholder="Nöbet teslimi sırasında meydana gelen önemli hususları, telsiz notlarını ve devir şartlarını yazınız..."
+                value={zBascavusNotu}
+                onChange={(e) => setZBascavusNotu(e.target.value)}
+                className="flex w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setZReportModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+              İptal
+            </Button>
+            <Button 
+              onClick={handleSubmitZReport} 
+              disabled={zSubmitting}
+              className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+            >
+              {zSubmitting ? "Mühürleniyor..." : "🏁 Raporu Mühürle & Devret"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
       <div 
