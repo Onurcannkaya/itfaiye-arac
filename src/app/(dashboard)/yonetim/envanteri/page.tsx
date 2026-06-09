@@ -1451,134 +1451,129 @@ export default function EnvanteriPage() {
           </DialogContent>
         </Dialog>
 
-        {/* --- Official Material Delivery Form (Antetli landscape window.print template) --- */}
+        {/* --- Hidden Assignment Print Template (Cloned dynamically for printing) --- */}
         {activePrintAssignment && (
-          <div className="hidden print:block fixed inset-0 bg-white text-black p-8 font-sans z-[9999]" style={{ color: '#000', backgroundColor: '#fff' }}>
-            <style dangerouslySetInnerHTML={{__html: `
-              @page {
-                size: A4 landscape;
-                margin: 8mm;
-              }
-              @media print {
-                body {
-                  color: #000 !important;
-                  background-color: #fff !important;
+          <div id="print-area-assignment" style={{ display: 'none' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', color: 'black', backgroundColor: 'white', padding: '0px' }}>
+              <style dangerouslySetInnerHTML={{__html: `
+                @page {
+                  size: A4 landscape;
+                  margin: 5mm;
                 }
-                .print-area-container-assignment {
-                  display: block !important;
+                @media print {
+                  .print-area-container {
+                    padding: 8mm !important;
+                    margin: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    box-sizing: border-box !important;
+                  }
                 }
-              }
-            `}} />
-            
-            <div className="w-full border-4 border-black p-6 rounded-3xl relative flex flex-col justify-between" style={{ minHeight: '180mm', border: '4px solid black' }}>
+              `}} />
               
-              {/* Top Header */}
-              <div className="flex justify-between items-start border-b-4 border-black pb-4 mb-4">
-                {/* Left Seal / Logo */}
-                <div className="flex items-center gap-4">
-                  <img src="/logo-belediye.png" className="w-20 h-20 object-contain animate-none" alt="Sivas Belediyesi" />
-                  <div>
-                    <h1 className="text-xl font-black tracking-tight leading-tight">SİVAS BELEDİYESİ</h1>
-                    <h2 className="text-lg font-bold tracking-tight leading-tight">İTFAİYE MÜDÜRLÜĞÜ</h2>
-                  </div>
-                </div>
+              <div style={{ width: '100%', border: '4px solid black', padding: '15px', borderRadius: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', height: '140mm', minHeight: '140mm', maxHeight: '140mm', justifyContent: 'space-between', fontFamily: 'sans-serif' }}>
                 
-                {/* Center Title */}
-                <div className="text-center self-center">
-                  <h2 className="text-2xl font-black tracking-widest border-2 border-black px-6 py-2 rounded-xl">MALZEME TESLİM FORMU</h2>
-                </div>
-
-                {/* Right QR and UUID */}
-                <div className="flex flex-col items-end gap-1">
-                  <div className="bg-white p-1 border-2 border-black">
-                    <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={90} level="H" />
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid black', paddingBottom: '10px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <img src="/logo-belediye.png" style={{ width: '60px', height: '60px', objectFit: 'contain' }} alt="Belediye Logo" />
+                    <div>
+                      <h1 style={{ margin: 0, fontSize: '16px', fontWeight: 900 }}>SİVAS BELEDİYESİ</h1>
+                      <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>İTFAİYE MÜDÜRLÜĞÜ</h2>
+                    </div>
                   </div>
-                  <span className="font-mono text-[9px] font-bold mt-1">UUID: {activePrintAssignment.uuid}</span>
-                </div>
-              </div>
+                  
+                  <div style={{ textAlign: 'center' }}>
+                    <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900, border: '2px solid black', padding: '6px 15px', borderRadius: '10px', letterSpacing: '1px' }}>MALZEME TESLİM FORMU</h2>
+                  </div>
 
-              {/* Main Form Content */}
-              <div className="grid grid-cols-12 gap-4 flex-1 border-b-4 border-black pb-4 mb-4">
-                {/* Left Info Column */}
-                <div className="col-span-4 border-r-4 border-black pr-4 space-y-4 flex flex-col justify-around">
-                  <div className="border-2 border-black p-3 rounded-xl">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">TESLİM EDİLEN BİRİM / TİP</h3>
-                    <p className="font-bold text-sm">
-                      {activePrintAssignment.teslim_edilen_tip === 'PERSONEL' ? 'PERSONEL' : 
-                       activePrintAssignment.teslim_edilen_tip === 'ARAC' ? 'ARAÇ' : 'DIŞ BİRİM'}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', gap: '2px' }}>
+                    <div style={{ background: 'white', padding: '2px', border: '2px solid black', display: 'inline-block' }}>
+                      <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={60} level="H" />
+                    </div>
+                    <span style={{ fontSize: '8px', fontFamily: 'monospace', fontWeight: 'bold' }}>UUID: {activePrintAssignment.uuid}</span>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', flex: 1, marginBottom: '10px', minHeight: '0' }}>
+                  
+                  {/* Left Column Box */}
+                  <div style={{ gridColumn: 'span 4', borderRight: '3px solid black', paddingRight: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '5px' }}>
+                    <div style={{ border: '2px solid black', padding: '6px 10px', borderRadius: '10px' }}>
+                      <h3 style={{ margin: 0, fontSize: '9px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TESLİM EDİLEN BİRİM / TİP</h3>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 'bold' }}>
+                        {activePrintAssignment.teslim_edilen_tip === 'PERSONEL' ? 'PERSONEL' : 
+                         activePrintAssignment.teslim_edilen_tip === 'ARAC' ? 'ARAÇ' : 'DIŞ BİRİM'}
+                      </p>
+                    </div>
+                    <div style={{ border: '2px solid black', padding: '6px 10px', borderRadius: '10px' }}>
+                      <h3 style={{ margin: 0, fontSize: '9px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TESLİM ALAN</h3>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 'bold' }}>{activePrintAssignment.birim_adi}</p>
+                    </div>
+                    <div style={{ border: '2px solid black', padding: '6px 10px', borderRadius: '10px' }}>
+                      <h3 style={{ margin: 0, fontSize: '9px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TELEFON</h3>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}>{activePrintAssignment.telefon || '....................................'}</p>
+                    </div>
+                  </div>
+
+                  {/* Right Table */}
+                  <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', minHeight: '0' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', tableLayout: 'fixed' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f3f4f6' }}>
+                          <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>S.NO</th>
+                          <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'left' }}>MALZEMENİN CİNSİ</th>
+                          <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '60px' }}>MİKTARI</th>
+                          <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '85px' }}>ÇIKIŞ TARİHİ</th>
+                          <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '85px' }}>DÖNÜŞ TARİHİ</th>
+                          <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '85px' }}>HASAR DURUMU</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace' }}>1</td>
+                          <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activePrintAssignment.materialName}</td>
+                          <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace' }}>{activePrintAssignment.quantity}</td>
+                          <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace' }}>{new Date(activePrintAssignment.teslim_tarihi).toLocaleDateString("tr-TR")}</td>
+                          <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace' }}>{new Date(activePrintAssignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}</td>
+                          <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', fontWeight: 'bold' }}>{activePrintAssignment.durum_aciklamasi || 'Hasarsız'}</td>
+                        </tr>
+                        {[2, 3, 4, 5].map(sno => (
+                          <tr key={sno}>
+                            <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace', color: '#ccc' }}>{sno}</td>
+                            <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>..................................................</td>
+                            <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', color: '#ccc' }}>......</td>
+                            <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', color: '#ccc' }}>...../...../20.....</td>
+                            <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', color: '#ccc' }}>...../...../20.....</td>
+                            <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', color: '#ccc' }}>................</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+
+                {/* Footer Signatures */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', textAlign: 'center', paddingTop: '8px', borderTop: '3px solid black' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 20px 0', fontSize: '10px', fontWeight: 'bold' }}>TESLİM EDEN BİRİM / AMİR</h4>
+                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 'bold' }}>İmza / Kaşe</p>
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 20px 0', fontSize: '10px', fontWeight: 'bold' }}>TESLİM ALAN PERSONEL</h4>
+                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 'bold' }}>İmza</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: '0 0 15px 0', fontSize: '9px', fontWeight: 'bold', color: '#555' }}>Malzeme Tamir İçin Çıkış Yapılmışsa Ücreti:</p>
+                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 'black' }}>
+                      {activePrintAssignment.ucret ? `${activePrintAssignment.ucret} TL` : '....................................... TL'}
                     </p>
                   </div>
-                  <div className="border-2 border-black p-3 rounded-xl">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">TESLİM ALAN</h3>
-                    <p className="font-bold text-sm">{activePrintAssignment.birim_adi}</p>
-                  </div>
-                  <div className="border-2 border-black p-3 rounded-xl">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">TELEFON</h3>
-                    <p className="font-mono text-sm font-semibold">{activePrintAssignment.telefon || '....................................'}</p>
-                  </div>
                 </div>
 
-                {/* Right Table Column */}
-                <div className="col-span-8 flex flex-col justify-between">
-                  <table className="w-full border-collapse border-2 border-black">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-12">S.NO</th>
-                        <th className="border-2 border-black px-3 py-2 text-left text-xs font-bold">MALZEMENİN CİNSİ</th>
-                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-20">MİKTARI</th>
-                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-28">ÇIKIŞ TARİHİ</th>
-                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-28">DÖNÜŞ TARİHİ</th>
-                        <th className="border-2 border-black px-2 py-2 text-center text-xs font-bold w-24">HASAR DURUMU</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Row 1: Active Material */}
-                      <tr>
-                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs">1</td>
-                        <td className="border-2 border-black px-3 py-3 text-sm font-bold">{activePrintAssignment.materialName}</td>
-                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-sm">{activePrintAssignment.quantity}</td>
-                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs">
-                          {new Date(activePrintAssignment.teslim_tarihi).toLocaleDateString("tr-TR")}
-                        </td>
-                        <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs">
-                          {new Date(activePrintAssignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}
-                        </td>
-                        <td className="border-2 border-black px-2 py-3 text-center text-xs font-semibold">{activePrintAssignment.durum_aciklamasi || 'Hasarsız'}</td>
-                      </tr>
-                      {/* Dummy rows for formatting matching the physical form (which has 5 rows) */}
-                      {[2, 3, 4, 5].map(sno => (
-                        <tr key={sno}>
-                          <td className="border-2 border-black px-2 py-3 text-center font-mono text-xs text-gray-300">{sno}</td>
-                          <td className="border-2 border-black px-3 py-3 text-sm text-gray-300">..................................................</td>
-                          <td className="border-2 border-black px-2 py-3 text-center text-gray-300">......</td>
-                          <td className="border-2 border-black px-2 py-3 text-center text-xs text-gray-300">...../...../20.....</td>
-                          <td className="border-2 border-black px-2 py-3 text-center text-xs text-gray-300">...../...../20.....</td>
-                          <td className="border-2 border-black px-2 py-3 text-center text-xs text-gray-300">................</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </div>
-
-              {/* Signatures & Footer */}
-              <div className="grid grid-cols-3 gap-6 text-center">
-                <div>
-                  <h4 className="text-xs font-bold mb-8">TESLİM EDEN BİRİM / AMİR</h4>
-                  <p className="text-xs font-semibold">İmza / Kaşe</p>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold mb-8">TESLİM ALAN PERSONEL</h4>
-                  <p className="text-xs font-semibold">İmza</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-gray-600 mb-6">Malzeme Tamir İçin Çıkış Yapılmışsa Ücreti:</p>
-                  <p className="text-xs font-black">
-                    {activePrintAssignment.ucret ? `${activePrintAssignment.ucret} TL` : '....................................... TL'}
-                  </p>
-                </div>
-              </div>
-
             </div>
           </div>
         )}

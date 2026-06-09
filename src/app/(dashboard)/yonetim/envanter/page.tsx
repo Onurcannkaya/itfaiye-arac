@@ -434,90 +434,99 @@ export default function EnvanterPageFallback() {
             {/* --- Hidden Assignment Control Print Template (Cloned dynamically for printing) --- */}
             {activePrintAssignment && (
               <div id="print-area-assignment-control" style={{ display: 'none' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', color: 'black', backgroundColor: 'white', padding: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', color: 'black', backgroundColor: 'white', padding: '0px' }}>
                   <style dangerouslySetInnerHTML={{__html: `
                     @page {
                       size: A4 landscape;
-                      margin: 8mm;
+                      margin: 5mm;
+                    }
+                    @media print {
+                      .print-area-container {
+                        padding: 8mm !important;
+                        margin: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        box-sizing: border-box !important;
+                      }
                     }
                   `}} />
                   
-                  <div style={{ width: '100%', border: '4px solid black', padding: '20px', borderRadius: '24px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '170mm', justifyContent: 'space-between', fontFamily: 'sans-serif' }}>
+                  <div style={{ width: '100%', border: '4px solid black', padding: '15px', borderRadius: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', height: '140mm', minHeight: '140mm', maxHeight: '140mm', justifyContent: 'space-between', fontFamily: 'sans-serif' }}>
                     
                     {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '4px solid black', paddingBottom: '15px', marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid black', paddingBottom: '10px', marginBottom: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <img src="/logo-belediye.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} alt="Belediye Logo" />
+                        <img src="/logo-belediye.png" style={{ width: '60px', height: '60px', objectFit: 'contain' }} alt="Belediye Logo" />
                         <div>
-                          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 900 }}>SİVAS BELEDİYESİ</h1>
-                          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>İTFAİYE MÜDÜRLÜĞÜ</h2>
+                          <h1 style={{ margin: 0, fontSize: '16px', fontWeight: 900 }}>SİVAS BELEDİYESİ</h1>
+                          <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>İTFAİYE MÜDÜRLÜĞÜ</h2>
                         </div>
                       </div>
                       
                       <div style={{ textAlign: 'center' }}>
-                        <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 900, border: '2px solid black', padding: '8px 20px', borderRadius: '12px', letterSpacing: '2px' }}>MALZEME TESLİM FORMU</h2>
+                        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900, border: '2px solid black', padding: '6px 15px', borderRadius: '10px', letterSpacing: '1px' }}>MALZEME TESLİM FORMU</h2>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', gap: '5px' }}>
-                        <div style={{ background: 'white', padding: '4px', border: '2px solid black', display: 'inline-block' }}>
-                          <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={80} level="H" />
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', gap: '2px' }}>
+                        <div style={{ background: 'white', padding: '2px', border: '2px solid black', display: 'inline-block' }}>
+                          <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={60} level="H" />
                         </div>
-                        <span style={{ fontSize: '9px', fontFamily: 'monospace', fontWeight: 'bold' }}>UUID: {activePrintAssignment.uuid}</span>
+                        <span style={{ fontSize: '8px', fontFamily: 'monospace', fontWeight: 'bold' }}>UUID: {activePrintAssignment.uuid}</span>
                       </div>
                     </div>
 
                     {/* Content */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '15px', flex: 1, marginBottom: '15px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', flex: 1, marginBottom: '10px', minHeight: '0' }}>
                       
                       {/* Left Column Box */}
-                      <div style={{ gridColumn: 'span 4', borderRight: '4px solid black', paddingRight: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', gap: '10px' }}>
-                        <div style={{ border: '2px solid black', padding: '10px', borderRadius: '12px' }}>
-                          <h3 style={{ margin: 0, fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TESLİM EDİLEN BİRİM / TİP</h3>
-                          <p style={{ margin: '5px 0 0 0', fontSize: '14px', fontWeight: 'bold' }}>
+                      <div style={{ gridColumn: 'span 4', borderRight: '3px solid black', paddingRight: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '5px' }}>
+                        <div style={{ border: '2px solid black', padding: '6px 10px', borderRadius: '10px' }}>
+                          <h3 style={{ margin: 0, fontSize: '9px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TESLİM EDİLEN BİRİM / TİP</h3>
+                          <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 'bold' }}>
                             {activePrintAssignment.teslim_edilen_tip === 'PERSONEL' ? 'PERSONEL' : 
                              activePrintAssignment.teslim_edilen_tip === 'ARAC' ? 'ARAÇ' : 'DIŞ BİRİM'}
                           </p>
                         </div>
-                        <div style={{ border: '2px solid black', padding: '10px', borderRadius: '12px' }}>
-                          <h3 style={{ margin: 0, fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TESLİM ALAN</h3>
-                          <p style={{ margin: '5px 0 0 0', fontSize: '14px', fontWeight: 'bold' }}>{activePrintAssignment.birim_adi}</p>
+                        <div style={{ border: '2px solid black', padding: '6px 10px', borderRadius: '10px' }}>
+                          <h3 style={{ margin: 0, fontSize: '9px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TESLİM ALAN</h3>
+                          <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 'bold' }}>{activePrintAssignment.birim_adi}</p>
                         </div>
-                        <div style={{ border: '2px solid black', padding: '10px', borderRadius: '12px' }}>
-                          <h3 style={{ margin: 0, fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TELEFON</h3>
-                          <p style={{ margin: '5px 0 0 0', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>{activePrintAssignment.telefon || '....................................'}</p>
+                        <div style={{ border: '2px solid black', padding: '6px 10px', borderRadius: '10px' }}>
+                          <h3 style={{ margin: 0, fontSize: '9px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>TELEFON</h3>
+                          <p style={{ margin: '2px 0 0 0', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}>{activePrintAssignment.telefon || '....................................'}</p>
                         </div>
                       </div>
 
                       {/* Right Table */}
-                      <div style={{ gridColumn: 'span 8' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black' }}>
+                      <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', minHeight: '0' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black', tableLayout: 'fixed' }}>
                           <thead>
                             <tr style={{ backgroundColor: '#f3f4f6' }}>
-                              <th style={{ border: '2px solid black', padding: '8px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', width: '40px' }}>S.NO</th>
-                              <th style={{ border: '2px solid black', padding: '8px', fontSize: '12px', fontWeight: 'bold', textAlign: 'left' }}>MALZEMENİN CİNSİ</th>
-                              <th style={{ border: '2px solid black', padding: '8px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', width: '70px' }}>MİKTARI</th>
-                              <th style={{ border: '2px solid black', padding: '8px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', width: '100px' }}>ÇIKIŞ TARİHİ</th>
-                              <th style={{ border: '2px solid black', padding: '8px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', width: '100px' }}>DÖNÜŞ TARİHİ</th>
-                              <th style={{ border: '2px solid black', padding: '8px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', width: '90px' }}>HASAR DURUMU</th>
+                              <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '35px' }}>S.NO</th>
+                              <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'left' }}>MALZEMENİN CİNSİ</th>
+                              <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '60px' }}>MİKTARI</th>
+                              <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '85px' }}>ÇIKIŞ TARİHİ</th>
+                              <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '85px' }}>DÖNÜŞ TARİHİ</th>
+                              <th style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', width: '85px' }}>HASAR DURUMU</th>
                             </tr>
                           </thead>
                           <tbody>
                             <tr>
-                              <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', textAlign: 'center', fontFamily: 'monospace' }}>1</td>
-                              <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', fontWeight: 'bold' }}>{activePrintAssignment.materialName}</td>
-                              <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace' }}>{activePrintAssignment.quantity || 1}</td>
-                              <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', textAlign: 'center', fontFamily: 'monospace' }}>{new Date(activePrintAssignment.teslim_tarihi).toLocaleDateString("tr-TR")}</td>
-                              <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', textAlign: 'center', fontFamily: 'monospace' }}>{new Date(activePrintAssignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}</td>
-                              <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '11px', textAlign: 'center', fontWeight: 'bold' }}>{activePrintAssignment.durum_aciklamasi || 'Hasarsız'}</td>
+                              <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace' }}>1</td>
+                              <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activePrintAssignment.materialName}</td>
+                              <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace' }}>{activePrintAssignment.quantity || 1}</td>
+                              <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace' }}>{new Date(activePrintAssignment.teslim_tarihi).toLocaleDateString("tr-TR")}</td>
+                              <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace' }}>{new Date(activePrintAssignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}</td>
+                              <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', fontWeight: 'bold' }}>{activePrintAssignment.durum_aciklamasi || 'Hasarsız'}</td>
                             </tr>
                             {[2, 3, 4, 5].map(sno => (
                               <tr key={sno}>
-                                <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', textAlign: 'center', fontFamily: 'monospace', color: '#ccc' }}>{sno}</td>
-                                <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', color: '#ccc' }}>..................................................</td>
-                                <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '12px', textAlign: 'center', color: '#ccc' }}>......</td>
-                                <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '11px', textAlign: 'center', color: '#ccc' }}>...../...../20.....</td>
-                                <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '11px', textAlign: 'center', color: '#ccc' }}>...../...../20.....</td>
-                                <td style={{ border: '2px solid black', padding: '10px 8px', fontSize: '11px', textAlign: 'center', color: '#ccc' }}>................</td>
+                                <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', fontFamily: 'monospace', color: '#ccc' }}>{sno}</td>
+                                <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>..................................................</td>
+                                <td style={{ border: '2px solid black', padding: '6px', fontSize: '11px', textAlign: 'center', color: '#ccc' }}>......</td>
+                                <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', color: '#ccc' }}>...../...../20.....</td>
+                                <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', color: '#ccc' }}>...../...../20.....</td>
+                                <td style={{ border: '2px solid black', padding: '6px', fontSize: '10px', textAlign: 'center', color: '#ccc' }}>................</td>
                               </tr>
                             ))}
                           </tbody>
@@ -527,18 +536,18 @@ export default function EnvanterPageFallback() {
                     </div>
 
                     {/* Footer Signatures */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', textAlign: 'center', paddingTop: '10px', borderTop: '4px solid black' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', textAlign: 'center', paddingTop: '8px', borderTop: '3px solid black' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 35px 0', fontSize: '11px', fontWeight: 'bold' }}>TESLİM EDEN BİRİM / AMİR</h4>
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 'bold' }}>İmza / Kaşe</p>
+                        <h4 style={{ margin: '0 0 20px 0', fontSize: '10px', fontWeight: 'bold' }}>TESLİM EDEN BİRİM / AMİR</h4>
+                        <p style={{ margin: 0, fontSize: '10px', fontWeight: 'bold' }}>İmza / Kaşe</p>
                       </div>
                       <div>
-                        <h4 style={{ margin: '0 0 35px 0', fontSize: '11px', fontWeight: 'bold' }}>TESLİM ALAN PERSONEL</h4>
-                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 'bold' }}>İmza</p>
+                        <h4 style={{ margin: '0 0 20px 0', fontSize: '10px', fontWeight: 'bold' }}>TESLİM ALAN PERSONEL</h4>
+                        <p style={{ margin: 0, fontSize: '10px', fontWeight: 'bold' }}>İmza</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <p style={{ margin: '0 0 25px 0', fontSize: '9px', fontWeight: 'bold', color: '#555' }}>Malzeme Tamir İçin Çıkış Yapılmışsa Ücreti:</p>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 'black' }}>
+                        <p style={{ margin: '0 0 15px 0', fontSize: '9px', fontWeight: 'bold', color: '#555' }}>Malzeme Tamir İçin Çıkış Yapılmışsa Ücreti:</p>
+                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 'black' }}>
                           {activePrintAssignment.ucret ? `${activePrintAssignment.ucret} TL` : '....................................... TL'}
                         </p>
                       </div>
