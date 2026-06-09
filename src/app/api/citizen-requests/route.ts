@@ -63,6 +63,18 @@ async function ensureTablesExist() {
       )
     `);
 
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.blacklist_institutions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        kurum_adi VARCHAR NOT NULL,
+        vergi_no_or_tc VARCHAR UNIQUE NOT NULL,
+        gerekce TEXT,
+        yasaklama_tarihi DATE NOT NULL DEFAULT CURRENT_DATE,
+        aktif_durum BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
     const tables = ['baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'citizen_requests'];
     for (const table of tables) {
       await query(`ALTER TABLE public.${table} ADD COLUMN IF NOT EXISTS durum VARCHAR(50) DEFAULT 'BEKLEMEDE'`);
@@ -183,6 +195,16 @@ export async function POST(request: NextRequest) {
       const { tc, ad, soyad, dogum_yili, telefon } = body;
       if (!tc || !ad || !soyad || !dogum_yili || !telefon) {
         return NextResponse.json({ error: 'TC Kimlik No, Ad, Soyad, Doğum Yılı ve Telefon alanları zorunludur.' }, { status: 400 });
+      }
+
+      // Kara Liste (Blacklist) Kontrolü
+      const blacklisted = await queryOne(`
+        SELECT id FROM public.blacklist_institutions 
+        WHERE vergi_no_or_tc = $1 AND aktif_durum = true
+      `, [tc.trim()]);
+
+      if (blacklisted) {
+        return NextResponse.json({ error: "Kurumunuz idari gerekçelerle kara listededir. Başvuru yapamazsınız." }, { status: 400 });
       }
 
       const upperAd = toTurkishUpperCase(ad.trim()).toLocaleUpperCase('tr-TR');

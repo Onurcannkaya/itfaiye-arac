@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -29,7 +29,12 @@ import {
   Send,
   UserCheck,
   Download,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Ban,
+  Edit
 } from "lucide-react"
 
 // Strict TypeScript structure for Sivas Fire Department Citizen Service requests
@@ -68,6 +73,61 @@ interface CitizenRequest {
   takip_kodu?: string;
 }
 
+interface BlacklistInstitution {
+  id: string;
+  kurum_adi: string;
+  vergi_no_or_tc: string;
+  gerekce?: string;
+  yasaklama_tarihi: string;
+  aktif_durum: boolean;
+  created_at: string;
+}
+
+interface ExternalEducation {
+  id: string;
+  kurum_id?: string | null;
+  kurum_adi?: string;
+  egitim_turu?: string;
+  kisi_sayisi?: number;
+  planlanan_tarih: string;
+  saat_slot: string;
+  egitimci_personel_ids: string[];
+  durum: string;
+  created_at?: string;
+}
+
+function formatDateLocal(dateString: string) {
+  const d = new Date(dateString)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getMonday(d: Date) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(date.setDate(diff));
+}
+
+const CALENDAR_SLOTS = [
+  "08:00 - 09:00",
+  "09:00 - 10:00",
+  "10:00 - 10:30",
+  "10:30 - 11:15",
+  "11:15 - 12:00",
+  "12:00 - 13:30",
+  "13:30 - 15:00",
+  "15:00 - 15:30",
+  "15:30 - 16:30",
+  "16:30 - 16:45",
+  "16:45 - 17:30",
+  "17:30 - 18:30",
+  "18:30 - 20:00",
+  "20:00 - 21:00"
+]
+
 export default function HizmetlerPage() {
   const { user } = useAuthStore()
   const [requests, setRequests] = useState<CitizenRequest[]>([])
@@ -105,6 +165,51 @@ export default function HizmetlerPage() {
     egitim_tarihi: new Date().toISOString().split('T')[0],
     egitim_kisi_sayisi: '30',
     egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi'
+  })
+
+  // 3-SubTab States
+  const [subTab, setSubTab] = useState<'applications' | 'calendar' | 'blacklist'>('applications')
+
+  // Blacklist Management State
+  const [blacklistList, setBlacklistList] = useState<BlacklistInstitution[]>([])
+  const [isSavingBlacklist, setIsSavingBlacklist] = useState(false)
+  const [blacklistForm, setBlacklistForm] = useState({
+    kurum_adi: '',
+    vergi_no_or_tc: '',
+    gerekce: ''
+  })
+
+  // Hourly Activity Calendar State
+  const [educations, setEducations] = useState<ExternalEducation[]>([])
+  const [personnelList, setPersonnelList] = useState<any[]>([])
+  const [currentWeekDate, setCurrentWeekDate] = useState<Date>(() => {
+    const d = new Date()
+    return getMonday(d)
+  })
+
+  const daysOfWeek = useMemo<Date[]>(() => {
+    const days: Date[] = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(currentWeekDate)
+      day.setDate(currentWeekDate.getDate() + i)
+      days.push(day)
+    }
+    return days
+  }, [currentWeekDate])
+
+  // Program Planning Modal State
+  const [isProgramModalOpen, setIsProgramModalOpen] = useState(false)
+  const [isSavingEdu, setIsSavingEdu] = useState(false)
+  const [eduForm, setEduForm] = useState({
+    id: '',
+    kurum_id: '',
+    kurum_adi: '',
+    egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+    kisi_sayisi: '20',
+    planlanan_tarih: new Date().toISOString().split('T')[0],
+    saat_slot: '08:00 - 09:00',
+    egitimci_personel_ids: [] as string[],
+    durum: 'Beklemede'
   })
 
   // Detect Müdür / Admin role
@@ -191,7 +296,43 @@ export default function HizmetlerPage() {
 
   useEffect(() => {
     fetchRequests()
+    fetchPersonnel()
+    fetchBlacklist()
+    fetchEducations()
   }, [])
+
+  const fetchPersonnel = async () => {
+    try {
+      const { data } = await api.from('personnel').select('*')
+      if (data && Array.isArray(data)) {
+        setPersonnelList(data)
+      }
+    } catch (err) {
+      console.error('Fetch personnel error:', err)
+    }
+  }
+
+  const fetchBlacklist = async () => {
+    try {
+      const { data } = await api.from('blacklist_institutions').select('*').order('created_at', { ascending: false })
+      if (data && Array.isArray(data)) {
+        setBlacklistList(data)
+      }
+    } catch (err) {
+      console.error('Fetch blacklist error:', err)
+    }
+  }
+
+  const fetchEducations = async () => {
+    try {
+      const { data } = await api.from('external_educations').select('*')
+      if (data && Array.isArray(data)) {
+        setEducations(data)
+      }
+    } catch (err) {
+      console.error('Fetch educations error:', err)
+    }
+  }
 
   const fetchRequests = async () => {
     setLoading(true)
@@ -287,6 +428,178 @@ export default function HizmetlerPage() {
       alert('Silme işlemi sırasında sistemsel bir hata oluştu.')
     } finally {
       setUpdating(null)
+    }
+  }
+
+  // Blacklist Handlers
+  const handleAddBlacklist = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!blacklistForm.kurum_adi || !blacklistForm.vergi_no_or_tc) {
+      alert("Lütfen Kurum Adı ve T.C. / Vergi No alanlarını doldurun.")
+      return
+    }
+    setIsSavingBlacklist(true)
+    try {
+      const payload = {
+        kurum_adi: blacklistForm.kurum_adi,
+        vergi_no_or_tc: blacklistForm.vergi_no_or_tc,
+        gerekce: blacklistForm.gerekce || '',
+        yasaklama_tarihi: new Date().toISOString().split('T')[0],
+        aktif_durum: true
+      }
+      const res = await api.insert('blacklist_institutions', [payload])
+      if (res && !res.error) {
+        setBlacklistForm({ kurum_adi: '', vergi_no_or_tc: '', gerekce: '' })
+        await fetchBlacklist()
+      } else {
+        alert("Hata: " + (res?.error || "Bilinmeyen hata"))
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Sistemsel hata.")
+    } finally {
+      setIsSavingBlacklist(false)
+    }
+  }
+
+  const handleToggleBlacklist = async (id: string, currentStatus: boolean) => {
+    try {
+      const res = await api.update('blacklist_institutions', { aktif_durum: !currentStatus }, { id })
+      if (res && !res.error) {
+        await fetchBlacklist()
+      } else {
+        alert("Durum güncellenirken hata oluştu: " + (res?.error || 'Bilinmeyen Hata'))
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Sistemsel hata.")
+    }
+  }
+
+  const handleDeleteBlacklist = async (id: string) => {
+    if (!window.confirm("Bu kurumu listeden tamamen silmek istiyor musunuz?")) return
+    try {
+      const res = await api.remove('blacklist_institutions', { id })
+      if (res && !res.error) {
+        await fetchBlacklist()
+      } else {
+        alert("Silme hatası: " + (res?.error || 'Bilinmeyen Hata'))
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Sistemsel hata.")
+    }
+  }
+
+  // Calendar Education Handlers
+  const handleSaveEducation = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!eduForm.kurum_adi) {
+      alert("Lütfen Kurum Adı giriniz.")
+      return
+    }
+
+    setIsSavingEdu(true)
+    try {
+      const payload = {
+        kurum_adi: eduForm.kurum_adi,
+        egitim_turu: eduForm.egitim_turu,
+        kisi_sayisi: Number(eduForm.kisi_sayisi) || 0,
+        planlanan_tarih: new Date(eduForm.planlanan_tarih).toISOString(),
+        saat_slot: eduForm.saat_slot,
+        egitimci_personel_ids: eduForm.egitimci_personel_ids,
+        durum: eduForm.durum,
+        kurum_id: eduForm.kurum_id || null
+      }
+
+      let res
+      if (eduForm.id) {
+        res = await api.update('external_educations', payload, { id: eduForm.id })
+      } else {
+        res = await api.insert('external_educations', [payload])
+      }
+
+      if (res && !res.error) {
+        setIsProgramModalOpen(false)
+        await fetchEducations()
+      } else {
+        alert("Kaydetme hatası: " + (res?.error || "Bilinmeyen hata"))
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Sistemsel hata.")
+    } finally {
+      setIsSavingEdu(false)
+    }
+  }
+
+  const handleDeleteEducation = async (id: string) => {
+    if (!window.confirm("Bu program kaydını silmek istediğinize emin misiniz?")) return
+    try {
+      const res = await api.remove('external_educations', { id })
+      if (res && !res.error) {
+        setIsProgramModalOpen(false)
+        await fetchEducations()
+      } else {
+        alert("Silme hatası: " + (res?.error || "Bilinmeyen hata"))
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Sistemsel hata.")
+    }
+  }
+
+  const handlePrevWeek = () => {
+    setCurrentWeekDate(prev => {
+      const d = new Date(prev)
+      d.setDate(d.getDate() - 7)
+      return d
+    })
+  }
+
+  const handleNextWeek = () => {
+    setCurrentWeekDate(prev => {
+      const d = new Date(prev)
+      d.setDate(d.getDate() + 7)
+      return d
+    })
+  }
+
+  const handleTodayWeek = () => {
+    setCurrentWeekDate(getMonday(new Date()))
+  }
+
+  const getDayName = (d: Date) => {
+    return d.toLocaleDateString('tr-TR', { weekday: 'long' })
+  }
+
+  const formatDateLabel = (d: Date) => {
+    return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })
+  }
+
+  const getYYYYMMDD = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const getTrainerNames = (ids: string[]) => {
+    if (!ids || ids.length === 0) return 'Atanmadı'
+    return ids.map(id => {
+      const p = personnelList.find(x => x.id === id || x.sicil_no === id)
+      return p ? `${p.ad} ${p.soyad}` : 'Personel'
+    }).join(', ')
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Onaylandı': return 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+      case 'Tamamlandı': return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+      case 'İptal': return 'bg-red-500/20 text-red-400 border border-red-500/30'
+      case 'Beklemede':
+      default:
+        return 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
     }
   }
 
@@ -574,270 +887,634 @@ export default function HizmetlerPage() {
           </div>
         </div>
 
-        {/* 1. Üst Özet KPI Kartları (Glassmorphic) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Baca Temizliği */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-blue-500/20 transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-blue-500 group-hover:scale-110 transition duration-500">
-              <Brush className="w-24 h-24" />
-            </div>
-            <CardContent className="p-0 flex items-center justify-between">
-              <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Baca Temizliği</span>
-                <h3 className="text-2xl font-black text-blue-400">{bacaCount} Başvuru</h3>
-                <p className="text-[10px] text-zinc-500">Sivas geneli konut/ticari baca talepleri</p>
-              </div>
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
-                <Brush className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Yangın Önlem / Ruhsat */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-yellow-500/20 transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-yellow-500 group-hover:scale-110 transition duration-500">
-              <ShieldCheck className="w-24 h-24" />
-            </div>
-            <CardContent className="p-0 flex items-center justify-between">
-              <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Yangın Önlem / Ruhsat</span>
-                <h3 className="text-2xl font-black text-yellow-400">{yanginCount} Rapor</h3>
-                <p className="text-[10px] text-zinc-500">İtfaiye uygunluk ve ruhsat onay süreci</p>
-              </div>
-              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Eğitim Talepleri */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-purple-500/20 transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-purple-500 group-hover:scale-110 transition duration-500">
-              <GraduationCap className="w-24 h-24" />
-            </div>
-            <CardContent className="p-0 flex items-center justify-between">
-              <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Eğitim Talepleri</span>
-                <h3 className="text-2xl font-black text-purple-400">{egitimCount} Talep</h3>
-                <p className="text-[10px] text-zinc-500">Kurumsal ve okul afet bilinç eğitimleri</p>
-              </div>
-              <div className="p-3 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Vezne / Tahsilat */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/20 transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-110 transition duration-500">
-              <CreditCard className="w-24 h-24" />
-            </div>
-            <CardContent className="p-0 flex items-center justify-between">
-              <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Vezne / Tahsilat</span>
-                <h3 className="text-2xl font-black text-emerald-400">₺{revenue.toLocaleString('tr-TR')}</h3>
-                <p className="text-[10px] text-zinc-500">Onaylanan başvurulardan tahsil edilen harç</p>
-              </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-                <CreditCard className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* 3 Asil Alt Menü Seçimi */}
+        <div className="flex border-b border-zinc-800 bg-slate-950/45 p-1.5 rounded-xl gap-2 max-w-xl">
+          <button
+            type="button"
+            onClick={() => setSubTab('applications')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-extrabold transition-all duration-200 ${
+              subTab === 'applications'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+            }`}
+          >
+            📋 Gelen Başvurular
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubTab('calendar')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-extrabold transition-all duration-200 ${
+              subTab === 'calendar'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+            }`}
+          >
+            📅 Saatli Teşkilat Programı
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubTab('blacklist')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-extrabold transition-all duration-200 ${
+              subTab === 'blacklist'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+            }`}
+          >
+            🚫 Kara Liste Yönetimi
+          </button>
         </div>
 
-        {/* 3. Resmi İş Akışı ve Kurumsal Tablo Düzenlemesi */}
-        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
-          <CardHeader className="border-b border-zinc-800 bg-zinc-900/10 pb-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle className="text-base font-black tracking-wider uppercase text-zinc-300 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-indigo-400" /> AKTİF BAŞVURULAR VERİ GRİDİ
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Veritabanından anlık çekilen resmi vatandaş/kurum hizmet kayıtları</p>
-              </div>
-              <span className="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-500 px-2.5 py-1 rounded-md">
-                TOPLAM KAYIT: {requests.length}
-              </span>
+        {subTab === 'applications' && (
+          <>
+            {/* 1. Üst Özet KPI Kartları (Glassmorphic) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Baca Temizliği */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-blue-500/20 transition duration-300">
+                <div className="absolute -right-4 -bottom-4 opacity-5 text-blue-500 group-hover:scale-110 transition duration-500">
+                  <Brush className="w-24 h-24" />
+                </div>
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Baca Temizliği</span>
+                    <h3 className="text-2xl font-black text-blue-400">{bacaCount} Başvuru</h3>
+                    <p className="text-[10px] text-zinc-500">Sivas geneli konut/ticari baca talepleri</p>
+                  </div>
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+                    <Brush className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Yangın Önlem / Ruhsat */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-yellow-500/20 transition duration-300">
+                <div className="absolute -right-4 -bottom-4 opacity-5 text-yellow-500 group-hover:scale-110 transition duration-500">
+                  <ShieldCheck className="w-24 h-24" />
+                </div>
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Yangın Önlem / Ruhsat</span>
+                    <h3 className="text-2xl font-black text-yellow-400">{yanginCount} Rapor</h3>
+                    <p className="text-[10px] text-zinc-500">İtfaiye uygunluk ve ruhsat onay süreci</p>
+                  </div>
+                  <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Eğitim Talepleri */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-purple-500/20 transition duration-300">
+                <div className="absolute -right-4 -bottom-4 opacity-5 text-purple-500 group-hover:scale-110 transition duration-500">
+                  <GraduationCap className="w-24 h-24" />
+                </div>
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Eğitim Talepleri</span>
+                    <h3 className="text-2xl font-black text-purple-400">{egitimCount} Talep</h3>
+                    <p className="text-[10px] text-zinc-500">Kurumsal ve okul afet bilinç eğitimleri</p>
+                  </div>
+                  <div className="p-3 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Vezne / Tahsilat */}
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/20 transition duration-300">
+                <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-110 transition duration-500">
+                  <CreditCard className="w-24 h-24" />
+                </div>
+                <CardContent className="p-0 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Vezne / Tahsilat</span>
+                    <h3 className="text-2xl font-black text-emerald-400">₺{revenue.toLocaleString('tr-TR')}</h3>
+                    <p className="text-[10px] text-zinc-500">Onaylanan başvurulardan tahsil edilen harç</p>
+                  </div>
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {requests.length === 0 ? (
-              <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
-                Sistemde henüz bir hizmet başvurusu bulunmamaktadır.
-              </div>
-            ) : (
-              <>
-                {/* ═══ Desktop Tablo Görünümü (md+) ═══ */}
-                <div className="hidden md:block overflow-x-auto scrollbar-thin">
-                  <table className="w-full min-w-[1000px] border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider">
-                        <th className="p-4 text-left">Başvuran / Kurum Adı</th>
-                        <th className="p-4 text-left">Hizmet Türü</th>
-                        <th className="p-4 text-left">Başvuru Tarihi</th>
-                        <th className="p-4 text-left">Görevli Ekip</th>
-                        <th className="p-4 text-left">Harç Durumu</th>
-                        <th className="p-4 text-left">İşlem Durumu</th>
-                        <th className="p-4 text-right">İşlemler / Aksiyonlar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-900">
+
+            {/* 3. Resmi İş Akışı ve Kurumsal Tablo Düzenlemesi */}
+            <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
+              <CardHeader className="border-b border-zinc-800 bg-zinc-900/10 pb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-base font-black tracking-wider uppercase text-zinc-300 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-indigo-400" /> AKTİF BAŞVURULAR VERİ GRİDİ
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">Veritabanından anlık çekilen resmi vatandaş/kurum hizmet kayıtları</p>
+                  </div>
+                  <span className="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-500 px-2.5 py-1 rounded-md">
+                    TOPLAM KAYIT: {requests.length}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {requests.length === 0 ? (
+                  <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
+                    Sistemde henüz bir hizmet başvurusu bulunmamaktadır.
+                  </div>
+                ) : (
+                  <>
+                    {/* ═══ Desktop Tablo Görünümü (md+) ═══ */}
+                    <div className="hidden md:block overflow-x-auto scrollbar-thin">
+                      <table className="w-full min-w-[1000px] border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider">
+                            <th className="p-4 text-left">Başvuran / Kurum Adı</th>
+                            <th className="p-4 text-left">Hizmet Türü</th>
+                            <th className="p-4 text-left">Başvuru Tarihi</th>
+                            <th className="p-4 text-left">Görevli Ekip</th>
+                            <th className="p-4 text-left">Harç Durumu</th>
+                            <th className="p-4 text-left">İşlem Durumu</th>
+                            <th className="p-4 text-right">İşlemler / Aksiyonlar</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-900">
+                          {requests.map(req => {
+                            const feeObj = getHarcDurumu(req)
+                            return (
+                              <tr key={req.id} className="hover:bg-zinc-900/30 transition duration-150 group">
+                                <td className="p-4 align-middle whitespace-nowrap">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:scale-105 transition shrink-0">
+                                      <User className="w-4 h-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      <span className="font-bold text-zinc-200 block text-sm line-clamp-1">{req.basvuran_ad_soyad}</span>
+                                      <span className="text-[10px] text-zinc-500 font-mono block">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-4 align-middle whitespace-nowrap">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
+                                      {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                                    </div>
+                                    <span className="font-semibold text-zinc-300">{req.talep_turu}</span>
+                                  </div>
+                                </td>
+                                <td className="p-4 align-middle text-zinc-400 font-medium whitespace-nowrap">
+                                  <div className="flex items-center gap-1.5 text-xs">
+                                    <Calendar className="w-3.5 h-3.5 text-zinc-600" />
+                                    {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </div>
+                                </td>
+                                <td className="p-4 align-middle font-bold text-xs text-zinc-400 whitespace-nowrap">
+                                  <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
+                                    {getGorevliEkip(req)}
+                                  </span>
+                                </td>
+                                <td className="p-4 align-middle whitespace-nowrap">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${feeObj.color}`}>{feeObj.text}</span>
+                                </td>
+                                <td className="p-4 align-middle whitespace-nowrap">{getStatusBadge(req.durum)}</td>
+                                <td className="p-4 align-middle text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-2">
+                                    {isMudur ? (
+                                      <>
+                                        <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 whitespace-nowrap transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
+                                          {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-[0_0_12px_rgba(220,38,38,0.3)] border border-red-500/20 active:scale-[0.97]"
+                                          onClick={() => handleDeleteRequest(req.id)}
+                                          disabled={updating === req.id}
+                                          title="Sil"
+                                        >
+                                          {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Trash2 className="w-3.5 h-3.5" /> Sil</>}
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700 whitespace-nowrap" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
+                                        {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* ═══ Mobil Kart Görünümü (md altı) ═══ */}
+                    <div className="md:hidden p-4 space-y-3">
                       {requests.map(req => {
                         const feeObj = getHarcDurumu(req)
                         return (
-                          <tr key={req.id} className="hover:bg-zinc-900/30 transition duration-150 group">
-                            <td className="p-4 align-middle whitespace-nowrap">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:scale-105 transition shrink-0">
+                          <div key={req.id} className="bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 space-y-3 shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all">
+                            {/* Başvuran Adı + Durum Badge */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">
                                   <User className="w-4 h-4" />
                                 </div>
-                                <div className="space-y-0.5">
-                                  <span className="font-bold text-zinc-200 block text-sm line-clamp-1">{req.basvuran_ad_soyad}</span>
-                                  <span className="text-[10px] text-zinc-500 font-mono block">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-zinc-100 block text-sm leading-tight">{req.basvuran_ad_soyad}</span>
+                                  <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
                                 </div>
                               </div>
-                            </td>
-                            <td className="p-4 align-middle whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
-                                  {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                                </div>
-                                <span className="font-semibold text-zinc-300">{req.talep_turu}</span>
+                              <div className="shrink-0">{getStatusBadge(req.durum)}</div>
+                            </div>
+
+                            {/* Hizmet Türü Rozeti */}
+                            <div className="flex items-center gap-2">
+                              <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
+                                {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
                               </div>
-                            </td>
-                            <td className="p-4 align-middle text-zinc-400 font-medium whitespace-nowrap">
-                              <div className="flex items-center gap-1.5 text-xs">
-                                <Calendar className="w-3.5 h-3.5 text-zinc-600" />
-                                {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              <span className="font-semibold text-zinc-300 text-sm">{req.talep_turu}</span>
+                            </div>
+
+                            {/* Tarih + Harç bilgileri */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="bg-zinc-900/40 rounded-xl p-2.5 border border-zinc-800/40">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block">Tarih</span>
+                                <span className="text-xs text-zinc-300 font-medium flex items-center gap-1 mt-0.5">
+                                  <Calendar className="w-3 h-3 text-zinc-600" />
+                                  {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
                               </div>
-                            </td>
-                            <td className="p-4 align-middle font-bold text-xs text-zinc-400 whitespace-nowrap">
-                              <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
+                              <div className="bg-zinc-900/40 rounded-xl p-2.5 border border-zinc-800/40">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block">Harç</span>
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border mt-0.5 ${feeObj.color}`}>{feeObj.text}</span>
+                              </div>
+                            </div>
+
+                            {/* Görevli Ekip */}
+                            <div className="text-xs">
+                              <span className="text-zinc-500 font-bold">Görevli Ekip: </span>
+                              <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 italic' : 'text-zinc-300 font-semibold'}>
                                 {getGorevliEkip(req)}
                               </span>
-                            </td>
-                            <td className="p-4 align-middle whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${feeObj.color}`}>{feeObj.text}</span>
-                            </td>
-                            <td className="p-4 align-middle whitespace-nowrap">{getStatusBadge(req.durum)}</td>
-                            <td className="p-4 align-middle text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-2">
-                                {isMudur ? (
-                                  <>
-                                    <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 whitespace-nowrap transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
-                                      {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-[0_0_12px_rgba(220,38,38,0.3)] border border-red-500/20 active:scale-[0.97]"
-                                      onClick={() => handleDeleteRequest(req.id)}
-                                      disabled={updating === req.id}
-                                      title="Sil"
-                                    >
-                                      {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Trash2 className="w-3.5 h-3.5" /> Sil</>}
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700 whitespace-nowrap" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
-                                    {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
-                                  </Button>
+                            </div>
+
+                            {/* Aksiyon Butonu */}
+                            {isMudur ? (
+                              <div className="flex gap-2">
+                                <Button 
+                                  className="flex-1 bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                                  onClick={() => setSelectedRequest(req)}
+                                  disabled={updating === req.id}
+                                >
+                                  {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
+                                </Button>
+                                <Button
+                                  className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs min-h-[44px] px-3.5 rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-[0_0_12px_rgba(220,38,38,0.3)] border border-red-500/20 active:scale-[0.97]"
+                                  onClick={() => handleDeleteRequest(req.id)}
+                                  disabled={updating === req.id}
+                                  title="Sil"
+                                >
+                                  {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button 
+                                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700"
+                                onClick={() => setSelectedRequest(req)}
+                                disabled={updating === req.id}
+                              >
+                                {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
+                              </Button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {subTab === 'calendar' && (
+          <div className="space-y-6">
+            {/* Calendar Controls & Navigation */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 p-4 rounded-2xl shadow-lg">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-800 text-zinc-300 hover:text-white"
+                  onClick={handlePrevWeek}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Önceki Hafta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-800 text-zinc-300 hover:text-white font-bold"
+                  onClick={handleTodayWeek}
+                >
+                  Bu Hafta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-800 text-zinc-300 hover:text-white"
+                  onClick={handleNextWeek}
+                >
+                  Sonraki Hafta <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <div className="text-zinc-200 font-extrabold text-sm sm:text-base">
+                📅 {formatDateLabel(daysOfWeek[0])} - {formatDateLabel(daysOfWeek[6])} {daysOfWeek[0].getFullYear()}
+              </div>
+              <div>
+                {isMudur && (
+                  <Button
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg"
+                    onClick={() => {
+                      setEduForm({
+                        id: '',
+                        kurum_id: '',
+                        kurum_adi: '',
+                        egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+                        kisi_sayisi: '20',
+                        planlanan_tarih: getYYYYMMDD(new Date()),
+                        saat_slot: '08:00 - 09:00',
+                        egitimci_personel_ids: [],
+                        durum: 'Beklemede'
+                      })
+                      setIsProgramModalOpen(true)
+                    }}
+                  >
+                    <Plus className="w-4 h-4" /> Yeni Program Planla
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Weekly Calendar Matrix */}
+            <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full min-w-[1200px] border-collapse table-fixed">
+                  <thead>
+                    <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider h-14">
+                      <th className="p-3 text-center border-r border-zinc-900/60 w-36">Saat Dilimi</th>
+                      {daysOfWeek.map((day, idx) => {
+                        const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
+                        return (
+                          <th key={idx} className={`p-3 text-center border-r border-zinc-900/60 ${isToday ? 'bg-indigo-950/25 text-indigo-400 font-black' : ''}`}>
+                            <div className="text-[11px] font-bold opacity-75">{getDayName(day)}</div>
+                            <div className="text-sm font-black mt-0.5">{formatDateLabel(day)}</div>
+                          </th>
+                        )
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-900">
+                    {CALENDAR_SLOTS.map(slot => (
+                      <tr key={slot} className="hover:bg-zinc-900/10 transition duration-150 h-24">
+                        <td className="p-3 font-mono text-xs font-bold text-zinc-400 text-center bg-zinc-950/30 border-r border-zinc-900/60 align-middle">
+                          {slot}
+                        </td>
+                        {daysOfWeek.map((day, idx) => {
+                          const dateStr = getYYYYMMDD(day)
+                          const cellEvents = educations.filter(edu => {
+                            return formatDateLocal(evtDateString(edu.planlanan_tarih)) === dateStr && edu.saat_slot === slot
+                          })
+                          function evtDateString(ds: any) {
+                            return ds || ''
+                          }
+                          const isToday = dateStr === getYYYYMMDD(new Date())
+
+                          return (
+                            <td
+                              key={idx}
+                              className={`p-2 border-r border-zinc-900/60 vertical-align-top relative group transition duration-150 align-top ${isToday ? 'bg-indigo-950/10' : ''}`}
+                            >
+                              <div className="flex flex-col gap-1.5 h-full min-h-[4rem]">
+                                {cellEvents.map(evt => (
+                                  <div
+                                    key={evt.id}
+                                    onClick={() => {
+                                      if (isMudur) {
+                                        setEduForm({
+                                          id: evt.id,
+                                          kurum_id: evt.kurum_id || '',
+                                          kurum_adi: evt.kurum_adi || '',
+                                          egitim_turu: evt.egitim_turu || '',
+                                          kisi_sayisi: String(evt.kisi_sayisi || 0),
+                                          planlanan_tarih: formatDateLocal(evt.planlanan_tarih),
+                                          saat_slot: evt.saat_slot,
+                                          egitimci_personel_ids: evt.egitimci_personel_ids || [],
+                                          durum: evt.durum
+                                        })
+                                        setIsProgramModalOpen(true)
+                                      } else {
+                                        alert(`Kurum: ${evt.kurum_adi}\nEğitim: ${evt.egitim_turu}\nEğitimci: ${getTrainerNames(evt.egitimci_personel_ids)}\nDurum: ${evt.durum}`)
+                                      }
+                                    }}
+                                    className={`p-2 rounded-xl text-left cursor-pointer transition-all hover:scale-[1.02] ${getStatusColor(evt.durum)}`}
+                                  >
+                                    <div className="font-black text-xs line-clamp-1">{evt.kurum_adi}</div>
+                                    <div className="text-[10px] font-bold opacity-80 mt-0.5 line-clamp-1">{evt.egitim_turu}</div>
+                                    <div className="flex items-center justify-between mt-1 text-[9px] font-semibold opacity-75">
+                                      <span>👥 {evt.kisi_sayisi} Kişi</span>
+                                      <span className="font-mono bg-zinc-950/40 px-1 py-0.5 rounded text-[8px] max-w-[80px] truncate">
+                                        {evt.egitimci_personel_ids && evt.egitimci_personel_ids.length > 0 ? getTrainerNames(evt.egitimci_personel_ids).split(',')[0] : 'Atanmadı'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {cellEvents.length === 0 && isMudur && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEduForm({
+                                        id: '',
+                                        kurum_id: '',
+                                        kurum_adi: '',
+                                        egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+                                        kisi_sayisi: '20',
+                                        planlanan_tarih: dateStr,
+                                        saat_slot: slot,
+                                        egitimci_personel_ids: [],
+                                        durum: 'Beklemede'
+                                      })
+                                      setIsProgramModalOpen(true)
+                                    }}
+                                    className="w-full h-full min-h-[4rem] rounded-xl border border-dashed border-zinc-800 hover:border-indigo-500/40 hover:bg-indigo-500/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-150 cursor-pointer"
+                                  >
+                                    <Plus className="w-4 h-4 text-indigo-400" />
+                                  </button>
                                 )}
                               </div>
                             </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {subTab === 'blacklist' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Kurum Engelleme Formu */}
+            <div className="lg:col-span-1">
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-6 rounded-2xl">
+                <CardHeader className="p-0 pb-4 border-b border-zinc-800/60 mb-4">
+                  <CardTitle className="text-base font-black text-indigo-100 flex items-center gap-2">
+                    <Ban className="w-5 h-5 text-red-500" /> KURUM ENGELLEME FORMU
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">İdari veya gerekçelerle başvuru hakkı askıya alınacak kurumlar</p>
+                </CardHeader>
+                
+                {isMudur ? (
+                  <form onSubmit={handleAddBlacklist} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">Kurum Adı / Unvanı <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                        placeholder="Örn: Öz Sivas Tekstil Ltd."
+                        value={blacklistForm.kurum_adi}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">T.C. Kimlik / Vergi No <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={11}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-mono font-medium"
+                        placeholder="10 veya 11 Haneli Numara"
+                        value={blacklistForm.vergi_no_or_tc}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, vergi_no_or_tc: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">Yasaklama Gerekçesi</label>
+                      <textarea
+                        rows={3}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium resize-none"
+                        placeholder="Yasaklama kararının idari gerekçesi..."
+                        value={blacklistForm.gerekce}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, gerekce: e.target.value }))}
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSavingBlacklist}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5 h-11 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/10 transition"
+                    >
+                      {isSavingBlacklist ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Engelleniyor...
+                        </>
+                      ) : (
+                        <>
+                          <Ban className="w-4 h-4" /> Kara Listeye Ekle
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="p-4 bg-zinc-900/40 rounded-xl border border-zinc-800 text-xs text-zinc-400 text-center">
+                    Kurum engelleme ve kara liste yönetimi sadece Müdür seviyesinde yapılabilir.
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            {/* Kara Listedeki Kurumlar Listesi */}
+            <div className="lg:col-span-2">
+              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
+                <CardHeader className="border-b border-zinc-800 bg-zinc-900/10 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base font-black tracking-wider uppercase text-zinc-300 flex items-center gap-2">
+                        <Ban className="w-5 h-5 text-red-500 animate-pulse" /> ENGELLENEN KURUMLAR VERİ GRİDİ
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground mt-1 font-medium">Sistemde başvuruları anlık bloke edilen aktif kara liste kayıtları</p>
+                    </div>
+                    <span className="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-500 px-2.5 py-1 rounded-md">
+                      ENGEL KAYITLARI: {blacklistList.length}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {blacklistList.length === 0 ? (
+                    <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
+                      Sistemde engellenmiş herhangi bir kurum bulunmamaktadır.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto scrollbar-thin">
+                      <table className="w-full min-w-[700px] border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider">
+                            <th className="p-4 text-left">Kurum Adı</th>
+                            <th className="p-4 text-left">T.C. / Vergi No</th>
+                            <th className="p-4 text-left">Yasaklama Gerekçesi</th>
+                            <th className="p-4 text-left">Tarih</th>
+                            <th className="p-4 text-center">Durum</th>
+                            {isMudur && <th className="p-4 text-right">İşlemler</th>}
                           </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* ═══ Mobil Kart Görünümü (md altı) ═══ */}
-                <div className="md:hidden p-4 space-y-3">
-                  {requests.map(req => {
-                    const feeObj = getHarcDurumu(req)
-                    return (
-                      <div key={req.id} className="bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 space-y-3 shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all">
-                        {/* Başvuran Adı + Durum Badge */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">
-                              <User className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="font-bold text-zinc-100 block text-sm leading-tight">{req.basvuran_ad_soyad}</span>
-                              <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">TC: {req.basvuran_tc || 'Girilmemeş'}</span>
-                            </div>
-                          </div>
-                          <div className="shrink-0">{getStatusBadge(req.durum)}</div>
-                        </div>
-
-                        {/* Hizmet Türü Rozeti */}
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : req.talep_turu.includes('Eğitim') ? 'text-purple-400 bg-purple-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
-                            {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : req.talep_turu.includes('Eğitim') ? <GraduationCap className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                          </div>
-                          <span className="font-semibold text-zinc-300 text-sm">{req.talep_turu}</span>
-                        </div>
-
-                        {/* Tarih + Harç bilgileri */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-zinc-900/40 rounded-xl p-2.5 border border-zinc-800/40">
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block">Tarih</span>
-                            <span className="text-xs text-zinc-300 font-medium flex items-center gap-1 mt-0.5">
-                              <Calendar className="w-3 h-3 text-zinc-600" />
-                              {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          </div>
-                          <div className="bg-zinc-900/40 rounded-xl p-2.5 border border-zinc-800/40">
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold block">Harç</span>
-                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border mt-0.5 ${feeObj.color}`}>{feeObj.text}</span>
-                          </div>
-                        </div>
-
-                        {/* Görevli Ekip */}
-                        <div className="text-xs">
-                          <span className="text-zinc-500 font-bold">Görevli Ekip: </span>
-                          <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 italic' : 'text-zinc-300 font-semibold'}>
-                            {getGorevliEkip(req)}
-                          </span>
-                        </div>
-
-                        {/* Aksiyon Butonu */}
-                        {isMudur ? (
-                          <div className="flex gap-2">
-                            <Button 
-                              className="flex-1 bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
-                              onClick={() => setSelectedRequest(req)}
-                              disabled={updating === req.id}
-                            >
-                              {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
-                            </Button>
-                            <Button
-                              className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs min-h-[44px] px-3.5 rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-[0_0_12px_rgba(220,38,38,0.3)] border border-red-500/20 active:scale-[0.97]"
-                              onClick={() => handleDeleteRequest(req.id)}
-                              disabled={updating === req.id}
-                              title="Sil"
-                            >
-                              {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700"
-                            onClick={() => setSelectedRequest(req)}
-                            disabled={updating === req.id}
-                          >
-                            {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
-                          </Button>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-900">
+                          {blacklistList.map(item => (
+                            <tr key={item.id} className="hover:bg-zinc-900/30 transition duration-150">
+                              <td className="p-4 font-bold text-zinc-200 align-middle">{item.kurum_adi}</td>
+                              <td className="p-4 font-mono font-bold text-zinc-300 align-middle">{item.vergi_no_or_tc}</td>
+                              <td className="p-4 text-zinc-400 font-medium align-middle max-w-xs truncate" title={item.gerekce}>
+                                {item.gerekce || '-'}
+                              </td>
+                              <td className="p-4 text-zinc-500 font-medium align-middle">
+                                {new Date(item.yasaklama_tarihi).toLocaleDateString('tr-TR')}
+                              </td>
+                              <td className="p-4 text-center align-middle">
+                                <button
+                                  type="button"
+                                  disabled={!isMudur}
+                                  onClick={() => handleToggleBlacklist(item.id, item.aktif_durum)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border transition cursor-pointer ${
+                                    item.aktif_durum
+                                      ? 'bg-red-950/40 text-red-400 border-red-500/30 hover:bg-red-950/60'
+                                      : 'bg-zinc-900/80 text-zinc-500 border-zinc-800 hover:bg-zinc-800'
+                                  }`}
+                                >
+                                  {item.aktif_durum ? '🚫 Engelli (Aktif)' : '⚪ Serbest (Pasif)'}
+                                </button>
+                              </td>
+                              {isMudur && (
+                                <td className="p-4 text-right align-middle">
+                                  <Button
+                                    size="sm"
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-2.5 py-1.5 min-h-0 h-auto rounded-lg shadow-md"
+                                    onClick={() => handleDeleteBlacklist(item.id)}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Premium Amir Taktik Operasyon Modalı */}
         {selectedRequest && (
@@ -1435,6 +2112,218 @@ export default function HizmetlerPage() {
                       </>
                     )}
                   </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* Yeni Program Planla / Düzenle Modalı */}
+        {isProgramModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2 font-black text-indigo-100">
+                    <Calendar className="w-5 h-5 text-indigo-400" /> {eduForm.id ? 'PROGRAM DETAY & DÜZENLEME PANELİ' : 'YENİ TEŞKİLAT PROGRAMI PLANLA'}
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Dış Eğitim ve Tatbikat Planlayıcı</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-zinc-400 hover:text-white"
+                  onClick={() => setIsProgramModalOpen(false)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </CardHeader>
+              
+              <form onSubmit={handleSaveEducation}>
+                <CardContent className="p-6 space-y-6 max-h-[65vh] overflow-y-auto scrollbar-thin">
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    {/* Kurum Adı */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-zinc-400 block">Eğitim Verilecek Kurum / İşyeri <span className="text-red-500">*</span></label>
+                      
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          required
+                          className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                          placeholder="Örn: Organize Sanayi Bölgesi A.Ş. veya okul adı"
+                          value={eduForm.kurum_adi}
+                          onChange={(e) => setEduForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
+                        />
+                        <select
+                          className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-2 py-2 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                          value={eduForm.kurum_id || ''}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            const match = blacklistList.find(x => x.id === val)
+                            setEduForm(prev => ({
+                              ...prev,
+                              kurum_id: val,
+                              kurum_adi: match ? match.kurum_adi : prev.kurum_adi
+                            }))
+                          }}
+                        >
+                          <option value="">Kayıtlı Kurum Seç...</option>
+                          {blacklistList.filter(x => !x.aktif_durum).map(x => (
+                            <option key={x.id} value={x.id}>{x.kurum_adi}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Eğitim Türü */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">Eğitim / Tatbikat Türü</label>
+                      <select
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        value={eduForm.egitim_turu}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, egitim_turu: e.target.value }))}
+                      >
+                        <option value="Yangın Önleme ve Temel Yangın Eğitimi">Yangın Önleme ve Temel Yangın Eğitimi</option>
+                        <option value="SCBA Maske ve Temiz Hava Cihazı Eğitimi">SCBA Maske ve Temiz Hava Cihazı Eğitimi</option>
+                        <option value="Arama Kurtarma ve Tahliye Tatbikatı">Arama Kurtarma ve Tahliye Tatbikatı</option>
+                        <option value="Endüstriyel Yangın Güvenliği Eğitimi">Endüstriyel Yangın Güvenliği Eğitimi</option>
+                        <option value="Dahili Teşkilat Eğitimi / Tatbikatı">Dahili Teşkilat Eğitimi / Tatbikatı</option>
+                      </select>
+                    </div>
+
+                    {/* Kişi Sayısı */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">Katılımcı / Kişi Sayısı</label>
+                      <input
+                        type="number"
+                        min={1}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                        value={eduForm.kisi_sayisi}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, kisi_sayisi: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Tarih */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">Planlanan Tarih</label>
+                      <input
+                        type="date"
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                        value={eduForm.planlanan_tarih}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, planlanan_tarih: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Saat Dilimi */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">Saat Dilimi</label>
+                      <select
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        value={eduForm.saat_slot}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, saat_slot: e.target.value }))}
+                      >
+                        {CALENDAR_SLOTS.map(slot => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Durum */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-zinc-400 block">Program Onay Durumu</label>
+                      <select
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        value={eduForm.durum}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, durum: e.target.value }))}
+                      >
+                        <option value="Beklemede">Beklemede (Onay Bekliyor)</option>
+                        <option value="Onaylandı">Onaylandı (Takvime Eklendi)</option>
+                        <option value="Tamamlandı">Tamamlandı (Eğitim Tamamlandı)</option>
+                        <option value="İptal">İptal Edildi</option>
+                      </select>
+                    </div>
+
+                    {/* Eğitimci Personel Çoklu Seçim (Grid Checkbox list) */}
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Görevli Eğitimci Personel(ler) <span className="text-zinc-500">(Çoklu Seçim)</span></label>
+                      
+                      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 max-h-48 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 scrollbar-thin">
+                        {personnelList.map(p => {
+                          const isChecked = eduForm.egitimci_personel_ids.includes(p.id)
+                          return (
+                            <label key={p.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-zinc-900 cursor-pointer select-none transition">
+                              <input
+                                type="checkbox"
+                                className="rounded bg-zinc-950 border-zinc-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-zinc-900"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setEduForm(prev => ({
+                                      ...prev,
+                                      egitimci_personel_ids: [...prev.egitimci_personel_ids, p.id]
+                                    }))
+                                  } else {
+                                    setEduForm(prev => ({
+                                      ...prev,
+                                      egitimci_personel_ids: prev.egitimci_personel_ids.filter(id => id !== p.id)
+                                    }))
+                                  }
+                                }}
+                              />
+                              <div className="text-xs font-semibold text-zinc-200">
+                                {p.ad} {p.soyad} <span className="text-[10px] text-zinc-500">({p.unvan || 'Er'})</span>
+                              </div>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                  </div>
+
+                </CardContent>
+
+                <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex items-center justify-between gap-3">
+                  <div>
+                    {eduForm.id && isMudur && (
+                      <Button
+                        type="button"
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"
+                        onClick={() => handleDeleteEducation(eduForm.id)}
+                      >
+                        <Trash2 className="w-4 h-4" /> Programı Sil
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 rounded-xl text-xs"
+                      onClick={() => setIsProgramModalOpen(false)}
+                    >
+                      Vazgeç
+                    </Button>
+                    <Button 
+                      type="submit"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition"
+                      disabled={isSavingEdu}
+                    >
+                      {isSavingEdu ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Kaydediliyor...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5" /> Programı Kaydet
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </Card>

@@ -31,7 +31,7 @@ const ALLOWED_TABLES = [
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
-  'temporary_assignments', 'daily_summary_reports'
+  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -300,6 +300,46 @@ async function ensureAracBakimGecmisiTableExists() {
     await query(`CREATE INDEX IF NOT EXISTS idx_arac_bakim_gecmisi_tarih ON public.arac_bakim_gecmisi(tarih DESC)`);
   } catch (err: unknown) {
     console.error('ensureAracBakimGecmisiTableExists hatası:', err);
+  }
+}
+
+async function ensureBlacklistInstitutionsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.blacklist_institutions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        kurum_adi VARCHAR NOT NULL,
+        vergi_no_or_tc VARCHAR UNIQUE NOT NULL,
+        gerekce TEXT,
+        yasaklama_tarihi DATE NOT NULL DEFAULT CURRENT_DATE,
+        aktif_durum BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+  } catch (err) {
+    console.error('ensureBlacklistInstitutionsTableExists hatası:', err);
+  }
+}
+
+async function ensureExternalEducationsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.external_educations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        kurum_id UUID REFERENCES public.blacklist_institutions(id) ON DELETE SET NULL,
+        kurum_adi VARCHAR,
+        egitim_turu VARCHAR,
+        kisi_sayisi INTEGER,
+        planlanan_tarih TIMESTAMPTZ,
+        saat_slot VARCHAR,
+        egitimci_personel_ids UUID[],
+        durum VARCHAR DEFAULT 'Beklemede',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS saat_slot VARCHAR;`);
+  } catch (err) {
+    console.error('ensureExternalEducationsTableExists hatası:', err);
   }
 }
 
@@ -629,6 +669,13 @@ export async function GET(
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
     }
+    if (table === 'blacklist_institutions') {
+      await ensureBlacklistInstitutionsTableExists();
+    }
+    if (table === 'external_educations') {
+      await ensureBlacklistInstitutionsTableExists();
+      await ensureExternalEducationsTableExists();
+    }
     if (table === 'unified_system_logs') {
       await ensureUnifiedSystemLogsViewExists();
     }
@@ -721,6 +768,13 @@ export async function POST(
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
+    }
+    if (table === 'blacklist_institutions') {
+      await ensureBlacklistInstitutionsTableExists();
+    }
+    if (table === 'external_educations') {
+      await ensureBlacklistInstitutionsTableExists();
+      await ensureExternalEducationsTableExists();
     }
 
     const body = await request.json();
@@ -864,6 +918,13 @@ export async function PATCH(
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
+    }
+    if (table === 'blacklist_institutions') {
+      await ensureBlacklistInstitutionsTableExists();
+    }
+    if (table === 'external_educations') {
+      await ensureBlacklistInstitutionsTableExists();
+      await ensureExternalEducationsTableExists();
     }
 
     const body = await request.json();
