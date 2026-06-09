@@ -211,3 +211,88 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Sunucu hatası oluştu: ' + msg }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = getSessionFromRequest(request);
+    const isMudur = session && (session.rol === 'Admin' || session.unvan === 'Müdür' || session.rol?.toLowerCase() === 'admin' || session.unvan?.toLowerCase() === 'müdür');
+    
+    if (!isMudur) {
+      console.warn(`[ACL API Shield] Unauthorized services delete attempt from: ${session ? session.sicilNo : 'Guest'}`);
+      return NextResponse.json(
+        { success: false, error: 'Yetkisiz erişim: Bu işlem sadece Müdür rütbesine sahip personel tarafından gerçekleştirilebilir.' },
+        { status: 403 }
+      );
+    }
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID parametresi zorunludur.' }, { status: 400 });
+    }
+
+    await query('BEGIN');
+    try {
+      let trackingCode = '';
+
+      if (typeof id === 'string' && id.startsWith('service-')) {
+        const serialId = parseInt(id.split('-')[1], 10);
+        const row = await query<{ takip_kodu: string }>('SELECT takip_kodu FROM public.service_applications WHERE id = $1', [serialId]);
+        if (row.rows.length > 0) {
+          trackingCode = row.rows[0].takip_kodu;
+        }
+        await query('DELETE FROM public.service_applications WHERE id = $1', [serialId]);
+      } else if (typeof id === 'string' && id.startsWith('baca-')) {
+        const serialId = parseInt(id.split('-')[1], 10);
+        const row = await query<{ takip_kodu: string }>('SELECT takip_kodu FROM public.baca_temizlik_basvurulari WHERE id = $1', [serialId]);
+        if (row.rows.length > 0) {
+          trackingCode = row.rows[0].takip_kodu;
+        }
+        await query('DELETE FROM public.baca_temizlik_basvurulari WHERE id = $1', [serialId]);
+      } else if (typeof id === 'string' && id.startsWith('yangin-')) {
+        const serialId = parseInt(id.split('-')[1], 10);
+        const row = await query<{ takip_kodu: string }>('SELECT takip_kodu FROM public.yangin_rapor_basvurulari WHERE id = $1', [serialId]);
+        if (row.rows.length > 0) {
+          trackingCode = row.rows[0].takip_kodu;
+        }
+        await query('DELETE FROM public.yangin_rapor_basvurulari WHERE id = $1', [serialId]);
+      } else {
+        const row = await query<{ basvuran_tc: string }>('SELECT basvuran_tc FROM public.citizen_requests WHERE id = $1', [id]);
+        if (row.rows.length > 0) {
+          trackingCode = row.rows[0].basvuran_tc;
+        }
+        await query('DELETE FROM public.citizen_requests WHERE id = $1', [id]);
+      }
+
+      if (trackingCode) {
+        await query('DELETE FROM public.service_applications WHERE takip_kodu = $1', [trackingCode]);
+        await query('DELETE FROM public.citizen_requests WHERE basvuran_tc = $1', [trackingCode]);
+        await query('DELETE FROM public.baca_temizlik_basvurulari WHERE takip_kodu = $1', [trackingCode]);
+        await query('DELETE FROM public.yangin_rapor_basvurulari WHERE takip_kodu = $1', [trackingCode]);
+      }
+
+      await query(
+        `INSERT INTO public.audit_logs (action_type, actor_sicil_no, actor_name, target, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          'hizmet_basvuru_sil',
+          session.sicilNo,
+          `${session.ad} ${session.soyad}`,
+          String(id),
+          JSON.stringify({ trackingCode })
+        ]
+      );
+
+      await query('COMMIT');
+      return NextResponse.json({ success: true, message: 'Başvuru başarıyla silindi.' });
+    } catch (innerErr: unknown) {
+      await query('ROLLBACK');
+      throw innerErr;
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[hizmet-onay/DELETE] Hata:', msg);
+    return NextResponse.json({ success: false, error: 'Sunucu hatası oluştu: ' + msg }, { status: 500 });
+  }
+}

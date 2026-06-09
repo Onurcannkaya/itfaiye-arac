@@ -91,11 +91,11 @@ function toTurkishUpperCase(str: string): string {
   return str.split('').map(char => map[char] || char.toUpperCase()).join('');
 }
 
-// SOAP NVİ Kimlik Doğrulama Fonksiyonu (Offline Fallback / Mock Kalkanı Dahil)
+// SOAP NVİ Kimlik Doğrulama Fonksiyonu (Offl// SOAP NVİ Kimlik Doğrulama Fonksiyonu (Offline Fallback / Mock Kalkanı Dahil)
 async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: number): Promise<boolean> {
   const cleanTc = tc.trim();
-  const cleanAd = ad.trim().toLowerCase();
-  const cleanSoy = soyad.trim().toLowerCase();
+  const cleanAd = ad.trim().toLocaleUpperCase('tr-TR');
+  const cleanSoy = soyad.trim().toLocaleUpperCase('tr-TR');
 
   // Test amaçlı sahte T.C. kimlik numaraları veya sunum/test modları için mock kalkanı
   if (
@@ -110,29 +110,25 @@ async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: nu
     cleanTc === '99999999999' || 
     cleanTc === '12345678901' ||
     cleanTc.startsWith('0000') ||
-    cleanAd.includes('test') ||
-    cleanAd.includes('mock') ||
-    cleanAd.includes('demo') ||
-    cleanSoy.includes('test') ||
-    cleanSoy.includes('mock') ||
-    cleanSoy.includes('demo')
+    cleanAd.includes('TEST') ||
+    cleanAd.includes('MOCK') ||
+    cleanAd.includes('DEMO') ||
+    cleanSoy.includes('TEST') ||
+    cleanSoy.includes('MOCK') ||
+    cleanSoy.includes('DEMO')
   ) {
     console.log(`[NVİ Mock] Test/Sahte veri tespiti (${tc} - ${ad} ${soyad}). Offline Fallback (Mock) Kalkanı devrede.`);
     return true;
   }
 
   try {
-    // Türkçe karakterleri doğru büyük harfe dönüştür (i -> İ, ı -> I)
-    const upperAd = toTurkishUpperCase(ad.trim());
-    const upperSoyad = toTurkishUpperCase(soyad.trim());
-
     const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <TCKimlikNoDogrula xmlns="http://tckimlik.nvi.gov.tr/WS">
       <TCKimlikNo>${tc}</TCKimlikNo>
-      <Ad>${upperAd}</Ad>
-      <Soyad>${upperSoyad}</Soyad>
+      <Ad>${cleanAd}</Ad>
+      <Soyad>${cleanSoy}</Soyad>
       <DogumYili>${dogum_yili}</DogumYili>
     </TCKimlikNoDogrula>
   </soap:Body>
@@ -160,10 +156,8 @@ async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: nu
     const contentType = response.headers.get('content-type') || '';
     const xmlText = await response.text();
 
-    // NVİ servisi 30 Eylül 2025'te kapatıldığı için HTML hata sayfası veya geçersiz bir yanıt döndürebilir.
-    // Eğer yanıt XML değil de HTML ise veya beklenen SOAP yanıt etiketini barındırmıyorsa offline mock fallback'i çalıştır.
     if (contentType.includes('text/html') || !xmlText.includes('TCKimlikNoDogrulaResult')) {
-      console.warn('[NVİ Servis Kapanması/Kesintisi] NVİ SOAP servisi geçersiz yanıt döndürdü (muhtemelen kapatıldı veya erişim engellendi). Offline Fallback (Mock) Kalkanı devreye alınıyor.');
+      console.warn('[NVİ Servis Kapanması/Kesintisi] NVİ SOAP servisi geçersiz yanıt döndürdü (muhtemelen kapatıldı veya erişim engellendi). Çevrimdışı test doğrulaması aktif edildi.');
       return true; // Servis kesintisinde veya servis kapalıyken başvurunun engellenmemesi için true dönüyoruz
     }
 
@@ -172,8 +166,8 @@ async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: nu
     }
     return false;
   } catch (err) {
-    console.warn('[NVİ SOAP Hatası] İstek başarısız oldu veya zaman aşımına uğradı. Offline Fallback (Mock) Kalkanı devreye alınıyor:', err);
-    return true; // Donanım/İnternet kesintisi veya servis arızasında mock kalkanı olarak doğrulamayı başarılı say
+    console.warn('[NVİ SOAP Hatası] İstek başarısız oldu veya zaman aşımına uğradı. Çevrimdışı test kalkanı devreye alınıyor:', err);
+    return true; // Donanım/İnternet kesintisi veya servis arızasında doğrulamayı başarılı say
   }
 }
 
@@ -191,10 +185,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'TC Kimlik No, Ad, Soyad, Doğum Yılı ve Telefon alanları zorunludur.' }, { status: 400 });
       }
 
+      const upperAd = toTurkishUpperCase(ad.trim()).toLocaleUpperCase('tr-TR');
+      const upperSoyad = toTurkishUpperCase(soyad.trim()).toLocaleUpperCase('tr-TR');
+
       // NVİ Kimlik Doğrulama
-      const isIdentityValid = await validateNVI(tc, ad, soyad, parseInt(dogum_yili, 10));
+      const isIdentityValid = await validateNVI(tc, upperAd, upperSoyad, parseInt(dogum_yili, 10));
       if (!isIdentityValid) {
-        return NextResponse.json({ error: 'Nüfus ve Vatandaşlık İşleri (NVİ) kimlik doğrulaması başarısız. Lütfen bilgilerinizi kontrol ediniz.' }, { status: 400 });
+        return NextResponse.json({ error: 'Kimlik Bilgileri Nüfus Müdürlüğü ile Uyuşmadı' }, { status: 400 });
       }
 
       // 6 Haneli Rastgele SMS OTP Oluştur
@@ -221,6 +218,21 @@ export async function POST(request: NextRequest) {
       const { otp, type, tc, ad, soyad, dogum_yili, telefon, adres, bina_tipi, isyeri_adi_turu } = body;
       if (!otp || !type || !tc || !ad || !soyad || !dogum_yili || !telefon || !adres || !bina_tipi) {
         return NextResponse.json({ error: 'Gerekli başvuru ve OTP bilgileri eksik.' }, { status: 400 });
+      }
+
+      // Mükerrer Kayıt Kontrolü (Son 5 Dakika)
+      let talepTuruVal = 'Baca Temizliği';
+      if (type === 'yangin_olur_raporu') talepTuruVal = 'İtfaiye Uygunluk Raporu';
+      else if (type === 'egitim_talebi') talepTuruVal = 'Eğitim Talebi';
+      else if (type === 'yangin_raporu') talepTuruVal = 'Yangın Raporu';
+
+      const duplicateCheck = await query(
+        `SELECT * FROM public.service_applications 
+         WHERE basvuran_tc = $1 AND talep_turu = $2 AND created_at > NOW() - INTERVAL '5 minutes'`,
+        [tc.trim(), talepTuruVal]
+      );
+      if (duplicateCheck.rows.length > 0) {
+        return NextResponse.json({ error: 'Son 5 dakika içinde bu hizmet türü için zaten aktif bir başvurunuz bulunmaktadır. Lütfen daha sonra tekrar deneyiniz.' }, { status: 400 });
       }
 
       // OTP Doğruluğunu ve geçerliliğini kontrol et
@@ -291,7 +303,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Yeni service_applications tablosuna ekle
-      let talepTuruVal = 'Baca Temizliği';
+      talepTuruVal = 'Baca Temizliği';
       if (type === 'yangin_olur_raporu') talepTuruVal = 'İtfaiye Uygunluk Raporu';
       else if (type === 'egitim_talebi') talepTuruVal = 'Eğitim Talebi';
       else if (type === 'yangin_raporu') talepTuruVal = 'Yangın Raporu';

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/authStore"
 import { Personnel } from "@/types"
-import { Loader2, ShieldCheck, Clock, MapPin, Building, ShieldAlert, Shield } from "lucide-react"
+import { Loader2, ShieldCheck, Clock, MapPin, Building, ShieldAlert, Shield, Printer } from "lucide-react"
 
 interface HourlyShiftsProps {
   personnel: Personnel[]
@@ -106,9 +106,148 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
     } catch (err) {
       console.error("Hourly shifts fetch error:", err)
     } finally {
-      setLoading(false)
+      setSavingCell(null)
     }
   }
+
+  const handlePrint = () => {
+    const formatPersonnel = (sicil: string) => {
+      if (!sicil) return "-";
+      const p = personnel.find(per => per.sicil_no === sicil);
+      return p ? `${p.ad} ${p.soyad} (${p.unvan || 'Er'})` : sicil;
+    };
+
+    const tarih = new Date().toLocaleDateString("tr-TR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+
+    const santralNames = santralKeys.map(key => formatPersonnel(matrix["TÜM GÜN"]?.[key]?.sicil || "")).join("<br/>");
+    const representativeNames = representativeKeys.map(key => formatPersonnel(matrix["TÜM GÜN"]?.[key]?.sicil || "")).join("<br/>");
+
+    const hoursRows = HOURS.map(hour => {
+      const nizamiye = formatPersonnel(matrix[hour]?.["NIZAMIYE"]?.sicil || "");
+      return `
+        <tr>
+          <td style="padding:10px;border:1px solid #000;font-family:monospace;font-size:14px;text-align:center;font-weight:bold;">${hour}</td>
+          <td style="padding:10px;border:1px solid #000;font-size:14px;text-align:center;font-weight:bold;">${nizamiye}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const html = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Saatlik Karargah Nöbet Çizelgesi - ${tarih}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Times New Roman', 'Noto Serif', serif;
+      color: #000;
+      padding: 10px;
+      line-height: 1.4;
+    }
+    .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+    .header h1 { font-size: 16pt; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+    .header h2 { font-size: 13pt; font-weight: bold; margin-bottom: 5px; }
+    .header h3 { font-size: 12pt; font-weight: bold; letter-spacing: 1px; }
+    
+    .meta-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
+    .meta-table td { padding: 5px; font-size: 11pt; }
+    .meta-table td.right { text-align: right; }
+    
+    .section-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 3px; }
+    
+    .duty-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+    .duty-table th { background: #f0f0f0; padding: 8px; border: 1px solid #000; font-size: 11pt; font-weight: bold; text-align: center; }
+    .duty-table td { padding: 8px; border: 1px solid #000; font-size: 11pt; vertical-align: middle; }
+    
+    .signature-section { margin-top: 50px; display: flex; justify-content: space-between; }
+    .signature-box { text-align: center; width: 180px; font-size: 11pt; }
+    .signature-box .title { margin-bottom: 50px; font-weight: bold; }
+    
+    @media print {
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="text-align:center;margin-bottom:20px;">
+    <button onclick="window.print()" style="padding:12px 32px;font-size:14px;font-weight:700;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🖨️ Yazdır / PDF Olarak Kaydet</button>
+  </div>
+
+  <div class="header">
+    <h1>T.C. SİVAS BELEDİYESİ</h1>
+    <h2>İtfaiye Müdürlüğü</h2>
+    <h3>SAATLİK KARARGAH NÖBET ÇİZELGESİ</h3>
+  </div>
+
+  <table class="meta-table">
+    <tr>
+      <td><strong>Posta:</strong> ${activePosta}. Posta</td>
+      <td class="right"><strong>Nöbet Tarihi:</strong> ${tarih}</td>
+    </tr>
+  </table>
+
+  <div class="section-title">24 Saatlik Sabit Karargah Görevleri</div>
+  <table class="duty-table">
+    <thead>
+      <tr>
+        <th style="width: 50%;">Nöbetçi Santral Operatörleri</th>
+        <th style="width: 50%;">Nöbetçi 112 Temsilcileri</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 12px; font-weight: bold; line-height: 1.6;">${santralNames || "-"}</td>
+        <td style="padding: 12px; font-weight: bold; line-height: 1.6;">${representativeNames || "-"}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">2 Saatlik Saatlik Karargah Nöbet Döngüsü</div>
+  <table class="duty-table">
+    <thead>
+      <tr>
+        <th style="width: 30%;">Saat Aralığı</th>
+        <th style="width: 70%;">Nizamiye Nöbetçisi</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${hoursRows}
+    </tbody>
+  </table>
+
+  <div class="signature-section">
+    <div class="signature-box">
+      <div class="title">Nöbetçi Amiri</div>
+      <div>İmza</div>
+    </div>
+    <div class="signature-box">
+      <div class="title">Grup Amiri</div>
+      <div>İmza</div>
+    </div>
+    <div class="signature-box">
+      <div class="title">İtfaiye Müdürü</div>
+      <div>İmza</div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank');
+    if (!w) {
+      alert("Popup engelleyiciyi devre dışı bırakın.");
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
 
   // Get dynamic keys sorted logically
   const santralKeys = useMemo(() => {
@@ -267,7 +406,14 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
           <Clock className="w-4 h-4 text-cyan-400" />
           <span>Saatlik Karargah Çizelgesi bugün için geçerlidir: <strong>{new Date().toLocaleDateString("tr-TR")}</strong></span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 transition-colors font-bold cursor-pointer text-xs shrink-0"
+          >
+            <Printer className="w-3.5 h-3.5 animate-pulse" /> Yazdır / PDF İndir
+          </button>
           {isAuthorized ? (
             <span className="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
               <ShieldCheck className="w-3.5 h-3.5" /> Nöbet Düzenleme Yetkisi Var

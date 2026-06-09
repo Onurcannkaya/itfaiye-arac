@@ -28,7 +28,8 @@ import {
   AlertTriangle,
   Send,
   UserCheck,
-  Download
+  Download,
+  Trash2
 } from "lucide-react"
 
 // Strict TypeScript structure for Sivas Fire Department Citizen Service requests
@@ -64,6 +65,7 @@ interface CitizenRequest {
   atanan_ekip?: string;
   islem_tarihi?: string;
   red_gerekcesi?: string;
+  takip_kodu?: string;
 }
 
 export default function HizmetlerPage() {
@@ -262,6 +264,32 @@ export default function HizmetlerPage() {
     }
   }
 
+  const handleDeleteRequest = async (id: string) => {
+    if (!window.confirm("Bu başvuruyu kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+      return
+    }
+    setUpdating(id)
+    try {
+      const res = await fetch(`/api/hizmet-onay?id=${id}`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+      if (data.success) {
+        setRequests(prev => prev.filter(r => r.id !== id))
+        if (selectedRequest?.id === id) {
+          setSelectedRequest(null)
+        }
+      } else {
+        alert('Silme işlemi başarısız: ' + (data.error || 'Bilinmeyen Hata'))
+      }
+    } catch (err) {
+      console.error('Delete request error:', err)
+      alert('Silme işlemi sırasında sistemsel bir hata oluştu.')
+    } finally {
+      setUpdating(null)
+    }
+  }
+
   // Calculated values for KPI Metrics
   const bacaCount = requests.filter(r => r.talep_turu.includes('Baca')).length
   const yanginCount = requests.filter(r => r.talep_turu.includes('Uygunluk') || r.talep_turu.includes('Ruhsat') || r.talep_turu.includes('Yangın Raporu')).length
@@ -445,7 +473,7 @@ export default function HizmetlerPage() {
 
   <div class="meta-row">
     <div class="left">
-      <strong>Takip Kodu:</strong> ${req.basvuran_tc || req.id}<br/>
+      <strong>Takip Kodu:</strong> ${req.takip_kodu || req.basvuran_tc || req.id}<br/>
       <strong>Başvuru Tarihi:</strong> ${tarih}
     </div>
     <div class="right">
@@ -465,7 +493,8 @@ export default function HizmetlerPage() {
   <p class="section-title">Başvuran Bilgileri</p>
   <table class="bilgi-tablosu">
     <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;width:200px;">Ad Soyad</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.basvuran_ad_soyad}</td></tr>
-    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">T.C. / Takip No</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.basvuran_tc || '-'}</td></tr>
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Takip Kodu</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.takip_kodu || req.basvuran_tc || req.id}</td></tr>
+    <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">T.C. Kimlik No</td><td style="padding:6px 12px;border:1px solid #ccc;">${(req.basvuran_tc && !req.basvuran_tc.startsWith('SVS-')) ? req.basvuran_tc : 'Girilmemiş'}</td></tr>
     <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">İrtibat Telefonu</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.irtibat_tel}</td></tr>
     <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Hizmet Adresi</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.adres}</td></tr>
     <tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600;">Hizmet Türü</td><td style="padding:6px 12px;border:1px solid #ccc;">${req.talep_turu}</td></tr>
@@ -694,9 +723,20 @@ export default function HizmetlerPage() {
                             <td className="p-4 align-middle text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-2">
                                 {isMudur ? (
-                                  <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 whitespace-nowrap transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
-                                    {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
-                                  </Button>
+                                  <>
+                                    <Button size="sm" className="bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 whitespace-nowrap transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
+                                      {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-[0_0_12px_rgba(220,38,38,0.3)] border border-red-500/20 active:scale-[0.97]"
+                                      onClick={() => handleDeleteRequest(req.id)}
+                                      disabled={updating === req.id}
+                                      title="Sil"
+                                    >
+                                      {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Trash2 className="w-3.5 h-3.5" /> Sil</>}
+                                    </Button>
+                                  </>
                                 ) : (
                                   <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700 whitespace-nowrap" onClick={() => setSelectedRequest(req)} disabled={updating === req.id}>
                                     {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔍 İncele</>}
@@ -764,13 +804,23 @@ export default function HizmetlerPage() {
 
                         {/* Aksiyon Butonu */}
                         {isMudur ? (
-                          <Button 
-                            className="w-full bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
-                            onClick={() => setSelectedRequest(req)}
-                            disabled={updating === req.id}
-                          >
-                            {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              className="flex-1 bg-cyan-600/90 hover:bg-cyan-500 text-white font-black text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.3)] border border-cyan-400/20 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                              onClick={() => setSelectedRequest(req)}
+                              disabled={updating === req.id}
+                            >
+                              {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>🔧 İşlem Yap</>}
+                            </Button>
+                            <Button
+                              className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs min-h-[44px] px-3.5 rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-[0_0_12px_rgba(220,38,38,0.3)] border border-red-500/20 active:scale-[0.97]"
+                              onClick={() => handleDeleteRequest(req.id)}
+                              disabled={updating === req.id}
+                              title="Sil"
+                            >
+                              {updating === req.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </Button>
+                          </div>
                         ) : (
                           <Button 
                             className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[44px] rounded-xl flex items-center justify-center gap-1.5 transition duration-150 border border-slate-700"
@@ -800,7 +850,7 @@ export default function HizmetlerPage() {
                     {isMudur ? "AMİR TAKTİK OPERASYON PANELİ" : "BAŞVURU DETAY PANELİ"}
                   </CardTitle>
                   <p className="text-xs text-zinc-500 mt-1 font-mono">
-                    Takip Kodu / ID: <span className="text-cyan-400">{selectedRequest.basvuran_tc || selectedRequest.id}</span>
+                    Takip Kodu / ID: <span className="text-cyan-400">{selectedRequest.takip_kodu || selectedRequest.basvuran_tc || selectedRequest.id}</span>
                   </p>
                 </div>
                 <Button 
@@ -853,8 +903,12 @@ export default function HizmetlerPage() {
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-900/20 p-4 rounded-xl border border-slate-900/60">
                     <div>
-                      <span className="text-zinc-500 block text-xs">Kimlik / Takip Kodu</span>
-                      <span className="font-bold text-zinc-300 font-mono">{selectedRequest.basvuran_tc || '-'}</span>
+                      <span className="text-zinc-500 block text-xs">T.C. Kimlik No</span>
+                      <span className="font-bold text-zinc-300 font-mono">{(selectedRequest.basvuran_tc && !selectedRequest.basvuran_tc.startsWith('SVS-')) ? selectedRequest.basvuran_tc : 'Girilmemiş'}</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 block text-xs">Takip Kodu</span>
+                      <span className="font-bold text-zinc-300 font-mono">{selectedRequest.takip_kodu || (selectedRequest.basvuran_tc?.startsWith('SVS-') ? selectedRequest.basvuran_tc : '') || '-'}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500 block text-xs">Ad Soyad / Unvan</span>

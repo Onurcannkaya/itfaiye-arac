@@ -48,6 +48,7 @@ interface CitizenRequestRow {
   atanan_ekip?: string;
   islem_tarihi?: string;
   red_gerekcesi?: string;
+  takip_kodu?: string;
 }
 
 async function ensureTablesExist(): Promise<void> {
@@ -122,6 +123,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         talep_turu: req.talep_turu,
         basvuru_tarihi: req.created_at,
         basvuran_tc: req.basvuran_tc,
+        takip_kodu: req.takip_kodu,
         basvuran_ad_soyad: `${req.basvuran_ad} ${req.basvuran_soyad}`,
         irtibat_tel: req.irtibat_tel,
         adres: req.adres,
@@ -156,13 +158,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Map existing citizen_requests
     citizenRequests.forEach((req) => {
-      const exists = unifiedRequests.some(r => r.basvuran_tc === req.basvuran_tc);
+      const exists = unifiedRequests.some(r => r.takip_kodu === req.basvuran_tc || r.basvuran_tc === req.basvuran_tc);
       if (!exists) {
         unifiedRequests.push({
           id: String(req.id),
           talep_turu: req.talep_turu,
           basvuru_tarihi: req.basvuru_tarihi || req.created_at,
           basvuran_tc: req.basvuran_tc || '11111111111',
+          takip_kodu: req.basvuran_tc,
           basvuran_ad_soyad: req.basvuran_ad_soyad,
           irtibat_tel: req.irtibat_tel,
           adres: req.adres,
@@ -176,7 +179,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           red_gerekcesi: req.red_gerekcesi || undefined
         });
       } else {
-        const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.basvuran_tc);
+        const index = unifiedRequests.findIndex(r => r.takip_kodu === req.basvuran_tc || r.basvuran_tc === req.basvuran_tc);
         if (index !== -1) {
           unifiedRequests[index].durum = mapStatus(req.durum) || unifiedRequests[index].durum;
           unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
@@ -189,13 +192,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Map and append baca_temizlik_basvurulari if they don't already exist in unified list
     bacaRequests.forEach((req) => {
-      const exists = unifiedRequests.some(r => r.basvuran_tc === req.takip_kodu);
+      const exists = unifiedRequests.some(r => r.takip_kodu === req.takip_kodu || r.basvuran_tc === req.takip_kodu);
       if (!exists) {
         unifiedRequests.push({
           id: `baca-${req.id}`,
           talep_turu: 'Baca Temizliği',
           basvuru_tarihi: req.created_at,
           basvuran_tc: req.takip_kodu,
+          takip_kodu: req.takip_kodu,
           basvuran_ad_soyad: req.ad_soyad,
           irtibat_tel: req.telefon,
           adres: req.adres,
@@ -214,7 +218,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         });
       } else {
         // If it exists, make sure we sync the extra details if they were updated in special table
-        const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.takip_kodu);
+        const index = unifiedRequests.findIndex(r => r.takip_kodu === req.takip_kodu || r.basvuran_tc === req.takip_kodu);
         if (index !== -1) {
           unifiedRequests[index].durum = mapStatus(req.durum) || unifiedRequests[index].durum;
           unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
@@ -227,13 +231,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Map and append yangin_rapor_basvurulari if they don't already exist in unified list
     yanginRequests.forEach((req) => {
-      const exists = unifiedRequests.some(r => r.basvuran_tc === req.takip_kodu);
+      const exists = unifiedRequests.some(r => r.takip_kodu === req.takip_kodu || r.basvuran_tc === req.takip_kodu);
       if (!exists) {
         unifiedRequests.push({
           id: `yangin-${req.id}`,
           talep_turu: 'İtfaiye Uygunluk Raporu',
           basvuru_tarihi: req.created_at,
           basvuran_tc: req.takip_kodu,
+          takip_kodu: req.takip_kodu,
           basvuran_ad_soyad: req.ad_soyad,
           irtibat_tel: req.telefon,
           adres: req.adres,
@@ -253,7 +258,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         });
       } else {
         // If it exists, make sure we sync the extra details if they were updated in special table
-        const index = unifiedRequests.findIndex(r => r.basvuran_tc === req.takip_kodu);
+        const index = unifiedRequests.findIndex(r => r.takip_kodu === req.takip_kodu || r.basvuran_tc === req.takip_kodu);
         if (index !== -1) {
           unifiedRequests[index].durum = mapStatus(req.durum) || unifiedRequests[index].durum;
           unifiedRequests[index].islem_yapan_amir = req.islem_yapan_amir || unifiedRequests[index].islem_yapan_amir;
