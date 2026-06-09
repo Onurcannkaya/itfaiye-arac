@@ -36,7 +36,7 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
         if (vehicle && vehicle.bolmeler[compartmentKey]) {
           const initialItems = vehicle.bolmeler[compartmentKey].map((item: any) => ({
             ...item,
-            checkStatus: item.durum === "Tam" ? "Tam" : undefined, 
+            checkStatus: (item.durum === "Tam" || item.durum === "🔄 GEÇİCİ ZİMMETTE") ? "Tam" : undefined, 
             note: ""
           }))
           setItems(initialItems)
@@ -211,26 +211,32 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
                     <p className="text-xs text-muted-foreground mt-0.5">Sistemde olması gereken: {item.adet} adet</p>
                   </div>
                   
-                  <div className="flex items-center gap-1.5 shrink-0 bg-muted/50 p-1 rounded-lg">
-                    <button 
-                      onClick={() => handleStatusChange(idx, "Tam")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Tam" ? "bg-success text-success-foreground" : "text-muted-foreground hover:bg-muted"}`}
-                    >
-                      <Check className="w-3.5 h-3.5" /> Tam
-                    </button>
-                    <button 
-                      onClick={() => handleStatusChange(idx, "Eksik")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Eksik" ? "bg-danger text-danger-foreground" : "text-muted-foreground hover:bg-muted"}`}
-                    >
-                      <X className="w-3.5 h-3.5" /> Eksik
-                    </button>
-                    <button 
-                      onClick={() => handleStatusChange(idx, "Arızalı")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Arızalı" ? "bg-warning text-warning-foreground" : "text-muted-foreground hover:bg-muted"}`}
-                    >
-                      <AlertTriangle className="w-3.5 h-3.5" /> Arızalı
-                    </button>
-                  </div>
+                  {item.durum === "🔄 GEÇİCİ ZİMMETTE" ? (
+                    <div className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 whitespace-nowrap">
+                      🔄 GEÇİCİ ZİMMETTE (Muaf)
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 shrink-0 bg-muted/50 p-1 rounded-lg">
+                      <button 
+                        onClick={() => handleStatusChange(idx, "Tam")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Tam" ? "bg-success text-success-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                      >
+                        <Check className="w-3.5 h-3.5" /> Tam
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(idx, "Eksik")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Eksik" ? "bg-danger text-danger-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                      >
+                        <X className="w-3.5 h-3.5" /> Eksik
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(idx, "Arızalı")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Arızalı" ? "bg-warning text-warning-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5" /> Arızalı
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {(item.checkStatus === "Eksik" || item.checkStatus === "Arızalı") && (
