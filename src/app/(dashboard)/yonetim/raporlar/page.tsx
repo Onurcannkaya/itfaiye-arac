@@ -292,9 +292,16 @@ export default function LogsReportsPage() {
 
   // jsPDF Custom Matbu Shift Handover Report Generator
   const handleExportZReportPDF = async (report: any) => {
-    const doc = new jsPDF()
-    
-    const replaceTrChars = (str: string) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = 210
+    const pageH = 297
+    const mL = 12  // margin left
+    const mR = 12  // margin right
+    const contentW = pageW - mL - mR
+    const colDivX = mL + contentW * 0.48 // left column ~48%
+    const rColX = colDivX + 3  // right column start
+
+    const tr = (str: string) => {
       if (!str) return ""
       const map: Record<string, string> = {
         'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
@@ -304,33 +311,72 @@ export default function LogsReportsPage() {
     }
 
     const dateStr = new Date(report.rapor_tarihi).toLocaleDateString("tr-TR")
-    
-    // Page Header
+    const amirName = personnelMap[report.devreden_amir_id] || "Bilinmeyen Amir"
+
+    // ═══════════════════════════════════════════════
+    // SAYFA ÇERÇEVESİ (Dış border)
+    // ═══════════════════════════════════════════════
+    doc.setDrawColor(30)
+    doc.setLineWidth(0.8)
+    doc.rect(mL - 2, 6, contentW + 4, pageH - 14)
+
+    // ═══════════════════════════════════════════════
+    // ANTET BAŞLIĞI
+    // ═══════════════════════════════════════════════
     doc.setFont("Helvetica", "bold")
-    doc.setFontSize(14)
-    doc.text("T.C. SIVAS BELEDİYE BASKANLIGI", 105, 15, { align: "center" })
-    doc.text("ITFAIYE MUDURLUGU GUNLUK NOBET VE VUKUAT DEFTERI", 105, 22, { align: "center" })
-    
+    doc.setFontSize(15)
+    doc.setTextColor(0)
+    doc.text("T.C.  S I V A S  B E L E D I Y E  B A S K A N L I G I", pageW / 2, 16, { align: "center" })
+    doc.setFontSize(12)
+    doc.text("ITFAIYE MUDURLUGU GUNLUK NOBET VE VUKUAT DEFTERI", pageW / 2, 23, { align: "center" })
+
+    // Antet altı çizgi (çift çizgi)
+    doc.setLineWidth(0.6)
+    doc.line(mL, 26, pageW - mR, 26)
+    doc.setLineWidth(0.2)
+    doc.line(mL, 27.2, pageW - mR, 27.2)
+
+    // ═══════════════════════════════════════════════
+    // META BİLGİ SATIRI
+    // ═══════════════════════════════════════════════
     doc.setFont("Helvetica", "normal")
     doc.setFontSize(10)
-    doc.text(`Rapor Tarihi: ${dateStr}`, 14, 32)
-    const amirName = personnelMap[report.devreden_amir_id] || "Bilinmeyen Amir"
-    doc.text(`Devreden Amir: ${replaceTrChars(amirName)}`, 14, 37)
-    doc.text(`Sayfa No: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, 196, 32, { align: "right" })
-    
-    // Header Border Line
-    doc.setDrawColor(0)
-    doc.setLineWidth(0.5)
-    doc.line(14, 40, 196, 40)
-    
-    // Side-by-side columns dividing line
-    doc.line(105, 40, 105, 245)
-    
-    // LEFT COLUMN: SHIFT ROSTER (POSTA MEVCUDU)
+    doc.text(`Rapor Tarihi: ${dateStr}`, mL + 2, 33)
+    doc.text(`Devreden Amir: ${tr(amirName)}`, mL + 2, 38)
     doc.setFont("Helvetica", "bold")
     doc.setFontSize(9)
-    doc.text("POSTA MEVCUDU VE NOBET CIZELGESI", 14, 46)
-    
+    doc.text(`Sayfa No: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, pageW - mR - 2, 33, { align: "right" })
+
+    // Meta altı çizgi
+    doc.setLineWidth(0.4)
+    doc.setDrawColor(60)
+    doc.line(mL, 41, pageW - mR, 41)
+
+    // ═══════════════════════════════════════════════
+    // SÜTUN BÖLME ÇİZGİSİ
+    // ═══════════════════════════════════════════════
+    const colTopY = 41
+    const colBotY = 225
+    doc.setDrawColor(80)
+    doc.setLineWidth(0.3)
+    doc.line(colDivX, colTopY, colDivX, colBotY)
+
+    // ═══════════════════════════════════════════════
+    // SOL SÜTUN: POSTA MEVCUDU VE NÖBET ÇİZELGESİ
+    // ═══════════════════════════════════════════════
+    const lColMaxW = colDivX - mL - 4
+
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(11)
+    doc.setTextColor(0)
+    doc.text("POSTA MEVCUDU VE NOBET CIZELGESI", mL + 2, 48)
+
+    // Bölüm başlığı altı ince çizgi
+    doc.setDrawColor(120)
+    doc.setLineWidth(0.2)
+    doc.line(mL + 2, 49.5, colDivX - 2, 49.5)
+
+    // Shift log verisi çek
     let shiftLogsData: any[] = []
     let rotasData: any[] = []
     try {
@@ -339,121 +385,170 @@ export default function LogsReportsPage() {
         const sDate = new Date(s.giris_tarihi).toISOString().split('T')[0]
         return sDate === report.rapor_tarihi
       })
-      
       const { data: rotas } = await api.from('hourly_shifts').select('*').eq('tarih', report.rapor_tarihi)
       rotasData = rotas || []
     } catch (e) {
       console.error("PDF data fetch error:", e)
     }
-    
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(7.5)
-    let leftY = 52
-    
+
+    let leftY = 55
+
+    // --- Nöbetçi Personel Listesi ---
     doc.setFont("Helvetica", "bold")
-    doc.text("Nobetci Personel Listesi (PDKS):", 14, leftY)
+    doc.setFontSize(9.5)
+    doc.text("Nobetci Personel Listesi (PDKS):", mL + 3, leftY)
     doc.setFont("Helvetica", "normal")
-    leftY += 4.5
-    
+    doc.setFontSize(8.5)
+    leftY += 5.5
+
     if (shiftLogsData.length === 0) {
-      doc.text("Bu tarihte aktif nobetci kaydi bulunmuyor.", 16, leftY)
-      leftY += 4.5
+      doc.setTextColor(100)
+      doc.text("Bu tarihte aktif nobetci kaydi bulunmuyor.", mL + 5, leftY)
+      doc.setTextColor(0)
+      leftY += 5.5
     } else {
-      shiftLogsData.slice(0, 20).forEach((s: any) => {
-        if (leftY < 180) {
+      shiftLogsData.slice(0, 18).forEach((s: any) => {
+        if (leftY < 155) {
           const checkInTime = new Date(s.giris_tarihi).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
-          const text = `• ${checkInTime} | ${s.personel_ad_soyad} (${s.posta}. Posta)`
-          doc.text(replaceTrChars(text), 16, leftY)
-          leftY += 4
+          const txt = tr(`${checkInTime} | ${s.personel_ad_soyad} (${s.posta}. Posta)`)
+          doc.setFont("Helvetica", "bold")
+          doc.text("\u2022", mL + 4, leftY)
+          doc.setFont("Helvetica", "normal")
+          doc.text(txt, mL + 8, leftY)
+          leftY += 4.5
         }
       })
     }
-    
-    leftY += 2
+
+    leftY += 3
+
+    // --- Saatlik Nöbet Yeri Çizelgesi ---
     doc.setFont("Helvetica", "bold")
-    doc.text("Saatlik Nobet Yeri Cizelgesi:", 14, leftY)
+    doc.setFontSize(9.5)
+    doc.text("Saatlik Nobet Yeri Cizelgesi:", mL + 3, leftY)
     doc.setFont("Helvetica", "normal")
-    leftY += 4.5
-    
+    doc.setFontSize(8.5)
+    leftY += 5.5
+
     if (rotasData.length === 0) {
-      doc.text("Saatlik nobet yerlesim kaydi bulunmuyor.", 16, leftY)
-      leftY += 4.5
+      doc.setTextColor(100)
+      doc.text("Saatlik nobet yerlesim kaydi bulunmuyor.", mL + 5, leftY)
+      doc.setTextColor(0)
+      leftY += 5.5
     } else {
       const groupedRotas: Record<string, string[]> = {}
       rotasData.forEach((r: any) => {
         if (!groupedRotas[r.gorev_yeri]) groupedRotas[r.gorev_yeri] = []
         groupedRotas[r.gorev_yeri].push(`${r.saat_araligi}: ${r.personel_sicil}`)
       })
-      
-      Object.entries(groupedRotas).slice(0, 4).forEach(([yeri, list]) => {
-        if (leftY < 180) {
+
+      Object.entries(groupedRotas).slice(0, 5).forEach(([yeri, list]) => {
+        if (leftY < 170) {
           doc.setFont("Helvetica", "bold")
-          doc.text(`- ${replaceTrChars(yeri)}:`, 16, leftY)
+          doc.setFontSize(8.5)
+          doc.text(`- ${tr(yeri.toUpperCase())}:`, mL + 5, leftY)
           doc.setFont("Helvetica", "normal")
-          leftY += 3.5
-          
-          list.slice(0, 4).forEach((txt: string) => {
-            if (leftY < 180) {
-              doc.text(`  ${replaceTrChars(txt)}`, 18, leftY)
-              leftY += 3.5
+          leftY += 4.5
+          list.slice(0, 5).forEach((txt: string) => {
+            if (leftY < 170) {
+              doc.text(`    ${tr(txt)}`, mL + 7, leftY)
+              leftY += 4
             }
           })
+          leftY += 1
         }
       })
     }
-    
-    // Draw Posta Genel Mevcudu box at the bottom of the left column
-    leftY = 185
-    doc.setDrawColor(120)
-    doc.rect(14, leftY, 85, 28)
+
+    // --- Posta Genel Mevcudu Raporu Kutusu ---
+    const boxY = Math.max(leftY + 5, 175)
+    const boxH = 30
+    doc.setDrawColor(40)
+    doc.setLineWidth(0.5)
+    doc.rect(mL + 1, boxY, lColMaxW + 2, boxH)
+
     doc.setFont("Helvetica", "bold")
-    doc.text("POSTA GENEL MEVCUDU RAPORU", 16, leftY + 5)
+    doc.setFontSize(9.5)
+    doc.text("POSTA GENEL MEVCUDU RAPORU", mL + 4, boxY + 6)
+
+    doc.setDrawColor(150)
+    doc.setLineWidth(0.15)
+    doc.line(mL + 4, boxY + 7.5, mL + lColMaxW - 2, boxY + 7.5)
+
     doc.setFont("Helvetica", "normal")
-    doc.text(`Hazir Mevcut (Postadaki Personel): ${shiftLogsData.length} personel`, 16, leftY + 12)
-    doc.text(`Dis Gorev / Zimmet Sayisi: ${report.dis_gorev_sayisi} vaka`, 16, leftY + 18)
-    doc.text(`Toplan Yekun: ${shiftLogsData.length + report.dis_gorev_sayisi} personel`, 16, leftY + 24)
-    
-    // RIGHT COLUMN: VUKUAT FAALİYETLERİ (INCIDENTS)
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(9)
-    doc.text("VUKUAT VE FAALIYET LISTESI (SON 24 SAAT)", 108, 46)
-    
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(8)
-    let rightY = 52
-    
+    doc.text(`Hazir Mevcut (Postadaki Personel): ${shiftLogsData.length} personel`, mL + 4, boxY + 13)
+    doc.text(`Dis Gorev / Zimmet Sayisi: ${report.dis_gorev_sayisi} gorev`, mL + 4, boxY + 19)
     doc.setFont("Helvetica", "bold")
-    doc.text("Vukuat Olay Ozetleri:", 108, rightY)
+    doc.text(`Toplam Yekun: ${shiftLogsData.length + report.dis_gorev_sayisi} personel`, mL + 4, boxY + 25)
     doc.setFont("Helvetica", "normal")
-    rightY += 4.5
-    
-    const yStr = `Yangin: ${report.yangin_sayisi.total} (Ev: ${report.yangin_sayisi.ev}, Isy: ${report.yangin_sayisi.isyeri}, Arz: ${report.yangin_sayisi.arazi}, Dgr: ${report.yangin_sayisi.diger})`
-    const kStr = `Kurtarma: ${report.kurtarma_sayisi.total} (Kaza: ${report.kurtarma_sayisi.trafik_kazasi}, Su: ${report.kurtarma_sayisi.su_baskini}, Hayv: ${report.kurtarma_sayisi.hayvan_kurtarma}, Dgr: ${report.kurtarma_sayisi.diger})`
-    
-    doc.text(replaceTrChars(yStr), 110, rightY)
-    rightY += 4
-    doc.text(replaceTrChars(kStr), 110, rightY)
+
+    // ═══════════════════════════════════════════════
+    // SAĞ SÜTUN: VUKUAT VE FAALİYET LİSTESİ
+    // ═══════════════════════════════════════════════
+    const rColMaxW = pageW - mR - rColX - 2
+
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(11)
+    doc.setTextColor(0)
+    doc.text("VUKUAT VE FAALIYET LISTESI (SON 24 SAAT)", rColX, 48)
+
+    doc.setDrawColor(120)
+    doc.setLineWidth(0.2)
+    doc.line(rColX, 49.5, pageW - mR - 2, 49.5)
+
+    let rightY = 55
+
+    // --- Vukuat Olay Özeti ---
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(9.5)
+    doc.text("Vukuat Olay Ozetleri:", rColX + 1, rightY)
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    rightY += 6
+
+    // Yangın satırı
+    doc.setFont("Helvetica", "bold")
+    doc.text("Yangin:", rColX + 3, rightY)
+    doc.setFont("Helvetica", "normal")
+    const yTotal = report.yangin_sayisi?.total || 0
+    doc.text(`${yTotal} adet  (Ev: ${report.yangin_sayisi?.ev || 0}, Isyeri: ${report.yangin_sayisi?.isyeri || 0}, Arazi: ${report.yangin_sayisi?.arazi || 0}, Diger: ${report.yangin_sayisi?.diger || 0})`, rColX + 19, rightY)
     rightY += 5.5
-    
+
+    // Kurtarma satırı
     doc.setFont("Helvetica", "bold")
-    doc.text("Arizali / Bakimdaki Taktik Araclar:", 108, rightY)
+    doc.text("Kurtarma:", rColX + 3, rightY)
     doc.setFont("Helvetica", "normal")
-    rightY += 4.5
-    
+    const kTotal = report.kurtarma_sayisi?.total || 0
+    doc.text(`${kTotal} adet  (Kaza: ${report.kurtarma_sayisi?.trafik_kazasi || 0}, Su: ${report.kurtarma_sayisi?.su_baskini || 0}, Hayvan: ${report.kurtarma_sayisi?.hayvan_kurtarma || 0}, Diger: ${report.kurtarma_sayisi?.diger || 0})`, rColX + 24, rightY)
+    rightY += 7
+
+    // --- Arızalı Araçlar ---
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(9.5)
+    doc.text("Arizali / Bakimdaki Taktik Araclar:", rColX + 1, rightY)
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    rightY += 5.5
+
     if (!report.arizali_araclar || report.arizali_araclar.length === 0) {
-      doc.text("Aktif arizali/bakimda olan taktik arac bulunmamaktadir.", 110, rightY)
-      rightY += 4.5
+      doc.setTextColor(100)
+      doc.text("Aktif arizali/bakimda olan taktik arac bulunmamaktadir.", rColX + 3, rightY)
+      doc.setTextColor(0)
     } else {
-      doc.text(`Araclar: ${report.arizali_araclar.join(', ')}`, 110, rightY)
-      rightY += 4.5
+      const aracText = doc.splitTextToSize(`Araclar: ${report.arizali_araclar.join(', ')}`, rColMaxW - 4)
+      doc.text(aracText, rColX + 3, rightY)
     }
-    
-    rightY += 2
+    rightY += 7
+
+    // --- Faaliyet Kayıtları Detaylı Listesi ---
     doc.setFont("Helvetica", "bold")
-    doc.text("Faaliyet Kayitlari Detayli Listesi:", 108, rightY)
+    doc.setFontSize(9.5)
+    doc.text("Faaliyet Kayitlari Detayli Listesi:", rColX + 1, rightY)
     doc.setFont("Helvetica", "normal")
-    rightY += 4.5
-    
+    doc.setFontSize(8.5)
+    rightY += 5.5
+
     let incidentsData: any[] = []
     try {
       const { data: incs } = await api.from('incidents').select('*')
@@ -464,63 +559,94 @@ export default function LogsReportsPage() {
     } catch (e) {
       console.error("PDF incidents fetch error:", e)
     }
-    
+
     if (incidentsData.length === 0) {
-      doc.text("Bu tarihte herhangi bir vukuat kaydi bulunmamaktadir.", 110, rightY)
-      rightY += 5
+      doc.setTextColor(100)
+      doc.text("Bu tarihte herhangi bir vukuat kaydi bulunmamaktadir.", rColX + 3, rightY)
+      doc.setTextColor(0)
+      rightY += 6
     } else {
-      incidentsData.slice(0, 15).forEach((inc: any, idx: number) => {
-        if (rightY < 180) {
+      incidentsData.slice(0, 12).forEach((inc: any, idx: number) => {
+        if (rightY < 170) {
           const time = new Date(inc.ihbar_saati || inc.created_at).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
-          const text = `${idx + 1}) [${time}] ${inc.olay_turu} - ${inc.mahalle} Mah. - ${inc.hasar_durumu || 'Maddi Hasarli'}`
-          doc.text(replaceTrChars(text), 110, rightY)
-          rightY += 4
+          const line = tr(`${idx + 1}) [${time}] ${inc.olay_turu || 'Belirsiz'} - ${inc.mahalle || ''} Mah.`)
+          doc.text(line, rColX + 3, rightY)
+          rightY += 4.5
         }
       })
+      rightY += 2
     }
-    
-    rightY = 185
+
+    // --- Başçavuş / Nöbetçi Amir Notu ---
+    const noteY = Math.max(rightY + 3, 170)
     doc.setFont("Helvetica", "bold")
-    doc.text("Bascavus / Nobetci Amir Notu:", 108, rightY)
+    doc.setFontSize(9.5)
+    doc.text("Bascavus / Nobetci Amir Notu:", rColX + 1, noteY)
     doc.setFont("Helvetica", "normal")
-    rightY += 4.5
-    
+    doc.setFontSize(9)
+
     const notText = report.bascavus_notu || "Herhangi bir devir notu eklenmemistir."
-    const splitNot = doc.splitTextToSize(replaceTrChars(notText), 85)
-    doc.text(splitNot, 110, rightY)
-    
-    // Divider line at bottom
-    doc.setDrawColor(0)
-    doc.setLineWidth(0.5)
-    doc.line(14, 245, 196, 245)
-    
-    // SIGNATURE BLOCKS
+    const splitNot = doc.splitTextToSize(tr(notText), rColMaxW - 4)
+    doc.text(splitNot, rColX + 3, noteY + 5.5)
+
+    // ═══════════════════════════════════════════════
+    // ALT BÖLME ÇİZGİSİ
+    // ═══════════════════════════════════════════════
+    doc.setDrawColor(30)
+    doc.setLineWidth(0.6)
+    doc.line(mL, colBotY, pageW - mR, colBotY)
+
+    // ═══════════════════════════════════════════════
+    // İMZA BLOKLARI
+    // ═══════════════════════════════════════════════
+    const sigTopY = colBotY + 6
+    const sigLineY = sigTopY + 22
+    const sigCenters = [
+      mL + contentW * 0.17,   // Nöbetçi Çavuş
+      pageW / 2,               // Nöbetçi Amir
+      pageW - mR - contentW * 0.17  // İtfaiye Müdürü
+    ]
+    const sigLabels = ["Nobetci Cavus", "Nobetci Amir", "Itfaiye Muduru"]
+    const sigSubs = ["Imza / Sicil / Unvan", "Imza / Sicil / Unvan", "Imza / Onay / Tarih"]
+
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(10)
+    sigLabels.forEach((label, i) => {
+      doc.text(label, sigCenters[i], sigTopY, { align: "center" })
+    })
+
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(8)
+    sigSubs.forEach((sub, i) => {
+      doc.text(sub, sigCenters[i], sigTopY + 5, { align: "center" })
+    })
+
+    // İmza çizgileri (kesik çizgi)
+    doc.setDrawColor(140)
+    doc.setLineWidth(0.3)
+    doc.setLineDashPattern([1.5, 1], 0)
+    sigCenters.forEach((cx) => {
+      doc.line(cx - 22, sigLineY, cx + 22, sigLineY)
+    })
+    doc.setLineDashPattern([], 0)
+
+    // ═══════════════════════════════════════════════
+    // DİJİTAL DOĞRULAMA KODU (FOOTER)
+    // ═══════════════════════════════════════════════
+    doc.setDrawColor(30)
+    doc.setLineWidth(0.2)
+    doc.line(mL, pageH - 18, pageW - mR, pageH - 18)
+
     doc.setFont("Helvetica", "bold")
     doc.setFontSize(8)
-    doc.text("Nobetci Cavus", 35, 252, { align: "center" })
-    doc.text("Nobetci Amir", 105, 252, { align: "center" })
-    doc.text("Itfaiye Muduru", 170, 252, { align: "center" })
-    
+    doc.setTextColor(80)
+    doc.text(`Dijital Dogrulama Kodu: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, pageW - mR - 2, pageH - 13, { align: "right" })
     doc.setFont("Helvetica", "normal")
     doc.setFontSize(7)
-    doc.text("Imza / Sicil / Unvan", 35, 256, { align: "center" })
-    doc.text("Imza / Sicil / Unvan", 105, 256, { align: "center" })
-    doc.text("Imza / Onay / Tarih", 170, 256, { align: "center" })
-    
-    // Dotted lines for signature
-    doc.setDrawColor(180)
-    doc.setLineDashPattern([1, 1], 0)
-    doc.line(18, 270, 52, 270)
-    doc.line(88, 270, 122, 270)
-    doc.line(152, 270, 188, 270)
-    doc.setLineDashPattern([], 0)
-    
-    // Digital Control Code
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(8)
-    doc.setTextColor(100)
-    doc.text(`Dijital Dogrulama Kodu: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, 196, 288, { align: "right" })
-    
+    doc.setTextColor(130)
+    doc.text("Bu belge Sivas Belediyesi Itfaiye Mudurlugu dijital arsiv sistemi tarafindan uretilmistir.", mL + 2, pageH - 13)
+    doc.setTextColor(0)
+
     doc.save(`Itfaiye_Z_Raporu_${report.rapor_tarihi}.pdf`)
   }
 
