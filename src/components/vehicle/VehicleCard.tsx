@@ -11,6 +11,7 @@ interface VehicleCardProps {
   vehicle: Vehicle
   onPrintQR?: (plaka: string, aracTipi: string, marka?: string) => void
   onEdit?: (vehicle: Vehicle) => void
+  onReportFault?: (plaka: string) => void
 }
 
 function getTacticalSilhouette(aracTipi: string, filoNo?: number | null) {
@@ -166,7 +167,7 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
   }
 }
 
-export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
+export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault }: VehicleCardProps) {
   const { user } = useAuthStore()
   const [inspectionDate, setInspectionDate] = useState(vehicle.next_inspection_date)
   const [isEditing, setIsEditing] = useState(false)
@@ -284,6 +285,19 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit }: VehicleCardProps) {
             </Link>
             
             <div className="flex items-center gap-1.5 shrink-0">
+              {vehicle.current_branch !== 'Makine İkmal Müdürlüğü (Bakım-Onarım)' && onReportFault && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onReportFault(vehicle.plaka)
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/40 text-orange-400 hover:bg-orange-500/20 hover:shadow-[0_0_10px_rgba(249,115,22,0.4)] text-[10px] font-black tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1 shrink-0"
+                  title="Arıza Bildir"
+                >
+                  <span>⚠️ Arıza Bildir</span>
+                </button>
+              )}
               {onEdit && (
                 <button
                   onClick={(e) => {
