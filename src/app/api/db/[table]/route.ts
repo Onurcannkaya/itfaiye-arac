@@ -320,6 +320,8 @@ async function ensureDailySummaryReportsTableExists() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await query(`ALTER TABLE public.daily_summary_reports ADD COLUMN IF NOT EXISTS serh_notu TEXT;`);
+    await query(`ALTER TABLE public.daily_summary_reports ADD COLUMN IF NOT EXISTS devir_durumu VARCHAR DEFAULT 'Temiz';`);
   } catch (err) {
     console.error('ensureDailySummaryReportsTableExists hatası:', err);
   }
@@ -939,6 +941,9 @@ export async function POST(
     if (table === 'daily_summary_reports') {
       for (const row of rows) {
         const amirId = row.devreden_amir_id;
+        let openAssignments: any[] = [];
+        let openMaintenance: any[] = [];
+
         if (amirId) {
           // Fetch amir's posta
           const amirRes = await query('SELECT posta FROM public.personnel WHERE id = $1', [amirId]);
@@ -947,8 +952,9 @@ export async function POST(
           if (amirPosta) {
             // Check for active/delayed assignments for personnel in this posta
             const openAssignmentsRes = await query(`
-              SELECT t.id
+              SELECT t.id, t.birim_adi, m.malzeme_adi, t.teslim_edilen_tip
               FROM public.temporary_assignments t
+              JOIN public.inventory m ON t.malzeme_id = m.id
               WHERE t.durum IN ('AKTIF', 'GECIKTI')
                 AND t.teslim_edilen_tip = 'PERSONEL'
                 AND EXISTS (
@@ -960,26 +966,48 @@ export async function POST(
                     )
                 )
             `, [amirPosta]);
-            
-            if (openAssignmentsRes.rows.length > 0) {
-              return NextResponse.json({
-                error: "❌ Z RAPORU KİLİTLENDİ: Açıkta kalan operasyonel süreçler veya Makine İkmal sevk logları kapatılmadan nöbet devir-teslim raporu mühürlenemez!"
-              }, { status: 400 });
-            }
+            openAssignments = openAssignmentsRes.rows;
           }
         }
 
         // Check for open maintenance logs without eski_sube
         const openMaintenanceRes = await query(`
-          SELECT id FROM public.maintenance_logs
-          WHERE durum IN ('Bakımda', 'Serviste', 'bakımda', 'serviste', 'BAKIMDA', 'SERVİSTE')
-            AND (eski_sube IS NULL OR eski_sube = '')
+          SELECT m.id, m.vehicle_id, m.ariza_seviyesi, m.aciklama, v.plaka
+          FROM public.maintenance_logs m
+          JOIN public.vehicles v ON m.vehicle_id = v.id
+          WHERE m.durum IN ('Bakımda', 'Serviste', 'bakımda', 'serviste', 'BAKIMDA', 'SERVİSTE')
+            AND (m.eski_sube IS NULL OR m.eski_sube = '')
         `);
+        openMaintenance = openMaintenanceRes.rows;
 
-        if (openMaintenanceRes.rows.length > 0) {
-          return NextResponse.json({
-            error: "❌ Z RAPORU KİLİTLENDİ: Açıkta kalan operasyonel süreçler veya Makine İkmal sevk logları kapatılmadan nöbet devir-teslim raporu mühürlenemez!"
-          }, { status: 400 });
+        const hasOpenProcesses = openAssignments.length > 0 || openMaintenance.length > 0;
+
+        if (hasOpenProcesses) {
+          if (!row.force_override) {
+            return NextResponse.json({
+              error: "LOGISTICS_LOCKED",
+              message: "Açıkta kalan lojistik süreçler veya Makine İkmal sevk logları kapatılmadan nöbet devir-teslim raporu mühürlenemez!",
+              assignments: openAssignments,
+              maintenance: openMaintenance
+            }, { status: 400 });
+          } else {
+            // Compile details of open processes
+            let detailsText = "SERHLI DEVIR NOTU:\n";
+            if (openAssignments.length > 0) {
+              detailsText += "Acik Zimmet Kayitlari:\n" + openAssignments.map(a => `- ${a.malzeme_adi} (${a.birim_adi} - ${a.teslim_edilen_tip})`).join("\n") + "\n";
+            }
+            if (openMaintenance.length > 0) {
+              detailsText += "Acik Makine Ikmal Surecleri (Eski Subesi Yok):\n" + openMaintenance.map(m => `- ${m.plaka} (${m.ariza_seviyesi}: ${m.aciklama || ''})`).join("\n");
+            }
+            row.serh_notu = detailsText;
+            row.devir_durumu = 'Serhli';
+            delete row.force_override;
+          }
+        } else {
+          row.devir_durumu = 'Temiz';
+          if (row.hasOwnProperty('force_override')) {
+            delete row.force_override;
+          }
         }
       }
     }

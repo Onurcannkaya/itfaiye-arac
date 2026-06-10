@@ -148,6 +148,11 @@ export default function LogsReportsPage() {
   const [zBascavusNotu, setZBascavusNotu] = useState("")
   const [zDisGorevCount, setZDisGorevCount] = useState(0)
   const [zSubmitting, setZSubmitting] = useState(false)
+  const [overrideData, setOverrideData] = useState<{
+    assignments: any[];
+    maintenance: any[];
+  } | null>(null)
+  const [isOverrideApproved, setIsOverrideApproved] = useState(false)
   const [personnelMap, setPersonnelMap] = useState<Record<string, string>>({})
   const [personnelListForZ, setPersonnelListForZ] = useState<any[]>([])
 
@@ -196,6 +201,8 @@ export default function LogsReportsPage() {
 
   const handleZDateChange = async (dateStr: string) => {
     setSelectedZDate(dateStr)
+    setOverrideData(null)
+    setIsOverrideApproved(false)
     try {
       // 1. Fetch incidents
       const { data: incidents } = await api.from('incidents').select('olay_turu,created_at,ihbar_saati')
@@ -253,7 +260,7 @@ export default function LogsReportsPage() {
     }
   }
 
-  const handleSubmitZReport = async () => {
+  const handleSubmitZReport = async (force: boolean = false) => {
     if (!user) {
       alert("Oturum açık değil.")
       return
@@ -272,14 +279,27 @@ export default function LogsReportsPage() {
         dis_gorev_sayisi: zDisGorevCount,
         arizali_araclar: zBrokenVehicles,
         bascavus_notu: zBascavusNotu,
-        onay_durumu: true
+        onay_durumu: true,
+        force_override: force
       }
       
       const res = await api.insert('daily_summary_reports', zData)
-      if (res.error) throw new Error(res.error)
+      if (res.error) {
+        if (res.error === 'LOGISTICS_LOCKED' || (res.message && res.message.includes('LOGISTICS_LOCKED')) || res.assignments || res.maintenance) {
+          setOverrideData({
+            assignments: res.assignments || [],
+            maintenance: res.maintenance || []
+          });
+          setZSubmitting(false);
+          return;
+        }
+        throw new Error(res.error || res.message)
+      }
       
-      alert("Z Raporu başarıyla mühürlendi ve arşive kaydedildi!")
+      alert(force ? "Z Raporu ŞERHLİ olarak başarıyla mühürlendi ve arşive kaydedildi!" : "Z Raporu başarıyla mühürlendi ve arşive kaydedildi!")
       setZReportModalOpen(false)
+      setOverrideData(null)
+      setIsOverrideApproved(false)
       setZBascavusNotu("")
       fetchDailyReports()
     } catch (err: any) {
@@ -588,6 +608,19 @@ export default function LogsReportsPage() {
     const notText = report.bascavus_notu || "Herhangi bir devir notu eklenmemistir."
     const splitNot = doc.splitTextToSize(tr(notText), rColMaxW - 4)
     doc.text(splitNot, rColX + 3, noteY + 5.5)
+
+    if (report.serh_notu) {
+      const serhY = noteY + 5.5 + splitNot.length * 4.5 + 4
+      doc.setFont("Helvetica", "bold")
+      doc.setFontSize(9.5)
+      doc.setTextColor(180, 83, 9)
+      doc.text("Resmi Devir Serh ve Lojistik Notlari:", rColX + 1, serhY)
+      doc.setFont("Helvetica", "normal")
+      doc.setFontSize(8.5)
+      doc.setTextColor(0)
+      const splitSerh = doc.splitTextToSize(tr(report.serh_notu), rColMaxW - 4)
+      doc.text(splitSerh, rColX + 3, serhY + 5.5)
+    }
 
     // ═══════════════════════════════════════════════
     // ALT BÖLME ÇİZGİSİ
@@ -1578,6 +1611,7 @@ export default function LogsReportsPage() {
                     <th className="px-6 py-4 text-center">Kurtarma (Toplam)</th>
                     <th className="px-6 py-4 text-center">Dış Görev</th>
                     <th className="px-6 py-4">Arızalı Araçlar</th>
+                    <th className="px-6 py-4 text-center">Devir Durumu</th>
                     <th className="px-6 py-4 text-center">İşlemler</th>
                   </tr>
                 </thead>
@@ -1603,6 +1637,17 @@ export default function LogsReportsPage() {
                         {report.arizali_araclar && report.arizali_araclar.length > 0
                           ? report.arizali_araclar.join(', ')
                           : "Yok"}
+                      </td>
+                      <td className="px-6 py-4 text-center align-middle">
+                        {report.devir_durumu === 'Serhli' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 font-mono">
+                            ⚠️ ŞERHLİ
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono">
+                            ✅ TEMİZ
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-center align-middle">
                         <Button
@@ -1635,82 +1680,161 @@ export default function LogsReportsPage() {
             </CardDescription>
           </DialogHeader>
 
-          <div className="space-y-4 my-4 font-sans text-sm">
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">RAPOR TARİHİ</label>
-              <Input
-                type="date"
-                value={selectedZDate}
-                onChange={(e) => handleZDateChange(e.target.value)}
-                className="bg-slate-900 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
-              />
-            </div>
-
-            {/* Aggregated Preview Block */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚒 YANGIN DETAYI</span>
-                <p className="font-bold text-red-400 text-lg mt-0.5">{zFires.total} Yangın</p>
-                <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
-                  Ev: {zFires.ev} | İşyeri: {zFires.isyeri} | Arazi: {zFires.arazi} | Diğer: {zFires.diger}
+          {overrideData ? (
+            <div className="space-y-4 my-4 font-sans text-sm">
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+                <span className="text-amber-500 font-bold text-base flex items-center gap-1.5">
+                  ⚠️ LOJİSTİK AÇIK VE ŞERH BİLDİRİMİ
                 </span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚨 KURTARMA DETAYI</span>
-                <p className="font-bold text-emerald-400 text-lg mt-0.5">{zRescues.total} Kurtarma</p>
-                <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
-                  Kaza: {zRescues.trafik_kazasi} | Su: {zRescues.su_baskini} | Hayvan: {zRescues.hayvan_kurtarma} | Diğer: {zRescues.diger}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/35 border border-slate-800 rounded-xl">
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🔄 GARAJ & ZİMMET SAYISI</span>
-                <p className="font-bold text-cyan-400 text-lg mt-0.5">{zAssignmentsCount} Devir</p>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🛠️ ARIZALI/BAKIMDAKİ ARAÇLAR</span>
-                <p className="font-bold text-amber-500 text-sm mt-1 truncate">
-                  {zBrokenVehicles.length > 0 ? zBrokenVehicles.join(', ') : "Yok"}
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Aşağıda listelenen lojistik süreçler veya Makine İkmal sevk logları henüz kapatılmamıştır.
+                  Nöbeti şerhli mühürlemek için sorumluluk devrini onaylamanız gerekmektedir.
                 </p>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">DIŞ GÖREV PERSONEL SAYISI (MANUEL AYARLA)</label>
-              <Input
-                type="number"
-                min="0"
-                value={zDisGorevCount}
-                onChange={(e) => setZDisGorevCount(Number(e.target.value))}
-                className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
-              />
-            </div>
+              {overrideData.assignments.length > 0 && (
+                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                  <span className="text-xs font-bold text-slate-400 block font-mono">AÇIKTA KALAN GEÇİCİ ZİMMET KAYITLARI</span>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-2">
+                    {overrideData.assignments.map((a: any, idx: number) => (
+                      <div key={idx} className="text-xs text-slate-300 flex justify-between bg-slate-950/50 p-2 rounded-lg border border-white/5">
+                        <span>{a.malzeme_adi}</span>
+                        <span className="text-slate-400 font-mono font-bold">({a.birim_adi} - {a.teslim_edilen_tip})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">BAŞÇAVUŞ NÖBET DEVİR NOTU</label>
-              <textarea
-                rows={3}
-                placeholder="Nöbet teslimi sırasında meydana gelen önemli hususları, telsiz notlarını ve devir şartlarını yazınız..."
-                value={zBascavusNotu}
-                onChange={(e) => setZBascavusNotu(e.target.value)}
-                className="flex w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-              />
+              {overrideData.maintenance.length > 0 && (
+                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                  <span className="text-xs font-bold text-slate-400 block font-mono">AÇIK MAKİNE İKMAL SEVK KAYITLARI (BAKIMDA)</span>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-2">
+                    {overrideData.maintenance.map((m: any, idx: number) => (
+                      <div key={idx} className="text-xs text-slate-300 flex justify-between bg-slate-950/50 p-2 rounded-lg border border-white/5">
+                        <span>{m.plaka} - Araç Bakımda</span>
+                        <span className="text-amber-500 font-bold">{m.ariza_seviyesi}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start gap-2.5 p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="override-approved"
+                  checked={isOverrideApproved}
+                  onChange={(e) => setIsOverrideApproved(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-white/10 bg-slate-950 text-cyan-600 focus:ring-cyan-500/50 cursor-pointer"
+                />
+                <label htmlFor="override-approved" className="text-xs text-slate-300 leading-normal select-none cursor-pointer">
+                  Açıkta kalan lojistik süreçlerin sorumluluğunu yeni postaya devrettiğimi ve raporu şerhli mühürlemek istediğimi onaylıyorum.
+                </label>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4 my-4 font-sans text-sm">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">RAPOR TARİHİ</label>
+                <Input
+                  type="date"
+                  value={selectedZDate}
+                  onChange={(e) => handleZDateChange(e.target.value)}
+                  className="bg-slate-900 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+                />
+              </div>
+
+              {/* Aggregated Preview Block */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚒 YANGIN DETAYI</span>
+                  <p className="font-bold text-red-400 text-lg mt-0.5">{zFires.total} Yangın</p>
+                  <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
+                    Ev: {zFires.ev} | İşyeri: {zFires.isyeri} | Arazi: {zFires.arazi} | Diğer: {zFires.diger}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚨 KURTARMA DETAYI</span>
+                  <p className="font-bold text-emerald-400 text-lg mt-0.5">{zRescues.total} Kurtarma</p>
+                  <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
+                    Kaza: {zRescues.trafik_kazasi} | Su: {zRescues.su_baskini} | Hayvan: {zRescues.hayvan_kurtarma} | Diğer: {zRescues.diger}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/35 border border-slate-800 rounded-xl">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🔄 GARAJ & ZİMMET SAYISI</span>
+                  <p className="font-bold text-cyan-400 text-lg mt-0.5">{zAssignmentsCount} Devir</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🛠️ ARIZALI/BAKIMDAKİ ARAÇLAR</span>
+                  <p className="font-bold text-amber-500 text-sm mt-1 truncate">
+                    {zBrokenVehicles.length > 0 ? zBrokenVehicles.join(', ') : "Yok"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">DIŞ GÖREV PERSONEL SAYISI (MANUEL AYARLA)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={zDisGorevCount}
+                  onChange={(e) => setZDisGorevCount(Number(e.target.value))}
+                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">BAŞÇAVUŞ NÖBET DEVİR NOTU</label>
+                <textarea
+                  rows={3}
+                  placeholder="Nöbet teslimi sırasında meydana gelen önemli hususları, telsiz notlarını ve devir şartlarını yazınız..."
+                  value={zBascavusNotu}
+                  onChange={(e) => setZBascavusNotu(e.target.value)}
+                  className="flex w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                />
+              </div>
+            </div>
+          )}
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setZReportModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
-              İptal
-            </Button>
-            <Button 
-              onClick={handleSubmitZReport} 
-              disabled={zSubmitting}
-              className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
-            >
-              {zSubmitting ? "Mühürleniyor..." : "🏁 Raporu Mühürle & Devret"}
-            </Button>
+            {overrideData ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOverrideData(null);
+                    setIsOverrideApproved(false);
+                  }}
+                  className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200"
+                >
+                  Geri Dön
+                </Button>
+                <Button
+                  onClick={() => handleSubmitZReport(true)}
+                  disabled={zSubmitting || !isOverrideApproved}
+                  className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800/50 disabled:text-slate-500 text-white font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                >
+                  {zSubmitting ? "Mühürleniyor..." : "🔏 Raporu Şerhli Mühürle ve Nöbeti Kapat"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setZReportModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+                  İptal
+                </Button>
+                <Button
+                  onClick={() => handleSubmitZReport(false)}
+                  disabled={zSubmitting}
+                  className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+                >
+                  {zSubmitting ? "Mühürleniyor..." : "🏁 Raporu Mühürle & Devret"}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
