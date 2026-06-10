@@ -1373,10 +1373,14 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
         el.style.cursor = 'pointer'
 
         const typeStr = (veh.arac_tipi || veh.aracTipi || "").toLowerCase();
+        const isMakineIkmal = veh.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)';
         let color = '#10b981'; // Default green for aktif
         let glowClass = 'vehicle-aktif-glow';
         const activeDurum = (veh.durum || "aktif").toLowerCase();
-        if (activeDurum === 'bakimda') {
+        if (isMakineIkmal) {
+          color = '#64748b';
+          glowClass = '';
+        } else if (activeDurum === 'bakimda') {
           color = '#f59e0b';
           glowClass = 'vehicle-bakimda-glow';
         } else if (activeDurum === 'arizali') {
@@ -1385,6 +1389,30 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
         } else if (activeDurum === 'pasif') {
           color = '#64748b';
           glowClass = '';
+        }
+
+        if (isMakineIkmal) {
+          const warningBadge = document.createElement('div');
+          warningBadge.style.cssText = `
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #64748b;
+            border-radius: 4px;
+            font-size: 7.5px;
+            font-weight: 850;
+            padding: 1px 3px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+            font-family: monospace;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+          `;
+          warningBadge.innerText = '🔧 GÖREV DIŞI';
+          el.appendChild(warningBadge);
         }
 
         const innerEl = document.createElement('div')
@@ -1472,7 +1500,8 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
                 <span style="font-size:10.5px;color:#94a3b8;font-weight:600;">${veh.arac_tipi || veh.aracTipi}</span>
               </div>
               <div style="margin-left:auto;display:flex;flex-direction:column;align-items:end;gap:4px;">
-                <span style="font-size:8.5px;font-weight:800;padding:2px 6px;border-radius:9999px;background:${color}15;color:${color};border:1px solid ${color}30;text-transform:uppercase;">${activeDurum}</span>
+                <span style="font-size:8.5px;font-weight:800;padding:2px 6px;border-radius:9999px;background:${color}15;color:${color};border:1px solid ${color}30;text-transform:uppercase;">${isMakineIkmal ? 'GÖREV DIŞI' : activeDurum}</span>
+                ${isMakineIkmal ? `<span style="font-size:8.5px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);margin-top:2px;">🔧 MAKİNE İKMAL</span>` : ''}
                 ${veh.marka ? `<span style="font-size:8.5px;font-weight:800;padding:1px 4px;border-radius:4px;background:rgba(34,211,238,0.1);color:#22d3ee;border:1px solid rgba(34,211,238,0.2);font-family:monospace;">${veh.marka}</span>` : ''}
               </div>
             </div>

@@ -1047,20 +1047,28 @@ function HaritaContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-white/10 rounded-xl bg-slate-950/60 p-2 max-h-[140px] overflow-y-auto">
                   {vehicles.map(v => {
                     const isSelected = selectedVehiclePlakas.includes(v.plaka);
+                    const isMaint = v.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)';
                     return (
                       <label
                         key={v.plaka}
-                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border text-xs ${
-                          isSelected
-                            ? 'bg-danger/10 border-danger/40 text-white'
-                            : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400'
+                        className={`flex items-center justify-between p-2 rounded-lg transition-all border text-xs ${
+                          isMaint
+                            ? 'opacity-40 cursor-not-allowed bg-slate-900 border-transparent text-slate-500'
+                            : isSelected
+                              ? 'bg-danger/10 border-danger/40 text-white cursor-pointer'
+                              : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400 cursor-pointer'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={(e) => handleVehicleToggle(v.plaka, e.target.checked)}
+                            disabled={isMaint}
+                            onChange={(e) => {
+                              if (!isMaint) {
+                                handleVehicleToggle(v.plaka, e.target.checked);
+                              }
+                            }}
                             className="rounded border-slate-700 bg-slate-900 text-danger focus:ring-danger w-3.5 h-3.5"
                           />
                           <div className="flex flex-col">
@@ -1069,11 +1077,13 @@ function HaritaContent() {
                           </div>
                         </div>
                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                          v.durum === 'Bakımda' || v.status === 'maintenance'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          isMaint
+                            ? 'bg-slate-700/30 text-slate-400 border border-slate-600/30'
+                            : v.durum === 'Bakımda' || v.status === 'maintenance'
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         }`}>
-                          {v.durum === 'Bakımda' || v.status === 'maintenance' ? 'BAKIMDA' : 'AKTİF'}
+                          {isMaint ? 'MAKİNE İKMAL' : (v.durum === 'Bakımda' || v.status === 'maintenance') ? 'BAKIMDA' : 'AKTİF'}
                         </span>
                       </label>
                     );

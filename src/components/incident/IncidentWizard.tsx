@@ -966,12 +966,30 @@ export function IncidentWizard({
                           </div>
                         ))
                       ) : (
-                        filteredVehicles.map(v => (
-                          <div key={v.plaka} onClick={() => toggleVehicle(v.plaka)} className={`p-2 text-sm rounded-lg cursor-pointer flex items-center justify-between border ${selectedVehicles.includes(v.plaka) ? 'bg-primary/10 border-primary/30 text-primary font-medium' : 'bg-background hover:bg-surface border-transparent'}`}>
-                            <span>{v.plaka} <span className="text-xs opacity-60 ml-1">({v.arac_tipi})</span></span>
-                            {selectedVehicles.includes(v.plaka) && <CheckCircle2 className="w-4 h-4" />}
-                          </div>
-                        ))
+                        filteredVehicles.map(v => {
+                          const isMaint = v.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)';
+                          return (
+                            <div 
+                              key={v.plaka} 
+                              onClick={() => { if (!isMaint) toggleVehicle(v.plaka); }} 
+                              className={`p-2 text-sm rounded-lg flex items-center justify-between border ${
+                                isMaint 
+                                  ? 'opacity-40 cursor-not-allowed bg-slate-900 border-transparent text-slate-500' 
+                                  : 'cursor-pointer'
+                              } ${
+                                selectedVehicles.includes(v.plaka) 
+                                  ? 'bg-primary/10 border-primary/30 text-primary font-medium' 
+                                  : 'bg-background hover:bg-surface border-transparent'
+                              }`}
+                            >
+                              <span>
+                                {v.plaka} <span className="text-xs opacity-60 ml-1">({v.arac_tipi})</span>
+                                {isMaint && <span className="text-[10px] font-bold text-amber-500 ml-2">🔧 BAKIMDA</span>}
+                              </span>
+                              {selectedVehicles.includes(v.plaka) && <CheckCircle2 className="w-4 h-4" />}
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>

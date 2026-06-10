@@ -27,6 +27,8 @@ export interface Vehicle {
   kopuk_kapasite?: number;
   filo_no?: number | null;
   aciklama?: string;
+  id?: string;
+  current_branch?: string;
 }
 
 

@@ -28,11 +28,13 @@ import {
   Layers,
   FileSpreadsheet,
   Warehouse,
-  HelpCircle
+  HelpCircle,
+  Wrench
 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuthStore } from "@/lib/authStore"
 import { COMPARTMENT_NAMES, APP_BASE_URL } from "@/lib/constants"
+import jsPDF from "jspdf"
 
 
 // ==========================================
@@ -47,6 +49,8 @@ interface Vehicle {
   model?: string;
   filo_no?: number | null;
   aciklama?: string;
+  id?: string;
+  current_branch?: string;
 }
 
 interface InventoryRow {
@@ -123,12 +127,27 @@ function VehicleInventoryTab() {
   const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   
   // Navigation Tabs State
-  const [activeTab, setActiveTab] = useState<"crud" | "matrix">("crud")
+  const [activeTab, setActiveTab] = useState<"crud" | "matrix" | "bakim">("crud")
   
   // Vehicle Selections and Rows
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedPlaka, setSelectedPlaka] = useState<string>("")
   const [tableRows, setTableRows] = useState<InventoryRow[]>([])
+
+  // Fault Reporting & Maintenance Pool States
+  const [arizaModalOpen, setArizaModalOpen] = useState(false)
+  const [arizaSeviyesi, setArizaSeviyesi] = useState<"Hafif" | "Orta" | "Kritik">("Hafif")
+  const [arizaAciklama, setArizaAciklama] = useState("")
+  const [savingAriza, setSavingAriza] = useState(false)
+
+  const [maintenanceLogs, setMaintenanceLogs] = useState<any[]>([])
+  const [loadingMaintenance, setLoadingMaintenance] = useState(false)
+
+  const [returnModalOpen, setReturnModalOpen] = useState(false)
+  const [selectedReturnVeh, setSelectedReturnVeh] = useState<any>(null)
+  const [returnBranch, setReturnBranch] = useState("Merkez")
+  const [bakimNotu, setBakimNotu] = useState("")
+  const [savingReturn, setSavingReturn] = useState(false)
 
   // Temporary Assignment States
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
@@ -349,6 +368,275 @@ function VehicleInventoryTab() {
     const slug = plaka.replace(/\s+/g, "-").toLowerCase();
     const compKey = getCompartmentKey(compartmentLabel);
     return `${APP_BASE_URL}/arac/${slug}/${compKey}`;
+  };
+
+  // Turkish character encoding cleaning helper for jsPDF Helvetica font compatibility
+  const cleanTurkishChars = (str: string): string => {
+    if (!str) return "";
+    const map: Record<string, string> = {
+      'ş': 's', 'Ş': 'S',
+      'ğ': 'g', 'Ğ': 'G',
+      'ı': 'i', 'İ': 'I',
+      'ö': 'o', 'Ö': 'O',
+      'ü': 'u', 'Ü': 'U',
+      'ç': 'c', 'Ç': 'C'
+    };
+    return str.replace(/[şŞğĞıİöÖüÜçÇ]/g, m => map[m] || m);
+  };
+
+  const loadMaintenanceLogs = async () => {
+    try {
+      setLoadingMaintenance(true)
+      const { data: logs } = await api.from('maintenance_logs').select('*')
+      if (logs) {
+        const sorted = [...logs].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        setMaintenanceLogs(sorted)
+      } else {
+        setMaintenanceLogs([])
+      }
+    } catch (err) {
+      console.error("Bakim loglari yuklenirken hata:", err)
+    } finally {
+      setLoadingMaintenance(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "bakim") {
+      loadMaintenanceLogs();
+    }
+  }, [activeTab])
+
+  const handleSaveAriza = async () => {
+    if (!selectedPlaka) return;
+    if (!arizaAciklama.trim()) {
+      alert("Lütfen arıza açıklamasını girin.");
+      return;
+    }
+
+    try {
+      setSavingAriza(true);
+      const targetVehicle = vehicles.find(v => v.plaka === selectedPlaka);
+      if (!targetVehicle) {
+        alert("Araç bulunamadı.");
+        return;
+      }
+
+      // 1. Insert into maintenance_logs
+      const logData = {
+        vehicle_id: targetVehicle.id,
+        ariza_seviyesi: arizaSeviyesi,
+        aciklama: arizaAciklama.trim(),
+        durum: 'Bakımda',
+        eski_sube: targetVehicle.current_branch || 'Merkez'
+      };
+
+      const res = await api.insert('maintenance_logs', logData);
+      if (res.error) throw new Error(res.error);
+
+      // 2. If Critical level, redirect vehicle to Makine Ikmal virtual branch
+      if (arizaSeviyesi === 'Kritik') {
+        const { error: updateErr } = await api.update('vehicles', {
+          current_branch: 'Makine İkmal Müdürlüğü (Bakım-Onarım)',
+          status: 'maintenance'
+        }, { plaka: selectedPlaka });
+        if (updateErr) throw updateErr;
+      }
+
+      // 3. Save audit log
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'ariza_bildirim',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: selectedPlaka,
+          details: {
+            ariza_seviyesi: arizaSeviyesi,
+            aciklama: arizaAciklama.trim(),
+            moved_to_maintenance: arizaSeviyesi === 'Kritik'
+          },
+        }),
+      }).catch(err => console.error('[AuditLog] Ariza logu gonderilemedi:', err));
+
+      alert("Arıza kaydı başarıyla oluşturuldu.");
+      setArizaModalOpen(false);
+      setArizaAciklama("");
+      setArizaSeviyesi("Hafif");
+      loadAllData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Hata oluştu: " + err.message);
+    } finally {
+      setSavingAriza(false);
+    }
+  };
+
+  const handleOpenReturnModal = (item: any) => {
+    setSelectedReturnVeh(item);
+    setReturnBranch(item.log?.eski_sube || 'Merkez');
+    setBakimNotu('');
+    setReturnModalOpen(true);
+  };
+
+  const handleSaveReturn = async () => {
+    if (!selectedReturnVeh) return;
+    try {
+      setSavingReturn(true);
+      const { vehicle, log } = selectedReturnVeh;
+
+      // 1. Update vehicle branch and status
+      const { error: updateErr } = await api.update('vehicles', {
+        current_branch: returnBranch,
+        status: 'active'
+      }, { plaka: vehicle.plaka });
+      if (updateErr) throw updateErr;
+
+      // 2. Update log status and note
+      if (log?.id) {
+        const { error: logErr } = await api.update('maintenance_logs', {
+          durum: 'Tamamlandı',
+          bakim_notu: bakimNotu.trim(),
+          "bakım_notu": bakimNotu.trim()
+        }, { id: log.id });
+        if (logErr) throw logErr;
+      }
+
+      // 3. Save audit log
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'arac_bakim_tamamlandi',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: vehicle.plaka,
+          details: {
+            returned_branch: returnBranch,
+            bakim_notu: bakimNotu.trim(),
+            log_id: log?.id
+          },
+        }),
+      }).catch(err => console.error('[AuditLog] Bakim tamamlandi logu gonderilemedi:', err));
+
+      alert("Araç başarıyla taburcu edildi ve şubesine atandı.");
+      setReturnModalOpen(false);
+      loadAllData();
+      loadMaintenanceLogs();
+    } catch (err: any) {
+      console.error(err);
+      alert("Taburcu edilirken hata oluştu: " + err.message);
+    } finally {
+      setSavingReturn(false);
+    }
+  };
+
+  const handlePrintServiceForm = (item: any) => {
+    const { vehicle, log } = item;
+    const plaka = vehicle.plaka;
+    const filoNo = vehicle.filo_no ? `${vehicle.filo_no} NOLU` : "";
+    const aracTipi = vehicle.arac_tipi || "";
+    const aciklama = vehicle.aciklama || "";
+    
+    const arizaSeviyesi = log?.ariza_seviyesi || "Kritik";
+    const arizaAciklama = log?.aciklama || "Belirtilmemiş";
+    const eskiSube = log?.eski_sube || vehicle.current_branch || "Merkez";
+    const girisTarihi = log?.created_at ? new Date(log.created_at).toLocaleString("tr-TR") : new Date().toLocaleString("tr-TR");
+    
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    // Outer border frame
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(1);
+    doc.rect(10, 10, 190, 277);
+    doc.rect(11.5, 11.5, 187, 274);
+
+    // Header Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(cleanTurkishChars("T.C."), 105, 22, { align: "center" });
+    doc.text(cleanTurkishChars("SİVAS BELEDİYE BAŞKANLIĞI"), 105, 29, { align: "center" });
+    doc.setFontSize(12);
+    doc.text(cleanTurkishChars("İtfaiye Müdürlüğü (Makine İkmal Şefliği)"), 105, 36, { align: "center" });
+    
+    doc.setLineWidth(0.5);
+    doc.line(15, 42, 195, 42);
+    doc.line(15, 43, 195, 43);
+
+    // Form Subject
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text(cleanTurkishChars("ARAÇ BAKIM VE SERVİS TALEP FORMU"), 105, 52, { align: "center" });
+
+    // Metadata Table
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    let y = 65;
+    const drawRow = (label: string, value: string) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(cleanTurkishChars(label) + ":", 20, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(cleanTurkishChars(value), 65, y);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, y + 2, 190, y + 2);
+      y += 10;
+    };
+
+    drawRow("Araç Plakası", plaka);
+    drawRow("Filo No / Açıklama", `${filoNo} ${aciklama} (${aracTipi})`);
+    drawRow("Gönderen Şube / Birim", eskiSube);
+    drawRow("Arıza Seviyesi", arizaSeviyesi);
+    drawRow("Giriş Tarihi / Saat", girisTarihi);
+
+    // Fault description multi-line box
+    doc.setFont("helvetica", "bold");
+    doc.text(cleanTurkishChars("Arıza / Bakım Açıklaması:"), 20, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    
+    const splitText = doc.splitTextToSize(cleanTurkishChars(arizaAciklama), 165);
+    doc.text(splitText, 20, y);
+    
+    y += splitText.length * 5 + 10;
+    
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(15, y, 195, y);
+    y += 10;
+
+    // Directives Section
+    doc.setFont("helvetica", "bold");
+    doc.text(cleanTurkishChars("MAKİNE İKMAL MÜDÜRLÜĞÜ İNCELEME NOTLARI:"), 20, y);
+    y += 8;
+    
+    // Draw an empty box for physical notes
+    doc.setDrawColor(180, 180, 180);
+    doc.rect(20, y, 170, 40);
+    
+    y += 50;
+
+    // Signatures Section
+    const imzaY = y + 10;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    
+    doc.text(cleanTurkishChars("TESLİM EDEN"), 45, imzaY, { align: "center" });
+    doc.text(cleanTurkishChars("İstasyon Amiri / Personel"), 45, imzaY + 5, { align: "center" });
+    
+    doc.text(cleanTurkishChars("TESLİM ALAN"), 150, imzaY, { align: "center" });
+    doc.text(cleanTurkishChars("Makine İkmal Yetkilisi"), 150, imzaY + 5, { align: "center" });
+    
+    doc.setFont("helvetica", "normal");
+    doc.text("İmza: ........................", 45, imzaY + 20, { align: "center" });
+    doc.text("İmza: ........................", 150, imzaY + 20, { align: "center" });
+
+    doc.save(`Servis_Talep_Formu_${plaka.replace(/\s+/g, "_")}.pdf`);
   };
 
   // Initial load
@@ -649,13 +937,33 @@ function VehicleInventoryTab() {
     }, 400)
   }
 
+  // Maintenance Plakas set
+  const maintenancePlakas = useMemo(() => {
+    return new Set(
+      vehicles
+        .filter(v => v.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)')
+        .map(v => v.plaka)
+    );
+  }, [vehicles]);
+
+  const activeMaintenanceList = useMemo(() => {
+    const maintenanceVehicles = vehicles.filter(v => v.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)');
+    return maintenanceVehicles.map(v => {
+      const latestLog = maintenanceLogs.find(log => log.vehicle_id === v.id && log.durum === 'Bakımda');
+      return {
+        vehicle: v,
+        log: latestLog
+      };
+    });
+  }, [vehicles, maintenanceLogs]);
+
   // S.T.O.K Sheet vehicle columns extract (Excluding GARAJ to put in separate section)
   const vehicleColumns = useMemo(() => {
     const set = new Set(allVehicleInventory.map(item => item.plaka));
     return Array.from(set)
-      .filter(plaka => plaka !== "GARAJ")
+      .filter(plaka => plaka !== "GARAJ" && !maintenancePlakas.has(plaka))
       .sort((a, b) => a.localeCompare(b, 'tr'));
-  }, [allVehicleInventory]);
+  }, [allVehicleInventory, maintenancePlakas]);
 
   // General stock matrix client-side Excel CSV exporter (includes vehicle columns)
   const exportStockMatrixToCSV = () => {
@@ -678,7 +986,7 @@ function VehicleInventoryTab() {
       });
 
       const vehicleSum = Object.entries(vehicleCountMap)
-        .filter(([plaka]) => plaka !== "GARAJ")
+        .filter(([plaka]) => plaka !== "GARAJ" && !maintenancePlakas.has(plaka))
         .reduce((sum, [_, val]) => sum + val, 0);
 
       const liveTotal = (item.merkez || 0) + (item.esentepe || 0) + (item.organize || 0) + (item.depo || 0) + vehicleSum;
@@ -808,6 +1116,12 @@ function VehicleInventoryTab() {
           >
             📊 Genel Stok & Sorgu Matrisi
           </button>
+          <button
+            onClick={() => setActiveTab("bakim")}
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "bakim" ? "bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-slate-200"}`}
+          >
+            🔧 Makine İkmal / Bakım Havuzu
+          </button>
         </div>
 
         {/* Dynamic Display Tab Body */}
@@ -894,6 +1208,12 @@ function VehicleInventoryTab() {
                       className="h-11 px-5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-extrabold rounded-xl text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 w-full sm:w-auto font-sans shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_-3px_rgba(16,185,129,0.3)]"
                     >
                       💾 Bilgiyi Güncelle
+                    </button>
+                    <button
+                      onClick={() => setArizaModalOpen(true)}
+                      className="h-11 px-5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 font-extrabold rounded-xl text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 w-full sm:w-auto font-sans shadow-[0_0_15px_-3px_rgba(249,115,22,0.15)] hover:shadow-[0_0_20px_-3px_rgba(249,115,22,0.3)]"
+                    >
+                      ⚠️ Arıza Bildir
                     </button>
                   </CardContent>
                 </Card>
@@ -1066,7 +1386,7 @@ function VehicleInventoryTab() {
                 </Card>
               )}
             </div>
-          ) : (
+          ) : activeTab === "matrix" ? (
             
             /* ════════════════ TAB 2: GENERAL STOCK MATRIX ════════════════ */
             <div className="space-y-6">
@@ -1208,7 +1528,7 @@ function VehicleInventoryTab() {
 
                             // Quantities sum of active vehicle columns (excluding GARAJ)
                             const activeVehicleSum = Object.entries(vehicleCountMap)
-                              .filter(([plaka]) => plaka !== "GARAJ")
+                              .filter(([plaka]) => plaka !== "GARAJ" && !maintenancePlakas.has(plaka))
                               .reduce((sum, [_, val]) => sum + val, 0);
 
                             // Calculate dynamically verified absolute total
@@ -1338,6 +1658,154 @@ function VehicleInventoryTab() {
               </Card>
 
             </div>
+          ) : (
+            /* ════════════════ TAB 3: MAKİNE İKMAL / BAKIM HAVUZU ════════════════ */
+            <div className="space-y-6 animate-in fade-in duration-200">
+              {/* Header Info */}
+              <div className="flex justify-between items-center bg-slate-900/35 border border-slate-800/80 p-5 rounded-2xl">
+                <div>
+                  <h3 className="text-base font-bold text-slate-200 flex items-center gap-2">
+                    <Wrench className="w-5 h-5 text-orange-500 animate-spin" style={{ animationDuration: '6s' }} />
+                    <span>Makine İkmal Bakım Havuzu</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Şu anda serviste/bakımda olan ve vaka sevkine kapatılmış aktif itfaiye araçlarının lojistik takibi.
+                  </p>
+                </div>
+                <div className="font-mono bg-orange-500/10 text-orange-400 border border-orange-500/25 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">
+                  Bakımdaki Araç: {activeMaintenanceList.length} Adet
+                </div>
+              </div>
+
+              {/* Maintenance Vehicles List Card */}
+              <Card className="bg-slate-950/75 border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
+                <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
+                  <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-cyan-400" />
+                    <span>Bakım Havuzundaki Araçlar</span>
+                  </CardTitle>
+                  <button 
+                    onClick={loadMaintenanceLogs}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors border border-white/5"
+                    title="Yenile"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {loadingMaintenance ? (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                      <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                      <p className="text-slate-500 font-mono text-xs">Bakım havuzu listesi güncelleniyor...</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-sm min-w-[900px]">
+                        <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
+                          <tr>
+                            <th className="px-5 py-3.5 text-left font-semibold">ARAÇ BİLGİSİ</th>
+                            <th className="px-5 py-3.5 text-left font-semibold">ARIZA SEVİYESİ</th>
+                            <th className="px-5 py-3.5 text-left font-semibold">ARIZA / BAKIM DETAYI</th>
+                            <th className="px-5 py-3.5 text-center font-semibold w-36">SEVK TARİHİ</th>
+                            <th className="px-5 py-3.5 text-center font-semibold w-36">ÖNCEKİ ŞUBESİ</th>
+                            <th className="px-5 py-3.5 text-center font-semibold w-64">İŞLEMLER</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 font-medium">
+                          {activeMaintenanceList.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                                Şu anda bakım havuzunda araç bulunmamaktadır. Tüm itfaiye filosu aktiftir.
+                              </td>
+                            </tr>
+                          ) : (
+                            activeMaintenanceList.map((item) => {
+                              const { vehicle, log } = item;
+                              const isCritical = log?.ariza_seviyesi === 'Kritik';
+                              
+                              return (
+                                <tr key={vehicle.plaka} className="hover:bg-white/5 transition-colors duration-150">
+                                  
+                                  {/* Araç Plaka & Filo */}
+                                  <td className="px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                      {renderPlateHeader(vehicle.plaka)}
+                                      <div className="flex flex-col">
+                                        <span className="text-slate-300 text-xs font-bold">
+                                          {vehicle.filo_no ? `${vehicle.filo_no} No` : 'Filo No Yok'}
+                                        </span>
+                                        <span className="text-[10px] text-slate-500 font-mono">
+                                          {vehicle.aciklama || 'Çağrı adı girilmemiş'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {/* Arıza Seviyesi */}
+                                  <td className="px-5 py-4 align-middle">
+                                    <Badge 
+                                      className={`font-black font-mono text-[9px] px-2.5 py-1 rounded-md ${
+                                        isCritical 
+                                          ? 'bg-red-500/10 text-red-400 border border-red-500/25 animate-pulse' 
+                                          : log?.ariza_seviyesi === 'Orta' 
+                                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/25' 
+                                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/25'
+                                      }`}
+                                    >
+                                      {log?.ariza_seviyesi || 'Kritik'}
+                                    </Badge>
+                                  </td>
+
+                                  {/* Arıza Açıklaması */}
+                                  <td className="px-5 py-4 max-w-[280px] truncate align-middle text-slate-300" title={log?.aciklama}>
+                                    {log?.aciklama || 'Açıklama girilmemiş.'}
+                                  </td>
+
+                                  {/* Sevk Tarihi */}
+                                  <td className="px-5 py-4 text-center font-mono text-xs text-slate-400 align-middle">
+                                    {log?.created_at ? new Date(log.created_at).toLocaleDateString("tr-TR") : '—'}
+                                  </td>
+
+                                  {/* Önceki Şubesi */}
+                                  <td className="px-5 py-4 text-center font-mono text-xs text-slate-400 align-middle">
+                                    {log?.eski_sube || 'Merkez'}
+                                  </td>
+
+                                  {/* İşlemler */}
+                                  <td className="px-5 py-4 text-center align-middle">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button
+                                        onClick={() => handlePrintServiceForm(item)}
+                                        className="h-10 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/5 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all min-h-[44px]"
+                                        title="Servis Formu (PDF) İndir"
+                                      >
+                                        <Printer className="w-4 h-4 text-orange-400" />
+                                        Servis Formu
+                                      </button>
+                                      {canEdit && (
+                                        <button
+                                          onClick={() => handleOpenReturnModal(item)}
+                                          className="h-10 px-3 bg-emerald-600/10 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 rounded-lg flex items-center justify-center gap-1.5 text-xs font-black transition-all min-h-[44px]"
+                                          title="Göreve İade Et / Taburcu Et"
+                                        >
+                                          <Inbox className="w-4 h-4 text-emerald-400" />
+                                          Taburcu Et
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                </tr>
+                              )
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )
         )}
 
@@ -1377,6 +1845,123 @@ function VehicleInventoryTab() {
              </div>
           </div>
         )}
+
+        {/* --- Fault Report Modal --- */}
+        <Dialog open={arizaModalOpen} onOpenChange={setArizaModalOpen}>
+          <DialogContent className="max-w-md bg-slate-950 border border-slate-800/80 shadow-[0_0_30px_rgba(249,115,22,0.15)] text-slate-100 p-6 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-orange-500 font-sans">
+                <span>⚠️ Arıza Bildirim Formu</span>
+              </DialogTitle>
+              <p className="text-xs text-slate-400 mt-1 font-sans">
+                Seçili araç ({selectedPlaka}) için arıza kaydı oluşturun. Kritik seviye araçları doğrudan Makine İkmal'e çeker.
+              </p>
+            </DialogHeader>
+
+            <div className="space-y-4 my-4 font-sans text-sm">
+              <div className="bg-slate-900/60 border border-slate-800 p-3 rounded-xl">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">ARIZA BİLDİRİLECEK ARAÇ</span>
+                <p className="font-bold text-slate-200 mt-0.5 font-mono">{selectedPlaka}</p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">ARIZA SEVİYESİ</label>
+                <select
+                  value={arizaSeviyesi}
+                  onChange={(e) => setArizaSeviyesi(e.target.value as any)}
+                  className="w-full h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-semibold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer"
+                >
+                  <option value="Hafif">Hafif (Göreve Engel Değil)</option>
+                  <option value="Orta">Orta (Kısmi Engel / Gözetim)</option>
+                  <option value="Kritik">Kritik (Görev Dışı - Makine İkmal Sevk)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">ARIZA AÇIKLAMASI</label>
+                <textarea
+                  placeholder="Arıza detaylarını, belirtilerini ve tespitleri buraya yazın..."
+                  value={arizaAciklama}
+                  onChange={(e) => setArizaAciklama(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 font-sans">
+              <Button variant="outline" onClick={() => setArizaModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+                İptal
+              </Button>
+              <Button onClick={handleSaveAriza} disabled={savingAriza} className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white font-bold shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                {savingAriza ? "Kaydediliyor..." : "Arıza Kaydını Aç"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* --- Return Vehicle from Maintenance Modal --- */}
+        <Dialog open={returnModalOpen} onOpenChange={setReturnModalOpen}>
+          <DialogContent className="max-w-md bg-slate-950 border border-slate-800/80 shadow-[0_0_30px_rgba(16,185,129,0.15)] text-slate-100 p-6 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-emerald-500 font-sans">
+                <span>🔧 Araç Taburcu ve Atama Formu</span>
+              </DialogTitle>
+              <p className="text-xs text-slate-400 mt-1 font-sans">
+                Seçili aracı ({selectedReturnVeh?.vehicle?.plaka}) bakım/servis sürecinden çıkarıp şubesine atayın.
+              </p>
+            </DialogHeader>
+
+            <div className="space-y-4 my-4 font-sans text-sm">
+              <div className="bg-slate-900/60 border border-slate-800 p-3 rounded-xl">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">TABURCU EDİLECEK ARAÇ</span>
+                <p className="font-bold text-slate-200 mt-0.5 font-mono">
+                  {selectedReturnVeh?.vehicle?.plaka} ({selectedReturnVeh?.vehicle?.arac_tipi || 'itfaiye aracı'})
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">ÖNCEKİ ŞUBESİ (KAYITLI)</label>
+                <p className="font-mono text-slate-300 font-bold bg-slate-900 px-3 py-2 rounded-xl border border-white/5">
+                  {selectedReturnVeh?.log?.eski_sube || 'Belirtilmemiş (Varsayılan: Merkez)'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">ATANACAK AKTİF ŞUBE</label>
+                <select
+                  value={returnBranch}
+                  onChange={(e) => setReturnBranch(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-semibold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
+                >
+                  <option value="Merkez">Merkez Şubesi</option>
+                  <option value="Esentepe">Esentepe Şubesi</option>
+                  <option value="OSB">OSB Şubesi</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">BAKIM / ONARIM NOTU</label>
+                <textarea
+                  placeholder="Yapılan işlemler, değiştirilen parçalar ve test sonuçlarını buraya yazın..."
+                  value={bakimNotu}
+                  onChange={(e) => setBakimNotu(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 font-sans">
+              <Button variant="outline" onClick={() => setReturnModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+                İptal
+              </Button>
+              <Button onClick={handleSaveReturn} disabled={savingReturn} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                {savingReturn ? "Kaydediliyor..." : "Taburcu Et ve Göreve Ver"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* --- Temporary Assignment Modal --- */}
         <Dialog open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen}>

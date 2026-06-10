@@ -259,6 +259,11 @@ async function ensureDailySummaryReportsTableExists() {
 
 async function ensureVehicleColumnsExist() {
   try {
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS id UUID UNIQUE DEFAULT gen_random_uuid();`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS current_branch VARCHAR DEFAULT 'Merkez';`);
+    await query(`UPDATE public.vehicles SET current_branch = 'Esentepe' WHERE (current_branch IS NULL OR current_branch = 'Merkez') AND (istasyon LIKE '%Esentepe%');`);
+    await query(`UPDATE public.vehicles SET current_branch = 'OSB' WHERE (current_branch IS NULL OR current_branch = 'Merkez') AND (istasyon LIKE '%Organize%' OR istasyon LIKE '%OSB%');`);
+    
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS marka VARCHAR;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS istasyon TEXT;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS yil INTEGER;`);
@@ -278,6 +283,36 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS aciklama VARCHAR;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
+  }
+}
+
+async function ensureMaintenanceLogsTableExists() {
+  try {
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS id UUID UNIQUE DEFAULT gen_random_uuid();`);
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.maintenance_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE CASCADE,
+        ariza_seviyesi VARCHAR,
+        aciklama TEXT,
+        bakim_notu TEXT,
+        "bakım_notu" TEXT,
+        bildiren_personel_id UUID REFERENCES public.personnel(id) ON DELETE SET NULL,
+        durum VARCHAR DEFAULT 'Bakımda',
+        eski_sube VARCHAR,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE CASCADE;`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS ariza_seviyesi VARCHAR;`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS aciklama TEXT;`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS bakim_notu TEXT;`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS "bakım_notu" TEXT;`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS bildiren_personel_id UUID REFERENCES public.personnel(id) ON DELETE SET NULL;`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS durum VARCHAR DEFAULT 'Bakımda';`);
+    await query(`ALTER TABLE public.maintenance_logs ADD COLUMN IF NOT EXISTS eski_sube VARCHAR;`);
+  } catch (err) {
+    console.error('ensureMaintenanceLogsTableExists hatası:', err);
   }
 }
 
@@ -677,6 +712,9 @@ export async function GET(
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
     }
+    if (table === 'maintenance_logs') {
+      await ensureMaintenanceLogsTableExists();
+    }
     if (table === 'blacklist_institutions') {
       await ensureBlacklistInstitutionsTableExists();
     }
@@ -776,6 +814,9 @@ export async function POST(
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
+    }
+    if (table === 'maintenance_logs') {
+      await ensureMaintenanceLogsTableExists();
     }
     if (table === 'blacklist_institutions') {
       await ensureBlacklistInstitutionsTableExists();
@@ -932,6 +973,9 @@ export async function PATCH(
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
+    }
+    if (table === 'maintenance_logs') {
+      await ensureMaintenanceLogsTableExists();
     }
     if (table === 'blacklist_institutions') {
       await ensureBlacklistInstitutionsTableExists();
@@ -1110,6 +1154,9 @@ export async function DELETE(
     }
     if (table === 'arac_bakim_gecmisi') {
       await ensureAracBakimGecmisiTableExists();
+    }
+    if (table === 'maintenance_logs') {
+      await ensureMaintenanceLogsTableExists();
     }
 
     const { searchParams } = new URL(request.url);
