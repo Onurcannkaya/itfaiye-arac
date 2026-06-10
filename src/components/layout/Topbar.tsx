@@ -18,6 +18,21 @@ interface NotificationItem {
   actionUrl?: string
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export function Topbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
   const router = useRouter()
@@ -29,9 +44,20 @@ export function Topbar() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false)
 
   const [readIds, setReadIds] = useState<string[]>([])
   const [deletedIds, setDeletedIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && user) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager.getSubscription().then(sub => {
+          setIsPushSubscribed(!!sub);
+        }).catch(err => console.error('Subscription check error:', err));
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,6 +78,54 @@ export function Topbar() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  const handlePushToggle = async () => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Bu tarayıcı anlık bildirimleri desteklemiyor.');
+      return;
+    }
+
+    try {
+      if (isPushSubscribed) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+        }
+        if (user?.sicilNo) {
+          await api.update('personnel', { push_subscription_token: null }, { sicil_no: user.sicilNo });
+        }
+        setIsPushSubscribed(false);
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Bildirim izni reddedildi. Lütfen tarayıcı ayarlarından bildirim iznini etkinleştirin.');
+        return;
+      }
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array('BGijonw6gf_TxWXTfukZCAc_bHPYE11lBPQF6CvGiVuAis5tVPiCFZ0A1y9Q7E7yV9fjiw5JnJWBQsun_Jj7PYM')
+      });
+
+      if (user?.sicilNo) {
+        const subJson = JSON.stringify(sub);
+        const res = await api.update('personnel', { push_subscription_token: subJson }, { sicil_no: user.sicilNo });
+        if (res.error) {
+          console.error('Push token save error:', res.error);
+          alert('Bildirim aboneliği kaydedilemedi: ' + res.error);
+        } else {
+          setIsPushSubscribed(true);
+        }
+      }
+    } catch (err) {
+      console.error('Push bildirim abonelik hatası:', err);
+      alert('Bildirim aboneliği oluşturulurken bir hata oluştu.');
+    }
+  };
 
   // Helper to determine notification triage styling
   const getNotificationTriage = (item: NotificationItem) => {
@@ -608,6 +682,16 @@ export function Topbar() {
                     <Key className="w-4 h-4" />
                     <span>Şifremi Değiştir</span>
                   </Link>
+                  <button 
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      handlePushToggle();
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                  >
+                    <Bell className={`w-4 h-4 ${isPushSubscribed ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
+                    <span>{isPushSubscribed ? 'Canlı Bildirimleri Kapat' : 'Canlı İhbar Bildirimlerini Aç'}</span>
+                  </button>
                   <button 
                     onClick={() => {
                       setIsProfileOpen(false)

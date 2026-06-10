@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Personel bulunamadı." }, { status: 404 });
       }
 
+
       // Fetch incident records for this personnel member
       const rows = await queryMany(`
         SELECT i.olay_turu, COUNT(ip.id) as count
@@ -34,13 +35,21 @@ export async function GET(request: NextRequest) {
         GROUP BY i.olay_turu
       `, [personnelId]);
 
+      // Fetch external missions count for this personnel member
+      const extMissionsCount = await queryOne(`
+        SELECT COUNT(*)::integer as count
+        FROM public.external_missions
+        WHERE $1 = ANY(sicil_nos)
+      `, [personnelId]);
+      const extCount = Number(extMissionsCount?.count || 0);
+
       const categories = {
         "Yangın Müdahale": 0,
         "Kurtarma Operasyonu": 0,
-        "Dış Görev": 0
+        "Dış Görev": extCount
       };
 
-      let totalMissions = 0;
+      let totalMissions = extCount;
       for (const row of rows) {
         const type = (row.olay_turu || "").toLowerCase();
         const count = Number(row.count || 0);
@@ -89,13 +98,21 @@ export async function GET(request: NextRequest) {
           p.istasyon,
           p.aktif,
           p.durum,
-          COUNT(ip.id) as total_missions
+          (
+            SELECT COUNT(*)::integer
+            FROM public.incident_personnel ip
+            JOIN public.incidents i ON ip.incident_id = i.id
+            WHERE ip.sicil_no = p.sicil_no 
+              AND (i.cikis_saati >= NOW() - INTERVAL '30 days' OR i.created_at >= NOW() - INTERVAL '30 days')
+          ) + (
+            SELECT COUNT(*)::integer
+            FROM public.external_missions em
+            WHERE p.sicil_no = ANY(em.sicil_nos)
+              AND (em.cikis_tarihi >= NOW() - INTERVAL '30 days' OR em.created_at >= NOW() - INTERVAL '30 days')
+          ) as total_missions
         FROM public.personnel p
-        LEFT JOIN public.incident_personnel ip ON p.sicil_no = ip.sicil_no
-        LEFT JOIN public.incidents i ON ip.incident_id = i.id 
-          AND (i.cikis_saati >= NOW() - INTERVAL '30 days' OR i.created_at >= NOW() - INTERVAL '30 days')
-        WHERE p.aktif = true OR p.aktif IS NULL
-        GROUP BY p.sicil_no, p.ad, p.soyad, p.unvan, p.istasyon, p.aktif, p.durum
+        WHERE (p.aktif = true OR p.aktif IS NULL)
+          AND p.unvan IN ('Er', 'Şoför', 'Baş Şoför', 'Pos.Baş.Şof.')
         ORDER BY total_missions ASC, p.ad ASC, p.soyad ASC
       `);
 

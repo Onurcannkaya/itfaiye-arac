@@ -170,3 +170,55 @@ self.addEventListener('message', (event) => {
     });
   }
 });
+
+// ---- WEB PUSH NOTIFICATIONS ----
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'Canlı İhbar Bildirimi',
+    body: 'Yeni bir acil durum vakası sevk edildi!',
+    url: 'https://maps.google.com/'
+  };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = {
+        title: 'Canlı İhbar Bildirimi',
+        body: event.data.text(),
+        url: 'https://maps.google.com/'
+      };
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: '/logo-itfaiye.png',
+    badge: '/logo-itfaiye.png',
+    vibrate: [100, 50, 100, 50, 200, 100, 300],
+    data: {
+      url: data.url
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : 'https://maps.google.com/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // For external maps link, opening a new window is always preferred
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+

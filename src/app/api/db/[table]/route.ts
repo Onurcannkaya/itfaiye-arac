@@ -1,6 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionFromRequest, AuthError, hashPassword } from '@/lib/auth';
+import webpush from 'web-push';
+
+const vapidPublicKey = 'BGijonw6gf_TxWXTfukZCAc_bHPYE11lBPQF6CvGiVuAis5tVPiCFZ0A1y9Q7E7yV9fjiw5JnJWBQsun_Jj7PYM';
+const vapidPrivateKey = 'ZAuqCRNE2BJ2pH7RvajHaRkTkmzwFRFcN4wik2mpU4I';
+
+webpush.setVapidDetails(
+  'mailto:sivas-itfaiye@sivas.bel.tr',
+  vapidPublicKey,
+  vapidPrivateKey
+);
+
+async function sendIncidentPushNotifications(incidentId: string, assignedSicilNos: string[]) {
+  try {
+    const locRes = await query(`
+      SELECT ST_X(location::geometry) AS lng, ST_Y(location::geometry) AS lat, olay_turu, mahalle, adres 
+      FROM public.incidents 
+      WHERE id = $1
+    `, [incidentId]);
+
+    let lat = 39.750;
+    let lng = 37.016;
+    let olayTuru = 'Yangın';
+    let mahalle = 'Bilinmeyen Mahalle';
+    let adres = '';
+
+    if (locRes.rows[0]) {
+      const row = locRes.rows[0];
+      lng = row.lng !== null && row.lng !== undefined ? parseFloat(row.lng) : 37.016;
+      lat = row.lat !== null && row.lat !== undefined ? parseFloat(row.lat) : 39.750;
+      olayTuru = row.olay_turu || 'Yangın';
+      mahalle = row.mahalle || 'Bilinmeyen Mahalle';
+      adres = row.adres || '';
+    }
+
+    const title = `🚨 CANLI İHBAR: ${olayTuru}`;
+    const body = `Yeni Sevk: ${mahalle} Mah. ${adres ? `- ${adres}` : ''}`;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+    const personnelQuery = `
+      SELECT sicil_no, push_subscription_token
+      FROM public.personnel
+      WHERE (sicil_no = ANY($1) 
+         OR rol IN ('Amir', 'Müdür') 
+         OR unvan ILIKE '%amir%' 
+         OR unvan ILIKE '%müdür%' 
+         OR unvan ILIKE '%çavuş%')
+        AND push_subscription_token IS NOT NULL
+    `;
+    const tokenRes = await query(personnelQuery, [assignedSicilNos]);
+
+    for (const pRow of tokenRes.rows) {
+      if (!pRow.push_subscription_token) continue;
+      try {
+        const subscription = JSON.parse(pRow.push_subscription_token);
+        const payload = JSON.stringify({
+          title,
+          body,
+          url: mapsUrl
+        });
+        await webpush.sendNotification(subscription, payload);
+      } catch (err) {
+        console.error(`[WebPush] Gönderim hatası (Sicil: ${pRow.sicil_no}):`, err);
+      }
+    }
+  } catch (err) {
+    console.error('sendIncidentPushNotifications hatası:', err);
+  }
+}
 
 // Turkish character mapping and username helpers
 function removeTurkishChars(str: string): string {
@@ -31,7 +99,7 @@ const ALLOWED_TABLES = [
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
-  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations'
+  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -261,8 +329,11 @@ async function ensureVehicleColumnsExist() {
   try {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS id UUID UNIQUE DEFAULT gen_random_uuid();`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS current_branch VARCHAR DEFAULT 'Merkez';`);
-    await query(`UPDATE public.vehicles SET current_branch = 'Esentepe' WHERE (current_branch IS NULL OR current_branch = 'Merkez') AND (istasyon LIKE '%Esentepe%');`);
-    await query(`UPDATE public.vehicles SET current_branch = 'OSB' WHERE (current_branch IS NULL OR current_branch = 'Merkez') AND (istasyon LIKE '%Organize%' OR istasyon LIKE '%OSB%');`);
+    // Faz 28.51: Kalıcı Şube Mühürlemesi - NULL olan tüm araçlara Merkez ata
+    await query(`UPDATE public.vehicles SET current_branch = 'Merkez' WHERE current_branch IS NULL;`);
+    // İstasyon bazlı otomatik şube eşleştirme (sadece henüz Merkez olanlar için)
+    await query(`UPDATE public.vehicles SET current_branch = 'Esentepe' WHERE current_branch = 'Merkez' AND (istasyon ILIKE '%Esentepe%' OR istasyon ILIKE '%esentepe%');`);
+    await query(`UPDATE public.vehicles SET current_branch = 'OSB (Organize)' WHERE current_branch = 'Merkez' AND (istasyon ILIKE '%Organize%' OR istasyon ILIKE '%OSB%' OR istasyon ILIKE '%organize%');`);
     
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS marka VARCHAR;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS istasyon TEXT;`);
@@ -281,6 +352,9 @@ async function ensureVehicleColumnsExist() {
     // Faz 28.26: Add filo_no and aciklama columns
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS filo_no INTEGER;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS aciklama VARCHAR;`);
+    
+    // Faz 28.53: Add push_subscription_token to personnel table
+    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS push_subscription_token TEXT;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }
@@ -383,6 +457,31 @@ async function ensureExternalEducationsTableExists() {
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS toplam_sure_saat NUMERIC(5,2) DEFAULT 0;`);
   } catch (err) {
     console.error('ensureExternalEducationsTableExists hatası:', err);
+  }
+}
+
+async function ensureExternalMissionsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.external_missions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        gorev_turu VARCHAR NOT NULL,
+        baslik VARCHAR NOT NULL,
+        detay TEXT,
+        hedef_koordinat GEOMETRY(Point, 4326),
+        adres VARCHAR,
+        mahalle VARCHAR,
+        cikis_tarihi TIMESTAMPTZ DEFAULT NOW(),
+        tahmini_donus TIMESTAMPTZ,
+        durum VARCHAR DEFAULT 'Aktif',
+        plaka VARCHAR,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await query(`ALTER TABLE public.external_missions ADD COLUMN IF NOT EXISTS sicil_nos VARCHAR[];`);
+    await query(`ALTER TABLE public.external_missions ADD COLUMN IF NOT EXISTS mahalle VARCHAR;`);
+  } catch (err) {
+    console.error('ensureExternalMissionsTableExists hatası:', err);
   }
 }
 
@@ -722,6 +821,9 @@ export async function GET(
       await ensureBlacklistInstitutionsTableExists();
       await ensureExternalEducationsTableExists();
     }
+    if (table === 'external_missions') {
+      await ensureExternalMissionsTableExists();
+    }
     if (table === 'unified_system_logs') {
       await ensureUnifiedSystemLogsViewExists();
     }
@@ -825,11 +927,62 @@ export async function POST(
       await ensureBlacklistInstitutionsTableExists();
       await ensureExternalEducationsTableExists();
     }
+    if (table === 'external_missions') {
+      await ensureExternalMissionsTableExists();
+    }
 
     const body = await request.json();
     const rows = Array.isArray(body.data) ? body.data : [body.data];
     const upsert = body.upsert === true;
     const conflictColumn = body.conflictColumn;
+
+    if (table === 'daily_summary_reports') {
+      for (const row of rows) {
+        const amirId = row.devreden_amir_id;
+        if (amirId) {
+          // Fetch amir's posta
+          const amirRes = await query('SELECT posta FROM public.personnel WHERE id = $1', [amirId]);
+          const amirPosta = amirRes.rows[0]?.posta || '';
+          
+          if (amirPosta) {
+            // Check for active/delayed assignments for personnel in this posta
+            const openAssignmentsRes = await query(`
+              SELECT t.id
+              FROM public.temporary_assignments t
+              WHERE t.durum IN ('AKTIF', 'GECIKTI')
+                AND t.teslim_edilen_tip = 'PERSONEL'
+                AND EXISTS (
+                  SELECT 1 FROM public.personnel p
+                  WHERE p.posta = $1
+                    AND (
+                      t.birim_adi ILIKE '%' || p.ad || '%' AND t.birim_adi ILIKE '%' || p.soyad || '%'
+                      OR t.birim_adi ILIKE '%' || p.sicil_no || '%'
+                    )
+                )
+            `, [amirPosta]);
+            
+            if (openAssignmentsRes.rows.length > 0) {
+              return NextResponse.json({
+                error: "❌ Z RAPORU KİLİTLENDİ: Açıkta kalan operasyonel süreçler veya Makine İkmal sevk logları kapatılmadan nöbet devir-teslim raporu mühürlenemez!"
+              }, { status: 400 });
+            }
+          }
+        }
+
+        // Check for open maintenance logs without eski_sube
+        const openMaintenanceRes = await query(`
+          SELECT id FROM public.maintenance_logs
+          WHERE durum IN ('Bakımda', 'Serviste', 'bakımda', 'serviste', 'BAKIMDA', 'SERVİSTE')
+            AND (eski_sube IS NULL OR eski_sube = '')
+        `);
+
+        if (openMaintenanceRes.rows.length > 0) {
+          return NextResponse.json({
+            error: "❌ Z RAPORU KİLİTLENDİ: Açıkta kalan operasyonel süreçler veya Makine İkmal sevk logları kapatılmadan nöbet devir-teslim raporu mühürlenemez!"
+          }, { status: 400 });
+        }
+      }
+    }
 
     const insertedRows: any[] = [];
 
@@ -919,6 +1072,23 @@ export async function POST(
       }
     }
 
+    if (table === 'incidents') {
+      for (const row of insertedRows) {
+        if (row.ek16_personel) {
+          try {
+            const pList = JSON.parse(row.ek16_personel);
+            if (Array.isArray(pList) && pList.length > 0) {
+              sendIncidentPushNotifications(row.id, pList).catch(err => {
+                console.error('sendIncidentPushNotifications POST hatası:', err);
+              });
+            }
+          } catch (e) {
+            console.error('ek16_personel parse hatası:', e);
+          }
+        }
+      }
+    }
+
     return NextResponse.json({ data: insertedRows, error: null });
   } catch (error: unknown) {
     console.error(`[db/POST] Hata:`, error);
@@ -983,6 +1153,9 @@ export async function PATCH(
     if (table === 'external_educations') {
       await ensureBlacklistInstitutionsTableExists();
       await ensureExternalEducationsTableExists();
+    }
+    if (table === 'external_missions') {
+      await ensureExternalMissionsTableExists();
     }
 
     const body = await request.json();
@@ -1098,6 +1271,23 @@ export async function PATCH(
           JSON.stringify({ id: row.id, no: row.no, newStatus: row.durum, tarih: new Date().toISOString() })
         ]
       ).catch(err => console.error('[Server AuditLog] Hidrant log yazma hatası:', err));
+    }
+
+    if (table === 'incidents' && result.rows.length > 0) {
+      for (const row of result.rows) {
+        if (row.ek16_personel) {
+          try {
+            const pList = JSON.parse(row.ek16_personel);
+            if (Array.isArray(pList) && pList.length > 0) {
+              sendIncidentPushNotifications(row.id, pList).catch(err => {
+                console.error('sendIncidentPushNotifications PATCH hatası:', err);
+              });
+            }
+          } catch (e) {
+            console.error('ek16_personel parse hatası:', e);
+          }
+        }
+      }
     }
 
     return NextResponse.json({ data: result.rows, error: null });

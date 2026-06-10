@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import jsPDF from "jspdf"
+import { QRCodeCanvas } from "qrcode.react"
 import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -107,6 +108,145 @@ export default function PersonelProfilPage() {
 
   if (!personel) {
     return <div className="p-8 text-center text-danger">Personel bulunamadı!</div>
+  }
+
+  const handlePrintIDCard = () => {
+    if (!personel) return
+
+    // Get QR from canvas
+    const canvas = document.getElementById("personnel-qr-canvas") as HTMLCanvasElement
+    const qrDataUrl = canvas ? canvas.toDataURL("image/png") : ""
+
+    // CR80 Standart Kredi Kartı Ebatları: 54mm x 86mm dikey format
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [54, 86] })
+
+    const tr = (str: string) => {
+      if (!str) return ""
+      const map: Record<string, string> = {
+        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
+        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
+      }
+      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
+    }
+
+    // --- SAYFA 1: KART ÖN YÜZÜ ---
+    // Siber-mat koyu arka plan
+    doc.setFillColor(15, 23, 42)
+    doc.rect(0, 0, 54, 86, "F")
+
+    // İnce altın sarısı/turuncu çerçeve
+    doc.setDrawColor(245, 158, 11)
+    doc.setLineWidth(0.8)
+    doc.rect(1.5, 1.5, 51, 83)
+
+    // Kurumsal Başlık
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(6.5)
+    doc.setTextColor(255, 255, 255)
+    doc.text("T.C.", 27, 6, { align: "center" })
+    doc.text("SIVAS BELEDIYESI", 27, 9, { align: "center" })
+    
+    doc.setTextColor(245, 158, 11)
+    doc.setFontSize(5.5)
+    doc.text("ITFAIYE MUDURLUGU", 27, 12, { align: "center" })
+
+    // Seperatör çizgi
+    doc.setDrawColor(245, 158, 11)
+    doc.setLineWidth(0.3)
+    doc.line(10, 14, 44, 14)
+
+    // Fotoğraf / İnitial Yuvarlağı
+    doc.setFillColor(30, 41, 59)
+    doc.setDrawColor(245, 158, 11)
+    doc.setLineWidth(0.5)
+    doc.circle(27, 26, 9, "FD")
+
+    // Ad Soyad Baş Harfleri
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(9)
+    doc.setTextColor(255, 255, 255)
+    doc.text(`${personel.ad.charAt(0)}${personel.soyad.charAt(0)}`, 27, 29, { align: "center" })
+
+    // Personel Kimlik Bilgileri
+    doc.setFontSize(8.5)
+    doc.text(`${tr(personel.ad.toUpperCase())} ${tr(personel.soyad.toUpperCase())}`, 27, 40, { align: "center" })
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(7)
+    doc.setTextColor(245, 158, 11)
+    doc.text(tr(personel.unvan || "Itfaiye Eri"), 27, 44, { align: "center" })
+
+    doc.setFontSize(5.5)
+    doc.setTextColor(203, 213, 225)
+    doc.text(`Sicil: ${tr(personel.sicil_no)}`, 27, 47.5, { align: "center" })
+    doc.text(`Yerleske: ${tr(personel.istasyon || "Merkez")}`, 27, 50.5, { align: "center" })
+    doc.text("Kan Grubu: A Rh (+)", 27, 53.5, { align: "center" })
+
+    // Kriptografik QR Kod Entegrasyonu
+    if (qrDataUrl) {
+      doc.addImage(qrDataUrl, "PNG", 17, 57, 20, 20)
+    }
+
+    // Alt Bilgi
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(4.5)
+    doc.setTextColor(100, 116, 139)
+    doc.text("DIJITAL PDKS KIMLIK KARTI", 27, 81, { align: "center" })
+
+    // --- SAYFA 2: KART ARKA YÜZÜ ---
+    doc.addPage()
+    
+    // Siber-mat koyu arka plan
+    doc.setFillColor(15, 23, 42)
+    doc.rect(0, 0, 54, 86, "F")
+
+    // İnce altın sarısı/turuncu çerçeve
+    doc.setDrawColor(245, 158, 11)
+    doc.setLineWidth(0.8)
+    doc.rect(1.5, 1.5, 51, 83)
+
+    // Acil Durum Bilgileri
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(7.5)
+    doc.setTextColor(239, 68, 68)
+    doc.text("ACIL DURUM HATLARI", 27, 18, { align: "center" })
+    
+    doc.setFontSize(6.5)
+    doc.setTextColor(255, 255, 255)
+    doc.text("YANGIN IHBAR: 112", 27, 23, { align: "center" })
+    doc.text("SANTRAL: 0346 221 21 11", 27, 27, { align: "center" })
+
+    // Seperatör
+    doc.setDrawColor(245, 158, 11)
+    doc.setLineWidth(0.3)
+    doc.line(10, 32, 44, 32)
+
+    // Yasal ve Entegrasyon İbareleri
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(5)
+    doc.setTextColor(148, 163, 184)
+    const backText = "Bu kart Sivas Itfaiye Mudurlugu Dijital PDKS (Personel Devam Kontrol Sistemi) altyapisina entegredir. Kart sahibi gorevli personeldir."
+    const splitBack = doc.splitTextToSize(backText, 40)
+    doc.text(splitBack, 27, 38, { align: "center" })
+
+    doc.setFont("Helvetica", "italic")
+    doc.setFontSize(4.5)
+    doc.text("Kayip durumunda itfaiye mudurlugune", 27, 54, { align: "center" })
+    doc.text("teslim edilmesi rica olunur.", 27, 57, { align: "center" })
+
+    // İlgili Yönetim / Müdür İmzası
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(6)
+    doc.setTextColor(255, 255, 255)
+    doc.text("Itfaiye Muduru", 27, 70, { align: "center" })
+    
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(4.5)
+    doc.text("Imza / Muhur", 27, 73, { align: "center" })
+
+    // Save PDF
+    const filename = `Sivas_Itfaiye_Kimlik_Karti_${personel.sicil_no}.pdf`
+    doc.save(filename)
   }
 
   const handlePrintCertificate = () => {
@@ -283,28 +423,47 @@ export default function PersonelProfilPage() {
             </div>
           </div>
 
-          {/* Certificate Print Area */}
-          {certInfo && (
-            <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0 bg-slate-950/20 border border-slate-800/40 p-3 rounded-2xl backdrop-blur-md shadow-md">
+          {/* Print/Certificate Area */}
+          <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0 bg-slate-950/20 border border-slate-800/40 p-3 rounded-2xl backdrop-blur-md shadow-md">
+            {certInfo && (
               <div className="text-xs font-semibold text-zinc-400">
                 Eğitim Verme Saati: <span className={`font-black ${certInfo.eligible ? "text-emerald-400" : "text-amber-400"}`}>{certInfo.total_hours} / {certInfo.threshold} sa</span>
               </div>
+            )}
+            <div className="flex flex-row items-center gap-2">
+              {/* Hidden Canvas for QR Generation */}
+              <div style={{ display: 'none' }}>
+                <QRCodeCanvas
+                  id="personnel-qr-canvas"
+                  value={`SIVAS-PDKS-ID: ${personel.sicil_no} | ${personel.ad} ${personel.soyad}`}
+                  size={150}
+                  level="H"
+                />
+              </div>
               <Button
-                disabled={!certInfo.eligible}
-                onClick={handlePrintCertificate}
-                className={`text-xs font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 transition-all shadow-md ${
-                  certInfo.eligible 
-                    ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold shadow-amber-500/20" 
-                    : "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed"
-                }`}
+                onClick={handlePrintIDCard}
+                className="text-xs font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md font-extrabold shadow-blue-500/20"
               >
-                🎓 Resmi Sertifika Bas
+                🪪 Dijital Kimlik Kartı Üret
               </Button>
-              {!certInfo.eligible && (
-                <span className="text-[10px] text-zinc-500 font-medium">Sertifika için {Math.max(0, certInfo.threshold - certInfo.total_hours).toFixed(1)} saat daha eğitim vermeli.</span>
+              {certInfo && (
+                <Button
+                  disabled={!certInfo.eligible}
+                  onClick={handlePrintCertificate}
+                  className={`text-xs font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 transition-all shadow-md ${
+                    certInfo.eligible 
+                      ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold shadow-amber-500/20" 
+                      : "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed"
+                  }`}
+                >
+                  🎓 Resmi Sertifika Bas
+                </Button>
               )}
             </div>
-          )}
+            {certInfo && !certInfo.eligible && (
+              <span className="text-[10px] text-zinc-500 font-medium">Sertifika için {Math.max(0, certInfo.threshold - certInfo.total_hours).toFixed(1)} saat daha eğitim vermeli.</span>
+            )}
+          </div>
         </div>
 
         {/* Custom Tabs Navigation */}

@@ -20,7 +20,7 @@ const Map = dynamic(() => import("@/components/map/Map"), {
       <span className="text-sm font-medium text-muted-foreground">Harita Yükleniyor...</span>
     </div>
   )
-})
+}) as any
 
 type Incident = any
 type Hydrant = any
@@ -123,6 +123,7 @@ function HaritaContent() {
   const [hydrants, setHydrants] = useState<Hydrant[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [personnelList, setPersonnelList] = useState<any[]>([])
+  const [externalMissions, setExternalMissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // Search Engine State
@@ -134,10 +135,10 @@ function HaritaContent() {
   const [hasFetchedAddress, setHasFetchedAddress] = useState(false)
 
   // Map Interactivity State
-  const [interactionMode, setInteractionMode] = useState<'idle' | 'add_incident' | 'add_hydrant'>('idle')
+  const [interactionMode, setInteractionMode] = useState<'idle' | 'add_incident' | 'add_hydrant' | 'add_external_mission'>('idle')
   
   // Modals Data State
-  const [showModal, setShowModal] = useState<'none' | 'incident' | 'hydrant' | 'mufreze_cikis'>('none')
+  const [showModal, setShowModal] = useState<'none' | 'incident' | 'hydrant' | 'mufreze_cikis' | 'external_mission'>('none')
   const [clickedCoords, setClickedCoords] = useState<{lat: number, lng: number} | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -150,6 +151,19 @@ function HaritaContent() {
   
   // Hydrant Form
   const [hydrantForm, setHydrantForm] = useState({ no: "", tip: "Yer üstü", durum: "Aktif", mahalle: "" })
+
+  // External Mission Form
+  const [externalMissionForm, setExternalMissionForm] = useState({
+    gorev_turu: "Sosyal Görev",
+    baslik: "",
+    detay: "",
+    mahalle: "",
+    adres: "",
+    tahmini_donus_saat: "2",
+    plaka: ""
+  })
+  const [checkedExternalPersonnel, setCheckedExternalPersonnel] = useState<string[]>([])
+  const [externalPersonnelSearch, setExternalPersonnelSearch] = useState("")
 
   // ─── İnteraktif Adres Arama (Geocoding) State ─────────
   const [incidentSearchQuery, setIncidentSearchQuery] = useState("")
@@ -208,6 +222,17 @@ function HaritaContent() {
     });
   }, [sortedMufrezePersonnel, personnelSearch]);
 
+  const filteredExternalPersonnel = useMemo(() => {
+    const sorted = [...activePostaPersonnel].sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
+    if (!externalPersonnelSearch.trim()) return sorted;
+    const q = toTurkishUpperCase(externalPersonnelSearch.trim());
+    return sorted.filter(p => {
+      const fullName = toTurkishUpperCase(`${p.ad || ''} ${p.soyad || ''}`);
+      const sicil = toTurkishUpperCase(p.sicil_no || '');
+      return fullName.includes(q) || sicil.includes(q);
+    });
+  }, [activePostaPersonnel, externalPersonnelSearch]);
+
   useEffect(() => {
     fetchData()
 
@@ -257,11 +282,29 @@ function HaritaContent() {
       const { data: hydData } = await api.from('fire_hydrants').select('*')
       const { data: vehData } = await api.from('vehicles').select('*')
       const { data: persData } = await api.from('personnel').select('*').eq('aktif', true)
+      const { data: extData } = await api.from('external_missions').select('*')
 
       if (incData) setIncidents(incData)
       if (hydData) setHydrants(hydData)
       if (vehData) setVehicles(vehData)
-      if (persData) setPersonnelList(persData)
+      if (persData) {
+        setPersonnelList(persData)
+        if (extData) {
+          const persMap = new Map(persData.map((p: any) => [p.sicil_no, `${p.ad} ${p.soyad}`]))
+          const enrichedExt = extData.map((m: any) => {
+            const names = (m.sicil_nos || [])
+              .map((s: string) => persMap.get(s) || s)
+              .join(', ')
+            return {
+              ...m,
+              personnel_names: names || m.sicil_no || '-'
+            }
+          })
+          setExternalMissions(enrichedExt)
+        }
+      } else {
+        if (extData) setExternalMissions(extData)
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -490,6 +533,19 @@ function HaritaContent() {
       }
     } else if (interactionMode === 'add_hydrant') {
       setShowModal('hydrant')
+    } else if (interactionMode === 'add_external_mission') {
+      setExternalMissionForm({
+        gorev_turu: "Sosyal Görev",
+        baslik: "",
+        detay: "",
+        mahalle: fetchedMahalle || "Alibaba",
+        adres: fetchedAddress || "Dış Görev Konumu",
+        tahmini_donus_saat: "2",
+        plaka: vehicles.length > 0 ? vehicles[0].plaka : ""
+      })
+      setCheckedExternalPersonnel([])
+      setExternalPersonnelSearch("")
+      setShowModal('external_mission')
     }
     
     // Reset mode back to idle after click
@@ -683,6 +739,58 @@ function HaritaContent() {
     }
   }
 
+  const handleSaveExternalMission = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!clickedCoords) return
+    if (checkedExternalPersonnel.length === 0) {
+      alert("Lütfen en az bir personel seçiniz.")
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      const locationWKT = `POINT(${clickedCoords.lng} ${clickedCoords.lat})`
+      
+      const hours = parseInt(externalMissionForm.tahmini_donus_saat, 10) || 2
+      const tahminiDonus = new Date()
+      tahminiDonus.setHours(tahminiDonus.getHours() + hours)
+
+      const payload = {
+        gorev_turu: externalMissionForm.gorev_turu,
+        baslik: externalMissionForm.baslik,
+        detay: externalMissionForm.detay,
+        mahalle: externalMissionForm.mahalle,
+        adres: externalMissionForm.adres,
+        hedef_koordinat: locationWKT,
+        cikis_tarihi: new Date().toISOString(),
+        tahmini_donus: tahminiDonus.toISOString(),
+        durum: "Aktif",
+        plaka: externalMissionForm.plaka,
+        sicil_nos: checkedExternalPersonnel
+      }
+
+      const { error } = await api.insert('external_missions', payload)
+      if (error) throw error
+
+      setShowModal('none')
+      setExternalMissionForm({
+        gorev_turu: "Sosyal Görev",
+        baslik: "",
+        detay: "",
+        mahalle: "",
+        adres: "",
+        tahmini_donus_saat: "2",
+        plaka: ""
+      })
+      setCheckedExternalPersonnel([])
+      fetchData() // Refresh map
+    } catch (error) {
+      console.error(error)
+      alert("Dış görev kaydı oluşturulurken hata oluştu.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <PageGuard pageId="harita">
       <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
@@ -707,6 +815,15 @@ function HaritaContent() {
           >
             <Flame className="w-4 h-4 mr-1 sm:mr-2" /> 
             {interactionMode === 'add_incident' ? 'Haritaya Tıklayın...' : 'Yeni Olay'}
+          </Button>
+
+          <Button 
+            variant={interactionMode === 'add_external_mission' ? 'default' : 'outline'}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_external_mission' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'border-amber-500/50 text-amber-500 hover:bg-amber-500/10'}`}
+            onClick={() => setInteractionMode(interactionMode === 'add_external_mission' ? 'idle' : 'add_external_mission')}
+          >
+            <MapPin className="w-4 h-4 mr-1 sm:mr-2" /> 
+            {interactionMode === 'add_external_mission' ? 'Haritaya Tıklayın...' : 'Yeni Dış Görev'}
           </Button>
           
           <Button 
@@ -796,6 +913,7 @@ function HaritaContent() {
             incidents={incidents} 
             hydrants={hydrants} 
             vehicles={vehicles}
+            externalMissions={externalMissions}
             mode={interactionMode} 
             onMapClick={handleMapClick} 
             focusLocation={focusLocation}
@@ -811,6 +929,239 @@ function HaritaContent() {
       {/* İNTERAKTİF İŞARETLEME (PIN DROPPING) FORMLARI / MODALLAR  */}
       {/* ========================================================= */}
       
+      {showModal === 'external_mission' && (
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
+          <Card className="w-full sm:max-w-md bg-slate-950/90 border border-slate-800/80 shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800/80 px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-amber-500">
+                <MapPin className="w-5 h-5" /> 
+                Yeni Dış Görev Planla
+              </h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowModal('none')} 
+                className="min-h-[44px] min-w-[44px] text-slate-400 hover:text-white hover:bg-slate-800/50"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <form onSubmit={handleSaveExternalMission} className="p-4 sm:p-6 space-y-4">
+              {/* Görev Türü */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400">Görev Türü</label>
+                <select 
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  value={externalMissionForm.gorev_turu}
+                  onChange={(e) => setExternalMissionForm(prev => ({ ...prev, gorev_turu: e.target.value }))}
+                >
+                  <option value="Sosyal Görev">Sosyal Görev (Su Dağıtımı, Baca Temizliği vs.)</option>
+                  <option value="Lojistik Sevk">Lojistik Sevk</option>
+                </select>
+              </div>
+
+              {/* Başlık */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400">Görev Başlığı</label>
+                <Input
+                  required
+                  placeholder="Görev Başlığı Girin..."
+                  value={externalMissionForm.baslik}
+                  onChange={(e) => setExternalMissionForm(prev => ({ ...prev, baslik: e.target.value }))}
+                  className="bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-amber-500 focus:border-amber-500"
+                />
+              </div>
+
+              {/* Detay */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400">Detaylar / Açıklama</label>
+                <textarea
+                  placeholder="Görev Detayları Girin..."
+                  value={externalMissionForm.detay}
+                  onChange={(e) => setExternalMissionForm(prev => ({ ...prev, detay: e.target.value }))}
+                  rows={3}
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                />
+              </div>
+
+              {/* Mahalle & Adres */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400">Mahalle</label>
+                  <Input
+                    placeholder="Mahalle..."
+                    value={externalMissionForm.mahalle}
+                    onChange={(e) => setExternalMissionForm(prev => ({ ...prev, mahalle: e.target.value }))}
+                    className="bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400">Adres</label>
+                  <Input
+                    placeholder="Adres..."
+                    value={externalMissionForm.adres}
+                    onChange={(e) => setExternalMissionForm(prev => ({ ...prev, adres: e.target.value }))}
+                    className="bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Tahmini Dönüş Süresi */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400">Tahmini Dönüş Süresi (Saat)</label>
+                <select 
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  value={externalMissionForm.tahmini_donus_saat}
+                  onChange={(e) => setExternalMissionForm(prev => ({ ...prev, tahmini_donus_saat: e.target.value }))}
+                >
+                  <option value="1">1 Saat</option>
+                  <option value="2">2 Saat</option>
+                  <option value="4">4 Saat</option>
+                  <option value="8">8 Saat</option>
+                  <option value="12">12 Saat</option>
+                  <option value="24">24 Saat</option>
+                </select>
+              </div>
+
+              {/* Araç */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400">Görevlendirilecek İtfaiye Aracı</label>
+                <select 
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  value={externalMissionForm.plaka}
+                  onChange={(e) => setExternalMissionForm(prev => ({ ...prev, plaka: e.target.value }))}
+                >
+                  <option value="">Araç Seçilmedi</option>
+                  {vehicles.map(v => (
+                    <option key={v.plaka} value={v.plaka}>
+                      {v.plaka} - {v.marka} {v.model} ({v.istasyon}) [{v.durum}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sorumlu Personel (Çoklu Seçim) */}
+              <div className="space-y-2 flex flex-col min-h-[220px]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <span>Görevli Personeller (Posta {activePostaNumber})</span>
+                    <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-slate-300">
+                      Seçili: {checkedExternalPersonnel.length}
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allSicils = filteredExternalPersonnel.map(p => p.sicil_no);
+                        setCheckedExternalPersonnel(allSicils);
+                      }}
+                      className="text-[10px] font-bold text-amber-400 hover:text-amber-300 transition-colors bg-white/5 px-2 py-1 rounded border border-amber-500/20 cursor-pointer"
+                    >
+                      Tümünü Seç
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCheckedExternalPersonnel([])}
+                      className="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors bg-white/5 px-2 py-1 rounded border border-rose-500/20 cursor-pointer"
+                    >
+                      Temizle
+                    </button>
+                  </div>
+                </div>
+
+                {/* Personel Arama Kutusu */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Personel ara (İsim, soyisim veya sicil no)..."
+                    value={externalPersonnelSearch}
+                    onChange={(e) => setExternalPersonnelSearch(e.target.value)}
+                    className="w-full h-9 rounded-xl border border-white/10 bg-slate-950/80 pl-9 pr-8 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                  {externalPersonnelSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setExternalPersonnelSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs border-0 bg-transparent cursor-pointer"
+                    >
+                      Temizle
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex-1 overflow-y-auto border border-white/10 rounded-xl bg-slate-950/60 p-2 space-y-1.5 max-h-[220px]">
+                  {filteredExternalPersonnel.length === 0 ? (
+                    <div className="text-center text-xs text-slate-500 py-6">
+                      {externalPersonnelSearch ? 'Arama kriterine uygun personel bulunamadı.' : 'Aktif posta personeli bulunamadı.'}
+                    </div>
+                  ) : (
+                    filteredExternalPersonnel.map(p => {
+                      const isChecked = checkedExternalPersonnel.includes(p.sicil_no);
+                      return (
+                        <label 
+                          key={p.id} 
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border ${
+                            isChecked 
+                              ? 'bg-amber-500/10 border-amber-500/40 text-white' 
+                              : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCheckedExternalPersonnel(prev => [...prev, p.sicil_no]);
+                                } else {
+                                  setCheckedExternalPersonnel(prev => prev.filter(s => s !== p.sicil_no));
+                                }
+                              }}
+                              className="rounded border-slate-800 text-amber-500 focus:ring-amber-500 bg-slate-950"
+                            />
+                            <div>
+                              <span className="text-xs font-semibold block text-slate-200">
+                                {p.ad} {p.soyad}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                Sicil: {p.sicil_no} | {p.unvan} | {p.istasyon}
+                              </span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="pt-4 border-t border-slate-800/80 flex justify-end gap-2 shrink-0">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowModal('none')} 
+                  className="border-slate-800 text-slate-300 hover:bg-slate-900"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                  Görevi Başlat
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
       {showModal === 'incident' && (
         <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
           <Card className="w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">

@@ -16,7 +16,9 @@ import {
   Printer, 
   Loader2,
   Edit2,
-  Trash2
+  Trash2,
+  Building2,
+  MapPin
 } from "lucide-react"
 import { Vehicle } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
@@ -43,6 +45,9 @@ export default function VehiclesPage() {
   const [loading, setLoading] = useState(true)
   const [loadingLogs, setLoadingLogs] = useState(false)
   const { user } = useAuthStore()
+
+  // Faz 28.51: Müfreze Filtresi
+  const [branchFilter, setBranchFilter] = useState<string>("Tümü")
 
   // Fault report modal states
   const [arizaModalOpen, setArizaModalOpen] = useState(false)
@@ -84,6 +89,12 @@ export default function VehiclesPage() {
 
   // Add Modal state
   const [addModalOpen, setAddModalOpen] = useState(false)
+
+  // Faz 28.51: Şube Değiştir Modal state
+  const [branchModalOpen, setBranchModalOpen] = useState(false)
+  const [branchChangePlaka, setBranchChangePlaka] = useState<string | null>(null)
+  const [newBranch, setNewBranch] = useState("Merkez")
+  const [savingBranch, setSavingBranch] = useState(false)
 
   const fetchVehicles = async () => {
     setLoading(true)
@@ -370,6 +381,59 @@ export default function VehiclesPage() {
       alert("Kayıt silinirken hata oluştu: " + err.message);
     }
   };
+  // Faz 28.51: Şube Değiştir Handler
+  const handleSaveBranchChange = async () => {
+    if (!branchChangePlaka) return;
+
+    try {
+      setSavingBranch(true);
+      const targetVehicle = vehicles.find(v => v.plaka === branchChangePlaka);
+      if (!targetVehicle) {
+        alert("Araç bulunamadı.");
+        return;
+      }
+
+      const oldBranch = targetVehicle.current_branch || 'Merkez';
+      if (newBranch === oldBranch) {
+        alert("Araç zaten bu şubede kayıtlı.");
+        return;
+      }
+
+      const resVeh = await api.update(
+        'vehicles',
+        { current_branch: newBranch },
+        { id: targetVehicle.id }
+      );
+      if (resVeh.error) throw new Error(resVeh.error);
+
+      // Audit Log
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'sube_degisiklik',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: branchChangePlaka,
+          details: {
+            eski_sube: oldBranch,
+            yeni_sube: newBranch,
+          },
+        }),
+      }).catch(err => console.error('[AuditLog] Şube değişiklik logu gönderilemedi:', err));
+
+      alert(`${branchChangePlaka} başarıyla "${newBranch}" şubesine atandı.`);
+      setBranchModalOpen(false);
+      setBranchChangePlaka(null);
+      setNewBranch("Merkez");
+      fetchVehicles();
+    } catch (err: any) {
+      console.error(err);
+      alert("Şube değiştirilirken hata oluştu: " + err.message);
+    } finally {
+      setSavingBranch(false);
+    }
+  };
 
   const handlePrintServiceForm = (item: { vehicle: Vehicle; log: MaintenanceLog }) => {
     const { vehicle, log } = item;
@@ -475,6 +539,21 @@ export default function VehiclesPage() {
     return vehicles.filter(v => v.current_branch !== 'Makine İkmal Müdürlüğü (Bakım-Onarım)')
   }, [vehicles])
 
+  // Faz 28.51: Müfreze filtresine göre aktif araçları filtrele
+  const filteredActiveVehicles = useMemo(() => {
+    if (branchFilter === 'Tümü') return activeVehicles;
+    return activeVehicles.filter(v => v.current_branch === branchFilter)
+  }, [activeVehicles, branchFilter])
+
+  // Faz 28.51: Şube bazlı araç sayıları
+  const branchCounts = useMemo(() => {
+    return {
+      Merkez: activeVehicles.filter(v => v.current_branch === 'Merkez' || !v.current_branch).length,
+      Esentepe: activeVehicles.filter(v => v.current_branch === 'Esentepe').length,
+      'OSB (Organize)': activeVehicles.filter(v => v.current_branch === 'OSB (Organize)').length,
+    }
+  }, [activeVehicles])
+
   const maintenanceVehicles = useMemo(() => {
     return vehicles.filter(v => v.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)')
   }, [vehicles])
@@ -546,26 +625,65 @@ export default function VehiclesPage() {
         </div>
       ) : activeTab === "active" ? (
         /* ════════════════ TAB 1: AKTİF GÖREV FİLOSU ════════════════ */
-        activeVehicles.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground border border-dashed border-white/10 rounded-3xl bg-slate-900/20">
-            Aktif görevde olan araç bulunmamaktadır.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {activeVehicles.map(v => (
-              <VehicleCard
-                key={v.plaka}
-                vehicle={v}
-                onPrintQR={(plaka, aracTipi, marka) => setQrModal({ open: true, plaka, aracTipi, marka: marka || "" })}
-                onEdit={canEdit ? (vehicle) => setEditModal({ open: true, vehicle }) : undefined}
-                onReportFault={(plaka) => {
-                  setReportingPlaka(plaka);
-                  setArizaModalOpen(true);
-                }}
-              />
+        <>
+          {/* Faz 28.51: Müfreze Filtre Barı */}
+          <div className="flex flex-wrap gap-2 animate-in fade-in duration-200">
+            {[
+              { key: 'Tümü', label: '🏢 Tümü', count: activeVehicles.length },
+              { key: 'Merkez', label: '📍 Merkez', count: branchCounts.Merkez },
+              { key: 'Esentepe', label: '📍 Esentepe', count: branchCounts.Esentepe },
+              { key: 'OSB (Organize)', label: '📍 OSB', count: branchCounts['OSB (Organize)'] },
+            ].map(item => (
+              <button
+                key={item.key}
+                onClick={() => setBranchFilter(item.key)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                  branchFilter === item.key
+                    ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.15)]'
+                    : 'bg-slate-900/50 text-slate-400 border border-white/5 hover:text-slate-200 hover:border-white/10'
+                }`}
+              >
+                <span>{item.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black ${
+                  branchFilter === item.key
+                    ? 'bg-cyan-500/20 text-cyan-300'
+                    : 'bg-slate-800 text-slate-500'
+                }`}>
+                  {item.count}
+                </span>
+              </button>
             ))}
           </div>
-        )
+
+          {filteredActiveVehicles.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground border border-dashed border-white/10 rounded-3xl bg-slate-900/20">
+              {branchFilter === 'Tümü'
+                ? 'Aktif görevde olan araç bulunmamaktadır.'
+                : `"${branchFilter}" şubesinde aktif araç bulunmamaktadır.`}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredActiveVehicles.map(v => (
+                <VehicleCard
+                  key={v.plaka}
+                  vehicle={v}
+                  onPrintQR={(plaka, aracTipi, marka) => setQrModal({ open: true, plaka, aracTipi, marka: marka || "" })}
+                  onEdit={canEdit ? (vehicle) => setEditModal({ open: true, vehicle }) : undefined}
+                  onReportFault={(plaka) => {
+                    setReportingPlaka(plaka);
+                    setArizaModalOpen(true);
+                  }}
+                  onChangeBranch={canEdit ? (plaka) => {
+                    const targetVehicle = vehicles.find(veh => veh.plaka === plaka);
+                    setBranchChangePlaka(plaka);
+                    setNewBranch(targetVehicle?.current_branch || 'Merkez');
+                    setBranchModalOpen(true);
+                  } : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         /* ════════════════ TAB 2: MAKİNE İKMAL / ARIZA HAVUZU ════════════════ */
         <div className="space-y-6 animate-in fade-in duration-200">
@@ -955,6 +1073,57 @@ export default function VehiclesPage() {
             </Button>
             <Button onClick={handleSaveLogEdit} disabled={savingLogEdit} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)]">
               {savingLogEdit ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- Faz 28.51: Şube Değiştir Modalı --- */}
+      <Dialog open={branchModalOpen} onOpenChange={setBranchModalOpen}>
+        <DialogContent className="max-w-md bg-slate-950 border border-slate-800/80 shadow-[0_0_30px_rgba(34,211,238,0.15)] text-slate-100 p-6 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
+              <span>📍 Araç Şube Değiştirme</span>
+            </DialogTitle>
+            <p className="text-xs text-slate-400 mt-1">
+              Seçili aracı farklı bir müfrezeye/şubeye atayabilirsiniz. Bu işlem araç konuşlanma bilgilerini günceller.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4 font-sans text-sm">
+            <div className="bg-slate-900/60 border border-slate-800 p-3 rounded-xl">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">ŞUBE DEĞİŞTİRİLEN ARAÇ</span>
+              <p className="font-bold text-slate-200 mt-0.5">{branchChangePlaka || ""}</p>
+              {branchChangePlaka && (() => {
+                const v = vehicles.find(veh => veh.plaka === branchChangePlaka);
+                return v ? (
+                  <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                    Mevcut Şube: <span className="text-cyan-400 font-bold">{v.current_branch || 'Merkez'}</span>
+                  </p>
+                ) : null;
+              })()}
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">YENİ ŞUBE</label>
+              <select
+                value={newBranch}
+                onChange={(e) => setNewBranch(e.target.value)}
+                className="w-full h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-semibold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+              >
+                <option value="Merkez">Merkez Şubesi</option>
+                <option value="Esentepe">Esentepe Şubesi</option>
+                <option value="OSB (Organize)">Organize Sanayi Şubesi</option>
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 font-sans">
+            <Button variant="outline" onClick={() => setBranchModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+              İptal
+            </Button>
+            <Button onClick={handleSaveBranchChange} disabled={savingBranch} className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+              {savingBranch ? "Kaydediliyor..." : "Şubeyi Güncelle"}
             </Button>
           </DialogFooter>
         </DialogContent>

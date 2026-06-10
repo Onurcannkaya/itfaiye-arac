@@ -46,7 +46,8 @@ interface MapProps {
   incidents: Incident[]
   hydrants: Hydrant[]
   vehicles?: Vehicle[]
-  mode: 'idle' | 'add_incident' | 'add_hydrant'
+  externalMissions?: any[]
+  mode: 'idle' | 'add_incident' | 'add_hydrant' | 'add_external_mission'
   onMapClick: (lat: number, lng: number) => void
   focusLocation: [number, number] | null
   onUpdateHydrantStatus?: (id: string, newStatus: string) => void
@@ -204,7 +205,7 @@ function computeClusters<T extends { id: string }>(
   return clusters
 }
 
-export default function Map({ incidents, hydrants, vehicles = [], mode, onMapClick, focusLocation, onUpdateHydrantStatus, onDeleteIncident, onEditIncident }: MapProps) {
+export default function Map({ incidents, hydrants, vehicles = [], externalMissions = [], mode, onMapClick, focusLocation, onUpdateHydrantStatus, onDeleteIncident, onEditIncident }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
@@ -897,6 +898,64 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
       markersRef.current.push(marker)
     }
 
+    // Helper: Render Individual External Mission Marker
+    const renderIndividualExternalMission = (mission: any, coords: [number, number]) => {
+      const isLojistik = mission.gorev_turu === 'Lojistik Sevk'
+      const color = isLojistik ? '#22c55e' : '#3b82f6' // green for logistics, blue for social
+      const bg = isLojistik ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)'
+
+      const el = document.createElement('div')
+      el.style.width = '34px'
+      el.style.height = '34px'
+
+      const innerEl = document.createElement('div')
+      innerEl.style.cssText = `
+        width: 100%; height: 100%;
+        background: ${bg};
+        border: 2px solid ${color};
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: ${color};
+        box-shadow: 0 0 10px ${color}80;
+        transition: transform 0.2s;
+      `
+
+      const svgIcon = isLojistik
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z"/><path d="M12 13v9"/><path d="M12 2v4"/><path d="M8 22h8"/></svg>`
+
+      innerEl.innerHTML = svgIcon
+      el.appendChild(innerEl)
+
+      const popup = new maplibregl.Popup({ offset: 18, maxWidth: '280px' }).setHTML(`
+        <div style="font-family:system-ui;padding:4px 0;color:#e2e8f0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:6px;margin-bottom:6px;gap:8px">
+            <h3 style="font-weight:700;color:${color};font-size:13.5px;margin:0">${mission.baslik}</h3>
+            <span style="font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:9999px;background:${color}20;color:${color};border:1px solid ${color}40">${mission.gorev_turu}</span>
+          </div>
+          <p style="font-size:12px;margin:3px 0;color:#cbd5e1;"><strong style="color:#94a3b8;font-weight:500;">Adres:</strong> ${mission.adres || '-'}</p>
+          <p style="font-size:12px;margin:3px 0;color:#cbd5e1;"><strong style="color:#94a3b8;font-weight:500;">Detay:</strong> ${mission.detay || '-'}</p>
+          <p style="font-size:12px;margin:3px 0;color:#cbd5e1;"><strong style="color:#94a3b8;font-weight:500;">Araç:</strong> ${mission.plaka || '-'}</p>
+          <p style="font-size:12px;margin:3px 0;color:#cbd5e1;"><strong style="color:#94a3b8;font-weight:500;">Görevli Personel:</strong> ${mission.personnel_names || mission.sicil_no || '-'}</p>
+          <p style="font-size:12px;margin:3px 0;color:#cbd5e1;"><strong style="color:#94a3b8;font-weight:500;">Durum:</strong> ${mission.durum || 'Aktif'}</p>
+          <p style="font-size:11px;color:#94a3b8;margin-top:6px;display:flex;align-items:center;gap:4px;">
+            <span style="opacity:0.7">🕒</span>
+            <span>Çıkış: ${mission.cikis_tarihi ? new Date(mission.cikis_tarihi).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}</span>
+          </p>
+        </div>
+      `)
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(coords)
+        .setPopup(popup)
+        .addTo(map)
+
+      markersRef.current.push(marker)
+    }
+
     // Helper: Render Individual Hydrant Marker
     const renderIndividualHydrant = (hyd: Hydrant, coords: [number, number]) => {
       const isMevcut = hyd.durum === 'MEVCUT' || hyd.durum === 'Aktif'
@@ -1126,7 +1185,15 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
     });
 
     // ─── Render Fire Stations ───
-    renderFireStations()
+    renderFireStations();
+
+    // ─── Render External Missions ───
+    (externalMissions || []).forEach((mission: any) => {
+      const coords = parseLocation(mission.hedef_koordinat)
+      if (coords) {
+        renderIndividualExternalMission(mission, coords)
+      }
+    });
 
     // ─── Fit Bounds ───
     if (filteredHydrants.length > 0 && !hasFitBoundsRef.current) {
@@ -1145,7 +1212,7 @@ export default function Map({ incidents, hydrants, vehicles = [], mode, onMapCli
       }
     }
 
-  }, [filteredIncidents, filteredHydrants, zoomLevel, mapReady, showHeatmap])
+  }, [filteredIncidents, filteredHydrants, externalMissions, zoomLevel, mapReady, showHeatmap])
 
   // ─── Heatmap Layer Effect ───────────────────
   useEffect(() => {

@@ -286,6 +286,7 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [vehicles, setVehicles] = useState<VehicleInfo[]>([])
   const [activeIncidentsList, setActiveIncidentsList] = useState<ActiveIncidentDetail[]>([])
+  const [activeExternalMissions, setActiveExternalMissions] = useState<any[]>([])
   const [personnelList, setPersonnelList] = useState<Personnel[]>([])
   const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly'>('daily')
   const [overdueAssignments, setOverdueAssignments] = useState<any[]>([])
@@ -295,6 +296,11 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPersonnelStats, setSelectedPersonnelStats] = useState<any | null>(null)
   const [lookupLoading, setLookupLoading] = useState(false)
+
+  const filteredJusticeStats = useMemo(() => {
+    const allowedUnvans = ['Er', 'Şoför', 'Baş Şoför', 'Pos.Baş.Şof.']
+    return justiceStats.filter((p: any) => allowedUnvans.includes(p.unvan))
+  }, [justiceStats])
 
   // ─── PostGIS WKB parser helpers for real-time focus ─────────
   const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -568,6 +574,14 @@ export default function DashboardPage() {
         setActiveIncidentsList(activeIncs)
       }
 
+      const { data: activeExts } = await api
+        .from("external_missions")
+        .select("*")
+        .eq("durum", "Aktif")
+      if (Array.isArray(activeExts)) {
+        setActiveExternalMissions(activeExts)
+      }
+
       // ── 8. Nöbetçi Personel Sorgulaması ───────────────────
       const { data: persData } = await api
         .from<Personnel>("personnel")
@@ -643,8 +657,24 @@ export default function DashboardPage() {
       })
     }
 
+    if (activeExternalMissions.length > 0) {
+      activeExternalMissions.forEach((mission) => {
+        const coords = parseLocation(mission.hedef_koordinat) || [37.0209312, 39.7339522]
+        const matchedVeh = vehicles.find((v) => v.plaka === mission.plaka)
+        list.push({
+          plaka: mission.plaka || "Araçsız",
+          arac_tipi: matchedVeh?.arac_tipi || "Dış Görev",
+          olay_turu: `Dış Görev: ${mission.gorev_turu} - ${mission.baslik}`,
+          mahalle: mission.mahalle || "",
+          adres: mission.adres || "Adres belirtilmemiş",
+          cikis_saati: mission.cikis_tarihi || mission.created_at || new Date().toISOString(),
+          coords,
+        })
+      })
+    }
+
     return list
-  }, [activeIncidentsList, vehicles])
+  }, [activeIncidentsList, activeExternalMissions, vehicles])
 
   // ─── Nöbetçi posta: 3'lü posta döngüsü (Faz 28.23.8) ───
   // Referans: 04.06.2026 tarihinde 2. Posta nöbette. Döngü sırasıyla: 2 -> 3 -> 1 -> 2 -> 3 -> 1
@@ -762,6 +792,8 @@ export default function DashboardPage() {
           <span>{currentTime}</span>
         </div>
       </div>
+
+
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
@@ -1147,7 +1179,7 @@ export default function DashboardPage() {
             
             {searchTerm.trim().length > 0 && !selectedPersonnelStats && (
               <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl divide-y divide-slate-800/60 z-30">
-                {justiceStats
+                {filteredJusticeStats
                   ?.filter((p: any) => 
                     `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
                     p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1164,7 +1196,7 @@ export default function DashboardPage() {
                     </button>
                   ))
                 }
-                {justiceStats?.filter((p: any) => 
+                {filteredJusticeStats?.filter((p: any) => 
                   `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
                   p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
                 ).length === 0 && (
@@ -1254,14 +1286,14 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground animate-pulse text-xs">
                   <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Yükleniyor...
                 </div>
-              ) : justiceStats.length === 0 ? (
+              ) : filteredJusticeStats.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground text-xs">
                   Kayıtlı personel bilgisi yüklenemedi.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                   {/* Select first 5 elements */}
-                  {justiceStats.slice(0, 5).map((p: any, idx: number) => (
+                  {filteredJusticeStats.slice(0, 5).map((p: any, idx: number) => (
                     <div 
                       key={p.sicil_no} 
                       onClick={() => handleSelectPersonnel(p.sicil_no)}
