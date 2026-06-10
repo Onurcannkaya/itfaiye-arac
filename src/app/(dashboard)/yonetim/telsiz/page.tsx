@@ -406,9 +406,9 @@ export default function TelsizPage() {
                 </div>
               </div>
               
-              {/* Frequency Screen */}
+              {/* Status Screen */}
               <div className="mt-3 bg-slate-900/90 border border-slate-800/60 rounded px-3 py-2 flex items-center justify-between font-mono">
-                <span className="text-xl font-black text-cyan-400 tracking-widest shadow-cyan-500/20">145.500 MHz</span>
+                <span className="text-xs font-black text-cyan-400 tracking-widest uppercase">ANLIK KANAL BAĞLANTISI</span>
                 <div className="flex items-end gap-0.5 h-5">
                   <div className="w-1 h-2 bg-cyan-500 rounded-sm" />
                   <div className="w-1 h-3 bg-cyan-500 rounded-sm" />
@@ -608,11 +608,11 @@ export default function TelsizPage() {
                 <div className="flex flex-wrap gap-1.5 items-center">
                   <span className="text-[9px] font-bold text-slate-500 mr-1 uppercase">HIZLI KOD:</span>
                   <button
-                    onClick={() => handleSendMessage("Anlaşıldı, tamam.", "10-4")}
+                    onClick={() => handleSendMessage("Anlaşıldı, tamam.", "ANLASILDI")}
                     disabled={sendingMessage || !personnelUuid}
                     className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
-                    📟 10-4 Anlaşıldı
+                    📟 Anlaşıldı
                   </button>
                   <button
                     onClick={() => handleSendMessage("Müfrezeden vaka yerine intikal başladı, tamam.", "INTIKAL")}
