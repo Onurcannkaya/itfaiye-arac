@@ -31,6 +31,7 @@ import { ShiftList } from "@/components/dashboard/ShiftList"
 import { HourlyShifts } from "@/components/dashboard/HourlyShifts"
 import { Personnel } from "@/types"
 import { Input } from "@/components/ui/Input"
+import { useAuthStore } from "@/lib/authStore"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -202,9 +203,51 @@ const activityIcon = (type: ActivityItem["type"]) => {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { user } = useAuthStore()
 
   const [programInfo, setProgramInfo] = useState({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
   const [currentTime, setCurrentTime] = useState("")
+
+  // Faz 28.55: Batarya Dostu Mobil GPS İzleme Motoru
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation || !user?.sicilNo) return
+
+    const sendCoords = (position: GeolocationPosition) => {
+      const lat = position.coords.latitude
+      const lng = position.coords.longitude
+      api.update('personnel', {
+        son_enlem: lat,
+        son_boylam: lng,
+        son_guncelleme: new Date().toISOString()
+      }, { sicil_no: user.sicilNo })
+      .then(res => {
+        if (res.error) {
+          console.error('[GPS Motoru] Konum güncelleme hatası:', res.error)
+        }
+      })
+      .catch(err => {
+        console.error('[GPS Motoru] Konum gönderim hatası:', err)
+      })
+    }
+
+    // İlk konum bilgisini hemen çek ve gönder
+    navigator.geolocation.getCurrentPosition(
+      sendCoords,
+      (err) => console.warn('[GPS Motoru] İlk konum alınamadı:', err),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+
+    // 30 saniyede bir güncelle (interval tabanlı)
+    const gpsInterval = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        sendCoords,
+        (err) => console.warn('[GPS Motoru] Konum güncellemesi başarısız:', err),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      )
+    }, 30000)
+
+    return () => clearInterval(gpsInterval)
+  }, [user?.sicilNo])
 
   useEffect(() => {
     const checkProgram = () => {

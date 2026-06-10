@@ -53,6 +53,8 @@ interface MapProps {
   onUpdateHydrantStatus?: (id: string, newStatus: string) => void
   onDeleteIncident?: (id: string) => void
   onEditIncident?: (incident: Incident) => void
+  showPersonnelLayer?: boolean
+  onTogglePersonnelLayer?: (val: boolean) => void
 }
 
 const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -205,11 +207,25 @@ function computeClusters<T extends { id: string }>(
   return clusters
 }
 
-export default function Map({ incidents, hydrants, vehicles = [], externalMissions = [], mode, onMapClick, focusLocation, onUpdateHydrantStatus, onDeleteIncident, onEditIncident }: MapProps) {
+export default function Map({ 
+  incidents, 
+  hydrants, 
+  vehicles = [], 
+  externalMissions = [], 
+  mode, 
+  onMapClick, 
+  focusLocation, 
+  onUpdateHydrantStatus, 
+  onDeleteIncident, 
+  onEditIncident,
+  showPersonnelLayer = true,
+  onTogglePersonnelLayer
+}: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
   const vehicleMarkersRef = useRef<maplibregl.Marker[]>([])
+  const personnelMarkersRef = useRef<maplibregl.Marker[]>([])
   const hydrantElementsRef = useRef<{el: HTMLDivElement, coords: [number, number]}[]>([])
   const modeRef = useRef(mode)
   const onMapClickRef = useRef(onMapClick)
@@ -228,6 +244,7 @@ export default function Map({ incidents, hydrants, vehicles = [], externalMissio
   const [binalarOpacity, setBinalarOpacity] = useState(0.3)
   const [mahallelerOpacity, setMahallelerOpacity] = useState(1.0)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
+  const [personnelList, setPersonnelList] = useState<any[]>([])
 
   // HUD Filter States
   const [onlyActiveIncidents, setOnlyActiveIncidents] = useState(false)
@@ -251,6 +268,123 @@ export default function Map({ incidents, hydrants, vehicles = [], externalMissio
     (user.unvan || '').toLowerCase().includes('çavuş') ||
     (user.unvan || '').toLowerCase().includes('santral')
   )
+
+  // Faz 28.55: Canlı Personel GPS Konum Polling Motoru
+  useEffect(() => {
+    let active = true
+    const fetchPersonnel = () => {
+      api.from('personnel')
+        .select('sicil_no,ad,soyad,unvan,rol,son_enlem,son_boylam,son_guncelleme')
+        .eq('aktif', true)
+        .then(
+          res => {
+            if (!active) return
+            if (res.data) {
+              const withCoords = (res.data as any[]).filter(p => p.son_enlem !== null && p.son_boylam !== null)
+              setPersonnelList(withCoords)
+            }
+          },
+          (err: any) => {
+            console.error("Map: Personnel fetch error:", err)
+          }
+        )
+    }
+
+    fetchPersonnel()
+    const interval = setInterval(fetchPersonnel, 15000)
+
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Faz 28.55: Canlı Personel Harita Katmanı Sync Motoru
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady) return
+
+    // Eski personelleri temizle
+    personnelMarkersRef.current.forEach(m => m.remove())
+    personnelMarkersRef.current = []
+
+    if (showPersonnelLayer && personnelList && personnelList.length > 0) {
+      personnelList.forEach((pers) => {
+        const coords: [number, number] = [pers.son_boylam, pers.son_enlem]
+
+        const el = document.createElement('div')
+        el.className = 'map-marker-personnel'
+        el.style.width = '30px'
+        el.style.height = '30px'
+        el.style.cursor = 'pointer'
+
+        const innerEl = document.createElement('div')
+        innerEl.className = 'map-marker-personnel-inner'
+        innerEl.style.cssText = `
+          width: 100%; height: 100%;
+          background: rgba(15, 23, 42, 0.9);
+          border: 2px solid #10b981;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #10b981;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+          transition: all 0.3s;
+        `
+        
+        innerEl.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        `
+        el.appendChild(innerEl)
+
+        const timeStr = pers.son_guncelleme 
+          ? new Date(pers.son_guncelleme).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          : 'Bilinmiyor'
+
+        const popup = new maplibregl.Popup({ offset: 12, maxWidth: '280px' }).setHTML(`
+          <div style="font-family:system-ui;padding:4.2px;color:#e2e8f0;line-height:1.5;">
+            <div style="border-bottom:1px solid rgba(255,255,255,0.12);padding-bottom:6px;margin-bottom:6px;">
+              <h3 style="font-weight:800;color:#10b981;font-size:13px;margin:0;">👥 ${pers.ad} ${pers.soyad}</h3>
+              <span style="font-size:10px;color:#94a3b8;font-weight:600;">${pers.unvan || 'İtfaiye Eri'}</span>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:11px;font-family:monospace;">
+              <span style="color:#64748b;font-weight:500;">Sicil No:</span>
+              <span style="font-weight:700;color:#f1f5f9;text-align:right;">${pers.sicil_no}</span>
+              
+              <span style="color:#64748b;font-weight:500;">Rol:</span>
+              <span style="font-weight:700;color:#f1f5f9;text-align:right;">${pers.rol}</span>
+
+              <span style="color:#64748b;font-weight:500;">Enlem:</span>
+              <span style="font-weight:600;color:#cbd5e1;text-align:right;">${pers.son_enlem.toFixed(6)}</span>
+
+              <span style="color:#64748b;font-weight:500;">Boylam:</span>
+              <span style="font-weight:600;color:#cbd5e1;text-align:right;">${pers.son_boylam.toFixed(6)}</span>
+
+              <span style="color:#64748b;font-weight:500;">Güncelleme:</span>
+              <span style="font-weight:700;color:#10b981;text-align:right;">${timeStr}</span>
+            </div>
+          </div>
+        `)
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat(coords)
+          .setPopup(popup)
+          .addTo(map)
+
+        personnelMarkersRef.current.push(marker)
+      })
+    }
+
+    return () => {
+      personnelMarkersRef.current.forEach(m => m.remove())
+      personnelMarkersRef.current = []
+    }
+  }, [personnelList, showPersonnelLayer, mapReady])
 
   useEffect(() => {
     if (!selectedIncident || !selectedIncident.id) {
@@ -2073,6 +2207,26 @@ export default function Map({ incidents, hydrants, vehicles = [], externalMissio
             <span>Canlı Katmanlar</span>
           </div>
           
+          {/* Faz 28.55: Aktif Personel Katmanı Toggle */}
+          <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
+            <div className="flex items-center gap-2 select-none">
+              <span className="text-emerald-400 font-bold text-[11px] shrink-0">👥</span>
+              <span className="text-[11px] font-semibold text-slate-200">Aktif Personel</span>
+            </div>
+            <div
+              onClick={() => onTogglePersonnelLayer ? onTogglePersonnelLayer(!showPersonnelLayer) : {}}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-all duration-300 ease-in-out focus:outline-none items-center p-0.5 ${
+                showPersonnelLayer ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-700/50 border border-slate-600/30'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+                  showPersonnelLayer ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </div>
+          </div>
+          
           <div className="grid grid-cols-2 gap-2">
             <div className="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 rounded-lg p-2">
               <span className="text-[11px] font-semibold text-slate-300">Vakalar</span>
@@ -2220,6 +2374,21 @@ export default function Map({ incidents, hydrants, vehicles = [], externalMissio
                 <span className="text-xs font-semibold leading-none">Tüm Filoyu Göster</span>
               </div>
               <span className={`w-2 h-2 rounded-full shrink-0 ${showFilo ? 'bg-emerald-400' : 'bg-slate-600'}`}></span>
+            </button>
+            {/* Faz 28.55: Aktif Personel Katmanı Toggle (Mobile) */}
+            <button
+              onClick={() => onTogglePersonnelLayer ? onTogglePersonnelLayer(!showPersonnelLayer) : {}}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all duration-300 min-h-[44px] ${
+                showPersonnelLayer
+                  ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                  : 'bg-slate-900/60 border-slate-800/80 text-slate-400'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-base shrink-0">👥</span>
+                <span className="text-xs font-semibold leading-none">Aktif Personeli Göster</span>
+              </div>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${showPersonnelLayer ? 'bg-emerald-400' : 'bg-slate-600'}`}></span>
             </button>
           </div>
         </div>

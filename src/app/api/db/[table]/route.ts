@@ -357,6 +357,11 @@ async function ensureVehicleColumnsExist() {
     
     // Faz 28.53: Add push_subscription_token to personnel table
     await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS push_subscription_token TEXT;`);
+    
+    // Faz 28.55: Add personnel location tracking columns
+    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_enlem DOUBLE PRECISION;`);
+    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_boylam DOUBLE PRECISION;`);
+    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_guncelleme TIMESTAMPTZ;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }

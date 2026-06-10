@@ -125,6 +125,7 @@ function HaritaContent() {
   const [personnelList, setPersonnelList] = useState<any[]>([])
   const [externalMissions, setExternalMissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showPersonnelLayer, setShowPersonnelLayer] = useState(true)
 
   // Search Engine State
   const [searchQuery, setSearchQuery] = useState("")
@@ -835,6 +836,18 @@ function HaritaContent() {
             {interactionMode === 'add_hydrant' ? 'Haritaya Tıklayın...' : 'Yeni Hidrant'}
           </Button>
 
+          <Button 
+            variant={showPersonnelLayer ? 'default' : 'outline'}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${
+              showPersonnelLayer 
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-[0_0_12px_rgba(16,185,129,0.3)]' 
+                : 'border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10'
+            }`}
+            onClick={() => setShowPersonnelLayer(!showPersonnelLayer)}
+          >
+            👥 Personel Katmanı
+          </Button>
+
           {interactionMode !== 'idle' && (
             <Button variant="ghost" size="icon" onClick={() => setInteractionMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px] whitespace-nowrap" title="İşlemi İptal Et">
               <X className="w-5 h-5" />
@@ -920,6 +933,8 @@ function HaritaContent() {
             onUpdateHydrantStatus={handleUpdateHydrantStatus}
             onDeleteIncident={handleDeleteIncident}
             onEditIncident={handleEditIncident}
+            showPersonnelLayer={showPersonnelLayer}
+            onTogglePersonnelLayer={setShowPersonnelLayer}
           />
           
         </CardContent>
