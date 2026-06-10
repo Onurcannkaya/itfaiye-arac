@@ -262,7 +262,7 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChang
       <CardContent className="p-5 flex flex-col justify-between h-full">
         <div>
           {/* Header */}
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <Link 
               href={`/araclar/${idStr}`} 
               className={`flex items-center space-x-3.5 flex-1 min-w-0 ${vehicle.filo_no ? 'pl-9' : ''}`}
@@ -285,7 +285,7 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChang
               </div>
             </Link>
             
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0 mt-1 sm:mt-0">
               {vehicle.current_branch !== 'Makine İkmal Müdürlüğü (Bakım-Onarım)' && onReportFault && (
                 <button
                   onClick={(e) => {

@@ -21,7 +21,8 @@ import {
   MessageSquare, 
   Clock, 
   User, 
-  AlertTriangle 
+  AlertTriangle,
+  ArrowLeft 
 } from "lucide-react"
 
 // Turkish character cleanups for Helvetica built-in font in jsPDF
@@ -87,7 +88,10 @@ export default function TelsizPage() {
   
   const chatEndRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const chatContainerRef = useRef<HTMLDivElement | null>(null)
   const prevMessagesLength = useRef<number>(0)
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+  const [mobileView, setMobileView] = useState<'channels' | 'chat'>('channels')
 
   // Canvas waveform dynamic animation loop
   useEffect(() => {
@@ -202,10 +206,26 @@ export default function TelsizPage() {
     }
   }
 
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget
+    const isAtBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 40
+    setShouldAutoScroll(isAtBottom)
+  }
+
   // Polling for Selected Channel messages (every 2 seconds)
   useEffect(() => {
+    prevMessagesLength.current = 0 // Reset message length tracker on channel change
+    setShouldAutoScroll(true) // Reset auto-scroll to true when changing channels
     setLoadingMessages(true)
-    fetchMessages().then(() => setLoadingMessages(false))
+    fetchMessages().then(() => {
+      setLoadingMessages(false)
+      // Force scroll to bottom on channel change
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+        }
+      }, 100)
+    })
 
     const interval = setInterval(fetchMessages, 2000)
     return () => clearInterval(interval)
@@ -213,12 +233,12 @@ export default function TelsizPage() {
 
   // Scroll to bottom and play squelch / static noise on new messages
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-    
-    // Play walkie-talkie audio squelch/siren on receiving a new message
     if (messages.length > prevMessagesLength.current) {
+      if (shouldAutoScroll && chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+      }
+      
+      // Play walkie-talkie audio squelch/siren on receiving a new message
       if (prevMessagesLength.current > 0) {
         const lastMsg = messages[messages.length - 1]
         if (lastMsg.telsiz_kodu === 'ACIL_DURUM') {
@@ -229,7 +249,7 @@ export default function TelsizPage() {
       }
       prevMessagesLength.current = messages.length
     }
-  }, [messages])
+  }, [messages, shouldAutoScroll])
 
   // Send message action
   const handleSendMessage = async (text: string, telsizKodu: string | null = null) => {
@@ -489,7 +509,7 @@ export default function TelsizPage() {
 
   return (
     <PageGuard pageId="telsiz">
-      <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6 font-sans">
+      <div className="flex flex-col min-h-[calc(100vh-8rem)] lg:min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 p-4 pb-2 md:pb-6 font-sans">
         
         {/* TOP STATUS CONTROL BAR */}
         <div className="flex flex-col md:flex-row md:items-center justify-between border border-slate-800 bg-slate-900/40 backdrop-blur-md px-4 py-3 rounded-xl gap-4 mb-4">
@@ -534,7 +554,9 @@ export default function TelsizPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 items-stretch">
           
           {/* LEFT CHANNEL SELECTOR PANEL (SOL PANEL) */}
-          <div className="lg:col-span-4 flex flex-col gap-4 border border-slate-900 bg-slate-950 rounded-xl p-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
+          <div className={`lg:col-span-4 flex flex-col gap-4 border border-slate-900 bg-slate-950 rounded-xl p-4 max-h-[calc(100vh-21rem)] lg:max-h-[calc(100vh-14rem)] overflow-y-auto ${
+            mobileView === 'channels' ? 'flex' : 'hidden lg:flex'
+          }`}>
             
             {/* Telsiz Simulation Graphic Panel */}
             <div className="border border-slate-800/80 bg-slate-950 rounded-lg p-3 relative overflow-hidden shadow-[inset_0_2px_10px_rgba(6,182,212,0.05)]">
@@ -570,7 +592,10 @@ export default function TelsizPage() {
               <div className="space-y-1">
                 <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">KARARGÂH KANALI</span>
                 <button
-                  onClick={() => setSelectedChannel({ id: 'general', name: 'Genel Karargâh Muhabere', type: 'Genel', isClosed: false })}
+                  onClick={() => {
+                    setSelectedChannel({ id: 'general', name: 'Genel Karargâh Muhabere', type: 'Genel', isClosed: false })
+                    setMobileView('chat')
+                  }}
                   className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all cursor-pointer ${
                     selectedChannel.id === 'general'
                       ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.2)]'
@@ -599,7 +624,10 @@ export default function TelsizPage() {
                     {activeIncidents.map(inc => (
                       <button
                         key={inc.id}
-                        onClick={() => setSelectedChannel({ id: inc.id, name: `Vaka #${inc.olay_turu} (${inc.mahalle})`, type: 'Vaka', isClosed: false })}
+                        onClick={() => {
+                          setSelectedChannel({ id: inc.id, name: `Vaka #${inc.olay_turu} (${inc.mahalle})`, type: 'Vaka', isClosed: false })
+                          setMobileView('chat')
+                        }}
                         className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all cursor-pointer ${
                           selectedChannel.id === inc.id
                             ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.2)]'
@@ -630,7 +658,10 @@ export default function TelsizPage() {
                     {closedIncidents.map(inc => (
                       <button
                         key={inc.id}
-                        onClick={() => setSelectedChannel({ id: inc.id, name: `Arşiv: Vaka #${inc.olay_turu} (${inc.mahalle})`, type: 'Vaka', isClosed: true })}
+                        onClick={() => {
+                          setSelectedChannel({ id: inc.id, name: `Arşiv: Vaka #${inc.olay_turu} (${inc.mahalle})`, type: 'Vaka', isClosed: true })
+                          setMobileView('chat')
+                        }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                           selectedChannel.id === inc.id
                             ? 'bg-slate-800/80 border-slate-700 text-slate-300 font-bold'
@@ -655,13 +686,23 @@ export default function TelsizPage() {
           </div>
 
           {/* RIGHT MESSAGE LOGS & CHAT WINDOW (SAĞ PANEL) */}
-          <div className="lg:col-span-8 flex flex-col border border-slate-900 bg-slate-950/60 rounded-xl overflow-hidden min-h-[500px] max-h-[calc(100vh-14rem)]">
+          <div className={`lg:col-span-8 flex flex-col border border-slate-900 bg-slate-950/60 rounded-xl overflow-hidden min-h-[300px] lg:min-h-[500px] max-h-[calc(100vh-21rem)] lg:max-h-[calc(100vh-14rem)] ${
+            mobileView === 'chat' ? 'flex' : 'hidden lg:flex'
+          }`}>
             
             {/* Header info */}
             <div className="border-b border-slate-900 bg-slate-950 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${selectedChannel.isClosed ? 'bg-slate-500' : 'bg-cyan-500 animate-pulse'}`} />
-                <h3 className="font-bold text-slate-100">{selectedChannel.name}</h3>
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Back Button on Mobile */}
+                <button
+                  onClick={() => setMobileView('channels')}
+                  className="lg:hidden p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 mr-2 shrink-0 cursor-pointer"
+                  title="Kanallara Dön"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${selectedChannel.isClosed ? 'bg-slate-500' : 'bg-cyan-500 animate-pulse'}`} />
+                <h3 className="font-bold text-slate-100 truncate text-sm md:text-base">{selectedChannel.name}</h3>
               </div>
               <div className="flex items-center gap-1.5">
                 {selectedChannel.isClosed ? (
@@ -685,7 +726,11 @@ export default function TelsizPage() {
             </div>
 
             {/* Chat Stream Window */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/30 scrollbar-thin">
+            <div 
+              ref={chatContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/30 scrollbar-thin"
+            >
               {loadingMessages ? (
                 <div className="flex flex-col items-center justify-center h-full py-12 text-slate-500 gap-2">
                   <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
