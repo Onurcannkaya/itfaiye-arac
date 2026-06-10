@@ -205,6 +205,27 @@ export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuthStore()
 
+  const showCriticalAlerts = useMemo(() => {
+    if (!user) return false
+    const role = user.rol || ""
+    const title = user.unvan || ""
+
+    if (role === "Admin" || role === "Editor" || role === "Shift_Leader") {
+      return true
+    }
+
+    const normalizedTitle = title.toLowerCase()
+      .replace(/ı/g, "i")
+      .replace(/ş/g, "s")
+      .replace(/ğ/g, "g")
+      .replace(/ç/g, "c")
+      .replace(/ü/g, "u")
+      .replace(/ö/g, "o")
+
+    const managerKeywords = ["mudur", "amir", "cavus", "cvs", "bas.cvs", "bas sofor", "bas.sofor", "pos.bas"]
+    return managerKeywords.some(keyword => normalizedTitle.includes(keyword))
+  }, [user])
+
   const [programInfo, setProgramInfo] = useState({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
   const [currentTime, setCurrentTime] = useState("")
 
@@ -983,7 +1004,7 @@ export default function DashboardPage() {
       )}
 
       {/* ═══════════ CRITICAL ALERTS ═══════════ */}
-      <CriticalAlertsWidget />
+      {showCriticalAlerts && <CriticalAlertsWidget />}
 
       {/* ═══════════ KPI CARDS ═══════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
