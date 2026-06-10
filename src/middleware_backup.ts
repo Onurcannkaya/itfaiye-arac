@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   // RBAC: Admin-only paths
   const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
   if (isAdminPath) {
-    if (session.rol !== "Admin" && session.rol !== "Editor" && session.rol !== "Shift_Leader") {
+    if (session.rol !== "Admin" && session.rol !== "Editor" && session.rol !== "Shift_Leader" && session.rol !== "User") {
       const dashUrl = new URL("/", request.url);
       dashUrl.searchParams.set("unauthorized", "1");
       return NextResponse.redirect(dashUrl);
