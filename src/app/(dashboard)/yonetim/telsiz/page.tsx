@@ -86,6 +86,58 @@ export default function TelsizPage() {
   const [isRxActive, setIsRxActive] = useState(false) // Green dot blinking (Reception)
   
   const chatEndRef = useRef<HTMLDivElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const prevMessagesLength = useRef<number>(0)
+
+  // Canvas waveform dynamic animation loop
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    let animationId: number
+    let phase = 0
+    
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      let amplitude = 1.5
+      let speed = 0.05
+      if (isTxActive || sendingMessage) {
+        amplitude = 8
+        speed = 0.22
+      } else if (isRxActive) {
+        amplitude = 6
+        speed = 0.16
+      } else if (inputText.trim().length > 0) {
+        amplitude = 3
+        speed = 0.08
+      }
+      
+      ctx.strokeStyle = '#06b6d4' // cyan-500
+      ctx.lineWidth = 1.5
+      ctx.shadowBlur = 4
+      ctx.shadowColor = 'rgba(6, 182, 212, 0.4)'
+      
+      ctx.beginPath()
+      for (let x = 0; x < canvas.width; x++) {
+        const y = canvas.height / 2 + Math.sin(x * 0.1 + phase) * amplitude
+        if (x === 0) {
+          ctx.moveTo(x, y)
+        } else {
+          ctx.lineTo(x, y)
+        }
+      }
+      ctx.stroke()
+      
+      phase += speed
+      animationId = requestAnimationFrame(draw)
+    }
+    
+    draw()
+    return () => cancelAnimationFrame(animationId)
+  }, [isTxActive, isRxActive, sendingMessage, inputText])
 
   // Resolve user's database personnel uuid on load
   useEffect(() => {
@@ -159,10 +211,23 @@ export default function TelsizPage() {
     return () => clearInterval(interval)
   }, [selectedChannel])
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom and play squelch / static noise on new messages
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+    
+    // Play walkie-talkie audio squelch/siren on receiving a new message
+    if (messages.length > prevMessagesLength.current) {
+      if (prevMessagesLength.current > 0) {
+        const lastMsg = messages[messages.length - 1]
+        if (lastMsg.telsiz_kodu === 'ACIL_DURUM') {
+          playSirenSound()
+        } else {
+          playStaticNoise()
+        }
+      }
+      prevMessagesLength.current = messages.length
     }
   }, [messages])
 
@@ -214,6 +279,7 @@ export default function TelsizPage() {
 
   // Simulate Walkie-Talkie Over beep sound using Web Audio API
   const playRadioBeep = () => {
+    if (isMuted) return
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
       if (!AudioCtx) return
@@ -224,7 +290,7 @@ export default function TelsizPage() {
       const gain = ctx.createGain()
       osc.type = 'sine'
       osc.frequency.setValueAtTime(880, ctx.currentTime) // High Pitch Beep
-      gain.gain.setValueAtTime(0.1, ctx.currentTime)
+      gain.gain.setValueAtTime(0.08, ctx.currentTime)
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15)
       
       osc.connect(gain)
@@ -233,6 +299,83 @@ export default function TelsizPage() {
       osc.stop(ctx.currentTime + 0.15)
     } catch (e) {
       console.warn("Audio Context init failed:", e)
+    }
+  }
+
+  // Play Walkie-Talkie Static/Squelch Noise using synthesized white noise
+  const playStaticNoise = () => {
+    if (isMuted || typeof window === 'undefined') return
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioCtx) return
+      const ctx = new AudioCtx()
+      
+      const bufferSize = ctx.sampleRate * 0.12 // 120ms duration
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1 // White noise
+      }
+      
+      const noise = ctx.createBufferSource()
+      noise.buffer = buffer
+      
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = 1000
+      filter.Q.value = 1.2
+      
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(0.04, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12)
+      
+      noise.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+      
+      noise.start()
+    } catch (e) {
+      console.warn("Static noise failed:", e)
+    }
+  }
+
+  // Play Emergency Siren Yelp sound using low pass modulated oscillator
+  const playSirenSound = () => {
+    if (isMuted || typeof window === 'undefined') return
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioCtx) return
+      const ctx = new AudioCtx()
+      
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(600, ctx.currentTime)
+      
+      const duration = 1.8 // 1.8 seconds duration
+      const steps = 18
+      for (let i = 0; i < steps; i++) {
+        const time = ctx.currentTime + (duration / steps) * i
+        const freq = i % 2 === 0 ? 900 : 600
+        osc.frequency.setValueAtTime(freq, time)
+      }
+      
+      gain.gain.setValueAtTime(0.08, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
+      
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'lowpass'
+      filter.frequency.value = 1400
+      
+      osc.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+      
+      osc.start()
+      osc.stop(ctx.currentTime + duration)
+    } catch (e) {
+      console.warn("Siren sound failed:", e)
     }
   }
 
@@ -406,15 +549,15 @@ export default function TelsizPage() {
                 </div>
               </div>
               
-              {/* Status Screen */}
+              {/* Status Screen with animated canvas waveform */}
               <div className="mt-3 bg-slate-900/90 border border-slate-800/60 rounded px-3 py-2 flex items-center justify-between font-mono">
                 <span className="text-xs font-black text-cyan-400 tracking-widest uppercase">ANLIK KANAL BAĞLANTISI</span>
-                <div className="flex items-end gap-0.5 h-5">
-                  <div className="w-1 h-2 bg-cyan-500 rounded-sm" />
-                  <div className="w-1 h-3 bg-cyan-500 rounded-sm" />
-                  <div className="w-1 h-4 bg-cyan-500 rounded-sm" />
-                  <div className="w-1 h-5 bg-cyan-500 rounded-sm animate-pulse" />
-                </div>
+                <canvas 
+                  ref={canvasRef} 
+                  width={90} 
+                  height={18} 
+                  className="w-[90px] h-[18px] opacity-90"
+                />
               </div>
             </div>
 
@@ -641,6 +784,17 @@ export default function TelsizPage() {
                     className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
                     🟢 Kontrol Altında
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSirenSound()
+                      handleSendMessage("🚨 ACİL DURUM İKAZI! İvedi koordinasyon sağlayın, tamam.", "ACIL_DURUM")
+                    }}
+                    disabled={sendingMessage || !personnelUuid}
+                    className="px-2.5 py-1 text-xs bg-red-950/20 hover:bg-red-900/20 border border-red-800/40 hover:border-red-500 text-red-400 rounded-lg cursor-pointer transition-all font-mono font-bold flex items-center gap-1"
+                  >
+                    🚨 Acil Durum İkazı
                   </button>
                 </div>
 
