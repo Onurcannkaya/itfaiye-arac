@@ -36,12 +36,12 @@ export function mapUserToPermissionRole(user: any): string {
 }
 
 interface PageGuardProps {
-  pageId: 'harita' | 'personel_yonetimi' | 'arac_bakim' | 'envanter' | 'raporlar' | 'egitimler' | 'hizmet_basvurulari' | 'gorevler' | 'kilavuz';
+  pageId: 'harita' | 'personel_yonetimi' | 'arac_bakim' | 'envanter' | 'raporlar' | 'egitimler' | 'hizmet_basvurulari' | 'gorevler' | 'kilavuz' | 'telsiz';
   children: React.ReactNode;
 }
 
 export default function PageGuard({ pageId, children }: PageGuardProps) {
-  if (pageId === 'kilavuz') {
+  if (pageId === 'kilavuz' || pageId === 'telsiz') {
     return <>{children}</>;
   }
   const { user, isAuthenticated } = useAuthStore();

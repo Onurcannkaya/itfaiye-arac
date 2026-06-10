@@ -18,7 +18,8 @@ import {
   ShieldAlert, 
   History,
   Combine,
-  BookOpen
+  BookOpen,
+  Radio
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { useAuthStore } from '@/lib/authStore'
@@ -43,6 +44,7 @@ export function Sidebar() {
       items: [
         { href: "/yonetim", label: "Gösterge Paneli", icon: LayoutDashboard, visible: true },
         { href: "/yonetim/harita", label: "Komuta Haritası (CBS)", icon: Map, visible: !isEr },
+        { href: "/yonetim/telsiz", label: "Dijital Telsiz", icon: Radio, visible: true },
       ]
     },
     {

@@ -20,7 +20,8 @@ import {
   FileText,
   GraduationCap,
   Combine,
-  BookOpen
+  BookOpen,
+  Radio
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -60,6 +61,7 @@ export function MobileNav() {
       items: [
         { href: "/yonetim", label: "Gösterge Paneli", icon: LayoutDashboard, visible: true },
         { href: "/yonetim/harita", label: "Komuta Haritası (CBS)", icon: Map, visible: !isEr },
+        { href: "/yonetim/telsiz", label: "Dijital Telsiz", icon: Radio, visible: true },
       ]
     },
     {

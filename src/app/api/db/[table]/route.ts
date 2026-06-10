@@ -99,7 +99,7 @@ const ALLOWED_TABLES = [
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
-  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions'
+  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -513,6 +513,26 @@ async function ensurePersonnelDetailsTableExists() {
   }
 }
 
+async function ensureRadioLogsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.radio_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        kanal_tipi VARCHAR NOT NULL,
+        vaka_id UUID REFERENCES public.incidents(id) ON DELETE CASCADE,
+        gonderen_personel_id UUID NOT NULL REFERENCES public.personnel(id) ON DELETE CASCADE,
+        gonderen_ad_soyad VARCHAR NOT NULL,
+        gonderen_rutbe VARCHAR NOT NULL,
+        mesaj_metni TEXT NOT NULL,
+        telsiz_kodu VARCHAR,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+  } catch (err) {
+    console.error('ensureRadioLogsTableExists hatası:', err);
+  }
+}
+
 async function sendIncidentWhatsAppNotification(incidentId: string, assignedSicilNos: string[]) {
   try {
     const locRes = await query(`
@@ -870,6 +890,9 @@ export async function GET(
     if (table === 'personnel_details') {
       await ensurePersonnelDetailsTableExists();
     }
+    if (table === 'radio_logs') {
+      await ensureRadioLogsTableExists();
+    }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
     }
@@ -989,6 +1012,9 @@ export async function POST(
     }
     if (table === 'personnel_details') {
       await ensurePersonnelDetailsTableExists();
+    }
+    if (table === 'radio_logs') {
+      await ensureRadioLogsTableExists();
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
@@ -1246,6 +1272,9 @@ export async function PATCH(
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
     }
+    if (table === 'radio_logs') {
+      await ensureRadioLogsTableExists();
+    }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
     }
@@ -1452,6 +1481,9 @@ export async function DELETE(
     }
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
+    }
+    if (table === 'radio_logs') {
+      await ensureRadioLogsTableExists();
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
