@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Input } from "@/components/ui/Input"
-import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity, Shield, ActivitySquare, LogOut, CheckCircle2, Clock, AlertTriangle } from "lucide-react"
+import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity, Shield, ActivitySquare, LogOut, CheckCircle2, Clock, AlertTriangle, Pencil, X, Save, Loader2 } from "lucide-react"
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts"
+import { useAuthStore } from "@/lib/authStore"
 
 // Types
 type Personel = any; // TODO: Better typing
@@ -34,6 +35,49 @@ export default function PersonelProfilPage() {
   const [totalMissions, setTotalMissions] = useState<number>(0)
   const [statsLoading, setStatsLoading] = useState(true)
   const [certInfo, setCertInfo] = useState<any | null>(null)
+
+  // Faz 28.56: Kişisel İletişim Bilgileri Düzenleme State'leri
+  const { user } = useAuthStore()
+  const [isEditing, setIsEditing] = useState(false)
+  const [editPhone, setEditPhone] = useState("")
+  const [editAddress, setEditAddress] = useState("")
+  const [editEmergencyName, setEditEmergencyName] = useState("")
+  const [editEmergencyPhone, setEditEmergencyPhone] = useState("")
+  const [savingDetails, setSavingDetails] = useState(false)
+
+  const canEdit = user && (user.sicilNo === sicil_no || user.rol === "Admin")
+
+  const handleStartEdit = () => {
+    setEditPhone(details?.telefon || "")
+    setEditAddress(details?.adres || "")
+    setEditEmergencyName(details?.acil_durum_kisi_ad || "")
+    setEditEmergencyPhone(details?.acil_durum_kisi_telefon || "")
+    setIsEditing(true)
+  }
+
+  const handleSaveDetails = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSavingDetails(true)
+    try {
+      const payload = {
+        sicil_no: sicil_no,
+        telefon: editPhone,
+        adres: editAddress,
+        acil_durum_kisi_ad: editEmergencyName,
+        acil_durum_kisi_telefon: editEmergencyPhone,
+        updated_at: new Date().toISOString()
+      }
+      const { error } = await api.upsert('personnel_details', payload, 'sicil_no')
+      if (error) throw error
+      
+      setDetails((prev: any) => prev ? ({ ...prev, ...payload }) : payload)
+      setIsEditing(false)
+    } catch (err: any) {
+      alert("Bilgiler güncellenirken hata oluştu: " + err.message)
+    } finally {
+      setSavingDetails(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -613,8 +657,18 @@ export default function PersonelProfilPage() {
         {/* İLETİŞİM SEKMESİ */}
         {activeTab === 'iletisim' && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="text-lg">İletişim & Acil Durum Bilgileri</CardTitle>
+              {canEdit && (
+                <Button 
+                  onClick={handleStartEdit} 
+                  variant="outline" 
+                  size="sm"
+                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                >
+                  <Pencil className="w-4 h-4 mr-2" /> Bilgileri Düzenle
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -801,6 +855,80 @@ export default function PersonelProfilPage() {
           </Card>
         )}
 
+        {/* İLETİŞİM DÜZENLEME MODALI */}
+        {isEditing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+            <Card className="w-full max-w-md bg-slate-900 border border-slate-800 shadow-2xl p-6 rounded-xl animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-cyan-400" /> İletişim Bilgilerini Düzenle
+                </h3>
+                <button 
+                  onClick={() => setIsEditing(false)} 
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-950 border border-slate-800 transition-all cursor-pointer"
+                  title="Kapat"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveDetails} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-400">Telefon Numarası</label>
+                  <Input 
+                    type="tel" 
+                    value={editPhone} 
+                    onChange={e => setEditPhone(e.target.value)} 
+                    placeholder="Örn: 0555 123 4567" 
+                    className="bg-slate-950 border-slate-800 focus:border-cyan-500" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-400">Açık Adres</label>
+                  <textarea 
+                    value={editAddress} 
+                    onChange={e => setEditAddress(e.target.value)} 
+                    placeholder="Ev adresi..." 
+                    rows={3}
+                    className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none" 
+                  />
+                </div>
+                
+                <div className="border-t border-slate-800 my-4 pt-4 space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-danger flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Acil Durumda Ulaşılacak Kişi
+                  </h4>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-400">Adı Soyadı</label>
+                    <Input 
+                      value={editEmergencyName} 
+                      onChange={e => setEditEmergencyName(e.target.value)} 
+                      placeholder="Örn: Yakını, Eşi vb." 
+                      className="bg-slate-950 border-slate-800 focus:border-cyan-500" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-400">İrtibat Telefonu</label>
+                    <Input 
+                      type="tel" 
+                      value={editEmergencyPhone} 
+                      onChange={e => setEditEmergencyPhone(e.target.value)} 
+                      placeholder="Örn: 0555 987 6543" 
+                      className="bg-slate-950 border-slate-800 focus:border-cyan-500" 
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>İptal</Button>
+                  <Button type="submit" disabled={savingDetails} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-5">
+                    {savingDetails ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Kaydet
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )

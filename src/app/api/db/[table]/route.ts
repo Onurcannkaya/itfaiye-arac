@@ -492,6 +492,93 @@ async function ensureExternalMissionsTableExists() {
   }
 }
 
+async function ensurePersonnelDetailsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.personnel_details (
+        sicil_no VARCHAR PRIMARY KEY,
+        kan_grubu VARCHAR,
+        telefon VARCHAR,
+        acil_durum_kisi_ad VARCHAR,
+        acil_durum_kisi_telefon VARCHAR,
+        adres TEXT,
+        dogum_tarihi DATE,
+        ise_baslama_tarihi DATE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+  } catch (err) {
+    console.error('ensurePersonnelDetailsTableExists hatası:', err);
+  }
+}
+
+async function sendIncidentWhatsAppNotification(incidentId: string, assignedSicilNos: string[]) {
+  try {
+    const locRes = await query(`
+      SELECT ST_X(location::geometry) AS lng, ST_Y(location::geometry) AS lat, olay_turu, mahalle, adres 
+      FROM public.incidents 
+      WHERE id = $1
+    `, [incidentId]);
+
+    let lat = 39.750;
+    let lng = 37.016;
+    let olayTuru = 'Yangın';
+    let mahalle = 'Bilinmeyen Mahalle';
+    let adres = '';
+
+    if (locRes.rows[0]) {
+      const row = locRes.rows[0];
+      lng = row.lng !== null && row.lng !== undefined ? parseFloat(row.lng) : 37.016;
+      lat = row.lat !== null && row.lat !== undefined ? parseFloat(row.lat) : 39.750;
+      olayTuru = row.olay_turu || 'Yangın';
+      mahalle = row.mahalle || 'Bilinmeyen Mahalle';
+      adres = row.adres || '';
+    }
+
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    const text = `🚨 DİKKAT: ${olayTuru}, ${mahalle} bölgesinde ihbar. Aracınızla ivedi çıkış yapın! Rota Linki: ${mapsUrl}`;
+
+    const phoneRes = await query(`
+      SELECT pd.telefon, p.sicil_no 
+      FROM public.personnel p
+      JOIN public.personnel_details pd ON p.sicil_no = pd.sicil_no
+      WHERE (p.sicil_no = ANY($1) 
+         OR p.rol IN ('Amir', 'Müdür') 
+         OR p.unvan ILIKE '%amir%' 
+         OR p.unvan ILIKE '%müdür%' 
+         OR p.unvan ILIKE '%çavuş%')
+        AND pd.telefon IS NOT NULL AND pd.telefon != ''
+    `, [assignedSicilNos]);
+
+    for (const row of phoneRes.rows) {
+      try {
+        console.log(`[WhatsApp Gateway] Mesaj gönderiliyor -> Tel: ${row.telefon}, Mesaj: ${text}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        fetch('http://localhost:3001/api/whatsapp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: row.telefon,
+            message: text
+          }),
+          signal: controller.signal
+        }).then(() => {
+          clearTimeout(timeoutId);
+        }).catch(() => {
+          clearTimeout(timeoutId);
+        });
+      } catch (err) {
+        console.error(`[WhatsApp Gateway] Hata (Sicil: ${row.sicil_no}):`, err);
+      }
+    }
+  } catch (err) {
+    console.error('sendIncidentWhatsAppNotification hatası:', err);
+  }
+}
+
 async function ensureUnifiedSystemLogsViewExists() {
   try {
     await query(`DROP VIEW IF EXISTS public.unified_system_logs CASCADE;`);
@@ -780,6 +867,9 @@ export async function GET(
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
     }
+    if (table === 'personnel_details') {
+      await ensurePersonnelDetailsTableExists();
+    }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
     }
@@ -896,6 +986,9 @@ export async function POST(
     }
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
+    }
+    if (table === 'personnel_details') {
+      await ensurePersonnelDetailsTableExists();
     }
     if (table === 'duty_logs') {
       await ensureDutyLogsTableExists();
@@ -1114,6 +1207,9 @@ export async function POST(
               sendIncidentPushNotifications(row.id, pList).catch(err => {
                 console.error('sendIncidentPushNotifications POST hatası:', err);
               });
+              sendIncidentWhatsAppNotification(row.id, pList).catch(err => {
+                console.error('sendIncidentWhatsAppNotification POST hatası:', err);
+              });
             }
           } catch (e) {
             console.error('ek16_personel parse hatası:', e);
@@ -1314,6 +1410,9 @@ export async function PATCH(
             if (Array.isArray(pList) && pList.length > 0) {
               sendIncidentPushNotifications(row.id, pList).catch(err => {
                 console.error('sendIncidentPushNotifications PATCH hatası:', err);
+              });
+              sendIncidentWhatsAppNotification(row.id, pList).catch(err => {
+                console.error('sendIncidentWhatsAppNotification PATCH hatası:', err);
               });
             }
           } catch (e) {
