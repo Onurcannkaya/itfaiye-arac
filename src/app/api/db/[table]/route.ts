@@ -355,6 +355,10 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS filo_no INTEGER;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS aciklama VARCHAR;`);
     
+    // Faz 28.59: Add responsible personnel columns
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS sorumlu_sofor_id UUID REFERENCES public.personnel(id) ON DELETE SET NULL;`);
+    await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS sorumlu_er_id UUID REFERENCES public.personnel(id) ON DELETE SET NULL;`);
+    
     // Faz 28.53: Add push_subscription_token to personnel table
     await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS push_subscription_token TEXT;`);
     

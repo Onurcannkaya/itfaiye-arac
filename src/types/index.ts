@@ -29,10 +29,13 @@ export interface Vehicle {
   aciklama?: string;
   id?: string;
   current_branch?: string;
+  sorumlu_sofor_id?: string | null;
+  sorumlu_er_id?: string | null;
 }
 
 
 export interface Personnel {
+  id?: string;
   sicil_no: string;
   username?: string;
   ad: string;

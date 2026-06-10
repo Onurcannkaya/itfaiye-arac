@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 export default function PersonelYonetimPage() {
   const { user: currentUser } = useAuthStore()
   const [personnel, setPersonnel] = useState<Personnel[]>([])
+  const [vehicles, setVehicles] = useState<any[]>([])
+  const [selectedClass, setSelectedClass] = useState<"komuta" | "driver" | "saha" | "destek">("komuta")
   const [searchQuery, setSearchQuery] = useState("")
   const [licenseFilter, setLicenseFilter] = useState("all")
   const [loading, setLoading] = useState(true)
@@ -71,12 +73,19 @@ export default function PersonelYonetimPage() {
         setCertifications(certData)
       }
 
+      // Fetch vehicles to show responsible vehicle plaka badges
+      const { data: vData } = await api.from('vehicles').select('id, plaka, sorumlu_sofor_id, sorumlu_er_id')
+      if (vData) {
+        setVehicles(vData)
+      }
+
       if (data && data.length > 0) {
         const mapped: Personnel[] = data.map((p: any) => {
           const ehliyet = certData?.find((c: any) => c.sicil_no === p.sicil_no && c.tip === 'Ehliyet')
           const ilkyardim = certData?.find((c: any) => c.sicil_no === p.sicil_no && c.tip === 'İlkyardım')
           const scba = certData?.find((c: any) => c.sicil_no === p.sicil_no && c.tip === 'SCBA')
           return {
+            id: p.id,
             sicil_no: p.sicil_no,
             ad: p.ad,
             soyad: p.soyad,
@@ -130,6 +139,27 @@ export default function PersonelYonetimPage() {
   const filteredPersonnel = useMemo(() => {
     let result = personnel
     
+    // Class filter (Komuta, Driver, Saha, Destek)
+    result = result.filter(p => {
+      const isKomuta = p.rol === 'Admin' || p.rol === 'Shift_Leader' || p.unvan === 'Amir' || p.unvan === 'Müdür';
+      const isDriver = !isKomuta && (
+        p.rol === 'Driver' || 
+        p.unvan.toLowerCase().includes('şof') || 
+        p.unvan.toLowerCase().includes('sürücü')
+      );
+      const isSaha = !isKomuta && !isDriver && (
+        p.unvan === 'Er' || 
+        p.unvan.toLowerCase().includes('personnel')
+      );
+      const isDestek = !isKomuta && !isDriver && !isSaha;
+
+      if (selectedClass === 'komuta') return isKomuta;
+      if (selectedClass === 'driver') return isDriver;
+      if (selectedClass === 'saha') return isSaha;
+      if (selectedClass === 'destek') return isDestek;
+      return true;
+    });
+    
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       result = result.filter(p => 
@@ -158,7 +188,7 @@ export default function PersonelYonetimPage() {
       })
     }
     return result
-  }, [personnel, searchQuery, licenseFilter])
+  }, [personnel, searchQuery, licenseFilter, selectedClass])
 
   // Şoför ehliyet listesi ve kalan gün sıralaması (Faz 28.23.7)
   const driverLicenseData = useMemo(() => {
@@ -934,6 +964,59 @@ export default function PersonelYonetimPage() {
             </div>
           </div>
         </CardHeader>
+
+        {/* 4 Sekmeli Siber-Mat Sınıflandırma Filtre Çubuğu */}
+        <div className="border-b border-border/50 bg-muted/5 p-2 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedClass('komuta')}
+            className={cn(
+              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'komuta'
+                ? "bg-amber-500/10 text-amber-500 border-amber-500/30 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>👑</span>
+            <span>Komuta Kademesi</span>
+          </button>
+          <button
+            onClick={() => setSelectedClass('driver')}
+            className={cn(
+              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'driver'
+                ? "bg-blue-500/10 text-blue-500 border-blue-500/30 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>🚚</span>
+            <span>Sürücü Filosu</span>
+          </button>
+          <button
+            onClick={() => setSelectedClass('saha')}
+            className={cn(
+              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'saha'
+                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>🧑🚒</span>
+            <span>Saha Müdahale</span>
+          </button>
+          <button
+            onClick={() => setSelectedClass('destek')}
+            className={cn(
+              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'destek'
+                ? "bg-purple-500/10 text-purple-500 border-purple-500/30 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>📞</span>
+            <span>Santral & Destek</span>
+          </button>
+        </div>
+
         <CardContent className="p-0">
           <div className="divide-y divide-border/50">
             {filteredPersonnel.map(person => {
@@ -963,6 +1046,16 @@ export default function PersonelYonetimPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold truncate">{person.ad} {person.soyad}</span>
+                        {(() => {
+                          const assignedVehicle = vehicles.find(v => v.sorumlu_sofor_id === person.id || v.sorumlu_er_id === person.id);
+                          if (!assignedVehicle) return null;
+                          return (
+                            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/35 text-[9px] px-1.5 py-0 font-bold font-mono flex items-center gap-1 shadow-sm shrink-0">
+                              <Truck className="w-2.5 h-2.5" />
+                              {assignedVehicle.plaka}
+                            </Badge>
+                          );
+                        })()}
                         {isLeader && (
                           <Badge variant="warning" className="text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
                             <Star className="w-2.5 h-2.5 fill-warning" />

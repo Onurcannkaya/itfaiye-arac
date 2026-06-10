@@ -20,7 +20,7 @@ import {
   Building2,
   MapPin
 } from "lucide-react"
-import { Vehicle } from "@/types"
+import { Vehicle, Personnel } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -41,6 +41,7 @@ interface MaintenanceLog {
 export default function VehiclesPage() {
   const [activeTab, setActiveTab] = useState<"active" | "maintenance">("active")
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingLogs, setLoadingLogs] = useState(false)
@@ -129,10 +130,59 @@ export default function VehiclesPage() {
     }
   }
 
+  const fetchPersonnel = async () => {
+    try {
+      const { data } = await api.from('personnel').select('*').eq('aktif', true)
+      if (data) {
+        setPersonnel(data)
+      }
+    } catch (err) {
+      console.error("Personel yüklenirken hata:", err)
+    }
+  }
+
   useEffect(() => {
     fetchVehicles()
     fetchMaintenanceLogs()
+    fetchPersonnel()
   }, [])
+
+  const drivers = useMemo(() => {
+    return personnel.filter(p => {
+      const isKomuta = p.rol === 'Admin' || p.rol === 'Shift_Leader' || p.unvan === 'Amir' || p.unvan === 'Müdür';
+      return !isKomuta && (
+        p.rol === 'Driver' || 
+        p.unvan.toLowerCase().includes('şof') || 
+        p.unvan.toLowerCase().includes('sürücü')
+      );
+    });
+  }, [personnel]);
+
+  const ers = useMemo(() => {
+    return personnel.filter(p => {
+      const isKomuta = p.rol === 'Admin' || p.rol === 'Shift_Leader' || p.unvan === 'Amir' || p.unvan === 'Müdür';
+      const isDriver = !isKomuta && (
+        p.rol === 'Driver' || 
+        p.unvan.toLowerCase().includes('şof') || 
+        p.unvan.toLowerCase().includes('sürücü')
+      );
+      return !isKomuta && !isDriver && (
+        p.unvan === 'Er' || 
+        p.unvan.toLowerCase().includes('personnel')
+      );
+    });
+  }, [personnel]);
+
+  const handleUpdateResponsibles = async (plaka: string, updateData: { sorumlu_sofor_id?: string | null, sorumlu_er_id?: string | null }) => {
+    try {
+      const { error } = await api.update('vehicles', updateData, { plaka });
+      if (error) throw new Error(error);
+      fetchVehicles();
+    } catch (err) {
+      console.error("Sorumlular güncellenirken hata oluştu:", err);
+      alert("Hata oluştu: Sorumlu personel atanamadı.");
+    }
+  };
 
   const canEdit = user?.rol !== 'User'
 
@@ -679,6 +729,9 @@ export default function VehiclesPage() {
                     setNewBranch(targetVehicle?.current_branch || 'Merkez');
                     setBranchModalOpen(true);
                   } : undefined}
+                  drivers={drivers}
+                  ers={ers}
+                  onUpdateResponsibles={handleUpdateResponsibles}
                 />
               ))}
             </div>
@@ -714,6 +767,9 @@ export default function VehiclesPage() {
                     vehicle={v}
                     onPrintQR={(plaka, aracTipi, marka) => setQrModal({ open: true, plaka, aracTipi, marka: marka || "" })}
                     onEdit={canEdit ? (vehicle) => setEditModal({ open: true, vehicle }) : undefined}
+                    drivers={drivers}
+                    ers={ers}
+                    onUpdateResponsibles={handleUpdateResponsibles}
                   />
                 ))}
               </div>

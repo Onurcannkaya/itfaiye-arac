@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { Printer, Edit2, MapPin, Calendar, Compass, Milestone, X } from "lucide-react"
 import Link from "next/link"
-import { Vehicle } from "@/types"
+import { Vehicle, Personnel } from "@/types"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/authStore"
 
@@ -13,6 +13,9 @@ interface VehicleCardProps {
   onEdit?: (vehicle: Vehicle) => void
   onReportFault?: (plaka: string) => void
   onChangeBranch?: (plaka: string) => void
+  drivers?: Personnel[]
+  ers?: Personnel[]
+  onUpdateResponsibles?: (plaka: string, updateData: { sorumlu_sofor_id?: string | null, sorumlu_er_id?: string | null }) => Promise<void>
 }
 
 function getTacticalSilhouette(aracTipi: string, filoNo?: number | null) {
@@ -168,12 +171,15 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
   }
 }
 
-export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChangeBranch }: VehicleCardProps) {
+export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChangeBranch, drivers, ers, onUpdateResponsibles }: VehicleCardProps) {
   const { user } = useAuthStore()
   const [inspectionDate, setInspectionDate] = useState(vehicle.next_inspection_date)
   const [isEditing, setIsEditing] = useState(false)
   const [newDate, setNewDate] = useState(vehicle.next_inspection_date || '')
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isUpdatingResponsibles, setIsUpdatingResponsibles] = useState(false)
+
+  const canUpdateResponsibles = user ? (user.rol === 'Admin' || user.rol === 'Editor' || user.rol === 'Shift_Leader') : false
 
   const canUpdateInspection = (() => {
     if (!user) return false;
@@ -434,6 +440,64 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChang
                   <span className="text-[11px] leading-none">✏️</span>
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Sorumlu Personel Dropdown Alanı */}
+        {drivers && ers && (
+          <div className="mt-4 pt-3.5 border-t border-white/5 space-y-2">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">🔒 Envanter Yetki Sorumluları</p>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Sorumlu Şoför */}
+              <div className="space-y-1">
+                <label className="text-[9px] text-slate-400 font-bold uppercase block">Sorumlu Şoför</label>
+                <select
+                  disabled={!canUpdateResponsibles || isUpdatingResponsibles}
+                  value={vehicle.sorumlu_sofor_id || ""}
+                  onChange={async (e) => {
+                    const val = e.target.value || null;
+                    if (onUpdateResponsibles) {
+                      setIsUpdatingResponsibles(true);
+                      await onUpdateResponsibles(vehicle.plaka, { sorumlu_sofor_id: val });
+                      setIsUpdatingResponsibles(false);
+                    }
+                  }}
+                  className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50 disabled:opacity-50 h-8"
+                >
+                  <option value="">Seçilmedi</option>
+                  {drivers.map(d => (
+                    <option key={d.id} value={d.id} className="bg-slate-950 text-slate-200">
+                      {d.ad} {d.soyad}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sorumlu Er */}
+              <div className="space-y-1">
+                <label className="text-[9px] text-slate-400 font-bold uppercase block">Sorumlu Er</label>
+                <select
+                  disabled={!canUpdateResponsibles || isUpdatingResponsibles}
+                  value={vehicle.sorumlu_er_id || ""}
+                  onChange={async (e) => {
+                    const val = e.target.value || null;
+                    if (onUpdateResponsibles) {
+                      setIsUpdatingResponsibles(true);
+                      await onUpdateResponsibles(vehicle.plaka, { sorumlu_er_id: val });
+                      setIsUpdatingResponsibles(false);
+                    }
+                  }}
+                  className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50 disabled:opacity-50 h-8"
+                >
+                  <option value="">Seçilmedi</option>
+                  {ers.map(er => (
+                    <option key={er.id} value={er.id} className="bg-slate-950 text-slate-200">
+                      {er.ad} {er.soyad}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}

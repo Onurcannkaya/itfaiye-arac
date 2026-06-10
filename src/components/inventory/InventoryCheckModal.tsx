@@ -25,26 +25,55 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState("")
   const { user } = useAuthStore()
+
+  const [currentUserUuid, setCurrentUserUuid] = useState<string | null>(null)
+  const [vehicleResponsibles, setVehicleResponsibles] = useState<{ sorumlu_sofor_id: string | null, sorumlu_er_id: string | null }>({
+    sorumlu_sofor_id: null,
+    sorumlu_er_id: null
+  })
+
+  const isAuthorized = user && (
+    user.rol === 'Admin' || 
+    user.rol === 'Shift_Leader' || 
+    (currentUserUuid && (currentUserUuid === vehicleResponsibles.sorumlu_sofor_id || currentUserUuid === vehicleResponsibles.sorumlu_er_id))
+  )
   
-  // Load items when opened
+  // Load items and responsibles when opened
   useEffect(() => {
-    async function fetchInventory() {
+    async function fetchInventoryAndUser() {
       if (isOpen && vehiclePlaka && compartmentKey) {
         setSaveError("")
-        const { data: vehicle } = await api.from('vehicles').select('bolmeler').eq('plaka', vehiclePlaka).single()
         
-        if (vehicle && vehicle.bolmeler[compartmentKey]) {
-          const initialItems = vehicle.bolmeler[compartmentKey].map((item: any) => ({
-            ...item,
-            checkStatus: (item.durum === "Tam" || item.durum === "🔄 GEÇİCİ ZİMMETTE") ? "Tam" : undefined, 
-            note: ""
-          }))
-          setItems(initialItems)
+        // 1. Fetch vehicle's compartments and responsibles
+        const { data: vehicle } = await api.from('vehicles').select('bolmeler, sorumlu_sofor_id, sorumlu_er_id').eq('plaka', vehiclePlaka).single()
+        
+        if (vehicle) {
+          setVehicleResponsibles({
+            sorumlu_sofor_id: vehicle.sorumlu_sofor_id || null,
+            sorumlu_er_id: vehicle.sorumlu_er_id || null
+          })
+
+          if (vehicle.bolmeler && vehicle.bolmeler[compartmentKey]) {
+            const initialItems = vehicle.bolmeler[compartmentKey].map((item: any) => ({
+              ...item,
+              checkStatus: (item.durum === "Tam" || item.durum === "🔄 GEÇİCİ ZİMMETTE") ? "Tam" : undefined, 
+              note: ""
+            }))
+            setItems(initialItems)
+          }
+        }
+
+        // 2. Fetch logged-in user's UUID id
+        if (user?.sicilNo) {
+          const { data: pData } = await api.from('personnel').select('id').eq('sicil_no', user.sicilNo).single()
+          if (pData) {
+            setCurrentUserUuid(pData.id)
+          }
         }
       }
     }
-    fetchInventory()
-  }, [isOpen, vehiclePlaka, compartmentKey])
+    fetchInventoryAndUser()
+  }, [isOpen, vehiclePlaka, compartmentKey, user?.sicilNo])
 
   const [lastCheckGroup, setLastCheckGroup] = useState<any[]>([])
   const [loadingLast, setLoadingLast] = useState(true)
@@ -187,9 +216,22 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
               </AlertDescription>
             </Alert>
           )}
+          {/* Yetki Kilidi Uyarısı */}
+          {!isAuthorized && (
+            <div className="bg-red-500/10 border border-red-500/35 text-red-400 p-3.5 rounded-xl font-semibold text-xs flex items-center gap-2 mb-4 shadow-[0_0_15px_rgba(239,68,68,0.08)] animate-pulse">
+              <span>🔒 YETKİ KİLİDİ: Bu aracın envanter kontrol yetkisi sadece tanımlı Sorumlu Şoförüne ve Sorumlu Erine aittir!</span>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-muted-foreground font-medium">{items.length} Malzeme Listelendi</span>
-            <Button variant="outline" size="sm" onClick={markAllComplete} className="h-8 text-xs bg-success/10 text-success border-success/30 hover:bg-success/20">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={markAllComplete} 
+              className="h-8 text-xs bg-success/10 text-success border-success/30 hover:bg-success/20"
+              disabled={!isAuthorized}
+            >
               <Check className="w-3.5 h-3.5 mr-1" /> Tümü Tamam
             </Button>
           </div>
@@ -218,20 +260,23 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
                   ) : (
                     <div className="flex items-center gap-1.5 shrink-0 bg-muted/50 p-1 rounded-lg">
                       <button 
+                        disabled={!isAuthorized}
                         onClick={() => handleStatusChange(idx, "Tam")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Tam" ? "bg-success text-success-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Tam" ? "bg-success text-success-foreground" : "text-muted-foreground hover:bg-muted"} disabled:opacity-50`}
                       >
                         <Check className="w-3.5 h-3.5" /> Tam
                       </button>
                       <button 
+                        disabled={!isAuthorized}
                         onClick={() => handleStatusChange(idx, "Eksik")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Eksik" ? "bg-danger text-danger-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Eksik" ? "bg-danger text-danger-foreground" : "text-muted-foreground hover:bg-muted"} disabled:opacity-50`}
                       >
                         <X className="w-3.5 h-3.5" /> Eksik
                       </button>
                       <button 
+                        disabled={!isAuthorized}
                         onClick={() => handleStatusChange(idx, "Arızalı")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Arızalı" ? "bg-warning text-warning-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Arızalı" ? "bg-warning text-warning-foreground" : "text-muted-foreground hover:bg-muted"} disabled:opacity-50`}
                       >
                         <AlertTriangle className="w-3.5 h-3.5" /> Arızalı
                       </button>
@@ -242,6 +287,7 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
                 {(item.checkStatus === "Eksik" || item.checkStatus === "Arızalı") && (
                   <div className="mt-3 pt-3 border-t border-border/50 animate-in fade-in slide-in-from-top-2">
                     <Input 
+                      disabled={!isAuthorized}
                       placeholder="Neden eksik/arızalı? (Örn: Tamire gönderildi, Depoda unutuldu)"
                       value={item.note || ""}
                       onChange={(e) => handleNoteChange(idx, e.target.value)}
@@ -256,7 +302,7 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
 
         <DialogFooter className="p-5 border-t border-border bg-muted/10">
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto" disabled={saving}>İptal</Button>
-          <Button onClick={handleSave} className="w-full sm:w-auto" disabled={saving}>
+          <Button onClick={handleSave} className="w-full sm:w-auto" disabled={saving || !isAuthorized}>
             {saving ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
