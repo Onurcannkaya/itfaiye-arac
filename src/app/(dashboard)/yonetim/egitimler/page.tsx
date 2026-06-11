@@ -1045,9 +1045,9 @@ export default function EgitimlerPage() {
                       {daysOfWeek.map((day, idx) => {
                         const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
                         return (
-                          <th key={idx} className={`p-3 text-center border-r border-zinc-900/60 ${isToday ? 'bg-indigo-950/20 text-indigo-400 font-black' : ''}`}>
+                          <th key={idx} className={`p-3 text-center border-r border-zinc-900/60 ${isToday ? 'bg-indigo-950/20 text-indigo-400 font-bold' : ''}`}>
                             <div className="text-[11px] font-bold opacity-75">{getDayName(day)}</div>
-                            <div className="text-sm font-black mt-0.5">{formatDateLabel(day)}</div>
+                            <div className="text-sm font-bold mt-0.5">{formatDateLabel(day)}</div>
                           </th>
                         )
                       })}
@@ -1104,7 +1104,7 @@ export default function EgitimlerPage() {
                                     >
                                       <div className="font-bold flex items-center justify-between gap-1">
                                         <span className="line-clamp-1">{edu.kurum_adi}</span>
-                                        {isBlacklisted && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-black shrink-0">KARA LİSTE</span>}
+                                        {isBlacklisted && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-semibold shrink-0">KARA LİSTE</span>}
                                       </div>
                                       <div className="text-[10px] opacity-75 line-clamp-1">{edu.egitim_turu}</div>
                                       <div className="flex items-center justify-between text-[9px] opacity-80 pt-0.5">
@@ -1161,7 +1161,7 @@ export default function EgitimlerPage() {
             
             {/* Kurum Sorgulama Paneli */}
             <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <CardTitle className="text-base font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-2">
+              <CardTitle className="text-base font-bold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-2">
                 <Search className="w-5 h-5 text-indigo-400" /> KURUMSAL RİSK / ENGEL SORGULAMA MOTORU
               </CardTitle>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
@@ -1227,7 +1227,7 @@ export default function EgitimlerPage() {
               {/* Kara Liste Oluşturma (Müdür) */}
               {isMudur && (
                 <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 h-fit">
-                  <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-2 flex items-center gap-1.5">
+                  <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-2 flex items-center gap-1.5">
                     <Ban className="w-4.5 h-4.5 text-red-400" /> YENİ ENGEL EKLEME PANELİ
                   </CardTitle>
                   <form onSubmit={handleAddBlacklist} className="space-y-4 text-xs">
@@ -1276,7 +1276,7 @@ export default function EgitimlerPage() {
               <div className="lg:col-span-2">
                 <Card className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                   <div className="p-4 border-b border-zinc-800 bg-zinc-900/10">
-                    <CardTitle className="text-sm font-black uppercase text-zinc-300">
+                    <CardTitle className="text-sm font-semibold uppercase text-zinc-300">
                       🚫 ENGELLENEN KURUMLAR VERİ TABANI ({blacklistList.length})
                     </CardTitle>
                   </div>
@@ -1292,7 +1292,7 @@ export default function EgitimlerPage() {
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-zinc-200 text-sm">{bl.kurum_adi}</span>
-                                <span className={`px-2 py-0.5 text-[9px] rounded font-black ${bl.aktif_durum ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                                <span className={`px-2 py-0.5 text-[9px] rounded font-semibold ${bl.aktif_durum ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-500'}`}>
                                   {bl.aktif_durum ? 'AKTİF ENGEL' : 'Kaldırıldı'}
                                 </span>
                               </div>
@@ -1344,7 +1344,7 @@ export default function EgitimlerPage() {
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
                     <span className="text-xs text-zinc-400 font-bold uppercase">Toplam Eğitim</span>
-                    <h3 className="text-2xl font-black text-indigo-400">{analyticsData.totalCount} Faaliyet</h3>
+                    <h3 className="text-2xl font-bold text-indigo-400">{analyticsData.totalCount} Faaliyet</h3>
                   </div>
                   <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
                     <GraduationCap className="w-6 h-6" />
@@ -1356,7 +1356,7 @@ export default function EgitimlerPage() {
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
                     <span className="text-xs text-zinc-400 font-bold uppercase">Eğitim Süresi</span>
-                    <h3 className="text-2xl font-black text-emerald-400">{analyticsData.totalHours} Saat</h3>
+                    <h3 className="text-2xl font-bold text-emerald-400">{analyticsData.totalHours} Saat</h3>
                   </div>
                   <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
                     <Clock className="w-6 h-6" />
@@ -1368,7 +1368,7 @@ export default function EgitimlerPage() {
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
                     <span className="text-xs text-zinc-400 font-bold uppercase">Eğitilen Vatandaş</span>
-                    <h3 className="text-2xl font-black text-blue-400">{analyticsData.totalParticipants} Vatandaş</h3>
+                    <h3 className="text-2xl font-bold text-blue-400">{analyticsData.totalParticipants} Vatandaş</h3>
                   </div>
                   <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
                     <Users className="w-6 h-6" />
@@ -1380,7 +1380,7 @@ export default function EgitimlerPage() {
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
                     <span className="text-xs text-zinc-400 font-bold uppercase">Bekleyen Başvuru</span>
-                    <h3 className="text-2xl font-black text-amber-400">{analyticsData.pendingCount} Başvuru</h3>
+                    <h3 className="text-2xl font-bold text-amber-400">{analyticsData.pendingCount} Başvuru</h3>
                   </div>
                   <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
                     <FileText className="w-6 h-6" />
@@ -1394,7 +1394,7 @@ export default function EgitimlerPage() {
               
               {/* Kurum Tipi Dağılımı */}
               <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
+                <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
                   <Users className="w-4.5 h-4.5 text-indigo-400" /> KURUM TİPLERİNE GÖRE DAĞILIM
                 </CardTitle>
                 <div className="h-[250px] w-full mt-4 flex items-center justify-center">
@@ -1426,7 +1426,7 @@ export default function EgitimlerPage() {
 
               {/* Mahalle Dağılımı (Top 5) */}
               <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
+                <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
                   <BarChart3 className="w-4.5 h-4.5 text-indigo-400" /> EN ÇOK EĞİTİM VERİLEN TOP 5 MAHALLE
                 </CardTitle>
                 <div className="h-[250px] w-full mt-4">
@@ -1448,7 +1448,7 @@ export default function EgitimlerPage() {
 
               {/* Aylık Eğitim Sayısı Trendi */}
               <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl lg:col-span-2">
-                <CardTitle className="text-sm font-black uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
+                <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
                   <Clock className="w-4.5 h-4.5 text-indigo-400" /> AYLIK EĞİTİM FAALİYET SAYILARI TRENDİ
                 </CardTitle>
                 <div className="h-[250px] w-full mt-4">
@@ -1485,7 +1485,7 @@ export default function EgitimlerPage() {
             <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
               <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-black text-zinc-100">
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
                     <GraduationCap className="w-5 h-5 text-indigo-400" /> VATANDAŞ EĞİTİM TALEBİ DETAYLARI
                   </CardTitle>
                   <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Eğitim İnceleme Arayüzü</p>
@@ -1529,7 +1529,7 @@ export default function EgitimlerPage() {
                 {/* Eğitim Detayları */}
                 {selectedRequest.isyeri_detaylari && (
                   <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-xl space-y-2">
-                    <h4 className="text-xs font-black text-indigo-400 uppercase tracking-wider border-b border-indigo-500/10 pb-1 flex items-center gap-1.5">
+                    <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider border-b border-indigo-500/10 pb-1 flex items-center gap-1.5">
                       <GraduationCap className="w-3.5 h-3.5" /> Talep Edilen Eğitim Detayları
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1722,7 +1722,7 @@ export default function EgitimlerPage() {
             <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
               <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-black text-zinc-100">
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
                     <Calendar className="w-5 h-5 text-indigo-400" /> {eduForm.id ? 'PROGRAM DETAY & DÜZENLEME' : 'YENİ EĞİTİM / ZİYARET PROGRAMLA'}
                   </CardTitle>
                   <p className="text-xs text-zinc-500 mt-1">Sivas İtfaiyesi Eğitim ve Ziyaret Program Planlama Sistemi</p>
@@ -1935,7 +1935,7 @@ export default function EgitimlerPage() {
                         <span className="text-xs font-bold text-indigo-300 block">Toplam Hesaplanan Süre</span>
                         <span className="text-[10px] text-zinc-500">Teorik ve pratik sürelerin saat cinsinden toplamı</span>
                       </div>
-                      <span className="text-base font-black text-indigo-400 font-mono">
+                      <span className="text-base font-bold text-indigo-400 font-mono">
                         {((Number(eduForm.teorik_sure_dk || 0) + Number(eduForm.pratik_sure_dk || 0)) / 60).toFixed(2)} Saat
                       </span>
                     </div>
