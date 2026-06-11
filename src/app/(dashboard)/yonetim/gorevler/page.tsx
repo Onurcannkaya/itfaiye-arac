@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/lib/authStore"
 import { ImageUpload } from "@/components/ui/ImageUpload"
 import PageGuard from "@/components/PageGuard"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 import {
   CheckSquare,
   ClipboardList,
@@ -26,7 +27,9 @@ import {
   Hash,
   RefreshCcw,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Milestone,
+  MapPin
 } from "lucide-react"
 
 // ─── Strongly-Typed Interfaces ────────────────────────────────────
@@ -89,7 +92,7 @@ export default function UnifiedGorevlerPage() {
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür'
   
   // Tab State
-  const [activeTab, setActiveTab] = useState<'gorevler' | 'sablonlar'>('gorevler')
+  const [activeTab, setActiveTab] = useState<'gorevler' | 'sablonlar' | 'dis_gorevler'>('gorevler')
 
   // Shared Data States
   const [tasks, setTasks] = useState<TaskItem[]>([])
@@ -108,6 +111,34 @@ export default function UnifiedGorevlerPage() {
   const [formSaving, setFormSaving] = useState(false)
   const [fillingTaskId, setFillingTaskId] = useState<string | null>(null)
   const [filledValues, setFilledValues] = useState<Record<string, any>>({})
+
+  // --- Tab 3: Dış Görevler States ---
+  const [externalMissions, setExternalMissions] = useState<any[]>([])
+  const [showAddMissionForm, setShowAddMissionForm] = useState(false)
+  const [addMissionForm, setAddMissionForm] = useState({
+    gorev_turu: "Sosyal Görev",
+    baslik: "",
+    detay: "",
+    mahalle: "",
+    adres: "",
+    plaka: "",
+    sicil_nos: [] as string[]
+  })
+  const [addMissionSaving, setAddMissionSaving] = useState(false)
+
+  // Edit Mission states
+  const [editingMission, setEditingMission] = useState<any | null>(null)
+  const [editMissionModalOpen, setEditMissionModalOpen] = useState(false)
+  const [editMissionForm, setEditMissionForm] = useState({
+    gorev_turu: "Sosyal Görev",
+    baslik: "",
+    detay: "",
+    mahalle: "",
+    adres: "",
+    plaka: "",
+    sicil_nos: [] as string[]
+  })
+  const [editMissionSaving, setEditMissionSaving] = useState(false)
 
   // --- Tab 2: Sablonlar Builder States ---
   const [isBuilding, setIsBuilding] = useState(false)
@@ -130,12 +161,13 @@ export default function UnifiedGorevlerPage() {
         }
       }
       
-      const [tasksRes, templatesRes, vRes, pRes] = await Promise.all([
+      const [tasksRes, templatesRes, vRes, pRes, extRes] = await Promise.all([
         fetchOrNull(api.from('tasks').select('*').order('created_at', { ascending: false })),
         // If not manager, only fetch active templates, else fetch all to let manager edit/toggle
         fetchOrNull(api.from('task_templates').select('*').order('created_at', { ascending: false })),
         fetchOrNull(api.from('vehicles').select('plaka, filo_no, aciklama')),
         fetchOrNull(api.from('personnel').select('sicil_no, ad, soyad').eq('aktif', true)),
+        fetchOrNull(api.from('external_missions').select('*').order('created_at', { ascending: false })),
       ])
 
       if (tasksRes.data) setTasks(tasksRes.data as TaskItem[])
@@ -145,6 +177,7 @@ export default function UnifiedGorevlerPage() {
         setVehicles(sortedV as Vehicle[])
       }
       if (pRes.data) setPersonnel(pRes.data as Personnel[])
+      if (extRes.data) setExternalMissions(extRes.data)
     } catch (err) {
       console.error("Data fetch error:", err)
     } finally {
@@ -318,9 +351,151 @@ export default function UnifiedGorevlerPage() {
     }
   }
 
+  // ─── EXTERNAL MISSIONS HELPERS (Müdür & Personnel) ───────────────────
+  const handleCreateExternalMission = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!addMissionForm.baslik) {
+      alert("Lütfen bir başlık giriniz.")
+      return
+    }
+    if (addMissionForm.sicil_nos.length === 0) {
+      alert("Lütfen en az bir personel seçiniz.")
+      return
+    }
+    
+    setAddMissionSaving(true)
+    try {
+      const defaultCoords = `POINT(37.0209312 39.7339522)`
+      const hours = 2
+      const tahminiDonus = new Date()
+      tahminiDonus.setHours(tahminiDonus.getHours() + hours)
+
+      const payload = {
+        gorev_turu: addMissionForm.gorev_turu,
+        baslik: addMissionForm.baslik,
+        detay: addMissionForm.detay || null,
+        mahalle: addMissionForm.mahalle || null,
+        adres: addMissionForm.adres || null,
+        hedef_koordinat: defaultCoords,
+        cikis_tarihi: new Date().toISOString(),
+        tahmini_donus: tahminiDonus.toISOString(),
+        durum: "Aktif",
+        plaka: addMissionForm.plaka || null,
+        sicil_nos: addMissionForm.sicil_nos
+      }
+
+      const { error } = await api.insert('external_missions', payload)
+      if (error) throw error
+
+      alert("Dış görev başarıyla başlatıldı.")
+      setShowAddMissionForm(false)
+      setAddMissionForm({
+        gorev_turu: "Sosyal Görev",
+        baslik: "",
+        detay: "",
+        mahalle: "",
+        adres: "",
+        plaka: "",
+        sicil_nos: []
+      })
+      await fetchAllData()
+    } catch (err: any) {
+      console.error(err)
+      alert("Dış görev oluşturulurken hata oluştu: " + err.message)
+    } finally {
+      setAddMissionSaving(false)
+    }
+  }
+
+  const handleCompleteExternalMission = async (id: string) => {
+    if (!confirm("Bu dış görevi sonlandırmak istediğinize emin misiniz?")) return
+    try {
+      const { error } = await api.update('external_missions', { durum: 'Tamamlandı' }, { id })
+      if (error) throw error
+      alert("Dış görev başarıyla tamamlandı.")
+      await fetchAllData()
+    } catch (err: any) {
+      console.error(err)
+      alert("Hata oluştu: " + err.message)
+    }
+  }
+
+  const handleDeleteExternalMission = async (id: string) => {
+    if (!confirm("Bu dış görevi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) return
+    try {
+      const { error } = await api.remove('external_missions', { id })
+      if (error) throw error
+      alert("Dış görev başarıyla silindi.")
+      await fetchAllData()
+    } catch (err: any) {
+      console.error(err)
+      alert("Silme hatası: " + err.message)
+    }
+  }
+
+  const handleStartEditMission = (mission: any) => {
+    setEditingMission(mission)
+    setEditMissionForm({
+      gorev_turu: mission.gorev_turu || "Sosyal Görev",
+      baslik: mission.baslik || "",
+      detay: mission.detay || "",
+      mahalle: mission.mahalle || "",
+      adres: mission.adres || "",
+      plaka: mission.plaka || "",
+      sicil_nos: mission.sicil_nos || []
+    })
+    setEditMissionModalOpen(true)
+  }
+
+  const handleCloseEditMissionModal = () => {
+    setEditingMission(null)
+    setEditMissionModalOpen(false)
+  }
+
+  const handleSaveMissionEdit = async () => {
+    if (!editingMission) return
+    if (!editMissionForm.baslik) {
+      alert("Lütfen başlık giriniz.")
+      return
+    }
+    if (editMissionForm.sicil_nos.length === 0) {
+      alert("Lütfen en az bir personel seçiniz.")
+      return
+    }
+
+    setEditMissionSaving(true)
+    try {
+      const { error } = await api.update('external_missions', {
+        gorev_turu: editMissionForm.gorev_turu,
+        baslik: editMissionForm.baslik,
+        detay: editMissionForm.detay || null,
+        mahalle: editMissionForm.mahalle || null,
+        adres: editMissionForm.adres || null,
+        plaka: editMissionForm.plaka || null,
+        sicil_nos: editMissionForm.sicil_nos
+      }, { id: editingMission.id })
+
+      if (error) throw error
+
+      alert("Dış görev başarıyla güncellendi.")
+      setEditMissionModalOpen(false)
+      setEditingMission(null)
+      await fetchAllData()
+    } catch (err: any) {
+      console.error(err)
+      alert("Güncelleme hatası: " + err.message)
+    } finally {
+      setEditMissionSaving(false)
+    }
+  }
+
   // Filter Tasks
   const pendingTasks = (tasks || []).filter(t => t.durum !== "tamamlandi" && t.durum !== "iptal")
   const completedTasks = (tasks || []).filter(t => t.durum === "tamamlandi" || t.durum === "iptal")
+
+  // Filter External Missions
+  const activeMissions = (externalMissions || []).filter(m => m.durum !== "Tamamlandı" && m.durum !== "iptal")
+  const completedMissions = (externalMissions || []).filter(m => m.durum === "Tamamlandı" || m.durum === "iptal")
 
   if (loading && tasks.length === 0) {
     return (
@@ -370,6 +545,17 @@ export default function UnifiedGorevlerPage() {
           >
             <CheckSquare className="w-4 h-4" />
             Vardiya Görevleri ({pendingTasks.length + completedTasks.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('dis_gorevler')}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+              activeTab === 'dis_gorevler'
+                ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Milestone className="w-4 h-4" />
+            Dış Görevler ({activeMissions.length})
           </button>
           <button
             onClick={() => setActiveTab('sablonlar')}
@@ -958,7 +1144,409 @@ export default function UnifiedGorevlerPage() {
           </div>
         )}
 
+        {/* ═══ TAB 3: DIŞ GÖREVLER (HARİTA & HAVA GÖREVLERİ) ═══ */}
+        {activeTab === 'dis_gorevler' && (
+          <div className="space-y-6">
+            {/* Müdür Hızlı Dış Görev Ekle Butonu */}
+            {isMudur && (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => setShowAddMissionForm(!showAddMissionForm)}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-600/10 hover:scale-[1.02] transition duration-150 shrink-0"
+                  >
+                    {showAddMissionForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    {showAddMissionForm ? "Görevi İptal Et" : "Yeni Dış Görev Ata"}
+                  </Button>
+                </div>
+
+                {showAddMissionForm && (
+                  <Card className="border-cyan-500/20 bg-slate-900/30 backdrop-blur-md border border-white/5 p-4 rounded-xl animate-in slide-in-from-top duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4" /> Yeni Dış Görev Atama Paneli
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <form onSubmit={handleCreateExternalMission} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400">Görev Türü</label>
+                            <select
+                              value={addMissionForm.gorev_turu}
+                              onChange={e => setAddMissionForm({...addMissionForm, gorev_turu: e.target.value})}
+                              required
+                              className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            >
+                              <option value="Sosyal Görev">Sosyal Görev</option>
+                              <option value="Lojistik Sevk">Lojistik Sevk</option>
+                              <option value="Yangın / Arazöz Görevi">Yangın / Arazöz Görevi</option>
+                              <option value="Arama Kurtarma Sevk">Arama Kurtarma Sevk</option>
+                              <option value="Eğitim / Tatbikat">Eğitim / Tatbikat</option>
+                              <option value="Refakat / Protokol">Refakat / Protokol</option>
+                              <option value="Diğer Dış Görev">Diğer Dış Görev</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400">Görev Başlığı</label>
+                            <Input
+                              placeholder="Örn: Kent Meydanı Sosyal Çadır Refakatı"
+                              value={addMissionForm.baslik}
+                              onChange={e => setAddMissionForm({...addMissionForm, baslik: e.target.value})}
+                              required
+                              className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400">Görevli Araç (Plaka)</label>
+                            <select
+                              value={addMissionForm.plaka}
+                              onChange={e => setAddMissionForm({...addMissionForm, plaka: e.target.value})}
+                              className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            >
+                              <option value="">Araç Seçiniz (Opsiyonel)</option>
+                              {(vehicles || []).map(v => (
+                                <option key={v.plaka} value={v.plaka}>
+                                  {v.filo_no ? `${v.filo_no} NOLU - ${v.plaka}` : v.plaka}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400">Mahalle</label>
+                            <Input
+                              placeholder="Örn: Yenişehir"
+                              value={addMissionForm.mahalle}
+                              onChange={e => setAddMissionForm({...addMissionForm, mahalle: e.target.value})}
+                              className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                            />
+                          </div>
+                          <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-xs font-semibold text-zinc-400">Tam Adres</label>
+                            <Input
+                              placeholder="Örn: Kent Meydanı Etkinlik Alanı No: 5"
+                              value={addMissionForm.adres}
+                              onChange={e => setAddMissionForm({...addMissionForm, adres: e.target.value})}
+                              className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-zinc-400">Görev Detayı / Açıklama</label>
+                          <textarea
+                            placeholder="Görevin amacı, personelin yapacağı çalışmalar vb..."
+                            value={addMissionForm.detay}
+                            onChange={e => setAddMissionForm({...addMissionForm, detay: e.target.value})}
+                            className="flex min-h-[80px] w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 resize-y"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-zinc-400 block mb-1">Görevlendirilecek Personeller</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[160px] overflow-y-auto p-3 bg-slate-950 border border-white/10 rounded-lg">
+                            {(personnel || []).map(p => {
+                              const isChecked = addMissionForm.sicil_nos.includes(p.sicil_no)
+                              return (
+                                <label key={p.sicil_no} className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-300 py-1 hover:text-white">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      const newStaff = isChecked 
+                                        ? addMissionForm.sicil_nos.filter(s => s !== p.sicil_no)
+                                        : [...addMissionForm.sicil_nos, p.sicil_no]
+                                      setAddMissionForm({...addMissionForm, sicil_nos: newStaff})
+                                    }}
+                                    className="rounded border-white/10 bg-slate-900 text-cyan-600 focus:ring-cyan-500"
+                                  />
+                                  <span>{p.ad} {p.soyad}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                          <Button
+                            type="submit"
+                            disabled={addMissionSaving}
+                            className="bg-cyan-600 hover:bg-cyan-700 h-10 px-6 font-bold text-sm shadow-md"
+                          >
+                            {addMissionSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                            Dış Görevi Başlat
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* List of Active External Missions */}
+            <div className="space-y-3">
+              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse"></span>
+                Aktif Dış Görevler ({activeMissions.length})
+              </h2>
+
+              <div className="grid grid-cols-1 gap-3">
+                {activeMissions.map(m => {
+                  const names = (m.sicil_nos || [])
+                    .map((s: string) => {
+                      const p = personnel.find(per => per.sicil_no === s)
+                      return p ? `${p.ad} ${p.soyad}` : s
+                    })
+                    .join(', ')
+
+                  return (
+                    <Card key={m.id} className="border-l-4 border-l-cyan-500 bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-extrabold text-base text-zinc-100">{m.baslik}</h3>
+                          <Badge className="bg-cyan-950/40 text-cyan-400 border border-cyan-500/20 font-bold text-xs py-0.5">
+                            {m.gorev_turu}
+                          </Badge>
+                          {m.plaka && (
+                            <Badge className="bg-slate-950 text-slate-300 border border-white/5 font-bold text-xs py-0.5">
+                              🚒 Araç: {m.plaka}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-zinc-400 font-medium line-clamp-2">{m.detay || "Detay girilmemiş."}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1 gap-x-4 text-[11px] text-zinc-400 font-semibold mt-2 pt-2 border-t border-white/5">
+                          <div>📍 Mahalle/Adres: <span className="text-zinc-200 font-bold">{m.mahalle || '-'}{m.adres ? `, ${m.adres}` : ''}</span></div>
+                          <div>🧑🚒 Personel: <span className="text-zinc-200 font-bold">{names || '-'}</span></div>
+                          <div>🕒 Çıkış: <span className="text-zinc-200 font-bold">{m.cikis_tarihi ? new Date(m.cikis_tarihi).toLocaleString('tr-TR') : '-'}</span></div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                        <Button
+                          onClick={() => handleCompleteExternalMission(m.id)}
+                          className="bg-emerald-600/90 hover:bg-emerald-600 text-white font-bold text-xs h-9 px-3 rounded-lg shadow-md"
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-1" /> Görevi Sonlandır
+                        </Button>
+                        {isMudur && (
+                          <>
+                            <Button
+                              onClick={() => handleStartEditMission(m)}
+                              className="bg-slate-800 hover:bg-slate-700 text-zinc-200 font-bold text-xs h-9 px-3 rounded-lg border border-white/5"
+                            >
+                              Düzenle
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleDeleteExternalMission(m.id)}
+                              className="font-bold text-xs h-9 px-3 rounded-lg"
+                            >
+                              Sil
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </Card>
+                  )
+                })}
+
+                {activeMissions.length === 0 && (
+                  <p className="text-zinc-400 text-xs italic py-6 text-center border border-dashed border-white/5 rounded-xl bg-slate-900/10">
+                    Şu anda aktif devam eden bir dış görev bulunmamaktadır.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* List of Completed External Missions */}
+            <div className="space-y-3 pt-4">
+              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                Tamamlanan Dış Görevler ({completedMissions.length})
+              </h2>
+
+              <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto pr-1">
+                {completedMissions.map(m => {
+                  const names = (m.sicil_nos || [])
+                    .map((s: string) => {
+                      const p = personnel.find(per => per.sicil_no === s)
+                      return p ? `${p.ad} ${p.soyad}` : s
+                    })
+                    .join(', ')
+
+                  return (
+                    <Card key={m.id} className="border-l-4 border-l-emerald-500 bg-slate-900/20 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 opacity-80">
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-extrabold text-sm text-zinc-200 line-through decoration-zinc-600">{m.baslik}</h3>
+                          <Badge className="bg-emerald-950/20 text-emerald-400 border border-emerald-500/10 font-bold text-[10px] py-0.5">
+                            {m.gorev_turu}
+                          </Badge>
+                          {m.plaka && (
+                            <Badge className="bg-slate-950 text-slate-400 border border-white/5 font-bold text-[10px] py-0.5">
+                              🚒 Araç: {m.plaka}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1 gap-x-4 text-[10px] text-zinc-400 font-semibold mt-1">
+                          <div>📍 Adres: <span className="text-zinc-300 font-bold">{m.mahalle || '-'}{m.adres ? `, ${m.adres}` : ''}</span></div>
+                          <div>🧑🚒 Personel: <span className="text-zinc-300 font-bold">{names || '-'}</span></div>
+                          <div>🕒 Çıkış: <span className="text-zinc-300 font-bold">{m.cikis_tarihi ? new Date(m.cikis_tarihi).toLocaleString('tr-TR') : '-'}</span></div>
+                        </div>
+                      </div>
+                      {isMudur && (
+                        <div className="shrink-0 self-end md:self-center">
+                          <Button
+                            variant="danger"
+                            onClick={() => handleDeleteExternalMission(m.id)}
+                            className="font-bold text-[10px] h-7 px-2 rounded-lg"
+                          >
+                            Sil
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  )
+                })}
+
+                {completedMissions.length === 0 && (
+                  <p className="text-zinc-500 text-xs italic py-4 text-center">
+                    Henüz tamamlanmış bir dış görev kaydı bulunmamaktadır.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* ═══ DIŞ GÖREV DÜZENLEME MODAL (Dialog) ═══ */}
+      {editMissionModalOpen && editingMission && (
+        <Dialog open={editMissionModalOpen} onOpenChange={(open) => { if(!open) handleCloseEditMissionModal() }}>
+          <DialogContent className="border-slate-800 bg-slate-950/95 backdrop-blur-xl max-w-xl text-slate-100 rounded-2xl shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold text-cyan-400">Dış Görevi Düzenle</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-400">Görev Türü</label>
+                  <select
+                    value={editMissionForm.gorev_turu}
+                    onChange={e => setEditMissionForm({...editMissionForm, gorev_turu: e.target.value})}
+                    required
+                    className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                  >
+                    <option value="Sosyal Görev">Sosyal Görev</option>
+                    <option value="Lojistik Sevk">Lojistik Sevk</option>
+                    <option value="Yangın / Arazöz Görevi">Yangın / Arazöz Görevi</option>
+                    <option value="Arama Kurtarma Sevk">Arama Kurtarma Sevk</option>
+                    <option value="Eğitim / Tatbikat">Eğitim / Tatbikat</option>
+                    <option value="Refakat / Protokol">Refakat / Protokol</option>
+                    <option value="Diğer Dış Görev">Diğer Dış Görev</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-400">Görev Başlığı</label>
+                  <Input
+                    placeholder="Örn: Sosyal Çadır Görevi"
+                    value={editMissionForm.baslik}
+                    onChange={e => setEditMissionForm({...editMissionForm, baslik: e.target.value})}
+                    required
+                    className="h-10 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-400">Görevli Araç (Plaka)</label>
+                  <select
+                    value={editMissionForm.plaka}
+                    onChange={e => setEditMissionForm({...editMissionForm, plaka: e.target.value})}
+                    className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                  >
+                    <option value="">Araç Seçiniz (Opsiyonel)</option>
+                    {(vehicles || []).map(v => (
+                      <option key={v.plaka} value={v.plaka}>
+                        {v.filo_no ? `${v.filo_no} NOLU - ${v.plaka}` : v.plaka}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-400">Mahalle</label>
+                  <Input
+                    placeholder="Örn: Yenişehir"
+                    value={editMissionForm.mahalle}
+                    onChange={e => setEditMissionForm({...editMissionForm, mahalle: e.target.value})}
+                    className="h-10 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-400">Tam Adres</label>
+                <Input
+                  placeholder="Örn: Kent Meydanı No: 5"
+                  value={editMissionForm.adres}
+                  onChange={e => setEditMissionForm({...editMissionForm, adres: e.target.value})}
+                  className="h-10 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-400">Görev Detayı</label>
+                <textarea
+                  placeholder="Açıklama..."
+                  value={editMissionForm.detay}
+                  onChange={e => setEditMissionForm({...editMissionForm, detay: e.target.value})}
+                  className="flex min-h-[80px] w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 resize-y"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-400 block mb-1">Görevli Personeller</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[140px] overflow-y-auto p-3 bg-slate-900 border border-white/10 rounded-lg">
+                  {(personnel || []).map(p => {
+                    const isChecked = editMissionForm.sicil_nos.includes(p.sicil_no)
+                    return (
+                      <label key={p.sicil_no} className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-300 py-0.5 hover:text-white">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const newStaff = isChecked 
+                              ? editMissionForm.sicil_nos.filter(s => s !== p.sicil_no)
+                              : [...editMissionForm.sicil_nos, p.sicil_no]
+                            setEditMissionForm({...editMissionForm, sicil_nos: newStaff})
+                          }}
+                          className="rounded border-white/10 bg-slate-950 text-cyan-600 focus:ring-cyan-500"
+                        />
+                        <span>{p.ad} {p.soyad}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={handleCloseEditMissionModal} className="text-zinc-400 hover:text-white hover:bg-white/5">
+                Vazgeç
+              </Button>
+              <Button onClick={handleSaveMissionEdit} disabled={editMissionSaving} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold">
+                {editMissionSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                Değişiklikleri Kaydet
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </PageGuard>
   )
 }

@@ -316,6 +316,19 @@ function HaritaContent() {
     }
   }
 
+  const handleCompleteExternalMission = async (id: string) => {
+    if (!confirm("Bu dış görevi sonlandırmak istediğinize emin misiniz?")) return
+    try {
+      const { error } = await api.update('external_missions', { durum: 'Tamamlandı' }, { id })
+      if (error) throw error
+      alert("Görev başarıyla sonlandırıldı.")
+      fetchData()
+    } catch (err: any) {
+      console.error(err)
+      alert("Görev sonlandırılırken hata oluştu: " + err.message)
+    }
+  }
+
   // Focus on incident if incidentId is passed in URL query params
   useEffect(() => {
     if (incidentId && incidents.length > 0) {
@@ -938,6 +951,7 @@ function HaritaContent() {
             onEditIncident={handleEditIncident}
             showPersonnelLayer={showPersonnelLayer}
             onTogglePersonnelLayer={setShowPersonnelLayer}
+            onCompleteExternalMission={handleCompleteExternalMission}
           />
           
         </CardContent>

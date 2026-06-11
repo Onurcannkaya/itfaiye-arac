@@ -55,6 +55,7 @@ interface MapProps {
   onEditIncident?: (incident: Incident) => void
   showPersonnelLayer?: boolean
   onTogglePersonnelLayer?: (val: boolean) => void
+  onCompleteExternalMission?: (id: string) => void
 }
 
 const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -247,7 +248,8 @@ export default function Map({
   onDeleteIncident, 
   onEditIncident,
   showPersonnelLayer = true,
-  onTogglePersonnelLayer
+  onTogglePersonnelLayer,
+  onCompleteExternalMission
 }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -289,6 +291,17 @@ export default function Map({
   const [dispatchedVehicles, setDispatchedVehicles] = useState<any[]>([])
   const [dispatchedPersonnel, setDispatchedPersonnel] = useState<any[]>([])
   const [detailsLoading, setDetailsLoading] = useState(false)
+
+  useEffect(() => {
+    (window as any).completeExternalMission = (id: string) => {
+      if (onCompleteExternalMission) {
+        onCompleteExternalMission(id)
+      }
+    }
+    return () => {
+      delete (window as any).completeExternalMission
+    }
+  }, [onCompleteExternalMission])
 
   const isAuthorized = user && (
     user.rol === 'Admin' || 
@@ -1124,6 +1137,18 @@ export default function Map({
             <span style="opacity:0.7">🕒</span>
             <span>Çıkış: ${mission.cikis_tarihi ? new Date(mission.cikis_tarihi).toLocaleString('tr-TR') : 'Zaman bilgisi yok'}</span>
           </p>
+          ${mission.durum !== 'Tamamlandı' ? `
+            <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;text-align:right;">
+              <button 
+                onclick="window.completeExternalMission('${mission.id}')"
+                style="background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                onmouseover="this.style.background='#dc2626'"
+                onmouseout="this.style.background='#ef4444'"
+              >
+                Görevi Sonlandır
+              </button>
+            </div>
+          ` : ''}
         </div>
       `)
 
