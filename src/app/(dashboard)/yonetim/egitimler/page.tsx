@@ -32,6 +32,9 @@ import {
   BarChart3,
   Info,
   Printer,
+  Award,
+  BookOpen,
+  Edit3,
 } from "lucide-react"
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, AreaChart, Area
@@ -98,6 +101,15 @@ interface ExternalEducation {
   toplam_sure_saat?: number;
 }
 
+interface EgitimMufredati {
+  id: string;
+  tarih: string;
+  posta: string;
+  egitim_konusu: string;
+  ay: number;
+  yil: number;
+}
+
 // --- Helper Functions ---
 function getMonday(d: Date) {
   const date = new Date(d);
@@ -151,9 +163,33 @@ const CALENDAR_SLOTS = [
   "20:00 - 21:00"
 ]
 
+const GUNLUK_FAALIYET = [
+  { saat: '08:00 – 09:00', faaliyet: 'Posta Devir Teslimi / Araç ve Malzeme Kontrolü', sure: '30 dk', uygulama: 'Tatbiki' },
+  { saat: '09:00 – 10:00', faaliyet: 'Spor (Koşu, Kültür Fizik vs.)', sure: '60 dk', uygulama: 'Tatbiki' },
+  { saat: '10:00 – 10:30', faaliyet: 'Spor Sonrası Duş, Eğitime Hazırlık', sure: '30 dk', uygulama: 'Tatbiki' },
+  { saat: '10:30 – 11:15', faaliyet: 'Eğitim Konusu (Günün Konusu)', sure: '45 dk', uygulama: 'Nazari' },
+  { saat: '11:15 – 12:00', faaliyet: 'Dinlenme ve Yemek Hazırlığı', sure: '15 dk', uygulama: '—' },
+  { saat: '12:00 – 13:30', faaliyet: 'Yemek Saati', sure: '90 dk', uygulama: '—' },
+  { saat: '13:30 – 15:00', faaliyet: 'Birey Eğitim Çalışması', sure: '90 dk', uygulama: 'Nazari / Tatbiki' },
+  { saat: '15:00 – 15:30', faaliyet: 'Dinlenme', sure: '30 dk', uygulama: '—' },
+  { saat: '15:30 – 16:30', faaliyet: 'Araç ve Malzeme Bakımı / Eksikliklerin Tamamlanması', sure: '60 dk', uygulama: 'Tatbiki' },
+  { saat: '16:30 – 16:45', faaliyet: 'Dinlenme', sure: '15 dk', uygulama: '—' },
+  { saat: '16:45 – 17:30', faaliyet: 'Eğitim Değerlendirmesi / Eksiklerin Belirlenmesi', sure: '45 dk', uygulama: 'Nazari / Tatbiki' },
+  { saat: '17:30 – 18:30', faaliyet: 'Dinlenme (Serbest Zaman) / Yemek Hazırlığı', sure: '60 dk', uygulama: '—' },
+  { saat: '18:30 – 20:00', faaliyet: 'Yemek Saati', sure: '90 dk', uygulama: '—' },
+  { saat: '20:00 – 21:00', faaliyet: 'Görsel Sunumlar', sure: '60 dk', uygulama: 'Nazari' },
+]
+
+const POSTA_RENK: Record<string, { bg: string; text: string; border: string }> = {
+  'A': { bg: 'bg-cyan-950/30', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  'B': { bg: 'bg-amber-950/30', text: 'text-amber-400', border: 'border-amber-500/30' },
+  'C': { bg: 'bg-emerald-950/30', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+}
+
 export default function EgitimlerPage() {
   const { user } = useAuthStore()
-  const [activeTab, setActiveTab] = useState<'requests' | 'calendar' | 'blacklist' | 'analytics'>('requests')
+  const [activeTab, setActiveTab] = useState<'requests' | 'calendar' | 'blacklist' | 'analytics' | 'temel'>('requests')
+  const [temelSubTab, setTemelSubTab] = useState<'cizelge' | 'mufredat' | 'sertifika'>('cizelge')
 
   // Data States
   const [requests, setRequests] = useState<CitizenRequest[]>([])
@@ -221,6 +257,22 @@ export default function EgitimlerPage() {
   const [queryResult, setQueryResult] = useState<BlacklistInstitution | null>(null)
   const [hasQueried, setHasQueried] = useState(false)
 
+  // Temel Eğitim States
+  const [mufredatList, setMufredatList] = useState<EgitimMufredati[]>([])
+  const [mufredatMonth, setMufredatMonth] = useState(new Date().getMonth() + 1)
+  const [mufredatYear, setMufredatYear] = useState(new Date().getFullYear())
+  const [mufredatLoading, setMufredatLoading] = useState(false)
+  const [mufredatEditRow, setMufredatEditRow] = useState<EgitimMufredati | null>(null)
+  const [mufredatForm, setMufredatForm] = useState({ tarih: '', posta: 'A', egitim_konusu: '' })
+  const [isSavingMufredat, setIsSavingMufredat] = useState(false)
+  const [sertifikaPersonelId, setSertifikaPersonelId] = useState('')
+  const [sertifikaSaat, setSertifikaSaat] = useState('240')
+  const [cizelgeSearch, setCizelgeSearch] = useState('')
+  const [cizelgePostaFilter, setCizelgePostaFilter] = useState('ALL')
+  const [editingPersonel, setEditingPersonel] = useState<any | null>(null)
+  const [newTrainingHours, setNewTrainingHours] = useState<number>(120)
+  const [isUpdatingHours, setIsUpdatingHours] = useState(false)
+
   // Role Checker
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
 
@@ -251,6 +303,320 @@ export default function EgitimlerPage() {
   useEffect(() => {
     fetchAll()
   }, [])
+
+  // --- Temel Eğitim: Müfredat Fetch ---
+  const fetchMufredat = async (ay: number, yil: number) => {
+    setMufredatLoading(true)
+    try {
+      const { data } = await api.from('egitim_mufredati').select('*').eq('ay', ay).eq('yil', yil).order('tarih', { ascending: true })
+      if (data) setMufredatList(data)
+    } catch (err) {
+      console.error("Müfredat fetch error:", err)
+    } finally {
+      setMufredatLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'temel') {
+      fetchMufredat(mufredatMonth, mufredatYear)
+    }
+  }, [activeTab, mufredatMonth, mufredatYear])
+
+  const handleSaveMufredat = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!mufredatForm.tarih || !mufredatForm.egitim_konusu) {
+      alert("Tarih ve eğitim konusu zorunludur.")
+      return
+    }
+    setIsSavingMufredat(true)
+    try {
+      const d = new Date(mufredatForm.tarih)
+      const payload = {
+        tarih: mufredatForm.tarih,
+        posta: mufredatForm.posta,
+        egitim_konusu: mufredatForm.egitim_konusu,
+        ay: d.getMonth() + 1,
+        yil: d.getFullYear()
+      }
+      if (mufredatEditRow) {
+        await api.update('egitim_mufredati', payload, { id: mufredatEditRow.id })
+      } else {
+        await api.insert('egitim_mufredati', [payload])
+      }
+      setMufredatForm({ tarih: '', posta: 'A', egitim_konusu: '' })
+      setMufredatEditRow(null)
+      await fetchMufredat(mufredatMonth, mufredatYear)
+    } catch (err) {
+      console.error(err)
+      alert("Kayıt sırasında hata oluştu.")
+    } finally {
+      setIsSavingMufredat(false)
+    }
+  }
+
+  const handleDeleteMufredat = async (id: string) => {
+    if (!window.confirm("Bu müfredat kaydını silmek istiyor musunuz?")) return
+    try {
+      await api.remove('egitim_mufredati', { id })
+      await fetchMufredat(mufredatMonth, mufredatYear)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const AY_ISIMLERI = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+
+  // --- PDF: Günlük Faaliyet Çizelgesi ---
+  const handlePrintGunlukFaaliyet = () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const clean = (txt: string) => cleanTurkishChars(txt || "")
+    doc.rect(5, 5, 200, 287)
+    doc.rect(6, 6, 198, 285)
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(14)
+    doc.text(clean("T.C. SIVAS BELEDIYE BASKANLIGI"), 105, 18, { align: "center" })
+    doc.setFontSize(12)
+    doc.text(clean("ITFAIYE MUDURLUGU"), 105, 24, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(11)
+    doc.text(clean("GUNLUK FAALIYET CIZELGESI"), 105, 30, { align: "center" })
+    doc.line(15, 35, 195, 35)
+
+    // Tablo basliklarini ciz
+    doc.setFontSize(9)
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("SAAT"), 17, 42)
+    doc.text(clean("YAPILACAK FAALIYETIN KONUSU"), 52, 42)
+    doc.text(clean("SURE"), 140, 42)
+    doc.text(clean("UYGULAMA"), 165, 42)
+    doc.line(15, 45, 195, 45)
+
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(8)
+    let y = 51
+    GUNLUK_FAALIYET.forEach(row => {
+      doc.text(clean(row.saat.replace('–', '-')), 17, y)
+      doc.text(clean(row.faaliyet), 52, y)
+      doc.text(clean(row.sure), 142, y)
+      doc.text(clean(row.uygulama), 168, y)
+      y += 8
+      doc.line(15, y - 3, 195, y - 3)
+    })
+
+    y += 5
+    doc.setFontSize(7)
+    doc.text(clean("Not: Nazari Egitimler Egitim Salonunda - Tatbiki Egitimler Egitim Sahasinda Yapilmaktadir."), 15, y)
+
+    y += 12
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(9)
+    doc.text(clean("Seyfi Ali GUL"), 25, y)
+    doc.text(clean("Ahmet YILDIZ"), 85, y)
+    doc.text(clean("Ahmet CELIMLI"), 150, y)
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(8)
+    doc.text(clean("Egitim Amiri"), 28, y + 5)
+    doc.text(clean("Mudahale Ekipler Amiri"), 82, y + 5)
+    doc.text(clean("Personel Amiri"), 152, y + 5)
+
+    y += 18
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(10)
+    doc.text(clean("ONAY"), 105, y, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(clean("Ibrahim ALACAM"), 105, y + 6, { align: "center" })
+    doc.text(clean("Itfaiye Muduru"), 105, y + 11, { align: "center" })
+
+    doc.save("Gunluk_Faaliyet_Cizelgesi.pdf")
+  }
+
+  // --- PDF: Aylık Müfredat ---
+  const handlePrintAylikMufredat = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const clean = (txt: string) => cleanTurkishChars(txt || "")
+    doc.rect(5, 5, 287, 200)
+    doc.rect(6, 6, 285, 198)
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text(clean("T.C. SIVAS BELEDIYE BASKANLIGI"), 148, 15, { align: "center" })
+    doc.setFontSize(10)
+    doc.text(clean("ITFAIYE MUDURLUGU"), 148, 21, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(clean(`${mufredatYear} YILI ${clean(AY_ISIMLERI[mufredatMonth]).toUpperCase()} AYI UYGULANACAK EGITIM KONULARI`), 148, 27, { align: "center" })
+    doc.text(clean("GUNLUK EGITIM KONULARI"), 148, 32, { align: "center" })
+    doc.line(10, 36, 287, 36)
+
+    // Basliklar
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(8)
+    doc.text(clean("TARIH / GUN"), 14, 42)
+    doc.text(clean("POSTA"), 60, 42)
+    doc.text(clean("EGITIM KONUSU"), 80, 42)
+    doc.line(10, 45, 287, 45)
+
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(7)
+    let y = 51
+    const gunIsimleri = ['Pazar', 'Pazartesi', 'Sali', 'Carsamba', 'Persembe', 'Cuma', 'Cumartesi']
+    mufredatList.forEach(row => {
+      const d = new Date(row.tarih)
+      const gunStr = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${gunIsimleri[d.getDay()]}`
+      doc.text(clean(gunStr), 14, y)
+      doc.text(clean(row.posta), 64, y)
+      doc.text(clean(row.egitim_konusu), 80, y)
+      y += 5
+      if (y > 190) {
+        doc.addPage()
+        y = 20
+      }
+    })
+
+    doc.save(`Egitim_Mufredati_${AY_ISIMLERI[mufredatMonth]}_${mufredatYear}.pdf`)
+  }
+
+  // --- PDF: Sertifika ---
+  const handlePrintSertifika = () => {
+    const p = personnelList.find((x: any) => x.id === sertifikaPersonelId || x.sicil_no === sertifikaPersonelId)
+    if (!p) {
+      alert("Lütfen geçerli bir personel seçiniz.")
+      return
+    }
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const clean = (txt: string) => cleanTurkishChars(txt || "")
+
+    // Sertifika Çerçevesi
+    doc.setDrawColor(6, 182, 212)
+    doc.setLineWidth(1.5)
+    doc.rect(10, 10, 277, 190)
+    doc.setLineWidth(0.5)
+    doc.rect(14, 14, 269, 182)
+
+    // Başlık
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(22)
+    doc.text(clean("T.C. SIVAS BELEDIYE BASKANLIGI"), 148, 38, { align: "center" })
+    doc.setFontSize(16)
+    doc.text(clean("ITFAIYE MUDURLUGU"), 148, 48, { align: "center" })
+
+    doc.setFontSize(24)
+    doc.text(clean("TEMEL ITFAIYE EGITIMI"), 148, 68, { align: "center" })
+    doc.setFontSize(18)
+    doc.text(clean("BASARI SERTIFIKASI"), 148, 78, { align: "center" })
+
+    doc.line(60, 84, 237, 84)
+
+    // Personel Bilgileri
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(14)
+    doc.text(clean(`${p.ad} ${p.soyad}`), 148, 100, { align: "center" })
+    doc.setFontSize(11)
+    doc.text(clean(`Sicil No: ${p.sicil_no || '-'} | Unvan: ${p.unvan || 'Itfaiye Eri'}`), 148, 110, { align: "center" })
+
+    doc.setFontSize(12)
+    const sertText = `${clean(p.ad)} ${clean(p.soyad)}, ${clean(sertifikaSaat)} saatlik Temel Itfaiye Egitimi programini basariyla tamamlayarak bu sertifikayi almaya hak kazanmistir.`
+    const lines = doc.splitTextToSize(sertText, 200)
+    doc.text(lines, 148, 126, { align: "center" })
+
+    doc.setFontSize(10)
+    doc.text(clean(`Verilis Tarihi: ${new Date().toLocaleDateString('tr-TR')}`), 148, 148, { align: "center" })
+
+    // İmzalar
+    doc.line(40, 170, 110, 170)
+    doc.line(187, 170, 257, 170)
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(10)
+    doc.text(clean("Seyfi Ali GUL"), 75, 176, { align: "center" })
+    doc.text(clean("Ibrahim ALACAM"), 222, 176, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(clean("Egitim Amiri"), 75, 182, { align: "center" })
+    doc.text(clean("Itfaiye Muduru"), 222, 182, { align: "center" })
+
+    doc.save(`Sertifika_${clean(p.ad)}_${clean(p.soyad)}.pdf`)
+  }
+
+  // --- Basic Training Functions ---
+  const handleUpdateHours = async () => {
+    if (!editingPersonel) return
+    setIsUpdatingHours(true)
+    try {
+      const res = await api.update('personnel', { 
+        temel_egitim_saati: Number(newTrainingHours) 
+      }, { 
+        id: editingPersonel.id 
+      })
+      if (res.error) {
+        alert("Eğitim saati güncellenirken hata oluştu: " + res.error)
+      } else {
+        setPersonnelList(prev => prev.map(p => p.id === editingPersonel.id ? { ...p, temel_egitim_saati: Number(newTrainingHours) } : p))
+        setEditingPersonel(null)
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert("Hata: " + err.message)
+    } finally {
+      setIsUpdatingHours(false)
+    }
+  }
+
+  const handlePrintYillikCizelge = () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const clean = (txt: string) => cleanTurkishChars(txt || "")
+    doc.rect(5, 5, 200, 287)
+    doc.rect(6, 6, 198, 285)
+    doc.setFont("Helvetica", "bold")
+    doc.setFontSize(14)
+    doc.text(clean("T.C. SIVAS BELEDIYE BASKANLIGI"), 105, 18, { align: "center" })
+    doc.setFontSize(12)
+    doc.text(clean("ITFAIYE MUDURLUGU"), 105, 24, { align: "center" })
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(11)
+    doc.text(clean("PERSONEL TEMEL EGITIM YILLIK CIZELGESI"), 105, 30, { align: "center" })
+    doc.line(15, 35, 195, 35)
+
+    doc.setFontSize(9)
+    doc.setFont("Helvetica", "bold")
+    doc.text(clean("SICIL NO"), 17, 42)
+    doc.text(clean("AD SOYAD"), 45, 42)
+    doc.text(clean("POSTA"), 110, 42)
+    doc.text(clean("UNVAN"), 135, 42)
+    doc.text(clean("EGITIM SAATI"), 170, 42)
+    doc.line(15, 45, 195, 45)
+
+    doc.setFont("Helvetica", "normal")
+    doc.setFontSize(9)
+    let y = 51
+    personnelList.forEach(p => {
+      doc.text(clean(p.sicil_no || '-'), 17, y)
+      doc.text(clean(`${p.ad} ${p.soyad}`), 45, y)
+      doc.text(clean(p.posta || '-'), 110, y)
+      doc.text(clean(p.unvan || '-'), 135, y)
+      doc.text(clean(`${p.temel_egitim_saati || 0} Saat`), 170, y)
+      y += 8
+      if (y > 270) {
+        doc.addPage()
+        doc.rect(5, 5, 200, 287)
+        doc.rect(6, 6, 198, 285)
+        y = 20
+        doc.setFont("Helvetica", "bold")
+        doc.text(clean("SICIL NO"), 17, y)
+        doc.text(clean("AD SOYAD"), 45, y)
+        doc.text(clean("POSTA"), 110, y)
+        doc.text(clean("UNVAN"), 135, y)
+        doc.text(clean("EGITIM SAATI"), 170, y)
+        doc.line(15, y + 3, 195, y + 3)
+        y += 10
+        doc.setFont("Helvetica", "normal")
+      } else {
+        doc.line(15, y - 3, 195, y - 3)
+      }
+    })
+
+    doc.save("Personel_Temel_Egitim_Yillik_Cizelgesi.pdf")
+  }
 
   // Filtered Training Citizen Requests
   const trainingRequests = useMemo(() => {
@@ -851,6 +1217,13 @@ export default function EgitimlerPage() {
             onClick={() => setActiveTab('analytics')}
           >
             📊 Başkanlık Analiz Paneli
+          </Button>
+          <Button
+            variant={activeTab === 'temel' ? 'default' : 'ghost'}
+            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'temel' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+            onClick={() => setActiveTab('temel')}
+          >
+            🎓 Personel Temel Eğitimi
           </Button>
         </div>
 
@@ -1476,6 +1849,472 @@ export default function EgitimlerPage() {
 
             </div>
 
+          </div>
+        )}
+
+        {/* --- TAB 5: Personel Temel Eğitimi --- */}
+        {activeTab === 'temel' && (
+          <div className="space-y-6">
+            {/* Alt Sekmeler */}
+            <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+              <Button
+                variant={temelSubTab === 'cizelge' ? 'default' : 'ghost'}
+                className={`font-bold text-xs h-9 rounded-xl ${temelSubTab === 'cizelge' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+                onClick={() => setTemelSubTab('cizelge')}
+              >
+                📊 Yıllık Eğitim Çizelgesi
+              </Button>
+              <Button
+                variant={temelSubTab === 'mufredat' ? 'default' : 'ghost'}
+                className={`font-bold text-xs h-9 rounded-xl ${temelSubTab === 'mufredat' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+                onClick={() => setTemelSubTab('mufredat')}
+              >
+                📖 Eğitim Müfredatı
+              </Button>
+              <Button
+                variant={temelSubTab === 'sertifika' ? 'default' : 'ghost'}
+                className={`font-bold text-xs h-9 rounded-xl ${temelSubTab === 'sertifika' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+                onClick={() => setTemelSubTab('sertifika')}
+              >
+                📜 Sertifika Basımı
+              </Button>
+            </div>
+
+            {/* ALT SEKME 1: Yıllık Eğitim Çizelgesi */}
+            {temelSubTab === 'cizelge' && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <div className="flex flex-1 gap-2 w-full">
+                    {/* Arama */}
+                    <div className="flex items-center flex-1 bg-slate-900/40 border border-zinc-800 rounded-xl px-3.5 py-2">
+                      <Search className="w-4 h-4 text-zinc-400 mr-2" />
+                      <input
+                        type="text"
+                        className="bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-sm w-full"
+                        placeholder="Personel adına göre arayın..."
+                        value={cizelgeSearch}
+                        onChange={(e) => setCizelgeSearch(e.target.value)}
+                      />
+                    </div>
+                    {/* Posta Filtresi */}
+                    <select
+                      className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                      value={cizelgePostaFilter}
+                      onChange={(e) => setCizelgePostaFilter(e.target.value)}
+                    >
+                      <option value="ALL">Tüm Postalar</option>
+                      <option value="A">A Grubu</option>
+                      <option value="B">B Grubu</option>
+                      <option value="C">C Grubu</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto justify-end">
+                    <Button
+                      variant="outline"
+                      className="border-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-bold gap-2"
+                      onClick={handlePrintYillikCizelge}
+                    >
+                      <Printer className="w-4 h-4 text-indigo-400" /> PDF Rapor Çıktısı
+                    </Button>
+                  </div>
+                </div>
+
+                <Card className="bg-slate-900/40 border-zinc-800/80 rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-zinc-800/50 bg-zinc-900/20 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                          <th className="p-4">Sicil No</th>
+                          <th className="p-4">Ad Soyad</th>
+                          <th className="p-4">Grup / Posta</th>
+                          <th className="p-4">Unvan</th>
+                          <th className="p-4">Toplam Eğitim Saati</th>
+                          <th className="p-4">Durum</th>
+                          <th className="p-4 text-right">İşlemler</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-800/30 text-xs text-zinc-300 font-medium">
+                        {personnelList
+                          .filter(p => {
+                            const matchSearch = `${p.ad} ${p.soyad}`.toLowerCase().includes(cizelgeSearch.toLowerCase()) || (p.sicil_no || '').includes(cizelgeSearch);
+                            const matchPosta = cizelgePostaFilter === 'ALL' || p.posta === cizelgePostaFilter;
+                            return matchSearch && matchPosta;
+                          })
+                          .map(p => {
+                            const hours = p.temel_egitim_saati || 0;
+                            const isEligible = hours >= 240;
+                            return (
+                              <tr key={p.id} className="hover:bg-zinc-800/20 transition">
+                                <td className="p-4 font-mono font-bold text-zinc-400">{p.sicil_no}</td>
+                                <td className="p-4 font-semibold text-zinc-100">{p.ad} {p.soyad}</td>
+                                <td className="p-4">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                    p.posta === 'A' ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/20' :
+                                    p.posta === 'B' ? 'bg-amber-950/30 text-amber-400 border-amber-500/20' :
+                                    'bg-emerald-950/30 text-emerald-400 border-emerald-500/20'
+                                  }`}>
+                                    {p.posta} Grubu
+                                  </span>
+                                </td>
+                                <td className="p-4 text-zinc-400">{p.unvan || 'İtfaiye Eri'}</td>
+                                <td className="p-4 font-mono font-bold text-indigo-400">{hours} Saat</td>
+                                <td className="p-4">
+                                  {isEligible ? (
+                                    <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                                      <CheckCircle className="w-4 h-4 text-emerald-400" /> Sertifika Hak Kazandı
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1.5 text-amber-500 font-bold">
+                                      <Clock className="w-4 h-4 text-amber-500" /> Devam Ediyor ({hours}/240)
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-4 text-right flex items-center justify-end gap-2">
+                                  {isMudur && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-indigo-400 hover:text-indigo-300 font-bold text-[11px] h-8 rounded-lg hover:bg-indigo-950/20"
+                                      onClick={() => {
+                                        setEditingPersonel(p);
+                                        setNewTrainingHours(hours);
+                                      }}
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5 mr-1" /> Saat Güncelle
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={!isEligible}
+                                    className={`font-bold text-[11px] h-8 rounded-lg ${
+                                      isEligible 
+                                        ? 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20' 
+                                        : 'text-zinc-600 cursor-not-allowed'
+                                    }`}
+                                    onClick={() => {
+                                      setSertifikaPersonelId(p.id);
+                                      setSertifikaSaat(String(hours));
+                                      setTemelSubTab('sertifika');
+                                    }}
+                                  >
+                                    <Award className="w-3.5 h-3.5 mr-1" /> Sertifika
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* ALT SEKME 2: Eğitim Müfredatı */}
+            {temelSubTab === 'mufredat' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Müfredat Listesi (Sol/Orta) */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div className="flex gap-2">
+                      <select
+                        className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                        value={mufredatMonth}
+                        onChange={(e) => setMufredatMonth(Number(e.target.value))}
+                      >
+                        {AY_ISIMLERI.map((name, index) => index > 0 && (
+                          <option key={index} value={index}>{name}</option>
+                        ))}
+                      </select>
+                      <select
+                        className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                        value={mufredatYear}
+                        onChange={(e) => setMufredatYear(Number(e.target.value))}
+                      >
+                        {[2025, 2026, 2027].map(y => (
+                          <option key={y} value={y}>{y} Yılı</option>
+                        ))}
+                      </select>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="border-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-bold gap-2"
+                      onClick={handlePrintAylikMufredat}
+                    >
+                      <Printer className="w-4 h-4 text-indigo-400" /> Müfredat PDF Yazdır
+                    </Button>
+                  </div>
+
+                  <Card className="bg-slate-900/40 border-zinc-800/80 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800/50 bg-zinc-900/20 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                            <th className="p-4">Tarih</th>
+                            <th className="p-4">Posta</th>
+                            <th className="p-4">Eğitim Konusu</th>
+                            {isMudur && <th className="p-4 text-right">İşlemler</th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/30 text-xs text-zinc-300 font-medium">
+                          {mufredatLoading ? (
+                            <tr>
+                              <td colSpan={4} className="p-8 text-center text-zinc-500 font-semibold">
+                                <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-400" />
+                                Müfredat Yükleniyor...
+                              </td>
+                            </tr>
+                          ) : mufredatList.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="p-8 text-center text-zinc-500 font-semibold">
+                                <Info className="w-5 h-5 mx-auto mb-2 text-zinc-600" />
+                                Bu ay için eğitim müfredatı planlanmamış.
+                              </td>
+                            </tr>
+                          ) : (
+                            mufredatList.map(row => {
+                              const d = new Date(row.tarih);
+                              const formattedDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${getDayName(d)}`;
+                              return (
+                                <tr key={row.id} className="hover:bg-zinc-800/20 transition">
+                                  <td className="p-4 font-semibold text-zinc-200">{formattedDate}</td>
+                                  <td className="p-4">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                      row.posta === 'A' ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/20' :
+                                      row.posta === 'B' ? 'bg-amber-950/30 text-amber-400 border-amber-500/20' :
+                                      'bg-emerald-950/30 text-emerald-400 border-emerald-500/20'
+                                    }`}>
+                                      {row.posta} Postası
+                                    </span>
+                                  </td>
+                                  <td className="p-4 text-zinc-100 font-semibold">{row.egitim_konusu}</td>
+                                  {isMudur && (
+                                    <td className="p-4 text-right flex justify-end gap-1.5">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-indigo-400 hover:text-white h-7 w-7 p-0 rounded-lg"
+                                        onClick={() => {
+                                          setMufredatEditRow(row);
+                                          setMufredatForm({
+                                            tarih: row.tarih.split('T')[0],
+                                            posta: row.posta,
+                                            egitim_konusu: row.egitim_konusu
+                                          });
+                                        }}
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-400 hover:text-red-300 h-7 w-7 p-0 rounded-lg hover:bg-red-950/20"
+                                        onClick={() => handleDeleteMufredat(row.id)}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </td>
+                                  )}
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Müfredat Formu (Sağ) */}
+                <div>
+                  {isMudur ? (
+                    <Card className="bg-slate-900/40 border-zinc-800/80 p-5 rounded-2xl space-y-4">
+                      <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-400" />
+                        {mufredatEditRow ? "Müfredat Kaydını Düzenle" : "Yeni Müfredat Ekle"}
+                      </h3>
+                      <form onSubmit={handleSaveMufredat} className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-zinc-400 font-semibold block text-xs">Eğitim Tarihi</label>
+                          <input
+                            type="date"
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs"
+                            value={mufredatForm.tarih}
+                            onChange={(e) => setMufredatForm(prev => ({ ...prev, tarih: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-zinc-400 font-semibold block text-xs">Grup / Posta</label>
+                          <select
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                            value={mufredatForm.posta}
+                            onChange={(e) => setMufredatForm(prev => ({ ...prev, posta: e.target.value }))}
+                          >
+                            <option value="A">A Grubu</option>
+                            <option value="B">B Grubu</option>
+                            <option value="C">C Grubu</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-zinc-400 font-semibold block text-xs">Eğitim Konusu</label>
+                          <textarea
+                            rows={3}
+                            placeholder="Eğitimin detaylı konusu..."
+                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs resize-none"
+                            value={mufredatForm.egitim_konusu}
+                            onChange={(e) => setMufredatForm(prev => ({ ...prev, egitim_konusu: e.target.value }))}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="submit"
+                            disabled={isSavingMufredat}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"
+                          >
+                            {isSavingMufredat ? "Kaydediliyor..." : mufredatEditRow ? "Güncelle" : "Ekle"}
+                          </Button>
+                          {mufredatEditRow && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="border border-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-bold"
+                              onClick={() => {
+                                setMufredatEditRow(null);
+                                setMufredatForm({ tarih: '', posta: 'A', egitim_konusu: '' });
+                              }}
+                            >
+                              İptal
+                            </Button>
+                          )}
+                        </div>
+                      </form>
+                    </Card>
+                  ) : (
+                    <Card className="bg-slate-900/20 border-zinc-800/40 p-5 rounded-2xl text-center">
+                      <ShieldCheck className="w-8 h-8 text-zinc-500 mx-auto mb-2" />
+                      <h3 className="text-xs font-bold text-zinc-400 uppercase">Yetki Kısıtlaması</h3>
+                      <p className="text-[11px] text-zinc-500 mt-1">Eğitim müfredatı planlama yetkisi sadece İtfaiye Müdürlüğü yetkililerine aittir.</p>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ALT SEKME 3: Sertifika Basımı */}
+            {temelSubTab === 'sertifika' && (
+              <Card className="bg-slate-900/40 border-zinc-800/80 p-6 rounded-2xl max-w-xl mx-auto space-y-6">
+                <div className="text-center space-y-2">
+                  <Award className="w-12 h-12 text-indigo-400 mx-auto animate-bounce" />
+                  <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-wider">Temel İtfaiye Eğitimi Başarı Sertifikası</h3>
+                  <p className="text-xs text-zinc-400">Yıllık 240 saatlik temel itfaiye eğitimini tamamlayan personel için resmi sertifika baskı paneli.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-zinc-400 font-semibold block text-xs">Sertifika Alacak Personel</label>
+                    <select
+                      className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                      value={sertifikaPersonelId}
+                      onChange={(e) => {
+                        setSertifikaPersonelId(e.target.value);
+                        const selected = personnelList.find(x => x.id === e.target.value);
+                        if (selected) {
+                          setSertifikaSaat(String(selected.temel_egitim_saati || 240));
+                        }
+                      }}
+                    >
+                      <option value="">-- Personel Seçiniz --</option>
+                      {personnelList
+                        .filter(p => (p.temel_egitim_saati || 0) >= 240)
+                        .map(p => (
+                          <option key={p.id} value={p.id}>
+                            🏆 {p.ad} {p.soyad} ({p.temel_egitim_saati} Saat)
+                          </option>
+                        ))}
+                    </select>
+                    {sertifikaPersonelId && (
+                      <p className="text-[10px] text-emerald-400 font-semibold mt-1">
+                        ✓ Seçilen personel başarı sınırını (240 Saat) aşmıştır ve sertifika almaya hak kazanmıştır.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-zinc-400 font-semibold block text-xs">Belgelenecek Eğitim Süresi (Saat)</label>
+                    <input
+                      type="number"
+                      className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs"
+                      value={sertifikaSaat}
+                      onChange={(e) => setSertifikaSaat(e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    disabled={!sertifikaPersonelId}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white rounded-xl text-xs font-bold gap-2 py-3"
+                    onClick={handlePrintSertifika}
+                  >
+                    <Award className="w-4 h-4" /> Sertifikayı PDF Olarak Bas ve İndir
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* Eğitim Saati Güncelleme Modalı */}
+            {editingPersonel && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                <Card className="w-full max-w-md bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
+                  <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-4 flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-indigo-400" /> EĞİTİM SAATİ GÜNCELLE
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-zinc-400 hover:text-white"
+                      onClick={() => setEditingPersonel(null)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-5 space-y-4">
+                    <div className="bg-slate-900/50 p-3 rounded-xl border border-zinc-800 text-xs space-y-1">
+                      <p className="text-zinc-400">Personel: <span className="text-zinc-100 font-bold">{editingPersonel.ad} {editingPersonel.soyad}</span></p>
+                      <p className="text-zinc-400">Sicil No: <span className="text-zinc-100 font-bold font-mono">{editingPersonel.sicil_no}</span></p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-zinc-400 font-semibold block text-xs">Mevcut Toplam Eğitim Saati (Yıllık)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs"
+                        value={newTrainingHours}
+                        onChange={(e) => setNewTrainingHours(Number(e.target.value))}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        disabled={isUpdatingHours}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"
+                        onClick={handleUpdateHours}
+                      >
+                        {isUpdatingHours ? "Güncelleniyor..." : "Kaydet"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="border border-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-bold"
+                        onClick={() => setEditingPersonel(null)}
+                      >
+                        İptal
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         )}
 

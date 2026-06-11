@@ -99,7 +99,7 @@ const ALLOWED_TABLES = [
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
-  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs'
+  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs', 'egitim_mufredati'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -367,6 +367,9 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_enlem DOUBLE PRECISION;`);
     await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_boylam DOUBLE PRECISION;`);
     await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_guncelleme TIMESTAMPTZ;`);
+
+    // Egitimler: Add temel_egitim_saati to personnel table
+    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS temel_egitim_saati INTEGER DEFAULT 120;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }
@@ -494,6 +497,24 @@ async function ensureExternalMissionsTableExists() {
     await query(`ALTER TABLE public.external_missions ADD COLUMN IF NOT EXISTS mahalle VARCHAR;`);
   } catch (err) {
     console.error('ensureExternalMissionsTableExists hatası:', err);
+  }
+}
+
+async function ensureEgitimMufredatiTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.egitim_mufredati (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tarih DATE NOT NULL,
+        posta VARCHAR(1) NOT NULL,
+        egitim_konusu VARCHAR NOT NULL,
+        ay INTEGER NOT NULL,
+        yil INTEGER NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+  } catch (err) {
+    console.error('ensureEgitimMufredatiTableExists hatası:', err);
   }
 }
 
@@ -950,6 +971,9 @@ export async function GET(
     if (table === 'external_missions') {
       await ensureExternalMissionsTableExists();
     }
+    if (table === 'egitim_mufredati') {
+      await ensureEgitimMufredatiTableExists();
+    }
     if (table === 'unified_system_logs') {
       await ensureUnifiedSystemLogsViewExists();
     }
@@ -1061,6 +1085,9 @@ export async function POST(
     }
     if (table === 'external_missions') {
       await ensureExternalMissionsTableExists();
+    }
+    if (table === 'egitim_mufredati') {
+      await ensureEgitimMufredatiTableExists();
     }
 
     const body = await request.json();
@@ -1320,6 +1347,9 @@ export async function PATCH(
     }
     if (table === 'external_missions') {
       await ensureExternalMissionsTableExists();
+    }
+    if (table === 'egitim_mufredati') {
+      await ensureEgitimMufredatiTableExists();
     }
 
     const body = await request.json();
