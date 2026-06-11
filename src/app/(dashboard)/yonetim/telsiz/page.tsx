@@ -566,14 +566,14 @@ export default function TelsizPage() {
                 <div className="flex items-center gap-1">
                   <div className={`w-2 h-2 rounded-full ${isTxActive ? 'bg-red-500 animate-ping' : 'bg-red-900'}`} title="TX - Gönderme" />
                   <span className="text-[8px] font-bold text-red-500 mr-1.5">TX</span>
-                  <div className={`w-2 h-2 rounded-full ${isRxActive ? 'bg-green-500 animate-ping' : 'bg-green-900'}`} title="RX - Alma" />
-                  <span className="text-[8px] font-bold text-green-500">RX</span>
+                  <div className={`w-2 h-2 rounded-full ${isRxActive ? 'bg-emerald-500 animate-ping' : 'bg-emerald-950/80'}`} title="RX - Alma" />
+                  <span className="text-[8px] font-bold text-emerald-500">RX</span>
                 </div>
               </div>
               
               {/* Status Screen with animated canvas waveform */}
               <div className="mt-3 bg-slate-900/90 border border-slate-800/60 rounded px-3 py-2 flex items-center justify-between font-mono">
-                <span className="text-xs font-black text-cyan-400 tracking-widest uppercase">ANLIK KANAL BAĞLANTISI</span>
+                <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase">ANLIK KANAL BAĞLANTISI</span>
                 <canvas 
                   ref={canvasRef} 
                   width={90} 
@@ -769,7 +769,7 @@ export default function TelsizPage() {
                         {/* Radio Code badge if present */}
                         {msg.telsiz_kodu && (
                           <div className="mb-1 flex">
-                            <span className="text-[9px] font-black uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                               📟 {msg.telsiz_kodu}
                             </span>
                           </div>
