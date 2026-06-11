@@ -291,10 +291,13 @@ function HaritaContent() {
       if (persData) {
         setPersonnelList(persData)
         if (extData) {
-          const persMap = new Map(persData.map((p: any) => [p.sicil_no, `${p.ad} ${p.soyad}`]))
+          const persMap: Record<string, string> = {}
+          persData.forEach((p: any) => {
+            persMap[p.sicil_no] = `${p.ad} ${p.soyad}`
+          })
           const enrichedExt = extData.map((m: any) => {
             const names = (m.sicil_nos || [])
-              .map((s: string) => persMap.get(s) || s)
+              .map((s: string) => persMap[s] || s)
               .join(', ')
             return {
               ...m,
