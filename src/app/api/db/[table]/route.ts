@@ -336,6 +336,7 @@ async function ensureVehicleColumnsExist() {
     // İstasyon bazlı otomatik şube eşleştirme (sadece henüz Merkez olanlar için)
     await query(`UPDATE public.vehicles SET current_branch = 'Esentepe' WHERE current_branch = 'Merkez' AND (istasyon ILIKE '%Esentepe%' OR istasyon ILIKE '%esentepe%');`);
     await query(`UPDATE public.vehicles SET current_branch = 'OSB (Organize)' WHERE current_branch = 'Merkez' AND (istasyon ILIKE '%Organize%' OR istasyon ILIKE '%OSB%' OR istasyon ILIKE '%organize%');`);
+    await query(`UPDATE public.vehicles SET current_branch = 'OSB (Organize)' WHERE current_branch = 'OSB';`);
     
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS marka VARCHAR;`);
     await query(`ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS istasyon TEXT;`);
