@@ -48,10 +48,19 @@ interface Incident {
   adres?: string
 }
 
+interface Mission {
+  id: string
+  gorev_turu: string
+  baslik: string
+  durum: string
+  created_at: string
+}
+
 interface RadioLog {
   id: string
   kanal_tipi: string
   vaka_id?: string
+  mission_id?: string
   gonderen_personel_id: string
   gonderen_ad_soyad: string
   gonderen_rutbe: string
@@ -67,7 +76,9 @@ export default function TelsizPage() {
   // Channels and selection state
   const [activeIncidents, setActiveIncidents] = useState<Incident[]>([])
   const [closedIncidents, setClosedIncidents] = useState<Incident[]>([])
-  const [selectedChannel, setSelectedChannel] = useState<{ id: string; name: string; type: 'Genel' | 'Vaka'; isClosed: boolean }>({
+  const [activeMissions, setActiveMissions] = useState<Mission[]>([])
+  const [closedMissions, setClosedMissions] = useState<Mission[]>([])
+  const [selectedChannel, setSelectedChannel] = useState<{ id: string; name: string; type: 'Genel' | 'Vaka' | 'Görev'; isClosed: boolean }>({
     id: 'general',
     name: 'Genel Karargâh Muhabere',
     type: 'Genel',
@@ -171,8 +182,16 @@ export default function TelsizPage() {
           setActiveIncidents(active)
           setClosedIncidents(closed)
         }
+
+        const { data: missionData } = await api.from('external_missions').select('*').order('created_at', { ascending: false })
+        if (missionData) {
+          const activeM = missionData.filter((m: any) => m.durum !== 'Tamamlandı' && m.durum !== 'iptal')
+          const closedM = missionData.filter((m: any) => m.durum === 'Tamamlandı' || m.durum === 'iptal')
+          setActiveMissions(activeM)
+          setClosedMissions(closedM)
+        }
       } catch (err) {
-        console.error("Fetch incidents error:", err)
+        console.error("Fetch channels error:", err)
       } finally {
         setLoadingChannels(false)
       }
@@ -193,6 +212,8 @@ export default function TelsizPage() {
       let queryBuilder = api.from('radio_logs').select('*')
       if (selectedChannel.id === 'general') {
         queryBuilder = queryBuilder.eq('kanal_tipi', 'Genel')
+      } else if (selectedChannel.type === 'Görev') {
+        queryBuilder = queryBuilder.eq('kanal_tipi', 'Görev').eq('mission_id', selectedChannel.id)
       } else {
         queryBuilder = queryBuilder.eq('kanal_tipi', 'Vaka').eq('vaka_id', selectedChannel.id)
       }
@@ -268,7 +289,8 @@ export default function TelsizPage() {
     try {
       const payload = {
         kanal_tipi: selectedChannel.type,
-        vaka_id: selectedChannel.id === 'general' ? null : selectedChannel.id,
+        vaka_id: selectedChannel.type === 'Vaka' ? selectedChannel.id : null,
+        mission_id: selectedChannel.type === 'Görev' ? selectedChannel.id : null,
         gonderen_personel_id: personnelUuid,
         gonderen_ad_soyad: `${user.ad} ${user.soyad}`,
         gonderen_rutbe: user.unvan || user.rol || "İtfaiye Eri",
@@ -416,7 +438,7 @@ export default function TelsizPage() {
     doc.text(clean("ITFAIYE MUDURLUGU"), 105, 26, { align: "center" })
     doc.setFont("Helvetica", "normal")
     doc.setFontSize(11)
-    doc.text(clean("RESMI VAKA TELSİZ MUHABERE JURNALI"), 105, 32, { align: "center" })
+    doc.text(clean(selectedChannel.type === 'Görev' ? "RESMI DIS GOREV TELSIZ MUHABERE JURNALI" : "RESMI VAKA TELSIZ MUHABERE JURNALI"), 105, 32, { align: "center" })
 
     doc.line(15, 38, 195, 38)
 
@@ -427,7 +449,7 @@ export default function TelsizPage() {
     
     doc.setFont("Helvetica", "normal")
     doc.text(clean(`Kanal Adi: ${selectedChannel.name}`), 15, 54)
-    doc.text(clean(`Kanal Tipi: ${selectedChannel.type === 'Genel' ? 'Genel Karargah' : 'Olay Sevk Kanali'}`), 15, 60)
+    doc.text(clean(`Kanal Tipi: ${selectedChannel.type === 'Genel' ? 'Genel Karargah' : selectedChannel.type === 'Görev' ? 'Dis Gorev Sevk Kanali' : 'Olay Sevk Kanali'}`), 15, 60)
     doc.text(clean(`Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`), 15, 66)
 
     doc.line(15, 72, 195, 72)
@@ -648,6 +670,44 @@ export default function TelsizPage() {
                 )}
               </div>
 
+              {/* Category 2.5: Active mission channels */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">📋 CANLI GÖREV KANALLARI</span>
+                {loadingChannels ? (
+                  <div className="py-4 text-center text-xs text-slate-500">Kanallar yükleniyor...</div>
+                ) : activeMissions.length === 0 ? (
+                  <div className="py-3 px-2 border border-dashed border-slate-900 text-xs text-slate-500 rounded-lg text-center">
+                    Aktif dış görev kanalı bulunmuyor.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {activeMissions.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => {
+                          setSelectedChannel({ id: m.id, name: `Görev: ${m.baslik} (${m.gorev_turu})`, type: 'Görev', isClosed: false })
+                          setMobileView('chat')
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                          selectedChannel.id === m.id
+                            ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.2)]'
+                            : 'bg-slate-900/20 border-slate-900 hover:border-slate-800 text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Radio className="w-4 h-4 text-cyan-400 shrink-0" />
+                          <div className="truncate">
+                            <span className="text-sm block truncate font-bold text-slate-200">{m.baslik}</span>
+                            <span className="text-[10px] block text-slate-400 truncate">{m.gorev_turu}</span>
+                          </div>
+                        </div>
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Category 3: Closed incident channels (Archive) */}
               <div className="space-y-1">
                 <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">🗄️ KAPATILMIŞ VAKA ARŞİVİ (SALT OKUNUR)</span>
@@ -673,6 +733,40 @@ export default function TelsizPage() {
                           <div className="truncate">
                             <span className="text-xs block truncate font-semibold">{inc.olay_turu}</span>
                             <span className="text-[9px] block text-slate-500 truncate">{inc.mahalle} Mah.</span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] bg-slate-900 border border-slate-800 px-1 rounded text-slate-500">Arşiv</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Category 4: Closed mission channels (Archive) */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">🗄️ KAPATILMIŞ GÖREV ARŞİVİ (SALT OKUNUR)</span>
+                {loadingChannels ? null : closedMissions.length === 0 ? (
+                  <div className="py-2 text-center text-xs text-slate-600">Görev arşiv kaydı bulunmuyor.</div>
+                ) : (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                    {closedMissions.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => {
+                          setSelectedChannel({ id: m.id, name: `Arşiv Görev: ${m.baslik} (${m.gorev_turu})`, type: 'Görev', isClosed: true })
+                          setMobileView('chat')
+                        }}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                          selectedChannel.id === m.id
+                            ? 'bg-slate-800/80 border-slate-700 text-slate-300 font-bold'
+                            : 'bg-slate-950 border-slate-900/80 hover:border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <div className="truncate">
+                            <span className="text-xs block truncate font-semibold">{m.baslik}</span>
+                            <span className="text-[9px] block text-slate-500 truncate">{m.gorev_turu}</span>
                           </div>
                         </div>
                         <span className="text-[9px] bg-slate-900 border border-slate-800 px-1 rounded text-slate-500">Arşiv</span>

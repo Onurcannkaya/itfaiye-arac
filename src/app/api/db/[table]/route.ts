@@ -533,6 +533,7 @@ async function ensureRadioLogsTableExists() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await query(`ALTER TABLE public.radio_logs ADD COLUMN IF NOT EXISTS mission_id UUID REFERENCES public.external_missions(id) ON DELETE CASCADE;`);
   } catch (err) {
     console.error('ensureRadioLogsTableExists hatası:', err);
   }
