@@ -535,7 +535,7 @@ export default function HizmetlerPage() {
               <FilePlus className="w-4 h-4" /> Yeni Başvuru Ekle
             </Button>
             {isMudur ? (
-              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black px-3 py-1 text-xs">
+              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1 text-xs">
                 Müdür Yetki Modu
               </Badge>
             ) : (
@@ -549,14 +549,14 @@ export default function HizmetlerPage() {
         {/* 1. Üst Özet KPI Kartları (Glassmorphic) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Baca Temizliği */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-blue-500/20 transition duration-300">
+          <Card className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-blue-500/20 transition-all duration-200 ease-out">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-blue-500 group-hover:scale-110 transition duration-500">
               <Brush className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Baca Temizliği</span>
-                <h3 className="text-2xl font-black text-blue-400">{bacaCount} Başvuru</h3>
+                <h3 className="text-2xl font-bold text-blue-400">{bacaCount} Başvuru</h3>
                 <p className="text-[10px] text-zinc-500">Sivas geneli konut/ticari baca talepleri</p>
               </div>
               <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
@@ -566,14 +566,14 @@ export default function HizmetlerPage() {
           </Card>
 
           {/* Yangın Önlem / Ruhsat */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-yellow-500/20 transition duration-300">
+          <Card className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-yellow-500/20 transition-all duration-200 ease-out">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-yellow-500 group-hover:scale-110 transition duration-500">
               <ShieldCheck className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Yangın Önlem / Ruhsat</span>
-                <h3 className="text-2xl font-black text-yellow-400">{yanginCount} Rapor</h3>
+                <h3 className="text-2xl font-bold text-yellow-400">{yanginCount} Rapor</h3>
                 <p className="text-[10px] text-zinc-500">İtfaiye uygunluk ve ruhsat onay süreci</p>
               </div>
               <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
@@ -583,14 +583,14 @@ export default function HizmetlerPage() {
           </Card>
 
           {/* Vezne / Tahsilat */}
-          <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/20 transition duration-300">
+          <Card className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-200 ease-out">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-110 transition duration-500">
               <CreditCard className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Vezne / Tahsilat</span>
-                <h3 className="text-2xl font-black text-emerald-400">₺{revenue.toLocaleString('tr-TR')}</h3>
+                <h3 className="text-2xl font-bold text-emerald-400">₺{revenue.toLocaleString('tr-TR')}</h3>
                 <p className="text-[10px] text-zinc-500">Onaylanan başvurulardan tahsil edilen harç</p>
               </div>
               <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
@@ -617,7 +617,7 @@ export default function HizmetlerPage() {
           <CardHeader className="border-b border-zinc-800 bg-zinc-900/10 pb-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-base font-black tracking-wider uppercase text-zinc-300 flex items-center gap-2">
+                <CardTitle className="text-base font-bold tracking-wider uppercase text-zinc-300 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-indigo-400" /> AKTİF BAŞVURULAR VERİ GRİDİ
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">Veritabanından anlık çekilen resmi vatandaş hizmet kayıtları</p>
@@ -684,7 +684,7 @@ export default function HizmetlerPage() {
                               </span>
                             </td>
                             <td className="p-4 align-middle whitespace-nowrap">
-                              <span className={`px-2.5 py-1 text-[11px] font-black rounded-md border ${feeObj.color}`}>
+                              <span className={`px-2.5 py-1 text-[11px] font-bold rounded-md border ${feeObj.color}`}>
                                 {feeObj.text}
                               </span>
                             </td>
@@ -749,7 +749,7 @@ export default function HizmetlerPage() {
                             Ekip: <span className="text-zinc-300">{getGorevliEkip(req)}</span>
                           </div>
                           <div>
-                            <span className={`px-2 py-0.5 text-[10px] font-black rounded border ${feeObj.color}`}>
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${feeObj.color}`}>
                               {feeObj.text}
                             </span>
                           </div>
@@ -784,7 +784,7 @@ export default function HizmetlerPage() {
             <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
               <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-black text-zinc-100">
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
                     {selectedRequest.talep_turu.includes('Baca') ? <Brush className="w-5 h-5 text-blue-400" /> : <ShieldCheck className="w-5 h-5 text-yellow-400" />}
                     BAŞVURU YÖNETİM & TEKNİK DETAY DETAYI
                   </CardTitle>
@@ -829,7 +829,7 @@ export default function HizmetlerPage() {
                 {/* Baca Detayları */}
                 {selectedRequest.talep_turu.includes('Baca') && selectedRequest.baca_detaylari && (
                   <div className="bg-blue-500/5 border border-blue-500/10 p-4 rounded-xl space-y-2">
-                    <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider border-b border-blue-500/10 pb-1 flex items-center gap-1.5">
+                    <h4 className="text-xs font-semibold text-blue-400 uppercase tracking-wider border-b border-blue-500/10 pb-1 flex items-center gap-1.5">
                       <Brush className="w-3.5 h-3.5" /> Teknik Baca Parametreleri
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
@@ -856,7 +856,7 @@ export default function HizmetlerPage() {
                 {/* İşyeri Uygunluk Raporu Detayları */}
                 {!selectedRequest.talep_turu.includes('Baca') && selectedRequest.isyeri_detaylari && (
                   <div className="bg-yellow-500/5 border border-yellow-500/10 p-4 rounded-xl space-y-2">
-                    <h4 className="text-xs font-black text-yellow-400 uppercase tracking-wider border-b border-yellow-500/10 pb-1 flex items-center gap-1.5">
+                    <h4 className="text-xs font-semibold text-yellow-400 uppercase tracking-wider border-b border-yellow-500/10 pb-1 flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" /> İşyeri Yangın Güvenlik Detayları
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1028,7 +1028,7 @@ export default function HizmetlerPage() {
             <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
               <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-black text-zinc-100">
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
                     <FilePlus className="w-5 h-5 text-indigo-400" /> YENİ VATANDAŞ BAŞVURUSU KAYDI
                   </CardTitle>
                   <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Hizmet Kaydı</p>
