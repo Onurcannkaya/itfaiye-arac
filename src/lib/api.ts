@@ -37,7 +37,7 @@ interface QueryBuilder<T = any> {
   then(resolve: (value: { data: T | T[] | null; error: any; count?: number }) => void, reject?: (reason?: any) => void): void;
 }
 
-function getAuthHeaders(): Record<string, string> {
+export function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
   if (typeof window !== 'undefined') {
     try {

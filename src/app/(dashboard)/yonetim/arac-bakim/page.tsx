@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import PageGuard from "@/components/PageGuard"
-import { api } from "@/lib/api"
+import { api, getAuthHeaders } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -171,7 +171,9 @@ export default function AracBakimPage() {
   const fetchAllData = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/bakim')
+      const res = await fetch('/api/bakim', {
+        headers: getAuthHeaders()
+      })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       
@@ -252,13 +254,9 @@ export default function AracBakimPage() {
   const uploadImage = async (selectedFile: File): Promise<string | null> => {
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', selectedFile)
-      formData.append('folder', 'arizalar')
-      const res = await fetch('/api/upload', { method: 'POST', body: formData })
-      const result = await res.json()
-      if (result.error) throw new Error(result.error)
-      return result.url
+      const { url, error } = await api.upload(selectedFile, 'arizalar')
+      if (error) throw new Error(error)
+      return url
     } catch (error) {
       console.error('Error uploading image:', error)
       alert('Fotoğraf yüklenirken hata oluştu!')
