@@ -18,7 +18,7 @@ export default function PersonelYonetimPage() {
   const { user: currentUser } = useAuthStore()
   const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
-  const [selectedClass, setSelectedClass] = useState<"komuta" | "driver" | "saha" | "destek">("komuta")
+  const [selectedClass, setSelectedClass] = useState<"all" | "komuta" | "driver" | "saha" | "destek" | "esentepe" | "organize">("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [licenseFilter, setLicenseFilter] = useState("all")
   const [loading, setLoading] = useState(true)
@@ -93,6 +93,7 @@ export default function PersonelYonetimPage() {
             rol: p.rol,
             posta: p.posta || '',
             posta_no: p.posta_no || 1,
+            istasyon: p.istasyon || '',
             durum: p.durum || 'Görevde',
             ehliyet_gecerlilik_tarihi: ehliyet?.gecerlilik_tarihi || undefined,
             ilkyardim_sertifika_tarihi: ilkyardim?.gecerlilik_tarihi || undefined,
@@ -139,8 +140,16 @@ export default function PersonelYonetimPage() {
   const filteredPersonnel = useMemo(() => {
     let result = personnel
     
-    // Class filter (Komuta, Driver, Saha, Destek)
+    // Class/Branch filter
     result = result.filter(p => {
+      if (selectedClass === 'all') return true;
+      if (selectedClass === 'esentepe') {
+        return p.istasyon?.toLowerCase().includes('esentepe') || false;
+      }
+      if (selectedClass === 'organize') {
+        return p.istasyon?.toLowerCase().includes('organize') || p.istasyon?.toLowerCase().includes('osb') || false;
+      }
+
       const isKomuta = p.rol === 'Admin' || p.rol === 'Shift_Leader' || p.unvan === 'Amir' || p.unvan === 'Müdür';
       const isDriver = !isKomuta && (
         p.rol === 'Driver' || 
@@ -965,55 +974,91 @@ export default function PersonelYonetimPage() {
           </div>
         </CardHeader>
 
-        {/* 4 Sekmeli Siber-Mat Sınıflandırma Filtre Çubuğu */}
+        {/* Siber-Mat Sınıflandırma ve Şube Filtre Çubuğu */}
         <div className="border-b border-border/50 bg-muted/5 p-2 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedClass('all')}
+            className={cn(
+              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'all'
+                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/35 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>🗂️</span>
+            <span>Tüm Liste</span>
+          </button>
           <button
             onClick={() => setSelectedClass('komuta')}
             className={cn(
-              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
               selectedClass === 'komuta'
                 ? "bg-amber-500/10 text-amber-500 border-amber-500/30 shadow-sm font-bold"
                 : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <span>👑</span>
-            <span>Komuta Kademesi</span>
+            <span>Komuta</span>
           </button>
           <button
             onClick={() => setSelectedClass('driver')}
             className={cn(
-              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
               selectedClass === 'driver'
                 ? "bg-blue-500/10 text-blue-500 border-blue-500/30 shadow-sm font-bold"
                 : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <span>🚚</span>
-            <span>Sürücü Filosu</span>
+            <span>Sürücü</span>
           </button>
           <button
             onClick={() => setSelectedClass('saha')}
             className={cn(
-              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
               selectedClass === 'saha'
                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-sm font-bold"
                 : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <span>🧑🚒</span>
-            <span>Saha Müdahale</span>
+            <span>Saha</span>
           </button>
           <button
             onClick={() => setSelectedClass('destek')}
             className={cn(
-              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
               selectedClass === 'destek'
                 ? "bg-purple-500/10 text-purple-500 border-purple-500/30 shadow-sm font-bold"
                 : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
             )}
           >
             <span>📞</span>
-            <span>Santral & Destek</span>
+            <span>Destek</span>
+          </button>
+          <button
+            onClick={() => setSelectedClass('esentepe')}
+            className={cn(
+              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'esentepe'
+                ? "bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>🏢</span>
+            <span>Esentepe Şube</span>
+          </button>
+          <button
+            onClick={() => setSelectedClass('organize')}
+            className={cn(
+              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              selectedClass === 'organize'
+                ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/30 shadow-sm font-bold"
+                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>🏢</span>
+            <span>Organize Şube</span>
           </button>
         </div>
 
