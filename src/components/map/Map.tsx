@@ -209,7 +209,7 @@ function computeClusters<T extends { id: string }>(
 
 const BASE_MAPS = {
   carto_dark: {
-    name: 'Siber Mat Karanlık (Varsayılan)',
+    name: 'Siber Mat Karanlık',
     url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     attribution: '&copy; CartoDB &copy; OpenStreetMap'
   },
@@ -229,7 +229,7 @@ const BASE_MAPS = {
     attribution: '&copy; Google Maps'
   },
   osm_standart: {
-    name: 'OpenStreetMap Standart',
+    name: 'OpenStreetMap Standart (Varsayılan)',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; OpenStreetMap'
   }
@@ -260,7 +260,7 @@ export default function Map({
   const routeAnimFrameRef = useRef<number | null>(null)
 
   const [mapReady, setMapReady] = useState(false)
-  const [activeBaseMap, setActiveBaseMap] = useState<'carto_dark' | 'google_road' | 'google_satellite' | 'google_hybrid' | 'osm_standart'>('carto_dark')
+  const [activeBaseMap, setActiveBaseMap] = useState<'carto_dark' | 'google_road' | 'google_satellite' | 'google_hybrid' | 'osm_standart'>('osm_standart')
   const hasFitBoundsRef = useRef(false)
 
   const [showBinalar, setShowBinalar] = useState(false)
@@ -766,9 +766,9 @@ export default function Map({
         sources: {
           'osm-raster': {
             type: 'raster',
-            tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
             tileSize: 256,
-            attribution: '&copy; CartoDB &copy; OpenStreetMap'
+            attribution: '&copy; OpenStreetMap'
           }
         },
         layers: [
@@ -2076,11 +2076,11 @@ export default function Map({
             onChange={(e) => setActiveBaseMap(e.target.value as any)}
             className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-lg p-2 focus:ring-1 focus:ring-cyan-500 focus:outline-none transition-all duration-200 font-semibold"
           >
-            <option value="carto_dark">🌃 Siber Karanlık (Varsayılan)</option>
+            <option value="carto_dark">🌃 Siber Karanlık</option>
             <option value="google_road">🗺️ Google Yol Haritası</option>
             <option value="google_satellite">🛰️ Google Uydu Görüntüsü</option>
             <option value="google_hybrid">🗺️ Google Hibrit Harita</option>
-            <option value="osm_standart">🌐 OpenStreetMap Standart</option>
+            <option value="osm_standart">🌐 OpenStreetMap Standart (Varsayılan)</option>
           </select>
         </div>
         <div className="h-px bg-slate-800/60 my-2" />
@@ -2473,11 +2473,11 @@ export default function Map({
               onChange={(e) => setActiveBaseMap(e.target.value as any)}
               className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-xl p-3 focus:ring-1 focus:ring-cyan-500 focus:outline-none transition-all duration-200 font-semibold"
             >
-              <option value="carto_dark">🌃 Siber Karanlık (Varsayılan)</option>
+              <option value="carto_dark">🌃 Siber Karanlık</option>
               <option value="google_road">🗺️ Google Yol Haritası</option>
               <option value="google_satellite">🛰️ Google Uydu Görüntüsü</option>
               <option value="google_hybrid">🗺️ Google Hibrit Harita</option>
-              <option value="osm_standart">🌐 OpenStreetMap Standart</option>
+              <option value="osm_standart">🌐 OpenStreetMap Standart (Varsayılan)</option>
             </select>
           </div>
           <div className="h-px bg-slate-800/60 my-3" />
