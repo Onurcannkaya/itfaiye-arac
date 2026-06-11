@@ -207,6 +207,34 @@ function computeClusters<T extends { id: string }>(
   return clusters
 }
 
+const BASE_MAPS = {
+  carto_dark: {
+    name: 'Siber Mat Karanlık (Varsayılan)',
+    url: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; CartoDB &copy; OpenStreetMap'
+  },
+  google_road: {
+    name: 'Google Yol Haritası',
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps'
+  },
+  google_satellite: {
+    name: 'Google Uydu Görüntüsü',
+    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps'
+  },
+  google_hybrid: {
+    name: 'Google Hibrit Harita',
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps'
+  },
+  osm_standart: {
+    name: 'OpenStreetMap Standart',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap'
+  }
+}
+
 export default function Map({ 
   incidents, 
   hydrants, 
@@ -232,6 +260,7 @@ export default function Map({
   const routeAnimFrameRef = useRef<number | null>(null)
 
   const [mapReady, setMapReady] = useState(false)
+  const [activeBaseMap, setActiveBaseMap] = useState<'carto_dark' | 'google_road' | 'google_satellite' | 'google_hybrid' | 'osm_standart'>('carto_dark')
   const hasFitBoundsRef = useRef(false)
 
   const [showBinalar, setShowBinalar] = useState(false)
@@ -385,6 +414,21 @@ export default function Map({
       personnelMarkersRef.current = []
     }
   }, [personnelList, showPersonnelLayer, mapReady])
+
+  // Dinamik Altlık Değiştirici Motoru
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady) return
+
+    try {
+      const source = map.getSource('osm-raster')
+      if (source && 'setTiles' in source) {
+        (source as any).setTiles([BASE_MAPS[activeBaseMap].url])
+      }
+    } catch (err) {
+      console.warn("Base map tiles could not be updated dynamically:", err)
+    }
+  }, [activeBaseMap, mapReady])
 
   useEffect(() => {
     if (!selectedIncident || !selectedIncident.id) {
@@ -722,9 +766,9 @@ export default function Map({
         sources: {
           'osm-raster': {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
             tileSize: 256,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            attribution: '&copy; CartoDB &copy; OpenStreetMap'
           }
         },
         layers: [
@@ -833,8 +877,8 @@ export default function Map({
         source: 'mahalleler',
         'source-layer': 'mahalleler',
         paint: {
-          'line-color': '#4b5563',
-          'line-width': 1.8,
+          'line-color': '#0ea5e9',
+          'line-width': 1.2,
           'line-dasharray': [4, 2],
           'line-opacity': mahallelerOpacity
         },
@@ -856,8 +900,9 @@ export default function Map({
         source: 'sokaklar',
         'source-layer': 'sokaklar',
         paint: {
-          'line-color': '#0284c7',
-          'line-width': 1.2
+          'line-color': '#06b6d4',
+          'line-width': 1.0,
+          'line-opacity': 0.3
         },
         layout: {
           visibility: showSokaklar ? 'visible' : 'none'
@@ -2020,6 +2065,26 @@ export default function Map({
           <span>AKILLI ŞEHİR KATMANLARI</span>
         </div>
         <div className="h-px bg-gradient-to-r from-cyan-500/20 via-slate-800/60 to-transparent my-1.5" />
+        
+        {/* Base Map Style Switcher (Desktop) */}
+        <div className="mb-3 space-y-1">
+          <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block mb-1 opacity-85">
+            Harita Altlığı (Base Map)
+          </span>
+          <select
+            value={activeBaseMap}
+            onChange={(e) => setActiveBaseMap(e.target.value as any)}
+            className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-lg p-2 focus:ring-1 focus:ring-cyan-500 focus:outline-none transition-all duration-200 font-semibold"
+          >
+            <option value="carto_dark">🌃 Siber Karanlık (Varsayılan)</option>
+            <option value="google_road">🗺️ Google Yol Haritası</option>
+            <option value="google_satellite">🛰️ Google Uydu Görüntüsü</option>
+            <option value="google_hybrid">🗺️ Google Hibrit Harita</option>
+            <option value="osm_standart">🌐 OpenStreetMap Standart</option>
+          </select>
+        </div>
+        <div className="h-px bg-slate-800/60 my-2" />
+
         <div className="space-y-2 mt-2">
           {/* Binalar Katmanı Toggle */}
           <div className="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-white/5 transition-colors">
@@ -2398,6 +2463,25 @@ export default function Map({
         <div className="space-y-1">
           <span className="text-xs font-bold uppercase tracking-wider text-cyan-400/90 block mb-2">Akıllı Şehir Katmanları</span>
 
+          {/* Base Map Style Switcher (Mobile) */}
+          <div className="mb-4 space-y-1.5">
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block mb-1 opacity-85">
+              Harita Altlığı (Base Map)
+            </span>
+            <select
+              value={activeBaseMap}
+              onChange={(e) => setActiveBaseMap(e.target.value as any)}
+              className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-xs rounded-xl p-3 focus:ring-1 focus:ring-cyan-500 focus:outline-none transition-all duration-200 font-semibold"
+            >
+              <option value="carto_dark">🌃 Siber Karanlık (Varsayılan)</option>
+              <option value="google_road">🗺️ Google Yol Haritası</option>
+              <option value="google_satellite">🛰️ Google Uydu Görüntüsü</option>
+              <option value="google_hybrid">🗺️ Google Hibrit Harita</option>
+              <option value="osm_standart">🌐 OpenStreetMap Standart</option>
+            </select>
+          </div>
+          <div className="h-px bg-slate-800/60 my-3" />
+
           {/* Binalar Katmanı Toggle */}
           <div 
             onClick={() => setShowBinalar(!showBinalar)}
@@ -2652,6 +2736,36 @@ export default function Map({
         </div>
       </div>
       <style>{`
+        /* MapLibre Dark-Glassmorphic Control Buttons Overrides */
+        .maplibregl-ctrl-group {
+          background: rgba(15, 23, 42, 0.85) !important;
+          backdrop-filter: blur(8px) !important;
+          -webkit-backdrop-filter: blur(8px) !important;
+          border: 1px solid rgba(6, 182, 212, 0.25) !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+          border-radius: 10px !important;
+          overflow: hidden !important;
+        }
+        .maplibregl-ctrl-group button {
+          width: 32px !important;
+          height: 32px !important;
+          border: 0 !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+          background: transparent !important;
+          color: #94a3b8 !important;
+          transition: all 0.2s ease-out !important;
+        }
+        .maplibregl-ctrl-group button:last-child {
+          border-bottom: none !important;
+        }
+        .maplibregl-ctrl-group button:hover {
+          background: rgba(6, 182, 212, 0.15) !important;
+          color: #22d3ee !important;
+        }
+        .maplibregl-ctrl-icon {
+          filter: invert(0.85) sepia(0.2) saturate(0.8) hue-rotate(180deg) !important;
+        }
+
         /* MapLibre Premium Glassmorphic Dark Theme Popup Overrides */
         .maplibregl-popup-content {
           background: rgba(15, 23, 42, 0.85) !important;

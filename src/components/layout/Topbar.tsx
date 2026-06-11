@@ -504,7 +504,7 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-surface px-3 sm:px-4 md:px-6 z-10 h-14 relative">
+    <header className="flex items-center justify-between border-b border-border bg-surface px-3 sm:px-4 md:px-6 z-30 h-14 relative">
       <div className="flex items-center md:hidden space-x-2">
         <Image src="/logo-itfaiye.png" alt="Logo" width={28} height={28} className="object-contain" />
         <h1 className="text-lg font-bold tracking-tight">Sivas İtfaiyesi</h1>
