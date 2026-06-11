@@ -299,7 +299,7 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChang
                     e.stopPropagation()
                     onReportFault(vehicle.plaka)
                   }}
-                  className="px-2 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/40 text-orange-400 hover:bg-orange-500/20 hover:shadow-[0_0_10px_rgba(249,115,22,0.4)] text-[10px] font-black tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1 shrink-0"
+                  className="px-2 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/40 text-orange-400 hover:bg-orange-500/20 hover:shadow-[0_0_10px_rgba(249,115,22,0.4)] text-[10px] font-bold tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1 shrink-0"
                   title="Arıza Bildir"
                 >
                   <span>⚠️ Arıza Bildir</span>
@@ -359,7 +359,7 @@ export function VehicleCard({ vehicle, onPrintQR, onEdit, onReportFault, onChang
               <div className="flex items-center gap-1.5 text-slate-400 col-span-2 border-t border-white/5 pt-1 mt-0.5">
                 <span className="text-[10px]">🏢</span>
                 <span>Şube:</span>
-                <span className={`text-[10px] font-black ml-auto px-1.5 py-0.5 rounded ${
+                <span className={`text-[10px] font-semibold ml-auto px-1.5 py-0.5 rounded ${
                   vehicle.current_branch === 'Merkez'
                     ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/25'
                     : vehicle.current_branch === 'Esentepe'
