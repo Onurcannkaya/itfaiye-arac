@@ -117,7 +117,7 @@ export function MobileNav() {
       {menuOpen && (
         <div className="md:hidden fixed inset-0 z-40 flex flex-col justify-end">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setMenuOpen(false)} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
           
           {/* Drawer Sheet */}
           <div className="relative z-50 bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-hidden flex flex-col space-y-4 animate-in slide-in-from-bottom duration-300">
@@ -203,10 +203,10 @@ export function MobileNav() {
           className="flex flex-col items-center justify-center relative -mt-5"
         >
           <div className={cn(
-            "w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95",
+            "w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all active:scale-95",
             isActive('/yonetim/tarayici')
-              ? "bg-cyan-500 text-slate-950 ring-4 ring-cyan-500/20 shadow-cyan-500/30"
-              : "bg-cyan-500/90 text-slate-950 hover:bg-cyan-500 shadow-cyan-500/20"
+              ? "bg-cyan-500 text-slate-950 ring-2 ring-cyan-500/20 shadow-cyan-500/20"
+              : "bg-cyan-500/90 text-slate-950 hover:bg-cyan-500 shadow-cyan-500/15"
           )}>
             <Camera size={26} />
           </div>

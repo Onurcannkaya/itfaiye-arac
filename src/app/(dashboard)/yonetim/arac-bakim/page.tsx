@@ -594,9 +594,9 @@ export default function AracBakimPage() {
   const getStatusBadge = (durum: string) => {
     switch (durum) {
       case 'Onaylandı': 
-        return <Badge className="bg-green-950/50 border border-green-500/30 text-green-400 font-semibold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
+        return <Badge className="bg-emerald-950/50 border border-emerald-500/30 text-emerald-400 font-semibold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
       case 'Bekliyor':
-        return <Badge className="bg-amber-950/50 border border-amber-500/30 text-amber-400 font-semibold px-2.5 py-1 rounded-lg animate-pulse">Onay Bekliyor</Badge>
+        return <Badge className="bg-amber-950/50 border border-amber-500/30 text-amber-400 font-semibold px-2.5 py-1 rounded-lg">Onay Bekliyor</Badge>
       default: 
         return <Badge className="bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-lg">Tamamlandı</Badge>
     }
@@ -623,11 +623,11 @@ export default function AracBakimPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
-              <span className="text-red-400 text-xs font-black tracking-widest uppercase">AKTİF KRİTİK ARIZA UYARILARI</span>
+              <span className="text-red-400 text-xs font-semibold tracking-wider uppercase">AKTİF KRİTİK ARIZA UYARILARI</span>
             </div>
             
             <div className="flex-1 overflow-hidden px-4">
-              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-6 animate-pulse">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-6">
                 {activeUnresolvedAlerts.slice(0, 3).map((alertItem) => (
                   <div key={alertItem.id} className="text-xs text-red-200 font-semibold flex items-center gap-1">
                     <span className="bg-red-500/20 px-1.5 py-0.5 rounded text-[10px] font-bold text-red-400">{alertItem.plaka}</span>
@@ -639,7 +639,7 @@ export default function AracBakimPage() {
 
             <Button
               onClick={() => setActiveTab('bakim')}
-              className="bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-slate-950 border border-red-500/20 text-xs px-3 py-1.5 min-h-[44px] rounded-lg font-black transition duration-150 active:scale-95 shrink-0"
+              className="bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-slate-950 border border-red-500/20 text-xs px-3 py-1.5 min-h-[44px] rounded-lg font-bold transition-all duration-200 ease-out active:scale-95 shrink-0"
             >
               Müdahale Et
             </Button>
@@ -649,20 +649,20 @@ export default function AracBakimPage() {
         {/* ═══ Sayfa Başlığı ═══ */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-slate-100">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2 text-slate-100">
               🚒 Araç Bakım & Yakıt Takibi
             </h1>
             <p className="text-slate-400 text-sm mt-1">Sivas İtfaiyesi araç filosunun bakım, arıza ve yakıt kayıtlarının yerel kurumsal veritabanı paneli</p>
           </div>
           <div className="flex items-center gap-3">
             <Button
-              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-extrabold text-xs px-4 py-3 min-h-[44px] rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-500/10 hover:scale-[1.02] transition duration-150 shrink-0"
+              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold text-xs px-4 py-3 min-h-[44px] rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-500/10 hover:scale-[1.02] transition-all duration-200 ease-out shrink-0"
               onClick={() => setIsCreateOpen(true)}
             >
               <Plus className="w-4 h-4" /> Yeni Kayıt Ekle
             </Button>
             {isMudur ? (
-              <Badge className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black px-3 py-1 text-xs">
+              <Badge className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-semibold px-3 py-1 text-xs">
                 Müdür Yetki Modu
               </Badge>
             ) : (
@@ -677,19 +677,19 @@ export default function AracBakimPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           
           {/* Skorbord 1: Kritik Antifriz Alarmı */}
-          <Card className="bg-slate-950/40 backdrop-blur-xl border border-red-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-red-500/40 transition duration-300">
+          <Card className="bg-slate-900/40 backdrop-blur-xl border border-red-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-red-500/40 transition-all duration-200 ease-out">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-red-500 group-hover:scale-110 transition duration-500">
               <Droplets className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-red-400 font-black tracking-widest uppercase">KRİTİK ANTİFRİZ ALARMI</span>
+                <span className="text-xs text-red-400 font-semibold tracking-wider uppercase">KRİTİK ANTİFRİZ ALARMI</span>
                 <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-red-500">{antifreezeRiskList.length} Riskli Araç</h3>
+                <h3 className="text-3xl font-bold text-red-500">{antifreezeRiskList.length} Riskli Araç</h3>
                 <p className="text-[10px] text-slate-400 mt-1">Sivas kış şartları (-25°C altı koruma yetersiz) ölçümleri</p>
               </div>
 

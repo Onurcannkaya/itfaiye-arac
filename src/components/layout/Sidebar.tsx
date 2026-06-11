@@ -95,8 +95,8 @@ export function Sidebar() {
           if (visibleItems.length === 0) return null
 
           return (
-            <div key={gIdx} className="space-y-1">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2 mt-2">
+            <div key={gIdx} className={`space-y-1 ${gIdx > 0 ? 'pt-4 border-t border-slate-800/40' : ''}`}>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 px-3 block mb-2 mt-1">
                 {group.title}
               </span>
               <div className="space-y-1">

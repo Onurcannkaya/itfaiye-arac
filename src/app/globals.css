@@ -122,8 +122,8 @@ select {
 
 /* ===== SCROLLBAR STYLING ===== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -131,12 +131,12 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--muted);
-  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: rgba(148, 163, 184, 0.3);
 }
 
 /* Hide scrollbar but keep functionality */
@@ -442,13 +442,3 @@ div:has(> table),
   box-sizing: border-box !important;
 }
 
-/* Dokunma hitbox'larını minimum 44px'e sabitle (Erişilebilirlik ve saha kullanımı için) */
-button, 
-[role="button"], 
-a, 
-select, 
-input, 
-textarea, 
-.touch-target {
-  min-height: 44px !important;
-}

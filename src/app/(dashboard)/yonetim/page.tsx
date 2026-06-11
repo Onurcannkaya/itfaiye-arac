@@ -792,7 +792,7 @@ export default function DashboardPage() {
     iconColor: string
   }) => (
     <Link href={href}>
-      <Card className="group relative overflow-hidden bg-slate-900/35 border-slate-800/90 hover:border-slate-700/90 transition-all duration-300 hover:shadow-md cursor-pointer rounded-2xl">
+      <Card className="group relative overflow-hidden bg-slate-900/40 border-slate-800/90 hover:border-slate-700/90 transition-all duration-200 ease-out hover:shadow-md cursor-pointer rounded-2xl">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
@@ -833,10 +833,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6 max-w-[1600px] mx-auto">
       {/* Canlı Teşkilat Program Barı */}
-      <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-300 backdrop-blur-md ${
+      <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-200 ease-out backdrop-blur-md ${
         programInfo.isOffDuty 
           ? "border-blue-500/30 bg-blue-950/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]" 
-          : "border-emerald-500/40 bg-emerald-950/25 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] animate-pulse"
+          : "border-emerald-500/40 bg-emerald-950/25 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
       }`}>
         <div className="flex items-center gap-3">
           <div className="relative flex h-3 w-3">
@@ -912,7 +912,7 @@ export default function DashboardPage() {
                 return (
                   <div 
                     key={`${mission.plaka}-${index}`}
-                    className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden"
+                    className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-200 ease-out hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden"
                   >
                     {/* Subtle siber grids overlay */}
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
@@ -957,7 +957,7 @@ export default function DashboardPage() {
                           const lng = mission.coords ? mission.coords[0] : 37.02093
                           router.push(`/yonetim/harita?focusPlaka=${mission.plaka}&lat=${lat}&lng=${lng}`)
                         }}
-                        className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-950/40 hover:bg-cyan-950/10 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer animate-none"
+                        className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-900/40 hover:bg-cyan-950/10 rounded-lg transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer animate-none"
                       >
                         <Target className="w-3.5 h-3.5 text-cyan-400" /> Konuma Git
                       </button>
@@ -979,7 +979,7 @@ export default function DashboardPage() {
               <AlertTriangle className="w-6 h-6 text-red-500" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-black text-red-400 tracking-wider">🚨 GECİKMİŞ GEÇİCİ ZİMMET ALARMI</h2>
+              <h2 className="text-sm sm:text-base font-bold text-red-400 tracking-wider">🚨 GECİKMİŞ GEÇİCİ ZİMMET ALARMI</h2>
               <p className="text-xs text-slate-400">İade tarihi geçen {overdueAssignments.length} adet malzeme tespit edildi!</p>
             </div>
           </div>
