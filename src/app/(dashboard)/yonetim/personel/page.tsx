@@ -1407,7 +1407,7 @@ export default function PersonelYonetimPage() {
                         <div className="w-full text-center space-y-2">
                           <p className="text-xs text-emerald-400 font-bold">Yeni Geçici Şifre:</p>
                           <div className="flex items-center justify-center gap-2 bg-slate-900 px-3 py-1.5 rounded border border-slate-800">
-                            <span className="font-mono font-black text-emerald-300 text-lg tracking-widest">{resetPasswordSuccess}</span>
+                            <span className="font-mono font-bold text-emerald-300 text-lg tracking-wider">{resetPasswordSuccess}</span>
                             <button
                               onClick={() => {
                                 if (typeof window !== 'undefined') {
@@ -1499,19 +1499,19 @@ export default function PersonelYonetimPage() {
           <div className="p-4 bg-slate-900/30 border-b border-slate-900 shrink-0 grid grid-cols-4 gap-2 text-center">
             <div className="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800/60">
               <p className="text-[10px] text-muted-foreground uppercase font-bold">Toplam Şoför</p>
-              <p className="text-base font-black text-slate-200 mt-0.5">{licenseStats.total}</p>
+              <p className="text-base font-bold text-slate-200 mt-0.5">{licenseStats.total}</p>
             </div>
             <div className="bg-emerald-500/5 p-2.5 rounded-lg border border-emerald-500/10">
               <p className="text-[10px] text-emerald-400 uppercase font-semibold">Aktif</p>
-              <p className="text-base font-black text-emerald-400 mt-0.5">{licenseStats.active}</p>
+              <p className="text-base font-bold text-emerald-400 mt-0.5">{licenseStats.active}</p>
             </div>
             <div className="bg-amber-500/5 p-2.5 rounded-lg border border-amber-500/10">
               <p className="text-[10px] text-amber-500 uppercase font-semibold">Kritik (≤30g)</p>
-              <p className="text-base font-black text-amber-500 mt-0.5">{licenseStats.critical}</p>
+              <p className="text-base font-bold text-amber-500 mt-0.5">{licenseStats.critical}</p>
             </div>
             <div className="bg-red-500/5 p-2.5 rounded-lg border border-red-500/10">
               <p className="text-[10px] text-rose-500 uppercase font-semibold">Eksik/Geçik</p>
-              <p className="text-base font-black text-rose-500 mt-0.5">{licenseStats.expired + licenseStats.missing}</p>
+              <p className="text-base font-bold text-rose-500 mt-0.5">{licenseStats.expired + licenseStats.missing}</p>
             </div>
           </div>
 
