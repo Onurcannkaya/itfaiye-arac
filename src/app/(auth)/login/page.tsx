@@ -229,13 +229,13 @@ function LoginForm() {
             <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={48} height={48} className="object-contain w-10 h-10 lg:w-12 lg:h-12" />
           </div>
           <div className="h-6 w-px bg-white/20" />
-          <span className="text-xs lg:text-lg xl:text-xl font-black tracking-widest text-slate-200 uppercase transition-all duration-300">SİVAS BELEDİYESİ</span>
+          <span className="text-xs lg:text-lg xl:text-xl font-semibold tracking-wider text-slate-200 uppercase transition-all duration-300">SİVAS BELEDİYESİ</span>
         </div>
 
         {/* Alt Tipografi */}
         <div className="relative z-10 max-w-3xl mt-auto">
           <div className="space-y-4">
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-none text-white drop-shadow-lg transition-all duration-300">
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-none text-white drop-shadow-lg transition-all duration-300">
               Sivas İtfaiyesi<br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-amber-500">Bilgi Yönetim Sistemi</span>
             </h1>
@@ -271,14 +271,14 @@ function LoginForm() {
               </div>
             </div>
             <div className="space-y-0.5">
-              <h2 className="text-xl font-black text-white">Sivas İtfaiyesi</h2>
+              <h2 className="text-xl font-bold text-white">Sivas İtfaiyesi</h2>
               <p className="text-xs text-slate-400 font-semibold">Bilgi ve Envanter Yönetim Portalı</p>
             </div>
           </div>
 
           {/* Masaüstü Başlık */}
           <div className="hidden lg:block space-y-2">
-            <h2 className="text-2xl lg:text-3xl font-black tracking-tight text-white transition-all duration-300">Personel Girişi</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-white transition-all duration-300">Personel Girişi</h2>
             <p className="text-xs lg:text-sm text-slate-400 font-semibold transition-all duration-300">Devam etmek için sicil bilginizle oturum açın.</p>
           </div>
 
@@ -301,7 +301,7 @@ function LoginForm() {
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] lg:text-xs font-black text-slate-300 uppercase tracking-widest transition-all">Kullanıcı Adı veya Sicil No</label>
+                <label className="text-[10px] lg:text-xs font-semibold text-slate-300 uppercase tracking-wider transition-all">Kullanıcı Adı veya Sicil No</label>
                 <Input 
                   placeholder="Kullanıcı adı veya sicil no" 
                   value={identifier}
@@ -312,7 +312,7 @@ function LoginForm() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] lg:text-xs font-black text-slate-300 uppercase tracking-widest transition-all">Giriş Parolası</label>
+                <label className="text-[10px] lg:text-xs font-semibold text-slate-300 uppercase tracking-wider transition-all">Giriş Parolası</label>
                 <Input 
                   type="password" 
                   placeholder="••••••"
@@ -389,7 +389,7 @@ function LoginForm() {
 
             {/* Modal Başlık */}
             <div className="mb-4 pr-10">
-              <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
                 Vatandaş Hizmet Başvuruları
               </h2>
@@ -411,13 +411,10 @@ function LoginForm() {
                     <h3 className="text-sm font-bold text-slate-100">Başvurunuz Alınmıştır</h3>
                     <p className="text-[10px] text-slate-400 max-w-[260px] mx-auto leading-relaxed">
                       Sürecinizi izlemek üzere lütfen takip kodunu not ediniz.
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-950/90 border border-emerald-500/30 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-xs mx-auto shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+          <div className="bg-slate-950/90 border border-emerald-500/30 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-xs mx-auto shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
                     <div className="text-left">
-                      <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block leading-none">Takip Kodu</span>
-                      <span className="text-base font-black font-mono text-emerald-400 tracking-wider drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]">
+                      <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block leading-none">Takip Kodu</span>
+                      <span className="text-base font-bold font-mono text-emerald-400 tracking-wider drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]">
                         {trackingCode}
                       </span>
                     </div>
@@ -515,7 +512,7 @@ function LoginForm() {
                       <>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1 col-span-2">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">T.C. Kimlik No</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">T.C. Kimlik No</label>
                             <Input 
                               placeholder="11 haneli T.C. Kimlik No" 
                               value={citizenTc}
@@ -526,7 +523,7 @@ function LoginForm() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ad (NVİ)</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Ad (NVİ)</label>
                             <Input 
                               placeholder="Adınız" 
                               value={citizenAd}
@@ -536,7 +533,7 @@ function LoginForm() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Soyad (NVİ)</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Soyad (NVİ)</label>
                             <Input 
                               placeholder="Soyadınız" 
                               value={citizenSoyad}
@@ -549,7 +546,7 @@ function LoginForm() {
 
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Doğum Yılı</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Doğum Yılı</label>
                             <Input 
                               placeholder="Örn: 1990" 
                               value={citizenDogumYili}
@@ -560,7 +557,7 @@ function LoginForm() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İrtibat Telefonu</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">İrtibat Telefonu</label>
                             <Input 
                               type="tel"
                               placeholder="Telefon Numaranız" 
@@ -573,7 +570,7 @@ function LoginForm() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Açık Adres</label>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Açık Adres</label>
                           <textarea 
                             placeholder="Açık adresiniz..." 
                             value={citizenAddress}
@@ -587,7 +584,7 @@ function LoginForm() {
                         {/* Sekme Özel Alanları */}
                         {activeTab === 'baca' && (
                           <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Bina Tipi</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Bina Tipi</label>
                             <select 
                               value={bacaType}
                               onChange={(e) => setBacaType(e.target.value)}
@@ -604,7 +601,7 @@ function LoginForm() {
                         {activeTab === 'olur' && (
                           <>
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">İşyeri Unvanı ve Faaliyet Türü</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">İşyeri Unvanı ve Faaliyet Türü</label>
                               <Input 
                                 placeholder="Örn: Sivas Un Fabrikası - Gıda İmalatı" 
                                 value={olurBizName}
@@ -614,7 +611,7 @@ function LoginForm() {
                               />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Bina Yapı Tipi</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Bina Yapı Tipi</label>
                               <select 
                                 value={olurType}
                                 onChange={(e) => setOlurType(e.target.value)}
@@ -632,7 +629,7 @@ function LoginForm() {
                         {activeTab === 'egitim' && (
                           <>
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Eğitim Türü</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Eğitim Türü</label>
                               <select 
                                 value={egitimTuru}
                                 onChange={(e) => setEgitimTuru(e.target.value)}
@@ -644,7 +641,7 @@ function LoginForm() {
                               </select>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Planlanan Katılımcı Sayısı</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Planlanan Katılımcı Sayısı</label>
                               <Input 
                                 type="number" 
                                 placeholder="Örn: 30" 
@@ -707,14 +704,14 @@ function LoginForm() {
                       <>
                         {/* SMS OTP Simülasyon Ekranı */}
                         <div className="bg-cyan-500/10 border border-cyan-500/30 p-3.5 rounded-xl text-cyan-400 text-xs font-mono text-center flex flex-col gap-2 my-2 animate-in slide-in-from-top-2">
-                          <span className="font-extrabold uppercase tracking-widest text-[9px] text-cyan-300">Simüle Edilen SMS Paneli</span>
+                          <span className="font-bold uppercase tracking-wider text-[9px] text-cyan-300">Simüle Edilen SMS Paneli</span>
                           <span className="text-[11px] leading-relaxed text-slate-100">
-                            Sivas Bld: <span className="font-black text-white px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-sm tracking-wider">{simulatedOtp}</span> doğrulama kodu ile başvurunuzu tamamlayabilirsiniz.
+                            Sivas Bld: <span className="font-semibold text-white px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-sm tracking-wider">{simulatedOtp}</span> doğrulama kodu ile başvurunuzu tamamlayabilirsiniz.
                           </span>
                         </div>
 
                         <div className="space-y-2 py-2">
-                          <label className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center block">6 Haneli SMS Doğrulama Kodu</label>
+                          <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider text-center block">6 Haneli SMS Doğrulama Kodu</label>
                           <Input 
                             type="text"
                             placeholder="SMS Kodunu Giriniz" 
