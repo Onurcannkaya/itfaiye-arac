@@ -236,7 +236,7 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
           PDF İndir
         </Button>
         <Button variant="outline" size="sm" onClick={handleExportExcel} className="gap-2">
-          <TableIcon className="w-4 h-4 text-green-600" />
+          <TableIcon className="w-4 h-4 text-emerald-600" />
           Excel İndir
         </Button>
       </div>

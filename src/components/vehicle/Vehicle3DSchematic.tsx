@@ -867,8 +867,8 @@ export function Vehicle3DSchematic({
 
         {/* Floating cyber lock details */}
         {activeCompartment && (
-          <div className="absolute top-4 right-4 bg-slate-950/90 border border-green-500/30 rounded px-2.5 py-1.5 font-mono text-[9px] text-green-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.1)] z-20">
-            <ShieldCheck className="w-3.5 h-3.5 text-green-400" />
+          <div className="absolute top-4 right-4 bg-slate-950/90 border border-emerald-500/30 rounded px-2.5 py-1.5 font-mono text-[9px] text-emerald-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.1)] z-20">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>SEÇİLİ BÖLME KİLİTLENDİ: [{(COMPARTMENT_NAMES[activeCompartment] || activeCompartment).toUpperCase()}]</span>
           </div>
         )}

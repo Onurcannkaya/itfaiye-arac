@@ -187,7 +187,7 @@ export function Topbar() {
       } else if (triage === 'medium') {
         triageClass = "border-l-4 border-l-amber-500 bg-amber-950/20"
       } else {
-        triageClass = "border-l-4 border-l-green-500 bg-green-950/20"
+        triageClass = "border-l-4 border-l-emerald-500 bg-emerald-950/20"
       }
 
       return (

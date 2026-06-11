@@ -411,7 +411,9 @@ function LoginForm() {
                     <h3 className="text-sm font-bold text-slate-100">Başvurunuz Alınmıştır</h3>
                     <p className="text-[10px] text-slate-400 max-w-[260px] mx-auto leading-relaxed">
                       Sürecinizi izlemek üzere lütfen takip kodunu not ediniz.
-          <div className="bg-slate-950/90 border border-emerald-500/30 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-xs mx-auto shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
+                    </p>
+                  </div>
+                  <div className="bg-slate-950/90 border border-emerald-500/30 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-xs mx-auto shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
                     <div className="text-left">
                       <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block leading-none">Takip Kodu</span>
                       <span className="text-base font-bold font-mono text-emerald-400 tracking-wider drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]">

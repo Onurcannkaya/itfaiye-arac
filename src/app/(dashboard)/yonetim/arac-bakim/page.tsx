@@ -707,7 +707,7 @@ export default function AracBakimPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-green-400 font-bold pt-2 flex items-center gap-1.5">
+                <div className="text-[11px] text-emerald-400 font-bold pt-2 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Tüm araçlar kış şartlarına dayanıklı
                 </div>
               )}
@@ -721,13 +721,13 @@ export default function AracBakimPage() {
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-amber-400 font-black tracking-widest uppercase">KURU BAKIM SAYACI</span>
+                <span className="text-xs text-amber-400 font-semibold tracking-wider uppercase">KURU BAKIM SAYACI</span>
                 <div className="p-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
                   <Clock className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-amber-400">{dryMaintRiskList.length} Araç</h3>
+                <h3 className="text-3xl font-bold text-amber-400">{dryMaintRiskList.length} Araç</h3>
                 <p className="text-[10px] text-slate-400 mt-1">6 aylık şaft/gres yağlama sayacı 15 günden az kalanlar</p>
               </div>
 
@@ -745,7 +745,7 @@ export default function AracBakimPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-green-400 font-bold pt-2 flex items-center gap-1.5">
+                <div className="text-[11px] text-emerald-400 font-bold pt-2 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Tüm gres şaft yağlama periyotları nominal
                 </div>
               )}
@@ -759,13 +759,13 @@ export default function AracBakimPage() {
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-cyan-400 font-black tracking-widest uppercase">FİLO MALİYET MÜHRÜ</span>
+                <span className="text-xs text-cyan-400 font-semibold tracking-wider uppercase">FİLO MALİYET MÜHRÜ</span>
                 <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
                   <TrendingUp className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-cyan-400">₺{(totalBakimMaliyet + totalYakitMaliyet).toLocaleString('tr-TR')}</h3>
+                <h3 className="text-3xl font-bold text-cyan-400">₺{(totalBakimMaliyet + totalYakitMaliyet).toLocaleString('tr-TR')}</h3>
                 <p className="text-[10px] text-slate-400 mt-1">Bakım (₺{totalBakimMaliyet.toLocaleString('tr-TR')}) + Yakıt (₺{totalYakitMaliyet.toLocaleString('tr-TR')})</p>
               </div>
 
@@ -783,13 +783,13 @@ export default function AracBakimPage() {
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-cyan-400 font-black tracking-widest uppercase">MUAYENE PLANI ALARMI</span>
+                <span className="text-xs text-cyan-400 font-semibold tracking-wider uppercase">MUAYENE PLANI ALARMI</span>
                 <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
                   <Calendar className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-black text-cyan-400">{inspectionRiskList.length} Risk Sınırında</h3>
+                <h3 className="text-3xl font-bold text-cyan-400">{inspectionRiskList.length} Risk Sınırında</h3>
                 <p className="text-[10px] text-slate-400 mt-1">Muayene süresi geçmiş veya 30 günden az kalmış araçlar</p>
               </div>
 
@@ -807,7 +807,7 @@ export default function AracBakimPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-green-400 font-bold pt-2 flex items-center gap-1.5">
+                <div className="text-[11px] text-emerald-400 font-bold pt-2 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Tüm araç muayeneleri güncel
                 </div>
               )}
@@ -1383,14 +1383,14 @@ export default function AracBakimPage() {
 
                   {/* Kayıt Türü Seçimi */}
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest block">Kayıt Türü <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Kayıt Türü <span className="text-red-500">*</span></label>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => setKayitTuru('bakim')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl font-bold text-xs border transition-all duration-200 ${
                           kayitTuru === 'bakim'
-                            ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-600/10 font-black'
+                            ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-600/10 font-bold'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
                         }`}
                       >
@@ -1401,7 +1401,7 @@ export default function AracBakimPage() {
                         onClick={() => setKayitTuru('yakit')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl font-bold text-xs border transition-all duration-200 ${
                           kayitTuru === 'yakit'
-                            ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-600/10 font-black'
+                            ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-600/10 font-bold'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
                         }`}
                       >

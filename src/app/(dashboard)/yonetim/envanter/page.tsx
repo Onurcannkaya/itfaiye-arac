@@ -843,7 +843,7 @@ function VehicleInventoryTab() {
                   
                   {/* Target Plate Select Dropdown */}
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
                     <div className="relative">
                       <select
                         value={selectedPlaka}
@@ -886,7 +886,7 @@ function VehicleInventoryTab() {
                 <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
                   <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-end">
                     <div className="w-full sm:w-32">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">FİLO NUMARASI</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">FİLO NUMARASI</label>
                       <input
                         type="number"
                         value={editFiloNo}
@@ -896,7 +896,7 @@ function VehicleInventoryTab() {
                       />
                     </div>
                     <div className="flex-1 w-full font-sans">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">AÇIKLAMA / ÇAĞRI ADI</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">AÇIKLAMA / ÇAĞRI ADI</label>
                       <input
                         type="text"
                         value={editAciklama}
@@ -1106,7 +1106,7 @@ function VehicleInventoryTab() {
               {/* Dynamic Search Cards for vehicle distributions (visible only when search has text) */}
               {searchQuery.trim() !== "" && (
                 <div className="space-y-4 print:hidden">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono pl-1">ARAMA SONUÇLARI MATRİS DIŞI DAĞILIM KARTLARI</h3>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono pl-1">ARAMA SONUÇLARI MATRİS DIŞI DAĞILIM KARTLARI</h3>
                   
                   {filteredInventory.length === 0 ? (
                     <Card className="bg-slate-950/40 border border-slate-800/40 py-8 text-center rounded-2xl">
@@ -1203,7 +1203,7 @@ function VehicleInventoryTab() {
                           <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">ESENTEPE</th>
                           <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">ORGANİZE</th>
                           <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">DEPO</th>
-                          <th className="px-4 py-4 text-right font-black w-32 bg-cyan-950/40 text-cyan-400 sticky right-0 z-30 border-l border-cyan-500/20">TOPLAM STOK</th>
+                          <th className="px-4 py-4 text-right font-bold w-32 bg-cyan-950/40 text-cyan-400 sticky right-0 z-30 border-l border-cyan-500/20">TOPLAM STOK</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 font-medium">
@@ -1294,7 +1294,7 @@ function VehicleInventoryTab() {
                                 </td>
                                 {/* Sticky Dynamic Verified Total */}
                                 <td className="px-4 py-3 text-right bg-cyan-950/20 sticky right-0 z-10 border-l border-cyan-500/20 align-middle">
-                                  <span className="inline-flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-black px-2.5 py-0.5 rounded-lg text-xs min-w-[28px]">
+                                  <span className="inline-flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold px-2.5 py-0.5 rounded-lg text-xs min-w-[28px]">
                                     {liveTotal}
                                   </span>
                                 </td>
@@ -1413,7 +1413,7 @@ function VehicleInventoryTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TESLİM EDİLEN TİP</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TESLİM EDİLEN TİP</label>
                 <select
                   value={recipientType}
                   onChange={(e) => setRecipientType(e.target.value as any)}
@@ -1426,7 +1426,7 @@ function VehicleInventoryTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TESLİM EDİLEN BİRİM / KİŞİ ADI</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TESLİM EDİLEN BİRİM / KİŞİ ADI</label>
                 <Input
                   type="text"
                   placeholder={recipientType === 'PERSONEL' ? "Personel adını girin..." : recipientType === 'ARAC' ? "Plaka girin..." : "Dış birim/kurum adı..."}
@@ -1437,7 +1437,7 @@ function VehicleInventoryTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">İRTİBAT TELEFONU (İSTEĞE BAĞLI)</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">İRTİBAT TELEFONU (İSTEĞE BAĞLI)</label>
                 <Input
                   type="text"
                   placeholder="Telefon numarası..."
@@ -1448,7 +1448,7 @@ function VehicleInventoryTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TAHMİNİ İADE TARİHİ</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TAHMİNİ İADE TARİHİ</label>
                 <Input
                   type="date"
                   value={estimatedReturnDate}
@@ -1458,7 +1458,7 @@ function VehicleInventoryTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">TUTAR/ÜCRET (İSTEĞE BAĞLI - TAMİR İÇİNSE)</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TUTAR/ÜCRET (İSTEĞE BAĞLI - TAMİR İÇİNSE)</label>
                 <Input
                   type="number"
                   placeholder="Ücret girin (TL)..."
@@ -1948,7 +1948,7 @@ export default function EnvanterPage() {
                                 <td className="px-5 py-4 font-bold text-slate-200">
                                   <div className="flex items-center gap-2">
                                     {isOverdue && (
-                                      <span className="animate-pulse bg-red-500/15 text-red-400 border border-red-500/30 text-[9px] font-mono px-2 py-0.5 rounded font-black shadow-[0_0_8px_rgba(239,68,68,0.4)]">
+                                      <span className="animate-pulse bg-red-500/15 text-red-400 border border-red-500/30 text-[9px] font-mono px-2 py-0.5 rounded font-bold shadow-[0_0_8px_rgba(239,68,68,0.4)]">
                                         🚨 GECİKTİ
                                       </span>
                                     )}
@@ -1980,7 +1980,7 @@ export default function EnvanterPage() {
                                 {/* Durum */}
                                 <td className="px-5 py-4 text-center align-middle">
                                   <Badge 
-                                    className={`font-black font-mono text-[9px] px-2.5 py-1 rounded-md ${
+                                    className={`font-bold font-mono text-[9px] px-2.5 py-1 rounded-md ${
                                       isReturned 
                                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' 
                                         : isOverdue 
@@ -2006,7 +2006,7 @@ export default function EnvanterPage() {
                                     {!isReturned && (
                                       <button
                                         onClick={() => handleReturnItem(item)}
-                                        className="h-10 px-3 bg-emerald-600/10 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 rounded-lg flex items-center justify-center gap-1.5 text-xs font-black transition-all min-h-[44px]"
+                                        className="h-10 px-3 bg-emerald-600/10 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all min-h-[44px]"
                                         title="Zimmeti Sonlandır, İade Al"
                                       >
                                         <Inbox className="w-4 h-4 text-emerald-400" />
