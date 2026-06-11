@@ -369,7 +369,7 @@ async function ensureVehicleColumnsExist() {
     await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS son_guncelleme TIMESTAMPTZ;`);
 
     // Egitimler: Add temel_egitim_saati to personnel table
-    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS temel_egitim_saati INTEGER DEFAULT 120;`);
+    await query(`ALTER TABLE public.personnel ADD COLUMN IF NOT EXISTS temel_egitim_saati INTEGER DEFAULT 0;`);
   } catch (err) {
     console.error('ensureVehicleColumnsExist hatası:', err);
   }
