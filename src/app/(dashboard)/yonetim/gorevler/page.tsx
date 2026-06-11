@@ -76,7 +76,7 @@ interface Personnel {
 
 // Status Badges mapping
 const DURUM_BADGE: Record<string, { label: string; bgClass: string; borderClass: string; textClass: string }> = {
-  tamamlandi: { label: "Teslim Alındı", bgClass: "bg-green-950/40", borderClass: "border-green-500/30", textClass: "text-green-400" },
+  tamamlandi: { label: "Teslim Alındı", bgClass: "bg-emerald-950/40", borderClass: "border-emerald-500/30", textClass: "text-emerald-400" },
   devam_ediyor: { label: "Devam Ediyor", bgClass: "bg-amber-950/40", borderClass: "border-amber-500/30", textClass: "text-amber-400" },
   beklemede: { label: "Bekliyor", bgClass: "bg-slate-950/40", borderClass: "border-slate-500/30", textClass: "text-slate-400" },
   iptal: { label: "İptal Edildi", bgClass: "bg-red-950/40", borderClass: "border-red-500/30", textClass: "text-red-400" },
@@ -347,7 +347,7 @@ export default function UnifiedGorevlerPage() {
           </div>
           <div className="flex items-center gap-3">
             {isMudur ? (
-              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black px-3 py-1 text-xs">
+              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1 text-xs">
                 Müdür Yetki Modu
               </Badge>
             ) : (
@@ -523,7 +523,7 @@ export default function UnifiedGorevlerPage() {
                           {!isFilling ? (
                             <div className="space-y-4">
                               <div className="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2.5">
-                                <p className="text-xs font-black text-cyan-400 uppercase tracking-wider">Kontrol Edilecek Maddeler:</p>
+                                <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Kontrol Edilecek Maddeler:</p>
                                 {(task.checklist || []).map((c, i) => (
                                   <div key={i} className="flex items-center gap-2 text-sm text-zinc-300">
                                     <span className="text-zinc-500 font-bold">•</span>
@@ -544,12 +544,12 @@ export default function UnifiedGorevlerPage() {
                             </div>
                           ) : (
                             <div className="space-y-5 bg-slate-950 p-5 rounded-xl border border-white/5 shadow-inner">
-                              <h3 className="font-extrabold text-sm text-cyan-400 border-b border-white/5 pb-3">Devir-Teslim / Kontrol Giriş Formu</h3>
+                              <h3 className="font-bold text-sm text-cyan-400 border-b border-white/5 pb-3">Devir-Teslim / Kontrol Giriş Formu</h3>
                               {(task.checklist || []).map(c => (
                                 <div key={c.id} className="space-y-2 border-b border-white/5 pb-4 last:border-0 last:pb-0">
                                   <p className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
                                     {c.soru}
-                                    {c.zorunlu && <span className="text-[9px] font-black bg-red-950/40 text-red-400 border border-red-500/30 rounded px-1.5 py-0.5">ZORUNLU</span>}
+                                    {c.zorunlu && <span className="text-[9px] font-bold bg-red-950/40 text-red-400 border border-red-500/30 rounded px-1.5 py-0.5">ZORUNLU</span>}
                                   </p>
 
                                   {c.tip === 'boolean' && (
@@ -559,8 +559,8 @@ export default function UnifiedGorevlerPage() {
                                         onClick={() => setFilledValues({...filledValues, [c.id]: true})}
                                         className={`flex items-center justify-center gap-2 min-h-[44px] rounded-lg border font-bold text-xs transition-all active:scale-[0.97] ${
                                           filledValues[c.id] === true
-                                            ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                                            : 'border-white/5 bg-slate-900 text-zinc-400 hover:border-green-500/20'
+                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                            : 'border-white/5 bg-slate-900 text-zinc-400 hover:border-emerald-500/20'
                                         }`}
                                       >
                                         <CheckCircle2 className="w-4 h-4" />
@@ -629,7 +629,7 @@ export default function UnifiedGorevlerPage() {
                                 </Button>
                                 <Button
                                   onClick={() => handleFillSubmit(task.id)}
-                                  className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 px-5 rounded-xl shadow-lg shadow-green-600/10"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-5 rounded-xl shadow-lg shadow-emerald-600/10"
                                 >
                                   <Save className="w-4 h-4 mr-1.5" /> Kontrolü Tamamla ve Teslim Et
                                 </Button>
@@ -653,14 +653,14 @@ export default function UnifiedGorevlerPage() {
             {/* Tamamlanan Görevler */}
             <div className="space-y-3 pt-4">
               <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                <CheckSquare className="w-4.5 h-4.5 text-green-400" />
+                <CheckSquare className="w-4.5 h-4.5 text-emerald-400" />
                 Tamamlanan / Teslim Alınan Görevler ({completedTasks.length})
               </h2>
 
               <div className="grid grid-cols-1 gap-3">
                 {completedTasks.map(task => {
                   const isOpen = expandedId === task.id
-                  const badgeInfo = DURUM_BADGE[task.durum] || { label: "Tamamlandı", bgClass: "bg-green-950/40", borderClass: "border-green-500/30", textClass: "text-green-400" }
+                  const badgeInfo = DURUM_BADGE[task.durum] || { label: "Tamamlandı", bgClass: "bg-emerald-950/40", borderClass: "border-emerald-500/30", textClass: "text-emerald-400" }
 
                   return (
                     <Card key={task.id} className="opacity-80 hover:opacity-100 transition-opacity bg-slate-900/30 backdrop-blur-md border border-white/5 rounded-xl">
@@ -693,7 +693,7 @@ export default function UnifiedGorevlerPage() {
                                 <span>
                                   {c.tip === 'boolean' ? (
                                     c.deger === true ? (
-                                      <Badge className="bg-green-950/40 border border-green-500/30 text-green-400 font-bold px-2 py-0.5 rounded">Evet</Badge>
+                                      <Badge className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-bold px-2 py-0.5 rounded">Evet</Badge>
                                     ) : (
                                       <Badge className="bg-red-950/40 border border-red-500/30 text-red-400 font-bold px-2 py-0.5 rounded">Hayır</Badge>
                                     )
@@ -896,7 +896,7 @@ export default function UnifiedGorevlerPage() {
                   key={t.id}
                   className={`bg-slate-900/30 backdrop-blur-md border rounded-xl p-5 ${
                     t.aktif
-                      ? "border-l-4 border-l-green-500 border-white/5"
+                      ? "border-l-4 border-l-emerald-500 border-white/5"
                       : "opacity-75 border-l-4 border-l-zinc-700 border-white/5"
                   }`}
                 >
@@ -910,7 +910,7 @@ export default function UnifiedGorevlerPage() {
                         <Badge variant="outline" className="text-zinc-400 border-zinc-700 font-bold scale-90 origin-left">
                           {t.periyot === 'gunluk' ? 'Günlük' : t.periyot === 'haftalik' ? 'Haftalık' : 'Aylık'}
                         </Badge>
-                        <Badge className={`${t.aktif ? 'bg-green-950/40 text-green-400 border-green-500/20' : 'bg-zinc-950/40 text-zinc-400 border-zinc-700'} border font-bold scale-90 origin-left`}>
+                        <Badge className={`${t.aktif ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/20' : 'bg-zinc-950/40 text-zinc-400 border-zinc-700'} border font-bold scale-90 origin-left`}>
                           {t.aktif ? "Aktif" : "Pasif"}
                         </Badge>
                       </div>
@@ -920,7 +920,7 @@ export default function UnifiedGorevlerPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleTemplateActive(t.id, t.aktif)}
-                        className={`text-xs font-bold rounded-lg ${t.aktif ? 'text-red-400 hover:text-red-300 hover:bg-red-950/20' : 'text-green-400 hover:text-green-300 hover:bg-green-950/20'}`}
+                        className={`text-xs font-bold rounded-lg ${t.aktif ? 'text-red-400 hover:text-red-300 hover:bg-red-950/20' : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20'}`}
                       >
                         {t.aktif ? "Devre Dışı Bırak" : "Aktifleştir"}
                       </Button>
@@ -928,7 +928,7 @@ export default function UnifiedGorevlerPage() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                    <p className="text-xs font-black text-cyan-400 uppercase tracking-wider mb-2.5">
+                    <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2.5">
                       {t.sorular ? t.sorular.length : 0} Adet Madde Girişi:
                     </p>
                     {(t.sorular || []).slice(0, 4).map((s, idx) => (
