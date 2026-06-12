@@ -207,7 +207,7 @@ export default function AracBakimPage() {
   const handleApprove = async (id: number) => {
     setUpdatingId(id)
     try {
-      const { error } = await api.update('arac_bakim_gecmisi', { durum: 'Onaylandı' }, { id })
+      const { error } = await api.update('vehicle_maintenances', { durum: 'Onaylandı' }, { id })
       if (error) throw error
       setAllLogs(prev => prev.map(m => m.id === id ? { ...m, durum: 'Onaylandı' } : m))
     } catch (err) {
@@ -285,14 +285,17 @@ export default function AracBakimPage() {
 
         const payload = {
           plaka: bakimForm.plaka,
+          islem_turu: bakimForm.islem_turu,
           tarih: new Date().toISOString().split('T')[0],
-          tip: (bakimForm.islem_turu === 'Yağ Değişimi' || bakimForm.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' as const : 'tamir' as const,
+          kilometre: Number(bakimForm.kilometre) || 0,
           aciklama: formattedDesc,
           maliyet: Number(bakimForm.maliyet) || 0,
-          durum: isMudur ? 'Onaylandı' : 'Bekliyor'
+          durum: isMudur ? 'Onaylandı' : 'Bekliyor',
+          kaydi_acan_sicil_no: user?.sicilNo || 'Sistem',
+          fotograf_url: finalPhotoUrl || null
         }
 
-        const { error } = await api.insert('arac_bakim_gecmisi', payload)
+        const { error } = await api.insert('vehicle_maintenances', payload)
         if (error) throw error
       } else {
         if (!yakitForm.plaka) { alert("Lütfen araç plakası seçin."); setIsSaving(false); return }

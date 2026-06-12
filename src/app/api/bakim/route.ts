@@ -36,15 +36,16 @@ export async function GET(request: NextRequest) {
       bolmeler: typeof row.bolmeler === 'string' ? JSON.parse(row.bolmeler) : (row.bolmeler || {}),
     }));
 
-    // 2. arac_bakim_gecmisi tablosunu sorgula
-    const logsResult = await query('SELECT * FROM public.arac_bakim_gecmisi ORDER BY tarih DESC');
+    // 2. vehicle_maintenances tablosunu sorgula
+    const logsResult = await query('SELECT * FROM public.vehicle_maintenances ORDER BY tarih DESC');
     const logs: AracBakimGecmisi[] = logsResult.rows.map((row: any) => ({
       id: row.id,
       plaka: row.plaka,
       tarih: row.tarih ? new Date(row.tarih).toISOString().split('T')[0] : '',
-      tip: row.tip as 'tamir' | 'yag_bakimi',
+      tip: (row.islem_turu === 'Yağ Değişimi' || row.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' : 'tamir',
       aciklama: row.aciklama,
       maliyet: Number(row.maliyet) || 0,
+      durum: row.durum || 'Onaylandı',
       created_at: row.created_at,
     }));
 

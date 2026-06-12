@@ -53,6 +53,7 @@ export interface AracBakimGecmisi {
   tip: 'tamir' | 'yag_bakimi';
   aciklama: string;
   maliyet: number;
+  durum?: 'Onaylandı' | 'Bekliyor' | string;
   created_at?: string;
 }
 
@@ -153,10 +154,20 @@ export default function VehicleDetailPage() {
         setVehicle(found || null)
 
         if (found) {
-          const { data: logs } = await api.from<AracBakimGecmisi>('arac_bakim_gecmisi')
+          const { data: logs } = await api.from('vehicle_maintenances')
             .eq('plaka', found.plaka)
-            .order('tarih', { ascending: false }) as { data: AracBakimGecmisi[] | null; error: unknown }
-          setMaintenanceLogs(logs || [])
+            .order('tarih', { ascending: false }) as { data: any[] | null; error: unknown }
+          const mappedLogs: AracBakimGecmisi[] = (logs || []).map((l: any) => ({
+            id: l.id,
+            plaka: l.plaka,
+            tarih: l.tarih ? new Date(l.tarih).toISOString().split('T')[0] : '',
+            tip: (l.islem_turu === 'Yağ Değişimi' || l.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' : 'tamir',
+            aciklama: l.aciklama,
+            maliyet: Number(l.maliyet) || 0,
+            durum: l.durum || 'Onaylandı',
+            created_at: l.created_at
+          }))
+          setMaintenanceLogs(mappedLogs)
         }
       } catch (err) {
         console.error("Error fetching vehicle or logs:", err)
@@ -326,16 +337,28 @@ export default function VehicleDetailPage() {
     setIsSavingMaintenance(true)
     try {
       const formattedDesc = `${maintenanceForm.islem_turu}: ${maintenanceForm.aciklama.trim()} ${maintenanceForm.kilometre ? `(KM: ${maintenanceForm.kilometre})` : ''}`
+      const isAuthorizedToApprove = 
+        user?.rol === 'Admin' || 
+        user?.rol === 'Editor' || 
+        user?.unvan === 'Müdür' || 
+        user?.unvan === 'Amir' ||
+        user?.rol?.toLowerCase() === 'admin' ||
+        user?.rol?.toLowerCase() === 'editor' ||
+        user?.unvan?.toLowerCase() === 'müdür' ||
+        user?.unvan?.toLowerCase() === 'amir';
+
       const payload = {
         plaka: vehicle.plaka,
+        islem_turu: maintenanceForm.islem_turu,
         tarih: maintenanceForm.tarih,
-        tip: (maintenanceForm.islem_turu === 'Yağ Değişimi' || maintenanceForm.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' as const : 'tamir' as const,
+        kilometre: Number(maintenanceForm.kilometre) || 0,
         aciklama: formattedDesc,
         maliyet: Number(maintenanceForm.maliyet) || 0,
-        durum: 'Onaylandı'
+        durum: isAuthorizedToApprove ? 'Onaylandı' : 'Bekliyor',
+        kaydi_acan_sicil_no: user?.sicilNo || 'Sistem'
       }
 
-      const { error } = await api.insert('arac_bakim_gecmisi', payload)
+      const { error } = await api.insert('vehicle_maintenances', payload)
       if (error) throw error
 
       // Audit log: Bakım kaydı ekleme logu
@@ -347,15 +370,25 @@ export default function VehicleDetailPage() {
           actor_sicil_no: user?.sicilNo || 'unknown',
           actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
           target: vehicle.plaka,
-          details: { tip: payload.tip, aciklama: formattedDesc, maliyet: payload.maliyet },
+          details: { tip: (maintenanceForm.islem_turu === 'Yağ Değişimi' || maintenanceForm.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' : 'tamir', aciklama: formattedDesc, maliyet: payload.maliyet },
         }),
       }).catch(err => console.error('[AuditLog] Bakım ekleme logu gönderilemedi:', err))
 
       // Refresh chronological logs
-      const { data: logs } = await api.from<AracBakimGecmisi>('arac_bakim_gecmisi')
+      const { data: logs } = await api.from('vehicle_maintenances')
         .eq('plaka', vehicle.plaka)
-        .order('tarih', { ascending: false }) as { data: AracBakimGecmisi[] | null; error: unknown }
-      setMaintenanceLogs(logs || [])
+        .order('tarih', { ascending: false }) as { data: any[] | null; error: unknown }
+      const mappedLogs: AracBakimGecmisi[] = (logs || []).map((l: any) => ({
+        id: l.id,
+        plaka: l.plaka,
+        tarih: l.tarih ? new Date(l.tarih).toISOString().split('T')[0] : '',
+        tip: (l.islem_turu === 'Yağ Değişimi' || l.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' : 'tamir',
+        aciklama: l.aciklama,
+        maliyet: Number(l.maliyet) || 0,
+        durum: l.durum || 'Onaylandı',
+        created_at: l.created_at
+      }))
+      setMaintenanceLogs(mappedLogs)
 
       // Reset form & close modal
       setMaintenanceForm({
@@ -1402,8 +1435,19 @@ export default function VehicleDetailPage() {
                           </div>
                         </div>
 
-                        {/* Cost Badge */}
-                        <div className="self-start md:self-auto">
+                        {/* Cost & Status Badges */}
+                        <div className="self-start md:self-auto flex items-center gap-2">
+                          <span className={cn(
+                            "px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider border uppercase",
+                            log.durum === 'Onaylandı' || log.durum === 'Tamamlandı'
+                              ? "bg-emerald-950/30 border-emerald-500/20 text-emerald-400"
+                              : log.durum === 'Bekliyor'
+                                ? "bg-amber-950/30 border-amber-500/20 text-amber-400 animate-pulse"
+                                : "bg-rose-950/30 border-rose-500/20 text-rose-400"
+                          )}>
+                            {log.durum === 'Onaylandı' || log.durum === 'Tamamlandı' ? 'Onaylandı' : log.durum === 'Bekliyor' ? 'Onay Bekliyor' : log.durum || 'Bilinmiyor'}
+                          </span>
+
                           <span className={cn(
                             "px-3 py-1 rounded-lg text-xs font-bold font-mono border",
                             hasMaliyet 
