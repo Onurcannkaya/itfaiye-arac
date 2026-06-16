@@ -288,6 +288,34 @@ function HaritaContent() {
       if (incData) setIncidents(incData)
       if (hydData) setHydrants(hydData)
       if (vehData) setVehicles(vehData)
+
+      // ─── Posta Devir Filtresi (08:00) ───────────────────
+      // Sadece aktif nöbet dönemindeki görevler haritada gösterilir.
+      // Posta devri saat 08:00'da gerçekleşir; bu saatten sonra
+      // bir önceki nöbetin görevleri otomatik olarak haritadan kalkar.
+      const getShiftStart = (): Date => {
+        const now = new Date()
+        const shiftStart = new Date(now)
+        shiftStart.setHours(8, 0, 0, 0)
+        // Eğer şu an saat 08:00'dan önceyse, nöbet dünden başlamıştır
+        if (now.getHours() < 8) {
+          shiftStart.setDate(shiftStart.getDate() - 1)
+        }
+        return shiftStart
+      }
+
+      const shiftStart = getShiftStart()
+
+      const filterByShift = (missions: any[]): any[] => {
+        return missions.filter((m: any) => {
+          // Eğer görev tamamlanmamış veya iptal edilmemişse (yani aktifse), haritada kalmalıdır.
+          if (m.durum !== 'Tamamlandı' && m.durum !== 'iptal') return true;
+          // Tamamlanan/iptal edilen görevler ise sadece bu nöbet vardiyasında (shiftStart sonrasında) yapılmışsa kalabilir.
+          const missionDate = new Date(m.cikis_tarihi || m.created_at)
+          return missionDate >= shiftStart
+        })
+      }
+
       if (persData) {
         setPersonnelList(persData)
         if (extData) {
@@ -295,7 +323,8 @@ function HaritaContent() {
           persData.forEach((p: any) => {
             persMap[p.sicil_no] = `${p.ad} ${p.soyad}`
           })
-          const enrichedExt = extData.map((m: any) => {
+          const filteredExt = filterByShift(extData)
+          const enrichedExt = filteredExt.map((m: any) => {
             const names = (m.sicil_nos || [])
               .map((s: string) => persMap[s] || s)
               .join(', ')
@@ -307,7 +336,7 @@ function HaritaContent() {
           setExternalMissions(enrichedExt)
         }
       } else {
-        if (extData) setExternalMissions(extData)
+        if (extData) setExternalMissions(filterByShift(extData))
       }
     } catch (err) {
       console.error(err)
