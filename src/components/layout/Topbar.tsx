@@ -177,7 +177,7 @@ export function Topbar() {
       let triageDot = null
 
       if (triage === 'critical') {
-        triageClass = "border-l-4 border-l-red-500 bg-red-950/20"
+        triageClass = "border-l-4 border-l-red-500 bg-red-950/20 light:bg-red-50/70 light:border-l-red-600"
         triageDot = (
           <span className="relative flex h-2 w-2 shrink-0 self-center">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -185,38 +185,38 @@ export function Topbar() {
           </span>
         )
       } else if (triage === 'medium') {
-        triageClass = "border-l-4 border-l-amber-500 bg-amber-950/20"
+        triageClass = "border-l-4 border-l-amber-500 bg-amber-950/20 light:bg-amber-50/70 light:border-l-amber-600"
       } else {
-        triageClass = "border-l-4 border-l-emerald-500 bg-emerald-950/20"
+        triageClass = "border-l-4 border-l-emerald-500 bg-emerald-950/20 light:bg-emerald-50/70 light:border-l-emerald-600"
       }
 
       return (
         <div 
           key={item.id}
           onClick={() => handleNotificationClick(item)}
-          className={`p-4 flex items-start justify-between gap-3 transition-colors cursor-pointer group hover:bg-slate-900/40 relative border-b border-slate-800/20 ${triageClass} ${
+          className={`p-4 flex items-start justify-between gap-3 transition-colors cursor-pointer group hover:bg-slate-900/40 light:hover:bg-slate-100/50 relative border-b border-slate-800/20 light:border-slate-200/60 ${triageClass} ${
             !item.read ? 'opacity-100 font-semibold' : 'opacity-80'
           }`}
         >
           {/* Left Icon Indicator */}
           <div className="mt-0.5 shrink-0">
             {item.type === 'urgent' && (
-              <div className="bg-red-500/10 p-1.5 rounded-lg text-red-500">
+              <div className="bg-red-500/10 p-1.5 rounded-lg text-red-500 light:bg-red-100 light:text-red-700">
                 <Flame className="w-4 h-4 text-red-500 animate-pulse" />
               </div>
             )}
             {item.type === 'warning' && (
-              <div className="bg-amber-500/10 p-1.5 rounded-lg text-amber-500">
+              <div className="bg-amber-500/10 p-1.5 rounded-lg text-amber-500 light:bg-amber-100 light:text-amber-700">
                 <AlertTriangle className="w-4 h-4" />
               </div>
             )}
             {item.type === 'info' && (
-              <div className="bg-blue-500/10 p-1.5 rounded-lg text-blue-500">
+              <div className="bg-blue-500/10 p-1.5 rounded-lg text-blue-500 light:bg-blue-100 light:text-blue-700">
                 <Info className="w-4 h-4" />
               </div>
             )}
             {item.type === 'success' && (
-              <div className="bg-emerald-500/10 p-1.5 rounded-lg text-emerald-500">
+              <div className="bg-emerald-500/10 p-1.5 rounded-lg text-emerald-500 light:bg-emerald-100 light:text-emerald-700">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             )}
@@ -227,13 +227,13 @@ export function Topbar() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 {triageDot}
-                <p className={`text-sm font-bold leading-tight truncate ${!item.read ? 'text-slate-100' : 'text-slate-400'}`}>
+                <p className={`text-sm font-bold leading-tight truncate ${!item.read ? 'text-slate-100 light:text-slate-900' : 'text-slate-400 light:text-slate-500'}`}>
                   {item.title}
                 </p>
               </div>
-              <span className="text-[10px] text-slate-500 shrink-0 font-medium">{item.time}</span>
+              <span className="text-[10px] text-slate-500 light:text-slate-500 shrink-0 font-medium">{item.time}</span>
             </div>
-            <p className="text-sm leading-relaxed text-slate-400 line-clamp-2">
+            <p className="text-sm leading-relaxed text-slate-400 light:text-slate-650 line-clamp-2">
               {item.description}
             </p>
 
@@ -243,7 +243,7 @@ export function Topbar() {
                 <Link
                   href={item.actionUrl || '/yonetim/harita'}
                   onClick={() => setIsOpen(false)}
-                  className="inline-flex items-center text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 px-2.5 py-1 rounded transition-all animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                  className="inline-flex items-center text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 light:bg-red-100 light:text-red-800 light:border-red-200 px-2.5 py-1 rounded transition-all animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.2)]"
                 >
                   Canlı CBS Haritasını Görüntüle
                 </Link>
@@ -256,7 +256,7 @@ export function Topbar() {
             <button
               onClick={(e) => removeNotification(item.id, e)}
               title="Sil"
-              className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-slate-800/40"
+              className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-slate-800/40 light:hover:bg-slate-200"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -264,7 +264,7 @@ export function Topbar() {
             <button
               onClick={(e) => toggleRead(item.id, e)}
               title={item.read ? "Okunmadı İşaretle" : "Okundu İşaretle"}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-slate-200 p-1 rounded hover:bg-slate-800/40"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-slate-200 light:hover:text-slate-800 p-1 rounded hover:bg-slate-800/40 light:hover:bg-slate-200"
             >
               <Check className="w-3.5 h-3.5" />
             </button>
@@ -504,10 +504,10 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-surface px-3 sm:px-4 md:px-6 z-30 h-14 relative">
+    <header className="flex items-center justify-between border-b border-border light:border-b light:border-slate-200 bg-surface px-3 sm:px-4 md:px-6 z-30 h-14 relative">
       <div className="flex items-center md:hidden space-x-2">
         <Image src="/logo-itfaiye.png" alt="Logo" width={28} height={28} className="object-contain" />
-        <h1 className="text-lg font-bold tracking-tight">Sivas İtfaiyesi</h1>
+        <h1 className="text-lg font-bold tracking-tight light:text-slate-900">Sivas İtfaiyesi</h1>
       </div>
       <div className="hidden md:flex flex-1"></div>
       <div className="flex items-center space-x-3">
@@ -515,26 +515,26 @@ export function Topbar() {
         {/* Desktop Quick Scan Button */}
         <Link 
           href="/yonetim/tarayici" 
-          className="hidden md:flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full transition-colors mr-2"
+          className="hidden md:flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full transition-colors mr-2 light:text-slate-900 light:bg-slate-100 light:hover:bg-slate-200/80"
         >
           <Camera size={18} />
           <span className="text-sm font-bold">QR Araç Tara</span>
         </Link>
         
         <GeofenceButton />
-
+ 
         {/* Notifications & Tasks Bell Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className={`rounded-full p-2 hover:bg-muted relative transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
-              isOpen ? 'bg-muted text-primary' : 'text-muted-foreground'
+            className={`rounded-full p-2 hover:bg-muted relative transition-colors focus:outline-none focus:ring-2 focus:ring-primary light:text-slate-600 light:hover:bg-slate-100 ${
+              isOpen ? 'bg-muted text-primary light:bg-slate-100 light:text-slate-900' : 'text-muted-foreground'
             }`}
             aria-label="Bildirimler"
           >
             <Bell size={20} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-red-600 border border-slate-900 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+              <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-red-600 border border-slate-900 light:border-white text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
                 {unreadCount}
               </span>
             )}
@@ -647,29 +647,29 @@ export function Topbar() {
           <div className="relative" ref={profileRef}>
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3 hover:bg-muted cursor-pointer transition-colors group focus:outline-none"
+              className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3 hover:bg-muted cursor-pointer transition-colors group focus:outline-none light:bg-slate-100 light:hover:bg-slate-200"
             >
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm light:bg-cyan-100 light:text-cyan-800">
                 {initials}
               </div>
               <div className="hidden md:block text-sm pr-2 text-left">
-                <p className="font-semibold leading-none text-foreground">{displayName}</p>
-                <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide flex items-center gap-1">
+                <p className="font-semibold leading-none text-foreground light:text-slate-900">{displayName}</p>
+                <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide flex items-center gap-1 light:text-slate-500">
                   {rolLabel}
                 </p>
               </div>
             </button>
 
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 origin-top-right bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-                <div className="p-2.5 border-b border-slate-900/60 bg-slate-900/10">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2">Hesap İşlemleri</p>
+              <div className="absolute right-0 mt-2 w-48 origin-top-right bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 light:bg-white light:border-slate-200">
+                <div className="p-2.5 border-b border-slate-900/60 bg-slate-900/10 light:bg-slate-50 light:border-slate-200">
+                  <p className="text-xs font-semibold text-slate-400 light:text-slate-550 uppercase tracking-wider px-2">Hesap İşlemleri</p>
                 </div>
                 <div className="p-1.5 space-y-1">
                   <Link 
                     href="/yonetim/kilavuz"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-cyan-400 light:hover:text-cyan-600 hover:bg-cyan-500/10 light:hover:bg-cyan-50 transition-colors w-full text-left font-medium"
                   >
                     <BookOpen className="w-4 h-4 text-cyan-400" />
                     <span>Kullanım Kılavuzu</span>
@@ -677,7 +677,7 @@ export function Topbar() {
                   <Link 
                     href="/sifre-degistir"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-cyan-400 light:hover:text-cyan-600 hover:bg-cyan-500/10 light:hover:bg-cyan-50 transition-colors w-full text-left font-medium"
                   >
                     <Key className="w-4 h-4" />
                     <span>Şifremi Değiştir</span>
@@ -687,7 +687,7 @@ export function Topbar() {
                       setIsProfileOpen(false);
                       handlePushToggle();
                     }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-cyan-400 light:hover:text-cyan-600 hover:bg-cyan-500/10 light:hover:bg-cyan-50 transition-colors w-full text-left font-medium"
                   >
                     <Bell className={`w-4 h-4 ${isPushSubscribed ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
                     <span>{isPushSubscribed ? 'Canlı Bildirimleri Kapat' : 'Canlı İhbar Bildirimlerini Aç'}</span>
@@ -697,7 +697,7 @@ export function Topbar() {
                       setIsProfileOpen(false)
                       handleLogout()
                     }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-red-400 light:hover:text-red-650 hover:bg-red-500/10 light:hover:bg-red-50 transition-colors w-full text-left font-medium"
                   >
                     <LogOut className="w-4 h-4 text-red-500" />
                     <span>Çıkış Yap</span>

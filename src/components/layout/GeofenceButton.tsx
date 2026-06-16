@@ -296,8 +296,8 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
       {distance !== null && (
         <span className={`hidden lg:inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border backdrop-blur-md transition-all duration-300 ${
           distance <= MAX_DISTANCE_METERS 
-            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 light:bg-emerald-50 light:text-emerald-800 light:border-emerald-200' 
+            : 'bg-rose-500/10 text-rose-400 border-rose-500/20 light:bg-rose-50 light:text-rose-800 light:border-rose-200'
         }`}>
           <MapPin className="w-3.5 h-3.5 mr-1" />
           {distance <= MAX_DISTANCE_METERS 
@@ -313,10 +313,10 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
         disabled={isButtonDisabled}
         className={`hidden md:flex items-center space-x-2 rounded-full px-5 py-2 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)] font-bold shadow-lg border border-white/10 ${
           isButtonDisabled
-            ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60'
+            ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60 light:bg-slate-100 light:text-slate-400 light:border-slate-200'
             : dutyStatus === 'AKTIF'
-              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/30'
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30'
+              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/30 light:bg-rose-100 light:text-rose-900 light:border-rose-200 light:hover:bg-rose-200 light:shadow-sm'
+              : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30 light:bg-emerald-100 light:text-emerald-900 light:border-emerald-200 light:hover:bg-emerald-200 light:shadow-sm'
         }`}
       >
         {loading || btnLoading ? (
@@ -335,8 +335,8 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
       {status !== 'idle' && message && (
         <div className={`absolute top-full mt-2 right-0 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-semibold backdrop-blur-lg whitespace-nowrap z-50 animate-in fade-in slide-in-from-top-2 duration-200 ${
           status === 'error' 
-            ? 'bg-rose-950/90 text-rose-200 border-rose-800/40' 
-            : 'bg-emerald-950/90 text-emerald-200 border-emerald-800/40'
+            ? 'bg-rose-950/90 text-rose-200 border-rose-800/40 light:bg-rose-50 light:text-rose-900 light:border-rose-200' 
+            : 'bg-emerald-950/90 text-emerald-200 border-emerald-800/40 light:bg-emerald-50 light:text-emerald-900 light:border-emerald-200'
         }`}>
           {message}
         </div>

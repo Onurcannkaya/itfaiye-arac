@@ -792,24 +792,24 @@ export default function DashboardPage() {
     iconColor: string
   }) => (
     <Link href={href}>
-      <Card className="group relative overflow-hidden bg-slate-900/40 border-slate-800/90 hover:border-slate-700/90 transition-all duration-200 ease-out hover:shadow-md cursor-pointer rounded-2xl">
+      <Card className="group relative overflow-hidden bg-slate-900/40 border-slate-800/90 hover:border-slate-700/90 transition-all duration-200 ease-out hover:shadow-md cursor-pointer rounded-2xl light:bg-white light:border-slate-200/80 light:shadow-sm light:hover:border-slate-300">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-slate-400 uppercase tracking-wider">
+              <p className="text-xs sm:text-sm font-medium text-slate-400 light:text-slate-600 uppercase tracking-wider">
                 {label}
               </p>
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100">{value}</p>
-              <p className="text-xs text-slate-500 line-clamp-1">{subtitle}</p>
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100 light:text-slate-900">{value}</p>
+              <p className="text-xs text-slate-500 light:text-slate-600 line-clamp-1">{subtitle}</p>
             </div>
             <div
-              className={`p-2.5 rounded-xl bg-slate-950/65 border border-slate-800 text-slate-300 shadow-inner group-hover:scale-105 transition-transform duration-300 ${iconColor}`}
+              className={`p-2.5 rounded-xl bg-slate-950/65 border border-slate-800 text-slate-300 light:bg-slate-100 light:border-slate-200 light:text-slate-700 shadow-inner group-hover:scale-105 transition-transform duration-300 ${iconColor}`}
             >
               {icon}
             </div>
           </div>
-          <div className="flex items-center mt-3 pt-3 border-t border-slate-800/60">
-            <span className="text-xs text-slate-400 font-medium group-hover:text-slate-200 transition-colors flex items-center gap-1">
+          <div className="flex items-center mt-3 pt-3 border-t border-slate-800/60 light:border-slate-200">
+            <span className="text-xs text-slate-400 light:text-slate-600 font-medium group-hover:text-slate-200 light:group-hover:text-slate-900 transition-colors flex items-center gap-1">
               Detay Görüntüle <ArrowRight className="w-3 h-3 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
@@ -835,8 +835,8 @@ export default function DashboardPage() {
       {/* Canlı Teşkilat Program Barı */}
       <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-200 ease-out backdrop-blur-md ${
         programInfo.isOffDuty 
-          ? "border-blue-500/30 bg-blue-950/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]" 
-          : "border-emerald-500/40 bg-emerald-950/25 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+          ? "border-blue-500/30 bg-blue-950/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] light:bg-blue-50 light:border-blue-200 light:text-blue-800" 
+          : "border-emerald-500/40 bg-emerald-950/25 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] light:bg-emerald-50 light:border-emerald-200 light:text-emerald-800"
       }`}>
         <div className="flex items-center gap-3">
           <div className="relative flex h-3 w-3">
@@ -851,7 +851,7 @@ export default function DashboardPage() {
             {programInfo.text}
           </span>
         </div>
-        <div className="text-xs font-mono opacity-80 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5">
+        <div className="text-xs font-mono opacity-80 flex items-center gap-1.5 bg-black/30 light:bg-slate-200/60 px-3 py-1.5 rounded-lg border border-white/5 light:border-slate-300 light:text-slate-700">
           <Clock className="w-3.5 h-3.5" />
           <span>{currentTime}</span>
         </div>
@@ -866,7 +866,7 @@ export default function DashboardPage() {
             <Shield className="w-6 h-6 text-primary" />
             Yönetim ve Gösterge Paneli
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          <p className="text-xs sm:text-sm text-muted-foreground light:text-slate-600 mt-0.5">
             Sivas İtfaiye Müdürlüğü Anlık Durum Özeti
           </p>
         </div>
@@ -877,18 +877,18 @@ export default function DashboardPage() {
       </div>
 
       {/* ═══════════ GÖREVDEKİ ARAÇ DURUMLARI ═══════════ */}
-      <Card className="border-border bg-slate-900/30 backdrop-blur-lg border-slate-800/80 shadow-[0_0_25px_rgba(6,182,212,0.1)] rounded-2xl overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-slate-800/60 gap-3">
+      <Card className="border-border bg-slate-900/30 backdrop-blur-lg border-slate-800/80 shadow-[0_0_25px_rgba(6,182,212,0.1)] rounded-2xl overflow-hidden light:bg-white light:border-slate-200/80 light:shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-slate-800/60 light:border-slate-200 gap-3">
           <div className="flex items-center gap-3">
             <div className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-slate-100 light:text-slate-900 flex items-center gap-2">
                 Görevdeki Araç Durumları
               </h2>
-              <p className="text-xs text-cyan-400/80 font-mono mt-0.5 tracking-wide uppercase">
+              <p className="text-xs text-cyan-400/80 light:text-cyan-700 font-mono mt-0.5 tracking-wide uppercase">
                 Sivas İtfaiye Müdürlüğü Anlık Durum Özeti
               </p>
             </div>
@@ -902,7 +902,7 @@ export default function DashboardPage() {
         <CardContent className="p-3 sm:p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {activeMissions.length === 0 ? (
-              <div className="col-span-full py-8 text-center text-slate-400 bg-slate-950/25 border border-slate-900 rounded-xl font-medium">
+              <div className="col-span-full py-8 text-center text-slate-400 light:text-slate-600 bg-slate-950/25 light:bg-slate-50 border border-slate-900 light:border-slate-200 rounded-xl font-medium">
                 Görevde aktif araç bulunmamaktadır.
               </div>
             ) : (
@@ -912,7 +912,7 @@ export default function DashboardPage() {
                 return (
                   <div 
                     key={`${mission.plaka}-${index}`}
-                    className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-200 ease-out hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden"
+                    className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-200 ease-out hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden light:bg-slate-50 light:border-slate-200/80"
                   >
                     {/* Subtle siber grids overlay */}
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
@@ -920,30 +920,30 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between gap-2 relative z-10">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold tracking-wider text-slate-200 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded shadow-inner">
+                          <span className="font-mono text-sm font-bold tracking-wider text-slate-200 light:text-slate-800 bg-slate-900 light:bg-slate-100 border border-slate-800 light:border-slate-200 px-2 py-0.5 rounded shadow-inner">
                             {mission.plaka}
                           </span>
                           <Badge variant="outline" className="text-[10px] py-0 border-cyan-500/20 text-cyan-400 bg-cyan-950/20 whitespace-nowrap">
                             {mission.arac_tipi}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300 light:text-slate-700 font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
                           <span>Vaka: <strong className="text-red-400">{mission.olay_turu}</strong></span>
                         </div>
                       </div>
-                      <span className="text-[11px] text-slate-400 bg-slate-900/80 border border-slate-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 font-mono whitespace-nowrap">
+                      <span className="text-[11px] text-slate-400 light:text-slate-600 bg-slate-900/80 border border-slate-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 font-mono whitespace-nowrap">
                         ⏱️ <LiveDuration cikisSaati={mission.cikis_saati} />
                       </span>
                     </div>
 
-                    <div className="space-y-2 border-t border-slate-900 pt-2.5 relative z-10">
+                    <div className="space-y-2 border-t border-slate-900 light:border-slate-200 pt-2.5 relative z-10">
                       <div className="text-xs space-y-1.5">
-                        <p className="text-slate-400 flex items-start gap-1">
+                        <p className="text-slate-400 light:text-slate-600 flex items-start gap-1">
                           <span className="text-slate-500 select-none">📍</span>
-                          <span><strong className="text-slate-300">{mission.mahalle}</strong> {mission.adres}</span>
+                          <span><strong className="text-slate-300 light:text-slate-900">{mission.mahalle}</strong> {mission.adres}</span>
                         </p>
-                        <p className="text-slate-500 font-mono text-[10px] flex items-center gap-1">
+                        <p className="text-slate-500 light:text-slate-600 font-mono text-[10px] flex items-center gap-1">
                           <span className="text-cyan-500/70 select-none">📡</span>
                           <span>GPS: <span className="text-cyan-400 font-semibold">{latVal}°N, {lngVal}°E</span></span>
                         </p>
@@ -957,7 +957,7 @@ export default function DashboardPage() {
                           const lng = mission.coords ? mission.coords[0] : 37.02093
                           router.push(`/yonetim/harita?focusPlaka=${mission.plaka}&lat=${lat}&lng=${lng}`)
                         }}
-                        className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-900/40 hover:bg-cyan-950/10 rounded-lg transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer animate-none"
+                        className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-900/40 hover:bg-cyan-950/10 rounded-lg transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer animate-none light:bg-slate-100 light:border-slate-200 light:text-slate-700 light:hover:bg-slate-200"
                       >
                         <Target className="w-3.5 h-3.5 text-cyan-400" /> Konuma Git
                       </button>
@@ -972,28 +972,28 @@ export default function DashboardPage() {
 
       {/* ═══════════ OVERDUE ASSIGNMENTS RED NEON ALERT ═══════════ */}
       {overdueAssignments.length > 0 && (
-        <div className="border-2 border-red-500/40 bg-red-950/15 shadow-[0_0_25px_rgba(239,68,68,0.25)] rounded-2xl p-5 space-y-3 relative overflow-hidden animate-pulse">
+        <div className="border-2 border-red-500/40 bg-red-950/15 shadow-[0_0_25px_rgba(239,68,68,0.25)] rounded-2xl p-5 space-y-3 relative overflow-hidden animate-pulse light:bg-red-50 light:border-red-200 light:text-red-900">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
           <div className="flex items-center gap-3 relative z-10">
-            <div className="p-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30">
+            <div className="p-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 light:bg-red-100 light:border-red-200">
               <AlertTriangle className="w-6 h-6 text-red-500" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-red-400 tracking-wider">🚨 GECİKMİŞ GEÇİCİ ZİMMET ALARMI</h2>
-              <p className="text-xs text-slate-400">İade tarihi geçen {overdueAssignments.length} adet malzeme tespit edildi!</p>
+              <h2 className="text-sm sm:text-base font-bold text-red-400 light:text-red-800 tracking-wider">🚨 GECİKMİŞ GEÇİCİ ZİMMET ALARMI</h2>
+              <p className="text-xs text-slate-400 light:text-red-750">İade tarihi geçen {overdueAssignments.length} adet malzeme tespit edildi!</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 relative z-10">
             {overdueAssignments.map((assignment) => (
-              <div key={assignment.id} className="bg-slate-950/80 border border-red-500/20 rounded-xl p-3.5 flex flex-col justify-between gap-2 hover:border-red-500/40 transition-colors">
+              <div key={assignment.id} className="bg-slate-950/80 border border-red-500/20 rounded-xl p-3.5 flex flex-col justify-between gap-2 hover:border-red-500/40 transition-colors light:bg-slate-100 light:border-slate-200">
                 <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-sm font-bold text-slate-200">{assignment.materialName}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Birim: <span className="text-red-400 font-semibold">{assignment.birim_adi}</span> ({assignment.teslim_edilen_tip})</p>
+                    <p className="text-sm font-bold text-slate-200 light:text-slate-900">{assignment.materialName}</p>
+                    <p className="text-xs text-slate-400 light:text-slate-600 mt-0.5">Birim: <span className="text-red-400 font-semibold">{assignment.birim_adi}</span> ({assignment.teslim_edilen_tip})</p>
                   </div>
-                  <span className="font-mono text-[9px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded">GECİKTİ</span>
+                  <span className="font-mono text-[9px] font-bold bg-red-500/10 text-red-400 light:bg-red-100 light:text-red-800 border border-red-500/20 light:border-red-200 px-2 py-0.5 rounded">GECİKTİ</span>
                 </div>
-                <div className="flex justify-between items-center text-[10px] text-slate-500 border-t border-slate-900 pt-2 font-mono">
+                <div className="flex justify-between items-center text-[10px] text-slate-500 light:text-slate-600 border-t border-slate-900 light:border-slate-200 pt-2.5 font-mono">
                   <span>Zimmet: {new Date(assignment.teslim_tarihi).toLocaleDateString("tr-TR")}</span>
                   <span className="text-red-400/80 font-bold">İade: {new Date(assignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}</span>
                 </div>
@@ -1047,23 +1047,23 @@ export default function DashboardPage() {
       </div>
 
       {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL & SAATLİK KULE NÖBETİ) ═══════════ */}
-      <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20">
+      <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl light:bg-white light:border-slate-200/80 light:shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20 light:bg-slate-50 light:border-slate-200">
           <div className="flex items-center gap-3">
             <Users className="w-5 h-5 text-cyan-500" />
-            <h2 className="text-sm sm:text-base font-bold text-slate-100">
+            <h2 className="text-sm sm:text-base font-bold text-slate-100 light:text-slate-900">
               {activePostaNumber}. Posta Nöbet ve Karargah Yönetimi
             </h2>
           </div>
           
           {/* Tab Selector */}
-          <div className="flex p-0.5 bg-slate-950 border border-slate-800 rounded-lg shrink-0">
+          <div className="flex p-0.5 bg-slate-950 light:bg-slate-100 border border-slate-800 light:border-slate-200 rounded-lg shrink-0">
             <button
               onClick={() => setActiveShiftTab('daily')}
               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
                 activeShiftTab === 'daily'
                   ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                  : 'text-slate-400 light:text-slate-600 hover:text-slate-200 light:hover:text-slate-900 border border-transparent'
               }`}
             >
               Günlük Nöbet Listesi
@@ -1073,7 +1073,7 @@ export default function DashboardPage() {
               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
                 activeShiftTab === 'hourly'
                   ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                  : 'text-slate-400 light:text-slate-600 hover:text-slate-200 light:hover:text-slate-900 border border-transparent'
               }`}
             >
               Saatlik Karargah Nöbet Çizelgesi
@@ -1092,15 +1092,15 @@ export default function DashboardPage() {
       {/* ═══════════ CHART + ACTIVITY FEED ═══════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         {/* ── Trend Chart (2/3 width) ── */}
-        <Card className="lg:col-span-2 border-border overflow-hidden">
+        <Card className="lg:col-span-2 border-border overflow-hidden light:bg-white light:border-slate-200/80 light:shadow-sm">
           <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
             <div>
-              <h2 className="text-sm sm:text-base font-bold flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 light:text-slate-900">
                 <BarChart3 className="w-4 h-4 text-primary" />
                 Son 7 Gün Olay Trendi
               </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Toplam <span className="font-semibold text-foreground">{totalWeekIncidents}</span> olay
+              <p className="text-xs text-muted-foreground light:text-slate-600 mt-0.5">
+                Toplam <span className="font-semibold text-foreground light:text-slate-900">{totalWeekIncidents}</span> olay
               </p>
             </div>
             <div className="flex items-center gap-1.5">
@@ -1157,18 +1157,18 @@ export default function DashboardPage() {
         </Card>
 
         {/* ── Activity Feed (1/3 width) ── */}
-        <Card className="border-border overflow-hidden">
+        <Card className="border-border overflow-hidden light:bg-white light:border-slate-200/80 light:shadow-sm">
           <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
-            <h2 className="text-sm sm:text-base font-bold flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 light:text-slate-900">
               <Clock className="w-4 h-4 text-primary" />
               Son Aktiviteler
             </h2>
-            <Badge variant="outline" className="text-xs">{activities.length}</Badge>
+            <Badge variant="outline" className="text-xs light:bg-slate-100 light:border-slate-200 light:text-slate-700">{activities.length}</Badge>
           </div>
           <CardContent className="p-0">
-            <div className="divide-y divide-border max-h-[320px] overflow-y-auto">
+            <div className="divide-y divide-border light:divide-slate-200 max-h-[320px] overflow-y-auto">
               {activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground light:text-slate-500">
                   <AlertTriangle className="w-8 h-8 mb-2 opacity-40" />
                   <p className="text-sm font-medium">Henüz aktivite yok</p>
                   <p className="text-xs">Sisteme veri girildikçe burada listelenecek</p>
@@ -1177,16 +1177,16 @@ export default function DashboardPage() {
                 activities.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-start gap-3 px-4 sm:px-5 py-3 hover:bg-surface/50 transition-colors"
+                    className="flex items-start gap-3 px-4 sm:px-5 py-3 hover:bg-surface/50 light:hover:bg-slate-50/50 transition-colors"
                   >
-                    <div className="mt-0.5 p-1.5 rounded-lg bg-surface border shrink-0">
+                    <div className="mt-0.5 p-1.5 rounded-lg bg-surface border light:bg-slate-50 light:border-slate-200 shrink-0">
                       {activityIcon(item.type)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{item.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{item.detail}</p>
+                      <p className="text-sm font-medium truncate light:text-slate-900">{item.title}</p>
+                      <p className="text-xs text-muted-foreground light:text-slate-600 truncate">{item.detail}</p>
                     </div>
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
+                    <span className="text-[11px] text-muted-foreground light:text-slate-500 whitespace-nowrap shrink-0 mt-0.5">
                       {item.time}
                     </span>
                   </div>
@@ -1198,17 +1198,17 @@ export default function DashboardPage() {
       </div>
 
       {/* ═══════════ GÖREV ADALETİ VE ANALİZ RADARI WIDGET ═══════════ */}
-      <Card className="border border-cyan-500/30 bg-slate-950/45 backdrop-blur-md text-slate-100 shadow-2xl relative overflow-hidden my-4 sm:my-5">
+      <Card className="border border-cyan-500/30 bg-slate-950/45 backdrop-blur-md text-slate-100 shadow-2xl relative overflow-hidden my-4 sm:my-5 light:bg-white light:border-slate-200/80 light:shadow-sm light:text-slate-900">
         {/* Neon style corner decoration */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/80 light:border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-extrabold flex items-center gap-2 text-cyan-400">
-              <Users className="w-5 h-5 text-cyan-400" />
+            <h2 className="text-base font-extrabold flex items-center gap-2 text-cyan-400 light:text-cyan-700">
+              <Users className="w-5 h-5 text-cyan-400 light:text-cyan-600" />
               Göreve Çıkan Personel Dağılımı
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 light:text-slate-600 mt-0.5">
               Son 30 günde en az göreve çıkan personellerin ve operasyonel dağılımın analizi
             </p>
           </div>
@@ -1225,9 +1225,9 @@ export default function DashboardPage() {
                     setSelectedPersonnelStats(null);
                   }
                 }}
-                className="w-full bg-slate-900/60 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-cyan-500 focus:border-cyan-500 text-xs py-1.5 pl-8"
+                className="w-full bg-slate-900/60 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-cyan-500 focus:border-cyan-500 text-xs py-1.5 pl-8 light:bg-slate-100 light:border-slate-200 light:text-slate-900 light:placeholder-slate-400"
               />
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-500 light:text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               {searchTerm.trim().length > 0 && selectedPersonnelStats && (
                 <button
                   onClick={() => {
@@ -1242,7 +1242,7 @@ export default function DashboardPage() {
             </div>
             
             {searchTerm.trim().length > 0 && !selectedPersonnelStats && (
-              <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl divide-y divide-slate-800/60 z-30">
+              <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl divide-y divide-slate-800/60 z-30 light:bg-white light:border-slate-200 light:divide-slate-200">
                 {filteredJusticeStats
                   ?.filter((p: any) => 
                     `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -1253,10 +1253,10 @@ export default function DashboardPage() {
                       key={p.sicil_no}
                       type="button"
                       onClick={() => handleSelectPersonnel(p.sicil_no)}
-                      className="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 transition-colors flex justify-between items-center"
+                      className="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 transition-colors flex justify-between items-center light:text-slate-800 light:hover:bg-slate-100"
                     >
                       <span className="font-medium">{p.ad} {p.soyad} ({p.sicil_no})</span>
-                      <span className="text-[10px] text-slate-500">{p.unvan}</span>
+                      <span className="text-[10px] text-slate-500 light:text-slate-400">{p.unvan}</span>
                     </button>
                   ))
                 }
@@ -1264,7 +1264,7 @@ export default function DashboardPage() {
                   `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
                   p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
                 ).length === 0 && (
-                  <div className="px-3 py-3 text-xs text-muted-foreground text-center">Sonuç bulunamadı</div>
+                  <div className="px-3 py-3 text-xs text-muted-foreground light:text-slate-500 text-center">Sonuç bulunamadı</div>
                 )}
               </div>
             )}
@@ -1278,17 +1278,17 @@ export default function DashboardPage() {
               <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Detaylar sorgulanıyor...
             </div>
           ) : selectedPersonnelStats ? (
-            <div className="border border-cyan-500/20 bg-cyan-950/5 rounded-xl p-4 space-y-4">
+            <div className="border border-cyan-500/20 bg-cyan-950/5 rounded-xl p-4 space-y-4 light:bg-cyan-50/30 light:border-cyan-200">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="text-sm font-extrabold text-cyan-400">
+                  <h4 className="text-sm font-extrabold text-cyan-400 light:text-cyan-700">
                     {selectedPersonnelStats.personnel.ad} {selectedPersonnelStats.personnel.soyad}
                   </h4>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Sicil: <span className="font-mono text-slate-300">{selectedPersonnelStats.personnel.sicil_no}</span> | Ünvan: {selectedPersonnelStats.personnel.unvan} | İstasyon: {selectedPersonnelStats.personnel.istasyon}
+                  <p className="text-xs text-slate-400 light:text-slate-600 mt-0.5">
+                    Sicil: <span className="font-mono text-slate-300 light:text-slate-800">{selectedPersonnelStats.personnel.sicil_no}</span> | Ünvan: {selectedPersonnelStats.personnel.unvan} | İstasyon: {selectedPersonnelStats.personnel.istasyon}
                   </p>
                 </div>
-                <Badge className="bg-cyan-950 text-cyan-400 border-cyan-800 px-2 py-0.5 text-xs font-bold">
+                <Badge className="bg-cyan-950 text-cyan-400 border-cyan-800 px-2 py-0.5 text-xs font-bold light:bg-cyan-100 light:text-cyan-800 light:border-cyan-200">
                   Toplam Görev: {selectedPersonnelStats.total}
                 </Badge>
               </div>
@@ -1300,10 +1300,10 @@ export default function DashboardPage() {
                     return (
                       <div key={s.subject} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">{s.subject}</span>
-                          <span className="text-slate-200 font-semibold">{s.value} Görev</span>
+                          <span className="text-slate-400 light:text-slate-650">{s.subject}</span>
+                          <span className="text-slate-200 light:text-slate-800 font-semibold">{s.value} Görev</span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/50">
+                        <div className="w-full h-1.5 bg-slate-900 light:bg-slate-200 rounded-full overflow-hidden border border-slate-800/50 light:border-slate-300/50">
                           <div 
                             className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
                             style={{ width: `${pct}%` }} 
@@ -1316,10 +1316,10 @@ export default function DashboardPage() {
 
                 <div className="h-[160px] flex items-center justify-center">
                   {selectedPersonnelStats.total === 0 ? (
-                    <div className="text-center p-4 border border-dashed border-slate-800 rounded bg-slate-950/20 max-w-xs">
+                    <div className="text-center p-4 border border-dashed border-slate-800 light:border-slate-300 rounded bg-slate-950/20 light:bg-slate-50 max-w-xs">
                       <AlertTriangle className="w-6 h-6 text-amber-500/80 mx-auto mb-1.5 animate-pulse" />
-                      <p className="text-xs font-semibold text-slate-300">Kayıtlı Vaka Görevi Yok</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Bu personel için herhangi bir olay kaydı bulunamadı.</p>
+                      <p className="text-xs font-semibold text-slate-300 light:text-slate-800">Kayıtlı Vaka Görevi Yok</p>
+                      <p className="text-[10px] text-slate-500 light:text-slate-500 mt-0.5">Bu personel için herhangi bir olay kaydı bulunamadı.</p>
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
@@ -1342,7 +1342,7 @@ export default function DashboardPage() {
           ) : (
             // Top 5 Lowest Active Personnel
             <div className="space-y-3">
-              <div className="text-xs font-semibold text-slate-400 mb-2">
+              <div className="text-xs font-semibold text-slate-400 light:text-slate-600 mb-2">
                 Son 30 Günde En Az Göreve Çıkan Aktif Personel Listesi (Kritik İdari Adalet Takibi)
               </div>
               
@@ -1361,31 +1361,31 @@ export default function DashboardPage() {
                     <div 
                       key={p.sicil_no} 
                       onClick={() => handleSelectPersonnel(p.sicil_no)}
-                      className="group border border-slate-800/80 bg-slate-900/30 hover:border-cyan-500/30 hover:bg-slate-900/65 transition-all p-3 rounded-xl cursor-pointer flex flex-col justify-between relative overflow-hidden"
+                      className="group border border-slate-800/80 bg-slate-900/30 hover:border-cyan-500/30 hover:bg-slate-900/65 transition-all p-3 rounded-xl cursor-pointer flex flex-col justify-between relative overflow-hidden light:bg-slate-100 light:border-slate-200 light:hover:bg-slate-200/50 light:hover:border-cyan-400/50"
                     >
                       {/* Badge counter */}
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-800 text-[10px] text-slate-400 font-bold flex items-center justify-center group-hover:bg-cyan-950 group-hover:text-cyan-400 transition-colors">
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-800 text-[10px] text-slate-400 font-bold flex items-center justify-center group-hover:bg-cyan-950 group-hover:text-cyan-400 transition-colors light:bg-slate-200 light:text-slate-600 light:group-hover:bg-cyan-100 light:group-hover:text-cyan-700">
                         #{idx + 1}
                       </div>
 
                       <div className="space-y-1">
-                        <div className="font-bold text-xs text-slate-200 group-hover:text-cyan-400 transition-colors truncate pr-6">
+                        <div className="font-bold text-xs text-slate-200 light:text-slate-800 group-hover:text-cyan-400 light:group-hover:text-cyan-600 transition-colors truncate pr-6">
                           {p.ad} {p.soyad}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono truncate">
+                        <div className="text-[10px] text-slate-400 light:text-slate-500 font-mono truncate">
                           {p.sicil_no}
                         </div>
-                        <div className="text-[10px] text-slate-500 truncate">
+                        <div className="text-[10px] text-slate-500 light:text-slate-400 truncate">
                           {p.unvan}
                         </div>
                       </div>
 
-                      <div className="mt-3 pt-2.5 border-t border-slate-800/60 space-y-1.5">
-                        <div className="text-[11px] text-slate-300 font-semibold flex justify-between">
+                      <div className="mt-3 pt-2.5 border-t border-slate-800/60 light:border-slate-200 space-y-1.5">
+                        <div className="text-[11px] text-slate-300 light:text-slate-700 font-semibold flex justify-between">
                           <span>Görev Sayısı:</span>
-                          <span className="text-amber-500">{p.last30DaysMissions}</span>
+                          <span className="text-amber-500 light:text-amber-700">{p.last30DaysMissions}</span>
                         </div>
-                        <span className="inline-block text-[9px] font-bold text-amber-500/90 bg-amber-950/20 border border-amber-900/40 rounded px-1.5 py-0.5 w-full text-center">
+                        <span className="inline-block text-[9px] font-bold text-amber-500/90 bg-amber-950/20 border border-amber-900/40 rounded px-1.5 py-0.5 w-full text-center light:bg-amber-50 light:text-amber-750 light:border-amber-200/85">
                           Görevlendirme Önerilir
                         </span>
                       </div>

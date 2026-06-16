@@ -78,7 +78,7 @@ export function Sidebar() {
   ]
 
   return (
-    <aside className="hidden w-64 flex-col border-r border-slate-900 bg-slate-950/80 backdrop-blur-xl md:flex">
+    <aside className="hidden w-64 flex-col border-r border-slate-900 light:border-r light:border-slate-200 bg-slate-950/80 backdrop-blur-xl md:flex">
       {/* Brand Header */}
       <div className="flex h-16 items-center px-6 border-b border-slate-900 space-x-3">
          <Image src="/logo-itfaiye.png" alt="Logo" width={32} height={32} className="object-contain" />
