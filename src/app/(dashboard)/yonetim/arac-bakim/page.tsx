@@ -30,6 +30,20 @@ import {
 } from "lucide-react"
 import { Vehicle, AracBakimGecmisi, FuelLog, Personnel } from "@/types"
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+}
+
 // ─── Constants ────────────────────────────────────────────────────
 const ISLEM_TURLERI = ['Periyodik Bakım', 'Arıza/Tamir', 'Yağ Değişimi', 'Lastik', 'Kaza/Hasar', 'Diğer']
 
@@ -555,11 +569,11 @@ export default function AracBakimPage() {
     }
 
     if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase()
+      const q = normalizeTextForSearch(searchQuery)
       result = result.filter(m => 
-        m.plaka.toLowerCase().includes(q) || 
-        m.aciklama.toLowerCase().includes(q) || 
-        (m.tip === 'tamir' ? 'tamir arıza' : 'yağ bakım').includes(q)
+        normalizeTextForSearch(m.plaka).includes(q) || 
+        normalizeTextForSearch(m.aciklama || '').includes(q) || 
+        normalizeTextForSearch(m.tip === 'tamir' ? 'tamir arıza' : 'yağ bakım').includes(q)
       )
     }
 
@@ -574,16 +588,17 @@ export default function AracBakimPage() {
     }
 
     if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase()
+      const q = normalizeTextForSearch(searchQuery)
       result = result.filter(f => 
-        f.plaka.toLowerCase().includes(q) || 
-        f.istasyon.toLowerCase().includes(q) || 
-        f.kayitEden.toLowerCase().includes(q)
+        normalizeTextForSearch(f.plaka).includes(q) || 
+        normalizeTextForSearch(f.istasyon || '').includes(q) || 
+        normalizeTextForSearch(f.kayitEden || '').includes(q)
       )
     }
 
     return result
   }, [fuelLogs, selectedPlaka, searchQuery])
+
 
   const pendingApprovals = useMemo(() => allLogs.filter(m => m.durum === 'Bekliyor'), [allLogs])
 

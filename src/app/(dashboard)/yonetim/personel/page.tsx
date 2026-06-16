@@ -14,6 +14,20 @@ import { useAuthStore } from "@/lib/authStore"
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+}
+
 export default function PersonelYonetimPage() {
   const { user: currentUser } = useAuthStore()
   const [personnel, setPersonnel] = useState<Personnel[]>([])
@@ -170,14 +184,15 @@ export default function PersonelYonetimPage() {
     });
     
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
+      const query = normalizeTextForSearch(searchQuery)
       result = result.filter(p => 
-        p.ad.toLowerCase().includes(query) || 
-        p.soyad.toLowerCase().includes(query) || 
-        p.sicil_no.toLowerCase().includes(query) ||
-        p.unvan.toLowerCase().includes(query)
+        normalizeTextForSearch(p.ad).includes(query) || 
+        normalizeTextForSearch(p.soyad).includes(query) || 
+        normalizeTextForSearch(p.sicil_no || '').includes(query) ||
+        normalizeTextForSearch(p.unvan || '').includes(query)
       )
     }
+
 
     if (licenseFilter === "has_license") {
       result = result.filter(p => p.ehliyet_gecerlilik_tarihi !== undefined)
@@ -274,13 +289,14 @@ export default function PersonelYonetimPage() {
 
   const filteredDriverLicenses = useMemo(() => {
     if (!licenseSearchQuery) return driverLicenseData
-    const q = licenseSearchQuery.toLowerCase()
+    const q = normalizeTextForSearch(licenseSearchQuery)
     return driverLicenseData.filter(d => 
-      d.person.ad.toLowerCase().includes(q) || 
-      d.person.soyad.toLowerCase().includes(q) || 
-      d.person.sicil_no.toLowerCase().includes(q)
+      normalizeTextForSearch(d.person.ad).includes(q) || 
+      normalizeTextForSearch(d.person.soyad).includes(q) || 
+      normalizeTextForSearch(d.person.sicil_no || '').includes(q)
     )
   }, [driverLicenseData, licenseSearchQuery])
+
 
   const licenseStats = useMemo(() => {
     let active = 0

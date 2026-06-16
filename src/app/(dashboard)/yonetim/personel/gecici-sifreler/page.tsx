@@ -8,6 +8,20 @@ import { Badge } from '@/components/ui/Badge'
 import { Key, Loader2, ShieldAlert, RefreshCcw, CheckCircle2, Copy, Check, Search, Download, Printer } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+}
+
 interface TempPasswordRow {
   sicil_no: string
   username: string | null
@@ -216,14 +230,15 @@ export default function GeciciSifrelerPage() {
 
   const filtered = data.filter(row => {
     if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
+    const q = normalizeTextForSearch(searchQuery)
     return (
-      row.sicil_no.toLowerCase().includes(q) ||
-      (row.username || '').toLowerCase().includes(q) ||
-      row.ad.toLowerCase().includes(q) ||
-      row.soyad.toLowerCase().includes(q)
+      normalizeTextForSearch(row.sicil_no).includes(q) ||
+      normalizeTextForSearch(row.username || '').includes(q) ||
+      normalizeTextForSearch(row.ad).includes(q) ||
+      normalizeTextForSearch(row.soyad).includes(q)
     )
   })
+
 
   return (
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">

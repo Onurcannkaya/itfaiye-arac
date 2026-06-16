@@ -146,6 +146,38 @@ function cleanTurkishChars(text: string): string {
   return text.replace(/[şŞıİğĞüÜöÖçÇ]/g, match => charMap[match] || match)
 }
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+};
+
+const fetchGeistFontBase64 = async (): Promise<string> => {
+  const fontRes = await fetch('/Geist-Regular.ttf')
+  const fontBuffer = await fontRes.arrayBuffer()
+  return btoa(
+    new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+  )
+}
+
+const loadHtmlImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.src = src
+    img.onload = () => resolve(img)
+    img.onerror = (err) => reject(err)
+  })
+}
+
+
 const CALENDAR_SLOTS = [
   "08:00 - 09:00",
   "09:00 - 10:00",
@@ -478,14 +510,32 @@ export default function EgitimlerPage() {
   }
 
   // --- PDF: Sertifika ---
-  const handlePrintSertifika = () => {
+  const handlePrintSertifika = async () => {
     const p = personnelList.find((x: any) => x.id === sertifikaPersonelId || x.sicil_no === sertifikaPersonelId)
     if (!p) {
       alert("Lütfen geçerli bir personel seçiniz.")
       return
     }
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-    const clean = (txt: string) => cleanTurkishChars(txt || "")
+
+    try {
+      const fontBase64 = await fetchGeistFontBase64()
+      doc.addFileToVFS('Geist-Regular.ttf', fontBase64)
+      doc.addFont('Geist-Regular.ttf', 'Geist', 'normal')
+      doc.setFont('Geist', 'normal')
+    } catch (err) {
+      console.error("Geist font load error, using Helvetica", err)
+      doc.setFont("Helvetica", "normal")
+    }
+
+    try {
+      const logoBelediye = await loadHtmlImage('/logo-belediye.png')
+      const logoItfaiye = await loadHtmlImage('/logo-itfaiye.png')
+      doc.addImage(logoBelediye, 'PNG', 22, 20, 24, 24)
+      doc.addImage(logoItfaiye, 'PNG', 251, 20, 24, 24)
+    } catch (err) {
+      console.error("Logolar yüklenirken hata oluştu:", err)
+    }
 
     // Sertifika Çerçevesi
     doc.setDrawColor(6, 182, 212)
@@ -495,48 +545,45 @@ export default function EgitimlerPage() {
     doc.rect(14, 14, 269, 182)
 
     // Başlık
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(22)
-    doc.text(clean("T.C. SIVAS BELEDIYE BASKANLIGI"), 148, 38, { align: "center" })
+    doc.text("T.C. SİVAS BELEDİYE BAŞKANLIĞI", 148, 38, { align: "center" })
     doc.setFontSize(16)
-    doc.text(clean("ITFAIYE MUDURLUGU"), 148, 48, { align: "center" })
+    doc.text("İTFAİYE MÜDÜRLÜĞÜ", 148, 48, { align: "center" })
 
     doc.setFontSize(24)
-    doc.text(clean("TEMEL ITFAIYE EGITIMI"), 148, 68, { align: "center" })
+    doc.text("TEMEL İTFAİYE EĞİTİMİ", 148, 68, { align: "center" })
     doc.setFontSize(18)
-    doc.text(clean("BASARI SERTIFIKASI"), 148, 78, { align: "center" })
+    doc.text("BAŞARI SERTİFİKASI", 148, 78, { align: "center" })
 
     doc.line(60, 84, 237, 84)
 
     // Personel Bilgileri
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(14)
-    doc.text(clean(`${p.ad} ${p.soyad}`), 148, 100, { align: "center" })
+    doc.text(`${p.ad} ${p.soyad}`, 148, 100, { align: "center" })
     doc.setFontSize(11)
-    doc.text(clean(`Sicil No: ${p.sicil_no || '-'} | Unvan: ${p.unvan || 'Itfaiye Eri'}`), 148, 110, { align: "center" })
+    doc.text(`Sicil No: ${p.sicil_no || '-'} | Unvan: ${p.unvan || 'İtfaiye Eri'}`, 148, 110, { align: "center" })
 
     doc.setFontSize(12)
-    const sertText = `${clean(p.ad)} ${clean(p.soyad)}, ${clean(sertifikaSaat)} saatlik Temel Itfaiye Egitimi programini basariyla tamamlayarak bu sertifikayi almaya hak kazanmistir.`
+    const sertText = `${p.ad} ${p.soyad}, ${sertifikaSaat} saatlik Temel İtfaiye Eğitimi programını başarıyla tamamlayarak bu sertifikayı almaya hak kazanmıştır.`
     const lines = doc.splitTextToSize(sertText, 200)
     doc.text(lines, 148, 126, { align: "center" })
 
     doc.setFontSize(10)
-    doc.text(clean(`Verilis Tarihi: ${new Date().toLocaleDateString('tr-TR')}`), 148, 148, { align: "center" })
+    doc.text(`Veriliş Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 148, 148, { align: "center" })
 
     // İmzalar
     doc.line(40, 170, 110, 170)
     doc.line(187, 170, 257, 170)
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(10)
-    doc.text(clean("Seyfi Ali GUL"), 75, 176, { align: "center" })
-    doc.text(clean("Ibrahim ALACAM"), 222, 176, { align: "center" })
-    doc.setFont("Helvetica", "normal")
+    doc.text("Seyfi Ali GÜL", 75, 176, { align: "center" })
+    doc.text("İbrahim ALAÇAM", 222, 176, { align: "center" })
     doc.setFontSize(9)
-    doc.text(clean("Egitim Amiri"), 75, 182, { align: "center" })
-    doc.text(clean("Itfaiye Muduru"), 222, 182, { align: "center" })
+    doc.text("Eğitim Amiri", 75, 182, { align: "center" })
+    doc.text("İtfaiye Müdürü", 222, 182, { align: "center" })
 
-    doc.save(`Sertifika_${clean(p.ad)}_${clean(p.soyad)}.pdf`)
+    doc.save(`Sertifika_${p.ad}_${p.soyad}.pdf`)
   }
+
 
   // --- Basic Training Functions ---
   const handleUpdateHours = async () => {
@@ -562,54 +609,57 @@ export default function EgitimlerPage() {
     }
   }
 
-  const handlePrintYillikCizelge = () => {
+  const handlePrintYillikCizelge = async () => {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const clean = (txt: string) => cleanTurkishChars(txt || "")
+    try {
+      const fontBase64 = await fetchGeistFontBase64()
+      doc.addFileToVFS('Geist-Regular.ttf', fontBase64)
+      doc.addFont('Geist-Regular.ttf', 'Geist', 'normal')
+      doc.setFont('Geist', 'normal')
+    } catch (err) {
+      console.error("Geist font load error, using Helvetica", err)
+      doc.setFont("Helvetica", "normal")
+    }
+
     doc.rect(5, 5, 200, 287)
     doc.rect(6, 6, 198, 285)
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(14)
-    doc.text(clean("T.C. SIVAS BELEDIYE BASKANLIGI"), 105, 18, { align: "center" })
+    doc.text("T.C. SİVAS BELEDİYE BAŞKANLIĞI", 105, 18, { align: "center" })
     doc.setFontSize(12)
-    doc.text(clean("ITFAIYE MUDURLUGU"), 105, 24, { align: "center" })
-    doc.setFont("Helvetica", "normal")
+    doc.text("İTFAİYE MÜDÜRLÜĞÜ", 105, 24, { align: "center" })
     doc.setFontSize(11)
-    doc.text(clean("PERSONEL TEMEL EGITIM YILLIK CIZELGESI"), 105, 30, { align: "center" })
+    doc.text("PERSONEL TEMEL EĞİTİM YILLIK ÇİZELGESİ", 105, 30, { align: "center" })
     doc.line(15, 35, 195, 35)
 
     doc.setFontSize(9)
-    doc.setFont("Helvetica", "bold")
-    doc.text(clean("SICIL NO"), 17, 42)
-    doc.text(clean("AD SOYAD"), 45, 42)
-    doc.text(clean("POSTA"), 110, 42)
-    doc.text(clean("UNVAN"), 135, 42)
-    doc.text(clean("EGITIM SAATI"), 170, 42)
+    doc.text("SİCİL NO", 17, 42)
+    doc.text("AD SOYAD", 45, 42)
+    doc.text("POSTA", 110, 42)
+    doc.text("UNVAN", 135, 42)
+    doc.text("EĞİTİM SAATİ", 170, 42)
     doc.line(15, 45, 195, 45)
 
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(9)
     let y = 51
     personnelList.forEach(p => {
-      doc.text(clean(p.sicil_no || '-'), 17, y)
-      doc.text(clean(`${p.ad} ${p.soyad}`), 45, y)
-      doc.text(clean(p.posta || '-'), 110, y)
-      doc.text(clean(p.unvan || '-'), 135, y)
-      doc.text(clean(`${p.temel_egitim_saati || 0} Saat`), 170, y)
+      doc.text(p.sicil_no || '-', 17, y)
+      doc.text(`${p.ad} ${p.soyad}`, 45, y)
+      doc.text(p.posta || '-', 110, y)
+      doc.text(p.unvan || '-', 135, y)
+      doc.text(`${p.temel_egitim_saati || 0} Saat`, 170, y)
       y += 8
       if (y > 270) {
         doc.addPage()
         doc.rect(5, 5, 200, 287)
         doc.rect(6, 6, 198, 285)
         y = 20
-        doc.setFont("Helvetica", "bold")
-        doc.text(clean("SICIL NO"), 17, y)
-        doc.text(clean("AD SOYAD"), 45, y)
-        doc.text(clean("POSTA"), 110, y)
-        doc.text(clean("UNVAN"), 135, y)
-        doc.text(clean("EGITIM SAATI"), 170, y)
+        doc.text("SİCİL NO", 17, y)
+        doc.text("AD SOYAD", 45, y)
+        doc.text("POSTA", 110, y)
+        doc.text("UNVAN", 135, y)
+        doc.text("EĞİTİM SAATİ", 170, y)
         doc.line(15, y + 3, 195, y + 3)
         y += 10
-        doc.setFont("Helvetica", "normal")
       } else {
         doc.line(15, y - 3, 195, y - 3)
       }
@@ -618,18 +668,19 @@ export default function EgitimlerPage() {
     doc.save("Personel_Temel_Egitim_Yillik_Cizelgesi.pdf")
   }
 
+
   // Filtered Training Citizen Requests
   const trainingRequests = useMemo(() => {
     return requests.filter(r => {
-      const isTraining = r.talep_turu.toLowerCase().includes("eğitim") || r.talep_turu.toLowerCase().includes("egitim")
+      const isTraining = normalizeTextForSearch(r.talep_turu).includes("egitim")
       if (!isTraining) return false
 
       if (requestSearch.trim() !== "") {
-        const s = requestSearch.toLowerCase()
+        const s = normalizeTextForSearch(requestSearch)
         return (
-          r.basvuran_ad_soyad.toLowerCase().includes(s) ||
+          normalizeTextForSearch(r.basvuran_ad_soyad).includes(s) ||
           (r.basvuran_tc || "").toLowerCase().includes(s) ||
-          r.adres.toLowerCase().includes(s)
+          normalizeTextForSearch(r.adres).includes(s)
         )
       }
       return true
@@ -1936,9 +1987,10 @@ export default function EgitimlerPage() {
                       <tbody className="divide-y divide-zinc-800/30 text-xs text-zinc-300 font-medium">
                         {personnelList
                           .filter(p => {
-                            const matchSearch = `${p.ad} ${p.soyad}`.toLowerCase().includes(cizelgeSearch.toLowerCase()) || (p.sicil_no || '').includes(cizelgeSearch);
+                            const matchSearch = normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(cizelgeSearch)) || normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(cizelgeSearch));
                             const matchPosta = cizelgePostaFilter === 'ALL' || p.posta === cizelgePostaFilter;
                             return matchSearch && matchPosta;
+
                           })
                           .map(p => {
                             const hours = p.temel_egitim_saati || 0;

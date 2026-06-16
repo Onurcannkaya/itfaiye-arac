@@ -46,6 +46,20 @@ import {
   PolarAngleAxis,
 } from "recharts"
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+}
+
 // ─── Types ──────────────────────────────────────────────────
 interface KPIData {
   activeIncidents: number
@@ -1245,8 +1259,8 @@ export default function DashboardPage() {
               <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl divide-y divide-slate-800/60 z-30 light:bg-white light:border-slate-200 light:divide-slate-200">
                 {filteredJusticeStats
                   ?.filter((p: any) => 
-                    `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                    p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
+                    normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(searchTerm)) || 
+                    normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(searchTerm))
                   )
                   .map((p: any) => (
                     <button
@@ -1261,8 +1275,8 @@ export default function DashboardPage() {
                   ))
                 }
                 {filteredJusticeStats?.filter((p: any) => 
-                  `${p.ad} ${p.soyad}`.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  p.sicil_no.toLowerCase().includes(searchTerm.toLowerCase())
+                  normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(searchTerm)) || 
+                  normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(searchTerm))
                 ).length === 0 && (
                   <div className="px-3 py-3 text-xs text-muted-foreground light:text-slate-500 text-center">Sonuç bulunamadı</div>
                 )}

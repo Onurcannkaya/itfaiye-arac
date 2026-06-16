@@ -16,6 +16,24 @@ import { useAuthStore } from "@/lib/authStore"
 // Types
 type Personel = any; // TODO: Better typing
 
+const fetchGeistFontBase64 = async (): Promise<string> => {
+  const fontRes = await fetch('/Geist-Regular.ttf')
+  const fontBuffer = await fontRes.arrayBuffer()
+  return btoa(
+    new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+  )
+}
+
+const loadHtmlImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.src = src
+    img.onload = () => resolve(img)
+    img.onerror = (err) => reject(err)
+  })
+}
+
+
 export default function PersonelProfilPage() {
   const params = useParams()
   const router = useRouter()
@@ -154,7 +172,7 @@ export default function PersonelProfilPage() {
     return <div className="p-8 text-center text-danger">Personel bulunamadı!</div>
   }
 
-  const handlePrintIDCard = () => {
+  const handlePrintIDCard = async () => {
     if (!personel) return
 
     // Get QR from canvas
@@ -164,13 +182,14 @@ export default function PersonelProfilPage() {
     // CR80 Standart Kredi Kartı Ebatları: 54mm x 86mm dikey format
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [54, 86] })
 
-    const tr = (str: string) => {
-      if (!str) return ""
-      const map: Record<string, string> = {
-        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
-        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
-      }
-      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
+    try {
+      const fontBase64 = await fetchGeistFontBase64()
+      doc.addFileToVFS('Geist-Regular.ttf', fontBase64)
+      doc.addFont('Geist-Regular.ttf', 'Geist', 'normal')
+      doc.setFont('Geist', 'normal')
+    } catch (err) {
+      console.error("Geist font load error, using Helvetica", err)
+      doc.setFont("Helvetica", "normal")
     }
 
     // --- SAYFA 1: KART ÖN YÜZÜ ---
@@ -184,15 +203,14 @@ export default function PersonelProfilPage() {
     doc.rect(1.5, 1.5, 51, 83)
 
     // Kurumsal Başlık
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(6.5)
     doc.setTextColor(255, 255, 255)
     doc.text("T.C.", 27, 6, { align: "center" })
-    doc.text("SIVAS BELEDIYESI", 27, 9, { align: "center" })
+    doc.text("SİVAS BELEDİYESİ", 27, 9, { align: "center" })
     
     doc.setTextColor(245, 158, 11)
     doc.setFontSize(5.5)
-    doc.text("ITFAIYE MUDURLUGU", 27, 12, { align: "center" })
+    doc.text("İTFAİYE MÜDÜRLÜĞÜ", 27, 12, { align: "center" })
 
     // Seperatör çizgi
     doc.setDrawColor(245, 158, 11)
@@ -206,24 +224,22 @@ export default function PersonelProfilPage() {
     doc.circle(27, 26, 9, "FD")
 
     // Ad Soyad Baş Harfleri
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(9)
     doc.setTextColor(255, 255, 255)
     doc.text(`${personel.ad.charAt(0)}${personel.soyad.charAt(0)}`, 27, 29, { align: "center" })
 
     // Personel Kimlik Bilgileri
     doc.setFontSize(8.5)
-    doc.text(`${tr(personel.ad.toUpperCase())} ${tr(personel.soyad.toUpperCase())}`, 27, 40, { align: "center" })
+    doc.text(`${personel.ad.toUpperCase()} ${personel.soyad.toUpperCase()}`, 27, 40, { align: "center" })
     
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(7)
     doc.setTextColor(245, 158, 11)
-    doc.text(tr(personel.unvan || "Itfaiye Eri"), 27, 44, { align: "center" })
+    doc.text(personel.unvan || "İtfaiye Eri", 27, 44, { align: "center" })
 
     doc.setFontSize(5.5)
     doc.setTextColor(203, 213, 225)
-    doc.text(`Sicil: ${tr(personel.sicil_no)}`, 27, 47.5, { align: "center" })
-    doc.text(`Yerleske: ${tr(personel.istasyon || "Merkez")}`, 27, 50.5, { align: "center" })
+    doc.text(`Sicil: ${personel.sicil_no}`, 27, 47.5, { align: "center" })
+    doc.text(`Yerleşke: ${personel.istasyon || "Merkez"}`, 27, 50.5, { align: "center" })
     doc.text("Kan Grubu: A Rh (+)", 27, 53.5, { align: "center" })
 
     // Kriptografik QR Kod Entegrasyonu
@@ -232,10 +248,9 @@ export default function PersonelProfilPage() {
     }
 
     // Alt Bilgi
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(4.5)
     doc.setTextColor(100, 116, 139)
-    doc.text("DIJITAL PDKS KIMLIK KARTI", 27, 81, { align: "center" })
+    doc.text("DİJİTAL PDKS KİMLİK KARTI", 27, 81, { align: "center" })
 
     // --- SAYFA 2: KART ARKA YÜZÜ ---
     doc.addPage()
@@ -250,14 +265,13 @@ export default function PersonelProfilPage() {
     doc.rect(1.5, 1.5, 51, 83)
 
     // Acil Durum Bilgileri
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(7.5)
     doc.setTextColor(239, 68, 68)
-    doc.text("ACIL DURUM HATLARI", 27, 18, { align: "center" })
+    doc.text("ACİL DURUM HATLARI", 27, 18, { align: "center" })
     
     doc.setFontSize(6.5)
     doc.setTextColor(255, 255, 255)
-    doc.text("YANGIN IHBAR: 112", 27, 23, { align: "center" })
+    doc.text("YANGIN İHBAR: 112", 27, 23, { align: "center" })
     doc.text("SANTRAL: 0346 221 21 11", 27, 27, { align: "center" })
 
     // Seperatör
@@ -266,34 +280,31 @@ export default function PersonelProfilPage() {
     doc.line(10, 32, 44, 32)
 
     // Yasal ve Entegrasyon İbareleri
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(5)
     doc.setTextColor(148, 163, 184)
-    const backText = "Bu kart Sivas Itfaiye Mudurlugu Dijital PDKS (Personel Devam Kontrol Sistemi) altyapisina entegredir. Kart sahibi gorevli personeldir."
+    const backText = "Bu kart Sivas İtfaiye Müdürlüğü Dijital PDKS (Personel Devam Kontrol Sistemi) altyapısına entegredir. Kart sahibi görevli personeldir."
     const splitBack = doc.splitTextToSize(backText, 40)
     doc.text(splitBack, 27, 38, { align: "center" })
 
-    doc.setFont("Helvetica", "italic")
     doc.setFontSize(4.5)
-    doc.text("Kayip durumunda itfaiye mudurlugune", 27, 54, { align: "center" })
+    doc.text("Kayıp durumunda itfaiye müdürlüğüne", 27, 54, { align: "center" })
     doc.text("teslim edilmesi rica olunur.", 27, 57, { align: "center" })
 
     // İlgili Yönetim / Müdür İmzası
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(6)
     doc.setTextColor(255, 255, 255)
-    doc.text("Itfaiye Muduru", 27, 70, { align: "center" })
+    doc.text("İtfaiye Müdürü", 27, 70, { align: "center" })
     
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(4.5)
-    doc.text("Imza / Muhur", 27, 73, { align: "center" })
+    doc.text("İmza / Mühür", 27, 73, { align: "center" })
 
     // Save PDF
     const filename = `Sivas_Itfaiye_Kimlik_Karti_${personel.sicil_no}.pdf`
     doc.save(filename)
   }
 
-  const handlePrintCertificate = () => {
+
+  const handlePrintCertificate = async () => {
     if (!certInfo || !personel) return
 
     // Create a landscape PDF
@@ -301,13 +312,23 @@ export default function PersonelProfilPage() {
     const pageW = 297
     const pageH = 210
 
-    const tr = (str: string) => {
-      if (!str) return ""
-      const map: Record<string, string> = {
-        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
-        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
-      }
-      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
+    try {
+      const fontBase64 = await fetchGeistFontBase64()
+      doc.addFileToVFS('Geist-Regular.ttf', fontBase64)
+      doc.addFont('Geist-Regular.ttf', 'Geist', 'normal')
+      doc.setFont('Geist', 'normal')
+    } catch (err) {
+      console.error("Geist font load error, using Helvetica", err)
+      doc.setFont("Helvetica", "normal")
+    }
+
+    try {
+      const logoBelediye = await loadHtmlImage('/logo-belediye.png')
+      const logoItfaiye = await loadHtmlImage('/logo-itfaiye.png')
+      doc.addImage(logoBelediye, 'PNG', 22, 20, 24, 24)
+      doc.addImage(logoItfaiye, 'PNG', 251, 20, 24, 24)
+    } catch (err) {
+      console.error("Logolar yüklenirken hata oluştu:", err)
     }
 
     // 1. Certificate Borders (Premium double frame)
@@ -330,15 +351,13 @@ export default function PersonelProfilPage() {
     doc.rect(pageW - 15, pageH - 15, 4, 4, "FD")
 
     // 2. Sivas Fire Department Branding
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(16)
     doc.setTextColor(30, 41, 59)
     doc.text("T.C.", pageW / 2, 28, { align: "center" })
-    doc.text("SIVAS BELEDIYE BASKANLIGI", pageW / 2, 35, { align: "center" })
+    doc.text("SİVAS BELEDİYE BAŞKANLIĞI", pageW / 2, 35, { align: "center" })
     
     doc.setFontSize(13)
-    doc.setFont("Helvetica", "normal")
-    doc.text("ITFAIYE MUDURLUGU EGITIM VE TAHKIKAT AMIRLIGI", pageW / 2, 42, { align: "center" })
+    doc.text("İTFAİYE MÜDÜRLÜĞÜ EĞİTİM VE TAHKİKAT AMİRLİĞİ", pageW / 2, 42, { align: "center" })
 
     // Decorative horizontal division lines
     doc.setDrawColor(218, 165, 32)
@@ -346,69 +365,62 @@ export default function PersonelProfilPage() {
     doc.line(pageW / 2 - 40, 46, pageW / 2 + 40, 46)
 
     // 3. Main Title
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(26)
     doc.setTextColor(190, 24, 24) // Crimson Red
-    doc.text("USTUN HIZMET VE EGITICI SERTIFIKASI", pageW / 2, 62, { align: "center" })
+    doc.text("ÜSTÜN HİZMET VE EĞİTİCİ SERTİFİKASI", pageW / 2, 62, { align: "center" })
 
     // 4. Certificate Body Text
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(14)
     doc.setTextColor(51, 65, 85) // Slate-700
-    doc.text("Sivas Belediyesi Itfaiye Mudurlugu bunyesinde gorev yapan;", pageW / 2, 78, { align: "center" })
+    doc.text("Sivas Belediyesi İtfaiye Müdürlüğü bünyesinde görev yapan;", pageW / 2, 78, { align: "center" })
 
     // Personnel Name & Unvan
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(20)
     doc.setTextColor(15, 23, 42) // Slate-900
-    doc.text(`${tr(personel.ad.toUpperCase())} ${tr(personel.soyad.toUpperCase())}`, pageW / 2, 92, { align: "center" })
+    doc.text(`${personel.ad.toUpperCase()} ${personel.soyad.toUpperCase()}`, pageW / 2, 92, { align: "center" })
     
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(13)
     doc.setTextColor(100, 116, 139) // Slate-500
-    doc.text(`Sicil No: ${tr(personel.sicil_no)}   |   Unvan: ${tr(personel.unvan || "Itfaiye Eri")}`, pageW / 2, 100, { align: "center" })
+    doc.text(`Sicil No: ${personel.sicil_no}   |   Unvan: ${personel.unvan || "İtfaiye Eri"}`, pageW / 2, 100, { align: "center" })
 
     // Text about education hours
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(13)
     doc.setTextColor(51, 65, 85)
     
     const bodyText = 
-      `Teftis ve egitim kuralları cercevesinde, Sivas ili sınırları icerisindeki dis kurumlara ` +
-      `yonelik icra edilen tamamlanmıs resmi faaliyetlerde toplam ${certInfo.total_hours} saat egitim verdigi ` +
-      `tespit edilmis ve Mudurlugumuzce belirlenen 40 saatlik kurumsal barajı basarıyla asarak bu sertifikayı ` +
-      `almaya hak kazanmıstır.`;
+      `Teftiş ve eğitim kuralları çerçevesinde, Sivas ili sınırları içerisindeki dış kurumlara ` +
+      `yönelik icra edilen tamamlanmış resmi faaliyetlerde toplam ${certInfo.total_hours} saat eğitim verdiği ` +
+      `tespit edilmiş ve Müdürlüğümüzce belirlenen 40 saatlik kurumsal barajı başarıyla aşarak bu sertifikayı ` +
+      `almaya hak kazanmıştır.`;
     
-    const splitText = doc.splitTextToSize(tr(bodyText), pageW - 80)
+    const splitText = doc.splitTextToSize(bodyText, pageW - 80)
     doc.text(splitText, pageW / 2, 116, { align: "center" })
 
     // Text on dedication
-    doc.setFont("Helvetica", "italic")
     doc.setFontSize(11)
-    doc.text("Gosterdigi ustun egitimci performansı, disiplin ve kurumsal katkılarından dolayı tesekkur ederiz.", pageW / 2, 140, { align: "center" })
+    doc.text("Gösterdiği üstün eğitimci performansı, disiplin ve kurumsal katkılarından dolayı teşekkür ederiz.", pageW / 2, 140, { align: "center" })
 
     // 5. Signatures
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(11)
     doc.setTextColor(15, 23, 42)
-    doc.text("Egitim Sube Amiri", 50, 162, { align: "center" })
-    doc.text("Itfaiye Muduru", pageW - 50, 162, { align: "center" })
+    doc.text("Eğitim Şube Amiri", 50, 162, { align: "center" })
+    doc.text("İtfaiye Müdürü", pageW - 50, 162, { align: "center" })
 
-    doc.setFont("Helvetica", "normal")
     doc.setFontSize(9)
     doc.setTextColor(71, 85, 105)
-    doc.text("Imza / Muhur", 50, 167, { align: "center" })
-    doc.text("Imza / Muhur", pageW - 50, 167, { align: "center" })
+    doc.text("İmza / Mühür", 50, 167, { align: "center" })
+    doc.text("İmza / Mühür", pageW - 50, 167, { align: "center" })
 
     // Date at bottom center
     const currentDate = new Date().toLocaleDateString("tr-TR")
     doc.setFontSize(10)
-    doc.text(`Duzenleme Tarihi: ${currentDate}`, pageW / 2, 192, { align: "center" })
+    doc.text(`Düzenleme Tarihi: ${currentDate}`, pageW / 2, 192, { align: "center" })
 
     // Save PDF
     const filename = `Sivas_Itfaiye_Egitici_Sertifikasi_${personel.sicil_no}.pdf`
     doc.save(filename)
   }
+
 
   const tabs = [
     { id: 'ozet', label: 'Özet', icon: User },

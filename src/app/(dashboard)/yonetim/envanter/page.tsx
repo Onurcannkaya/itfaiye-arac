@@ -37,6 +37,20 @@ import { COMPARTMENT_NAMES, APP_BASE_URL } from "@/lib/constants"
 import jsPDF from "jspdf"
 
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+}
+
 // ==========================================
 // 🚗 VEHICLE INVENTORY TAB COMPONENT & TYPES
 // ==========================================
@@ -750,11 +764,12 @@ function VehicleInventoryTab() {
   // Master stock filtering
   const filteredInventory = useMemo(() => {
     if (!searchQuery.trim()) return masterInventory;
-    const query = searchQuery.trim().toLowerCase();
+    const query = normalizeTextForSearch(searchQuery.trim());
     return masterInventory.filter(item => 
-      item.malzeme_adi.toLowerCase().includes(query)
+      normalizeTextForSearch(item.malzeme_adi).includes(query)
     );
   }, [masterInventory, searchQuery]);
+
 
   return (
     <PageGuard pageId="envanter">
@@ -1790,12 +1805,13 @@ export default function EnvanterPage() {
   // Filtered assignments
   const filteredAssignments = useMemo(() => {
     if (!searchQuery.trim()) return assignments
-    const q = searchQuery.toLowerCase().trim()
+    const q = normalizeTextForSearch(searchQuery.trim())
     return assignments.filter(item => 
-      (item.materialName || "").toLowerCase().includes(q) ||
-      (item.birim_adi || "").toLowerCase().includes(q)
+      normalizeTextForSearch(item.materialName || "").includes(q) ||
+      normalizeTextForSearch(item.birim_adi || "").includes(q)
     )
   }, [assignments, searchQuery])
+
 
   // Stats
   const stats = useMemo(() => {

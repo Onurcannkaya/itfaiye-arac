@@ -26,6 +26,20 @@ import {
   Search,
 } from "lucide-react"
 
+const normalizeTextForSearch = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g").replace(/Ğ/g, "g")
+    .replace(/ü/g, "u").replace(/Ü/g, "u")
+    .replace(/ş/g, "s").replace(/Ş/g, "s")
+    .replace(/ö/g, "o").replace(/Ö/g, "o")
+    .replace(/ç/g, "c").replace(/Ç/g, "c")
+    .toLowerCase();
+}
+
 interface CitizenRequest {
   id: string;
   talep_turu: string;
@@ -101,21 +115,22 @@ export default function HizmetlerPage() {
   const filteredRequests = useMemo(() => {
     return requests.filter(r => {
       // Must not contain "Eğitim" in talep_turu
-      const isTraining = r.talep_turu.toLowerCase().includes("eğitim") || r.talep_turu.toLowerCase().includes("egitim")
+      const isTraining = normalizeTextForSearch(r.talep_turu).includes("egitim")
       if (isTraining) return false
 
       if (searchTerm.trim() !== '') {
-        const s = searchTerm.toLowerCase()
+        const s = normalizeTextForSearch(searchTerm)
         return (
-          r.basvuran_ad_soyad.toLowerCase().includes(s) ||
-          (r.basvuran_tc || '').toLowerCase().includes(s) ||
-          r.talep_turu.toLowerCase().includes(s) ||
-          r.adres.toLowerCase().includes(s)
+          normalizeTextForSearch(r.basvuran_ad_soyad).includes(s) ||
+          normalizeTextForSearch(r.basvuran_tc || '').includes(s) ||
+          normalizeTextForSearch(r.talep_turu).includes(s) ||
+          normalizeTextForSearch(r.adres).includes(s)
         )
       }
       return true
     })
   }, [requests, searchTerm])
+
 
   // Detect Müdür / Admin / Amir role
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
