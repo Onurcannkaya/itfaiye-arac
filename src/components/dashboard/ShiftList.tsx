@@ -283,20 +283,20 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                       key={p.sicil_no}
                       className={`border-b border-border/30 last:border-0 transition-all duration-250 ${
                         isAbsent
-                          ? 'opacity-[0.40] text-slate-500 bg-slate-950/40 saturate-[0.2] hover:opacity-[0.55] hover:bg-slate-950/50'
+                          ? 'opacity-[0.40] text-slate-500 bg-slate-950/40 saturate-[0.2] hover:opacity-[0.55] hover:bg-slate-950/50 light:text-slate-400 light:bg-slate-50'
                           : isLeader
                             ? 'bg-primary/[0.03] hover:bg-primary/[0.06]'
                             : 'hover:bg-muted/20'
                       }`}
                     >
-                      <td className="px-4 py-2.5 font-mono text-xs font-medium whitespace-nowrap text-slate-400">{p.sicil_no}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs font-medium whitespace-nowrap text-slate-400 light:text-slate-600">{p.sicil_no}</td>
                       <td className="px-4 py-2.5 font-medium whitespace-nowrap">
                         <span className={
                           isAbsent 
-                            ? 'text-slate-500 line-through font-normal' 
+                            ? 'text-slate-500 light:text-slate-400 line-through font-normal' 
                             : isLeader 
-                              ? 'text-slate-100 font-bold' 
-                              : 'text-slate-300'
+                              ? 'text-slate-100 light:text-slate-900 font-bold' 
+                              : 'text-slate-300 light:text-slate-800'
                         }>
                           {p.ad} {p.soyad}
                         </span>
@@ -304,7 +304,7 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                           <Badge variant="default" className="ml-2 scale-[0.85] text-[9px] px-1.5 py-0">{p.unvan}</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{p.unvan}</td>
+                      <td className="px-4 py-2.5 text-xs text-slate-400 light:text-slate-650 whitespace-nowrap">{p.unvan}</td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {isAuthorized ? (
@@ -321,18 +321,18 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                                     : statusBase === 'Dış Görev' || statusBase.startsWith('Dış Görev')
                                       ? 'Dış Görev (Stadyum/Etkinlik)'
                                       : 'Hazır';
-
+ 
                               const getSelectClass = (status: string) => {
-                                const base = "rounded bg-slate-900 border text-xs focus:ring-1 focus:outline-none p-1.5 font-semibold transition-colors";
+                                const base = "rounded bg-slate-900 border text-xs focus:ring-1 focus:outline-none p-1.5 font-semibold transition-colors light:bg-slate-100 light:text-slate-800 light:border-slate-300";
                                 if (status === 'Hazır' || !status) {
-                                  return `${base} border-emerald-500/30 text-emerald-400 focus:ring-emerald-500 bg-emerald-500/5`;
+                                  return `${base} border-emerald-500/30 text-emerald-400 focus:ring-emerald-500 bg-emerald-500/5 light:border-emerald-250 light:text-emerald-700 light:bg-emerald-50/60`;
                                 }
                                 if (status.startsWith('Geçici Şube Görevi')) {
-                                  return `${base} border-cyan-500/30 text-cyan-400 focus:ring-cyan-500 bg-cyan-500/5`;
+                                  return `${base} border-cyan-500/30 text-cyan-400 focus:ring-cyan-500 bg-cyan-500/5 light:border-cyan-250 light:text-cyan-700 light:bg-cyan-50/60`;
                                 }
-                                return `${base} border-slate-700 text-slate-400 focus:ring-slate-600 bg-slate-950/40`;
+                                return `${base} border-slate-700 text-slate-400 focus:ring-slate-600 bg-slate-950/40 light:border-slate-200 light:text-slate-600 light:bg-slate-100`;
                               };
-
+ 
                               return (
                                 <>
                                   <select
@@ -341,13 +341,13 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                                     onChange={(e) => handleStatusChange(p.sicil_no, e.target.value)}
                                     className={getSelectClass(selectValue)}
                                   >
-                                    <option value="Hazır" className="bg-slate-950 text-emerald-400">Hazır</option>
-                                    <option value="Geçici Şube Görevi" className="bg-slate-950 text-cyan-400">Geçici Şube Görevi</option>
-                                    <option value="İzinli" className="bg-slate-950 text-amber-500">İzinli</option>
-                                    <option value="Raporlu" className="bg-slate-950 text-rose-500">Raporlu</option>
-                                    <option value="Dış Görev (Stadyum/Etkinlik)" className="bg-slate-950 text-blue-400">Dış Görev (Stadyum/Etkinlik)</option>
+                                    <option value="Hazır" className="bg-slate-950 text-emerald-400 light:bg-white light:text-emerald-700">Hazır</option>
+                                    <option value="Geçici Şube Görevi" className="bg-slate-950 text-cyan-400 light:bg-white light:text-cyan-700">Geçici Şube Görevi</option>
+                                    <option value="İzinli" className="bg-slate-950 text-amber-500 light:bg-white light:text-amber-600">İzinli</option>
+                                    <option value="Raporlu" className="bg-slate-950 text-rose-500 light:bg-white light:text-rose-600">Raporlu</option>
+                                    <option value="Dış Görev (Stadyum/Etkinlik)" className="bg-slate-950 text-blue-400 light:bg-white light:text-blue-600">Dış Görev (Stadyum/Etkinlik)</option>
                                   </select>
-
+ 
                                   {statusBase !== 'Hazır' && (
                                     <input
                                       type="text"
@@ -366,8 +366,8 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                                       placeholder={statusBase === 'Geçici Şube Görevi' ? 'Şube adı (Örn: Esentepe)...' : 'Açıklama giriniz...'}
                                       className={`px-2 py-1 text-xs rounded border focus:outline-none focus:ring-1 w-48 font-medium transition-colors ${
                                         statusBase === 'Geçici Şube Görevi'
-                                          ? 'border-cyan-500/20 text-cyan-200 bg-slate-950 focus:border-cyan-500 focus:ring-cyan-500'
-                                          : 'border-slate-700 text-slate-300 bg-slate-950 focus:border-slate-500 focus:ring-slate-500'
+                                          ? 'border-cyan-500/20 text-cyan-200 bg-slate-950 focus:border-cyan-500 focus:ring-cyan-500 light:border-cyan-300 light:text-slate-800 light:bg-slate-100 light:focus:border-cyan-500'
+                                          : 'border-slate-700 text-slate-300 bg-slate-950 focus:border-slate-500 focus:ring-slate-500 light:border-slate-200 light:text-slate-800 light:bg-slate-100 light:focus:border-slate-400'
                                       }`}
                                     />
                                   )}

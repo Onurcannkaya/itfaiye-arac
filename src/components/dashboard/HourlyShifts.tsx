@@ -400,11 +400,10 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
 
   return (
     <div className="space-y-4">
-      {/* Informational Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-white/5 bg-slate-950/45 text-xs">
-        <div className="flex items-center gap-2 text-slate-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-white/5 bg-slate-950/45 text-xs light:bg-slate-100 light:border-slate-200 light:text-slate-900">
+        <div className="flex items-center gap-2 text-slate-300 light:text-slate-800">
           <Clock className="w-4 h-4 text-cyan-400" />
-          <span>Saatlik Karargah Çizelgesi bugün için geçerlidir: <strong>{new Date().toLocaleDateString("tr-TR")}</strong></span>
+          <span>Saatlik Karargah Çizelgesi bugün için geçerlidir: <strong className="text-white light:text-slate-950">{new Date().toLocaleDateString("tr-TR")}</strong></span>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -580,24 +579,24 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       </div>
 
       {/* Grid Matrix Table */}
-      <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-slate-950/20">
+      <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-slate-950/20 light:bg-white light:border-slate-200/80 light:shadow-sm">
         <table className="w-full border-collapse text-sm text-left">
-          <thead className="text-[10px] text-slate-400 uppercase bg-slate-950/60 border-b border-white/10 font-bold tracking-wider">
+          <thead className="text-[10px] text-slate-400 uppercase bg-slate-950/60 border-b border-white/10 font-bold tracking-wider light:bg-slate-50 light:text-slate-600 light:border-slate-200">
             <tr>
-              <th className="px-4 py-3 text-center border-r border-white/5 w-[180px]">Saat Aralığı</th>
+              <th className="px-4 py-3 text-center border-r border-white/5 w-[180px] light:border-slate-200">Saat Aralığı</th>
               <th className="px-4 py-3 text-center">
                 <div className="flex items-center justify-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Nizamiye Nöbeti (2 Saatlik Döngü)</span>
+                  <Shield className="w-3.5 h-3.5 text-amber-400 light:text-amber-600" />
+                  <span className="light:text-slate-900">Nizamiye Nöbeti (2 Saatlik Döngü)</span>
                 </div>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-white/5 light:divide-slate-200">
             {HOURS.map((hour) => (
-              <tr key={hour} className="hover:bg-white/[0.01] transition-colors h-14">
+              <tr key={hour} className="hover:bg-white/[0.01] light:hover:bg-slate-50 transition-colors h-14">
                 {/* Hour Cell */}
-                <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-300 text-center bg-slate-950/20 border-r border-white/5">
+                <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-300 text-center bg-slate-950/20 border-r border-white/5 light:bg-slate-50/50 light:text-slate-700 light:border-slate-200">
                   {hour}
                 </td>
                 
@@ -615,17 +614,17 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                             value={currentVal}
                             disabled={isSaving}
                             onChange={(e) => handleCellChange(hour, place, e.target.value)}
-                            className="w-full h-10 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-medium"
+                            className="w-full h-10 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-medium light:bg-slate-100 light:border-slate-200 light:text-slate-900"
                           >
-                            <option value="">Nöbetçi Seçiniz</option>
+                            <option value="" className="light:bg-white light:text-slate-900">Nöbetçi Seçiniz</option>
                             {personnel.map(p => (
-                              <option key={p.sicil_no} value={p.sicil_no}>
+                              <option key={p.sicil_no} value={p.sicil_no} className="light:bg-white light:text-slate-900">
                                 {p.ad} {p.soyad} ({p.unvan || 'Er'})
                               </option>
                             ))}
                           </select>
                         ) : (
-                          <div className="h-10 flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-slate-400">
+                          <div className="h-10 flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-slate-400 light:bg-slate-50 light:border-slate-200 light:text-slate-650">
                             {currentVal ? (
                               (() => {
                                 const p = personnel.find(per => per.sicil_no === currentVal)
