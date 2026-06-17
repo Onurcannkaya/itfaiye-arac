@@ -304,6 +304,8 @@ export default function EgitimlerPage() {
   const [editingPersonel, setEditingPersonel] = useState<any | null>(null)
   const [newTrainingHours, setNewTrainingHours] = useState<number>(120)
   const [isUpdatingHours, setIsUpdatingHours] = useState(false)
+  const [basariSiniri, setBasariSiniri] = useState<number>(240)
+
 
   // Role Checker
   const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
@@ -1958,6 +1960,23 @@ export default function EgitimlerPage() {
                       <option value="B">B Grubu</option>
                       <option value="C">C Grubu</option>
                     </select>
+                    {/* Başarı Barajı */}
+                    <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3.5 py-2 focus-within:border-indigo-500">
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider whitespace-nowrap">Başarı Barajı:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="1000"
+                        className="bg-transparent border-none outline-none text-zinc-200 text-xs font-bold w-10 text-center"
+                        value={basariSiniri}
+                        onChange={(e) => {
+                          const val = Math.max(1, Number(e.target.value) || 240);
+                          setBasariSiniri(val);
+                          setSertifikaSaat(String(val));
+                        }}
+                      />
+                      <span className="text-[10px] text-zinc-500 font-semibold">Saat</span>
+                    </div>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto justify-end">
                     <Button
@@ -1994,7 +2013,7 @@ export default function EgitimlerPage() {
                           })
                           .map(p => {
                             const hours = p.temel_egitim_saati || 0;
-                            const isEligible = hours >= 240;
+                            const isEligible = hours >= basariSiniri;
                             return (
                               <tr key={p.id} className="hover:bg-zinc-800/20 transition">
                                 <td className="p-4 font-mono font-bold text-zinc-400">{p.sicil_no}</td>
@@ -2017,7 +2036,7 @@ export default function EgitimlerPage() {
                                     </span>
                                   ) : (
                                     <span className="flex items-center gap-1.5 text-amber-500 font-bold">
-                                      <Clock className="w-4 h-4 text-amber-500" /> Devam Ediyor ({hours}/240)
+                                      <Clock className="w-4 h-4 text-amber-500" /> Devam Ediyor ({hours}/{basariSiniri})
                                     </span>
                                   )}
                                 </td>
@@ -2259,7 +2278,7 @@ export default function EgitimlerPage() {
                 <div className="text-center space-y-2">
                   <Award className="w-12 h-12 text-indigo-400 mx-auto animate-bounce" />
                   <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-wider">Temel İtfaiye Eğitimi Başarı Sertifikası</h3>
-                  <p className="text-xs text-zinc-400">Yıllık 240 saatlik temel itfaiye eğitimini tamamlayan personel için resmi sertifika baskı paneli.</p>
+                  <p className="text-xs text-zinc-400">Yıllık {basariSiniri} saatlik temel itfaiye eğitimini tamamlayan personel için resmi sertifika baskı paneli.</p>
                 </div>
 
                 <div className="space-y-4">
@@ -2272,13 +2291,13 @@ export default function EgitimlerPage() {
                         setSertifikaPersonelId(e.target.value);
                         const selected = personnelList.find(x => x.id === e.target.value);
                         if (selected) {
-                          setSertifikaSaat(String(selected.temel_egitim_saati || 240));
+                          setSertifikaSaat(String(selected.temel_egitim_saati || basariSiniri));
                         }
                       }}
                     >
                       <option value="">-- Personel Seçiniz --</option>
                       {personnelList
-                        .filter(p => (p.temel_egitim_saati || 0) >= 240)
+                        .filter(p => (p.temel_egitim_saati || 0) >= basariSiniri)
                         .map(p => (
                           <option key={p.id} value={p.id}>
                             🏆 {p.ad} {p.soyad} ({p.temel_egitim_saati} Saat)
@@ -2287,7 +2306,7 @@ export default function EgitimlerPage() {
                     </select>
                     {sertifikaPersonelId && (
                       <p className="text-[10px] text-emerald-400 font-semibold mt-1">
-                        ✓ Seçilen personel başarı sınırını (240 Saat) aşmıştır ve sertifika almaya hak kazanmıştır.
+                        ✓ Seçilen personel başarı sınırını ({basariSiniri} Saat) aşmıştır ve sertifika almaya hak kazanmıştır.
                       </p>
                     )}
                   </div>
