@@ -3,27 +3,27 @@
 
 :root,
 .light {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --foreground: #090c1d;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #090c1d;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #0284c7;
+  --popover-foreground: #090c1d;
+  --primary: #7b68ee;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #1e293b;
-  --muted: #cbd5e1;
-  --muted-foreground: #475569;
-  --accent: #e2e8f0;
-  --border: #e2e8f0;
+  --secondary: #f8f9fa;
+  --secondary-foreground: #292d34;
+  --muted: #e8e8e8;
+  --muted-foreground: #646464;
+  --accent: #edf6fd;
+  --border: #e8e8e8;
   
   --success: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;
   
-  --neon-cyan: 34 211 238;
-  --neon-purple: 168 85 247;
+  --neon-cyan: 123 104 238;
+  --neon-purple: 0 145 255;
 }
 
 .dark {
@@ -70,6 +70,29 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-border: var(--border);
+
+  /* ClickUp Color Tokens */
+  --color-brand-violet: #7b68ee;
+  --color-signal-blue: #0091ff;
+  --color-ultra-violet: #6647f0;
+  --color-muted-violet: #514b81;
+  --color-midnight-ink: #090c1d;
+  --color-charcoal: #292d34;
+  --color-carbon: #202023;
+  --color-graphite: #1a202c;
+  --color-slate: #646464;
+  --color-steel: #7c828d;
+  --color-fog: #b3b3b3;
+  --color-ash: #838383;
+  --color-mist: #d9d9d9;
+  --color-cloud: #e8e8e8;
+  --color-paper: #f8f9fa;
+  --color-frost: #edf6fd;
+  --color-linen: #e9ebf0;
+  --color-pure-white: #ffffff;
+  --color-true-black: #000000;
+  --color-abyss: #090909;
+  --color-violet-glow: #b38cff;
 }
 
 /* ===== BASE ===== */
