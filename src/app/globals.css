@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
+@variant light (.light &);
+
+
 :root,
 .light {
   --background: #ffffff;
@@ -475,135 +478,229 @@ div:has(> table),
   box-sizing: border-box !important;
 }
 
-/* ===== LIGHT MODE ACCESSIBILITY & CONTRAST ADAPTER ===== */
+/* ===== LIGHT MODE ACCESSIBILITY & CONTRAST ADAPTER (FLAT SELECTORS) ===== */
 .light {
-  /* Soften background to avoid eye strain from pure white glare */
   --background: #f1f5f9; /* Soft Slate-100 */
-  --secondary: #ffffff;  /* Make secondary elements pop */
-  --accent: #edf6fd;     /* Soft blue-tinted Frost */
-
-  /* Override hardcoded dark text colors to highly readable charcoal/midnight */
-  .text-zinc-100,
-  .text-zinc-200,
-  .text-zinc-300,
-  .text-slate-100,
-  .text-slate-200,
-  .text-slate-300,
-  .text-white {
-    color: var(--foreground) !important; /* Midnight Ink #090c1d */
-  }
-
-  /* Override muted labels */
-  .text-zinc-400,
-  .text-slate-400,
-  .text-muted-foreground {
-    color: var(--muted-foreground) !important; /* Slate #646464 */
-  }
-
-  /* Overwrite hardcoded dark backgrounds to soft light surfaces */
-  .bg-slate-900,
-  .bg-slate-950,
-  .bg-zinc-900,
-  .bg-zinc-950,
-  .bg-slate-900\/40,
-  .bg-slate-900\/30,
-  .bg-slate-900\/20,
-  .bg-slate-900\/10,
-  .bg-slate-950\/80,
-  .bg-slate-950\/60,
-  .bg-slate-950\/75,
-  .bg-slate-950\/50,
-  .bg-slate-900\/80,
-  .bg-slate-900\/50,
-  .bg-zinc-900\/20,
-  .bg-zinc-900\/50,
-  .bg-slate-800\/40,
-  .bg-slate-800\/50,
-  .bg-black\/30,
-  .bg-black\/40,
-  .bg-black\/50,
-  .bg-black\/20 {
-    background-color: var(--secondary) !important; /* Pure White or Soft Paper */
-  }
-
-  .bg-slate-950 {
-    background-color: #e9ebf0 !important; /* Linen for dark panels like sidebar/topbar base */
-  }
-
-  /* Borders and lines */
-  .border-white\/5,
-  .border-white\/10,
-  .border-slate-800,
-  .border-slate-800\/80,
-  .border-slate-800\/90,
-  .border-slate-800\/60,
-  .border-zinc-800,
-  .border-zinc-800\/80,
-  .border-zinc-800\/50,
-  .border-zinc-800\/30 {
-    border-color: var(--border) !important; /* Cloud #e8e8e8 */
-  }
-
-  /* Sidebar specifically should have a very soft light-linen background */
-  aside {
-    background-color: #f1f5f9 !important; /* Soft gray */
-    border-right: 1px solid var(--border) !important;
-  }
-  aside h1 {
-    color: var(--foreground) !important;
-  }
-
-  /* Active states in menus/tabs */
-  .text-cyan-400,
-  .text-cyan-500 {
-    color: var(--primary) !important; /* ClickUp Brand Violet */
-  }
-  .bg-cyan-500\/10,
-  .bg-cyan-500\/20,
-  .bg-cyan-600\/10,
-  .bg-cyan-600\/20 {
-    background-color: var(--accent) !important; /* Frost */
-  }
-  .border-cyan-500,
-  .border-cyan-500\/30,
-  .border-cyan-600\/30 {
-    border-color: var(--primary) !important; /* Brand Violet */
-  }
-
-  /* Hover overrides in menus/tables */
-  .hover\:bg-slate-900\/50:hover,
-  .hover\:bg-slate-800\/50:hover,
-  .hover\:bg-slate-800\/30:hover {
-    background-color: var(--accent) !important;
-  }
-  .hover\:text-white:hover {
-    color: var(--foreground) !important;
-  }
-
-  /* Signal and warning colors in light mode (must be dark enough to read) */
-  .text-amber-500,
-  .text-amber-400,
-  .text-yellow-500,
-  .text-yellow-400 {
-    color: #b45309 !important; /* Amber-700 for readability */
-  }
-  
-  .text-emerald-400,
-  .text-emerald-500 {
-    color: #15803d !important; /* Green-700 for readability */
-  }
-
-  /* Glow widgets/banners */
-  .shadow-\[0_0_25px_rgba\(6\2c 182\2c 212\2c 0\.1\)\] {
-    shadow: none !important;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
-  }
-
-  /* Forms and Select options */
-  select option {
-    background-color: var(--background) !important;
-    color: var(--foreground) !important;
-  }
+  --foreground: #090c1d; /* Midnight Ink */
+  --card: #ffffff;       /* Crisp White Cards */
+  --card-foreground: #090c1d;
+  --popover: #ffffff;
+  --popover-foreground: #090c1d;
+  --primary: #7b68ee;    /* Brand Violet */
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #292d34;
+  --muted: #e8e8e8;
+  --muted-foreground: #646464;
+  --accent: #edf6fd;
+  --border: #e2e8f0;
 }
+
+/* Force body background and layouts to soft background */
+.light body,
+.light .bg-background {
+  background-color: #f1f5f9 !important;
+  color: #090c1d !important;
+}
+
+/* Overwrite hardcoded dark backgrounds to soft light surfaces with subtle shadows */
+.light .bg-slate-900,
+.light .bg-slate-950,
+.light .bg-zinc-900,
+.light .bg-zinc-950,
+.light .bg-slate-900\/40,
+.light .bg-slate-900\/30,
+.light .bg-slate-900\/20,
+.light .bg-slate-950\/80,
+.light .bg-slate-950\/60,
+.light .bg-slate-950\/75,
+.light .bg-slate-950\/50,
+.light .bg-slate-900\/80,
+.light .bg-slate-900\/50,
+.light .bg-zinc-900\/20,
+.light .bg-zinc-900\/50,
+.light .bg-slate-800\/40,
+.light .bg-slate-800\/50,
+.light .bg-slate-800\/20,
+.light .bg-black\/30,
+.light .bg-black\/40,
+.light .bg-black\/50,
+.light .bg-black\/20 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Soft gray surfaces for list headings, empty states, and inner panels */
+.light .bg-slate-900\/10,
+.light .bg-slate-950\/20,
+.light .bg-slate-950\/10,
+.light .bg-slate-950\/5,
+.light .bg-slate-900\/5,
+.light .bg-slate-950\/60,
+.light .bg-black\/5 {
+  background-color: #f8f9fa !important; /* ClickUp Paper */
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+/* Text Colors */
+.light .text-zinc-100,
+.light .text-zinc-200,
+.light .text-zinc-300,
+.light .text-slate-100,
+.light .text-slate-200,
+.light .text-slate-300,
+.light .text-white {
+  color: #090c1d !important; /* Midnight Ink */
+}
+
+.light .text-zinc-400,
+.light .text-slate-400,
+.light .text-muted-foreground {
+  color: #646464 !important; /* Slate */
+}
+
+.light .text-zinc-500,
+.light .text-slate-500 {
+  color: #7c828d !important; /* Steel */
+}
+
+/* Borders and lines */
+.light .border-white\/5,
+.light .border-white\/10,
+.light .border-slate-800,
+.light .border-slate-800\/80,
+.light .border-slate-800\/90,
+.light .border-slate-800\/60,
+.light .border-zinc-800,
+.light .border-zinc-800\/80,
+.light .border-zinc-800\/50,
+.light .border-zinc-800\/30 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Forms and inputs */
+.light input,
+.light textarea,
+.light select,
+.light .bg-slate-950 input,
+.light .bg-slate-950 select {
+  background-color: #ffffff !important;
+  color: #090c1d !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+.light select option {
+  background-color: #ffffff !important;
+  color: #090c1d !important;
+}
+
+/* Sidebar Specifics */
+.light aside {
+  background-color: #e9ebf0 !important; /* Linen */
+  border-right: 1px solid #cbd5e1 !important;
+}
+.light aside h1 {
+  color: #090c1d !important;
+}
+.light aside nav a {
+  color: #292d34 !important;
+}
+.light aside nav a:hover {
+  background-color: #cbd5e1 !important;
+  color: #090c1d !important;
+}
+.light aside nav a[class*="text-cyan-400"],
+.light aside nav a[class*="bg-cyan-500"] {
+  background-color: rgba(123, 104, 238, 0.12) !important;
+  color: #7b68ee !important;
+  border-left-color: #7b68ee !important;
+  font-weight: 700 !important;
+}
+.light aside div[class*="border-t"] {
+  border-top-color: rgba(9, 12, 29, 0.08) !important;
+}
+.light aside div[class*="bg-slate-950"] {
+  background-color: #d9d9d9 !important; /* Mist */
+  border-top: 1px solid #cbd5e1 !important;
+}
+
+/* Status Badges & Alerts (High contrast, pleasant readability) */
+/* Success / Completed */
+.light [class*="bg-emerald-"],
+.light [class*="bg-green-"] {
+  background-color: #e6f4ea !important;
+  color: #137333 !important;
+  border-color: #ceead6 !important;
+}
+.light [class*="text-emerald-"],
+.light [class*="text-green-"],
+.light .text-emerald-450,
+.light .text-emerald-400,
+.light .text-emerald-500 {
+  color: #137333 !important;
+}
+
+/* Warning / In-Progress */
+.light [class*="bg-amber-"],
+.light [class*="bg-yellow-"] {
+  background-color: #fef7e0 !important;
+  color: #b06000 !important;
+  border-color: #feebc8 !important;
+}
+.light [class*="text-amber-"],
+.light [class*="text-yellow-"],
+.light .text-amber-450,
+.light .text-amber-400,
+.light .text-amber-500 {
+  color: #b06000 !important;
+}
+
+/* Danger / Canceled */
+.light [class*="bg-red-"] {
+  background-color: #fce8e6 !important;
+  color: #c5221f !important;
+  border-color: #fad2cf !important;
+}
+.light [class*="text-red-"],
+.light .text-red-450,
+.light .text-red-400,
+.light .text-red-500 {
+  color: #c5221f !important;
+}
+
+/* Active / Primary Glow Overrides */
+.light [class*="bg-cyan-500\/10"],
+.light [class*="bg-cyan-500\/20"],
+.light [class*="bg-cyan-600\/10"],
+.light [class*="bg-cyan-600\/20"] {
+  background-color: rgba(123, 104, 238, 0.08) !important;
+  color: #7b68ee !important;
+  border-color: rgba(123, 104, 238, 0.2) !important;
+}
+.light .text-cyan-400,
+.light .text-cyan-500 {
+  color: #7b68ee !important;
+}
+
+/* Hover overrides in menus/tables */
+.light .hover\:bg-slate-900\/50:hover,
+.light .hover\:bg-slate-800\/50:hover,
+.light .hover\:bg-slate-800\/30:hover {
+  background-color: #edf6fd !important;
+}
+.light .hover\:text-white:hover {
+  color: #090c1d !important;
+}
+
+/* Glow widgets/banners */
+.light .shadow-\[0_0_25px_rgba\(6\2c 182\2c 212\2c 0\.1\)\] {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
 
 
