@@ -475,3 +475,135 @@ div:has(> table),
   box-sizing: border-box !important;
 }
 
+/* ===== LIGHT MODE ACCESSIBILITY & CONTRAST ADAPTER ===== */
+.light {
+  /* Soften background to avoid eye strain from pure white glare */
+  --background: #f1f5f9; /* Soft Slate-100 */
+  --secondary: #ffffff;  /* Make secondary elements pop */
+  --accent: #edf6fd;     /* Soft blue-tinted Frost */
+
+  /* Override hardcoded dark text colors to highly readable charcoal/midnight */
+  .text-zinc-100,
+  .text-zinc-200,
+  .text-zinc-300,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300,
+  .text-white {
+    color: var(--foreground) !important; /* Midnight Ink #090c1d */
+  }
+
+  /* Override muted labels */
+  .text-zinc-400,
+  .text-slate-400,
+  .text-muted-foreground {
+    color: var(--muted-foreground) !important; /* Slate #646464 */
+  }
+
+  /* Overwrite hardcoded dark backgrounds to soft light surfaces */
+  .bg-slate-900,
+  .bg-slate-950,
+  .bg-zinc-900,
+  .bg-zinc-950,
+  .bg-slate-900\/40,
+  .bg-slate-900\/30,
+  .bg-slate-900\/20,
+  .bg-slate-900\/10,
+  .bg-slate-950\/80,
+  .bg-slate-950\/60,
+  .bg-slate-950\/75,
+  .bg-slate-950\/50,
+  .bg-slate-900\/80,
+  .bg-slate-900\/50,
+  .bg-zinc-900\/20,
+  .bg-zinc-900\/50,
+  .bg-slate-800\/40,
+  .bg-slate-800\/50,
+  .bg-black\/30,
+  .bg-black\/40,
+  .bg-black\/50,
+  .bg-black\/20 {
+    background-color: var(--secondary) !important; /* Pure White or Soft Paper */
+  }
+
+  .bg-slate-950 {
+    background-color: #e9ebf0 !important; /* Linen for dark panels like sidebar/topbar base */
+  }
+
+  /* Borders and lines */
+  .border-white\/5,
+  .border-white\/10,
+  .border-slate-800,
+  .border-slate-800\/80,
+  .border-slate-800\/90,
+  .border-slate-800\/60,
+  .border-zinc-800,
+  .border-zinc-800\/80,
+  .border-zinc-800\/50,
+  .border-zinc-800\/30 {
+    border-color: var(--border) !important; /* Cloud #e8e8e8 */
+  }
+
+  /* Sidebar specifically should have a very soft light-linen background */
+  aside {
+    background-color: #f1f5f9 !important; /* Soft gray */
+    border-right: 1px solid var(--border) !important;
+  }
+  aside h1 {
+    color: var(--foreground) !important;
+  }
+
+  /* Active states in menus/tabs */
+  .text-cyan-400,
+  .text-cyan-500 {
+    color: var(--primary) !important; /* ClickUp Brand Violet */
+  }
+  .bg-cyan-500\/10,
+  .bg-cyan-500\/20,
+  .bg-cyan-600\/10,
+  .bg-cyan-600\/20 {
+    background-color: var(--accent) !important; /* Frost */
+  }
+  .border-cyan-500,
+  .border-cyan-500\/30,
+  .border-cyan-600\/30 {
+    border-color: var(--primary) !important; /* Brand Violet */
+  }
+
+  /* Hover overrides in menus/tables */
+  .hover\:bg-slate-900\/50:hover,
+  .hover\:bg-slate-800\/50:hover,
+  .hover\:bg-slate-800\/30:hover {
+    background-color: var(--accent) !important;
+  }
+  .hover\:text-white:hover {
+    color: var(--foreground) !important;
+  }
+
+  /* Signal and warning colors in light mode (must be dark enough to read) */
+  .text-amber-500,
+  .text-amber-400,
+  .text-yellow-500,
+  .text-yellow-400 {
+    color: #b45309 !important; /* Amber-700 for readability */
+  }
+  
+  .text-emerald-400,
+  .text-emerald-500 {
+    color: #15803d !important; /* Green-700 for readability */
+  }
+
+  /* Glow widgets/banners */
+  .shadow-\[0_0_25px_rgba\(6\2c 182\2c 212\2c 0\.1\)\] {
+    shadow: none !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Forms and Select options */
+  select option {
+    background-color: var(--background) !important;
+    color: var(--foreground) !important;
+  }
+}
+
+
