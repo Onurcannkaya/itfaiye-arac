@@ -761,6 +761,10 @@ export default function DashboardPage() {
     referenceDate.setHours(0, 0, 0, 0);
 
     const today = new Date();
+    // Nöbet değişimi 08:00'dedir. Saat 08:00'den önce ise önceki güne aittir.
+    if (today.getHours() < 8) {
+      today.setDate(today.getDate() - 1);
+    }
     today.setHours(0, 0, 0, 0);
 
     const diffTime = today.getTime() - referenceDate.getTime();

@@ -42,7 +42,14 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
     (user.unvan || '').toLowerCase().includes('çavuş')
   )
 
-  const todayStr = new Date().toLocaleDateString("en-CA") // YYYY-MM-DD local format safely
+  const todayStr = useMemo(() => {
+    const shiftDate = new Date();
+    // Nöbet değişimi 08:00'dedir. Saat 08:00'den önce ise önceki güne aittir.
+    if (shiftDate.getHours() < 8) {
+      shiftDate.setDate(shiftDate.getDate() - 1);
+    }
+    return shiftDate.toLocaleDateString("en-CA");
+  }, []);
 
   useEffect(() => {
     fetchShifts()
@@ -107,6 +114,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       console.error("Hourly shifts fetch error:", err)
     } finally {
       setSavingCell(null)
+      setLoading(false)
     }
   }
 
@@ -310,7 +318,10 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
     try {
       const currentCell = matrix["TÜM GÜN"]?.[place]
       if (currentCell && currentCell.id) {
-        await api.remove("hourly_shifts", { id: currentCell.id })
+        const res = await api.remove("hourly_shifts", { id: currentCell.id })
+        if (res.error) {
+          throw new Error(res.error)
+        }
       }
       
       setMatrix(prev => {
@@ -322,9 +333,9 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
         }
         return copy
       })
-    } catch (err) {
+    } catch (err: any) {
       console.error("Delete slot error:", err)
-      alert("Nöbetçi silinemedi.")
+      alert(`Nöbetçi silinemedi: ${err.message || err}`)
     } finally {
       setSavingCell(null)
     }
@@ -339,7 +350,10 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       if (newSicil === "") {
         // If empty selected and record exists, delete it
         if (currentCell && currentCell.id) {
-          await api.remove("hourly_shifts", { id: currentCell.id })
+          const res = await api.remove("hourly_shifts", { id: currentCell.id })
+          if (res.error) {
+            throw new Error(res.error)
+          }
         }
         setMatrix(prev => ({
           ...prev,
@@ -351,7 +365,10 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       } else {
         if (currentCell && currentCell.id) {
           // Update existing record
-          await api.update("hourly_shifts", { personel_sicil: newSicil }, { id: currentCell.id })
+          const res = await api.update("hourly_shifts", { personel_sicil: newSicil }, { id: currentCell.id })
+          if (res.error) {
+            throw new Error(res.error)
+          }
           setMatrix(prev => ({
             ...prev,
             [hour]: {
@@ -369,6 +386,10 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
             personel_sicil: newSicil
           })
           
+          if (insertRes.error) {
+            throw new Error(insertRes.error)
+          }
+          
           const insertedRow = Array.isArray(insertRes.data) ? insertRes.data[0] : insertRes.data
           const newId = insertedRow?.id
 
@@ -381,9 +402,9 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
           }))
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Shift save error:", err)
-      alert("Nöbet değişikliği kaydedilemedi.")
+      alert(`Nöbet değişikliği kaydedilemedi: ${err.message || err}`)
     } finally {
       setSavingCell(null)
     }

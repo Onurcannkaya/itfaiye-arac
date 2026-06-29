@@ -154,7 +154,12 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
   };
 
   const logPersonnelMovement = async (sicilNo: string, statusBase: string, explanation: string) => {
-    const todayStr = new Date().toLocaleDateString("en-CA");
+    const shiftDate = new Date();
+    // Nöbet değişimi 08:00'dedir. Saat 08:00'den önce ise önceki güne aittir.
+    if (shiftDate.getHours() < 8) {
+      shiftDate.setDate(shiftDate.getDate() - 1);
+    }
+    const todayStr = shiftDate.toLocaleDateString("en-CA");
     
     // 1. Log in personnel_leaves if the status is leave or sick
     if (statusBase === 'İzinli' || statusBase === 'Raporlu') {
@@ -215,13 +220,16 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
         finalStatus = `${newStatusBase} - ${currentExp.trim()}`;
       }
 
-      setList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: finalStatus } : p))
-      await api.update('personnel', { durum: finalStatus }, { sicil_no: sicilNo })
+      const res = await api.update('personnel', { durum: finalStatus }, { sicil_no: sicilNo })
+      if (res.error) {
+        throw new Error(res.error)
+      }
       
+      setList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: finalStatus } : p))
       await logPersonnelMovement(sicilNo, newStatusBase, currentExp.trim());
-    } catch (err) {
+    } catch (err: any) {
       console.error("Status update error:", err)
-      alert("Durum güncellenemedi.")
+      alert(`Durum güncellenemedi: ${err.message || err}`)
     } finally {
       setUpdatingId(null)
     }
