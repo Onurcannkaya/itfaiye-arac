@@ -100,13 +100,13 @@ export function MobileNav() {
       onClick={() => setMenuOpen(false)}
       className={cn(
         "flex flex-col items-center justify-center w-full py-2 transition-all duration-200 relative min-h-[56px]",
-        isActive(href) ? "text-cyan-400 font-semibold" : "text-slate-400 hover:text-slate-200 active:text-cyan-400/80"
+        isActive(href) ? "text-[var(--fd-accent)] font-semibold" : "text-[var(--fd-text3)] hover:text-[var(--fd-text)] active:text-[var(--fd-accent)]/80"
       )}
     >
       {icon}
-      <span className="text-[10px] mt-1 font-medium leading-none">{label}</span>
+      <span className="text-[10px] mt-1 font-medium leading-none font-sans">{label}</span>
       {isActive(href) && (
-        <div className="absolute top-0 w-10 h-1 bg-cyan-500 rounded-b-md shadow-[0_2px_8px_rgba(6,182,212,0.5)]" />
+        <div className="absolute top-0 w-10 h-1 bg-[var(--fd-accent)] rounded-b-md shadow-[0_2px_8px_var(--fd-accent-soft2)]" />
       )}
     </Link>
   )
@@ -117,19 +117,19 @@ export function MobileNav() {
       {menuOpen && (
         <div className="md:hidden fixed inset-0 z-40 flex flex-col justify-end">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" onClick={() => setMenuOpen(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
           
           {/* Drawer Sheet */}
-          <div className="relative z-50 bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-hidden flex flex-col space-y-4 animate-in slide-in-from-bottom duration-300">
+          <div className="relative z-50 bg-[var(--fd-surface)] border-t border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-t-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-hidden flex flex-col space-y-4 animate-in slide-in-from-bottom duration-300">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-slate-900 pb-3">
+            <div className="flex justify-between items-center border-b border-[var(--fd-border)] pb-3">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-                <h3 className="font-bold text-xs text-cyan-400 tracking-wider uppercase">Taktiksel HUD Modülleri</h3>
+                <div className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse" />
+                <h3 className="font-bold text-xs text-[var(--fd-accent)] tracking-wider uppercase font-sans">Taktiksel HUD Modülleri</h3>
               </div>
               <button 
                 onClick={() => setMenuOpen(false)} 
-                className="p-2 rounded-lg hover:bg-slate-900 text-slate-400 hover:text-slate-200"
+                className="p-2 rounded-lg hover:bg-[var(--fd-surface2)] text-[var(--fd-text3)] hover:text-[var(--fd-text)] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -148,7 +148,7 @@ export function MobileNav() {
                 
                 return (
                   <div key={gIdx} className="space-y-2">
-                    <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2 mt-2">
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--fd-text3)] px-3 block mb-2 mt-2 font-sans">
                       {group.title}
                     </span>
                     <div className="grid grid-cols-1 gap-1">
@@ -161,10 +161,10 @@ export function MobileNav() {
                             href={item.href}
                             onClick={() => setMenuOpen(false)}
                             className={cn(
-                              "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 min-h-[48px] border-l-2 text-sm font-medium",
+                              "flex items-center gap-3 p-3 rounded-xl transition-all duration-200 min-h-[48px] border-l-2 text-sm font-medium font-sans",
                               active
-                                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500 shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.15)] font-bold"
-                                : "text-slate-200 border-transparent hover:bg-slate-900/50 hover:text-white"
+                                ? "bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border-[var(--fd-accent)] font-bold"
+                                : "text-[var(--fd-text2)] border-transparent hover:bg-[var(--fd-surface2)] hover:text-[var(--fd-text)]"
                             )}
                           >
                             <Icon className="w-5 h-5" />
@@ -190,8 +190,8 @@ export function MobileNav() {
 
       {/* Bottom Navigation Bar */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 border-t border-slate-900 bg-slate-950/95 backdrop-blur-xl flex items-center justify-around z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.3)]"
-        style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="md:hidden fixed bottom-0 left-0 right-0 border-t border-[var(--fd-border)] bg-[var(--fd-surface)]/95 backdrop-blur-md flex items-center justify-around z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+        style={{ minHeight: 'calc(72px + env(safe-area-inset-bottom, 0px))', height: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {navLink("/yonetim", <Home size={22} />, "Ana Sayfa")}
         {navLink("/araclar", <Truck size={22} />, "Filo")}
@@ -203,16 +203,16 @@ export function MobileNav() {
           className="flex flex-col items-center justify-center relative -mt-5"
         >
           <div className={cn(
-            "w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all active:scale-95",
+            "w-14 h-14 rounded-full flex items-center justify-center shadow-[var(--fd-shadow)] transition-all active:scale-95",
             isActive('/yonetim/tarayici')
-              ? "bg-cyan-500 text-slate-950 ring-2 ring-cyan-500/20 shadow-cyan-500/20"
-              : "bg-cyan-500/90 text-slate-950 hover:bg-cyan-500 shadow-cyan-500/15"
+              ? "bg-[var(--fd-accent)] text-white ring-2 ring-[var(--fd-accent)]/20 shadow-[0_4px_12px_var(--fd-accent-soft2)]"
+              : "bg-[var(--fd-accent)]/90 text-white hover:bg-[var(--fd-accent)] shadow-[0_4px_12px_var(--fd-accent-soft)]"
           )}>
             <Camera size={26} />
           </div>
           <span className={cn(
-            "text-[10px] mt-1 font-bold leading-none",
-            isActive('/yonetim/tarayici') ? "text-cyan-400" : "text-slate-400"
+            "text-[10px] mt-1 font-bold leading-none font-sans",
+            isActive('/yonetim/tarayici') ? "text-[var(--fd-accent)]" : "text-[var(--fd-text3)]"
           )}>QR Tara</span>
         </Link>
 
@@ -221,12 +221,12 @@ export function MobileNav() {
         <button 
           onClick={() => setMenuOpen(!menuOpen)}
           className={cn(
-            "flex flex-col items-center justify-center w-full py-2 transition-all duration-200 min-h-[56px]",
-            menuOpen ? "text-cyan-400 font-semibold" : "text-slate-400 hover:text-slate-200 active:text-cyan-400/80"
+            "flex flex-col items-center justify-center w-full py-2 transition-all duration-200 min-h-[56px] cursor-pointer",
+            menuOpen ? "text-[var(--fd-accent)] font-semibold" : "text-[var(--fd-text3)] hover:text-[var(--fd-text)] active:text-[var(--fd-accent)]/80"
           )}
         >
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          <span className="text-[10px] mt-1 font-medium leading-none">Menü</span>
+          <span className="text-[10px] mt-1 font-medium leading-none font-sans">Menü</span>
         </button>
       </nav>
     </>
