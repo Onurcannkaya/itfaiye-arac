@@ -40,17 +40,17 @@ export interface Vehicle3DGarageProps {
 // Total width: 2.1m (X: -1.05 to +1.05)
 // Total height: 2.9m (Y: 0.0 to +2.9)
 const COMPARTMENT_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  kabin_ici:       { position: [0.0,   1.1,  2.2],  label: "Kabin İçi" },
-  arac_ustu:       { position: [0.0,   3.0,  -0.5], label: "Araç Üstü" },
-  sol_on_kapak:    { position: [1.15,  1.0,  1.1],  label: "Sol Ön Kapak" },
-  sag_on_kapak:    { position: [-1.15, 1.0,  1.1],  label: "Sağ Ön Kapak" },
-  sol_orta_kapak:  { position: [1.15,  1.0,  -0.1], label: "Sol Orta Kapak" },
-  sag_orta_kapak:  { position: [-1.15, 1.0,  -0.1], label: "Sağ Orta Kapak" },
-  sol_arka_kapak:  { position: [1.15,  1.0,  -1.3], label: "Sol Arka Kapak" },
-  sag_arka_kapak:  { position: [-1.15, 1.0,  -1.3], label: "Sağ Arka Kapak" },
-  arka_kapak:      { position: [0.0,   1.1,  -3.05],label: "Arka Kapak" },
-  arka_bolme:      { position: [0.0,   0.7,  -2.6], label: "Arka Bölme" },
-  arac_ici:        { position: [0.0,   0.2,  0.05], label: "Araç İçi" },
+  kabin_ici:       { position: [0.0,   1.0,  2.0],  label: "Kabin İçi" },
+  arac_ustu:       { position: [0.0,   2.3,  -0.5], label: "Araç Üstü" },
+  sol_on_kapak:    { position: [1.08,  1.1,  0.8],  label: "Sol Ön Kapak" },
+  sag_on_kapak:    { position: [-1.08, 1.1,  0.8],  label: "Sağ Ön Kapak" },
+  sol_orta_kapak:  { position: [1.08,  1.1,  -0.4], label: "Sol Orta Kapak" },
+  sag_orta_kapak:  { position: [-1.08, 1.1,  -0.4], label: "Sağ Orta Kapak" },
+  sol_arka_kapak:  { position: [1.08,  1.1,  -1.6], label: "Sol Arka Kapak" },
+  sag_arka_kapak:  { position: [-1.08, 1.1,  -1.6], label: "Sağ Arka Kapak" },
+  arka_kapak:      { position: [0.0,   1.2,  -3.0], label: "Arka Kapak" },
+  arka_bolme:      { position: [0.0,   0.8,  -2.8], label: "Arka Bölme" },
+  arac_ici:        { position: [0.0,   0.3,  0.0],  label: "Araç İçi" },
 }
 
 // ——— Helper: match hotspot keys ———

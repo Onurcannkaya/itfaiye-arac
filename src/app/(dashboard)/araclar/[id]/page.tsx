@@ -118,6 +118,7 @@ export default function VehicleDetailPage() {
   const [maintenanceLogs, setMaintenanceLogs] = useState<AracBakimGecmisi[]>([])
   const [visibleMaintenanceCount, setVisibleMaintenanceCount] = useState(5)
   const [schemaViewMode, setSchemaViewMode] = useState<'3d' | '2d'>('3d')
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false)
 
   // Manuel Bakım Giriş Modalı States
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false)
@@ -200,6 +201,7 @@ export default function VehicleDetailPage() {
     const keys = Object.keys(vehicle.bolmeler || {})
     if (bolmeParam && (keys.includes(bolmeParam) || vehicle.bolmeler?.[bolmeParam])) {
       setActiveCompartment(bolmeParam)
+      setIsInventoryModalOpen(true)
     } else if (keys.length > 0) {
       setActiveCompartment(keys[0])
     }
@@ -430,9 +432,17 @@ export default function VehicleDetailPage() {
 
   const handleSelectCompartment = (key: string) => {
     setActiveCompartment(key)
+    setIsInventoryModalOpen(true)
     const nextParams = new URLSearchParams(window.location.search)
     nextParams.set("bolme", key)
-    router.replace(`${window.location.pathname}?${nextParams.toString()}`)
+    router.replace(`${window.location.pathname}?${nextParams.toString()}`, { scroll: false })
+  }
+
+  const handleCloseInventoryModal = () => {
+    setIsInventoryModalOpen(false)
+    const nextParams = new URLSearchParams(window.location.search)
+    nextParams.delete("bolme")
+    router.replace(`${window.location.pathname}?${nextParams.toString()}`, { scroll: false })
   }
 
   const handlePrint = () => {
@@ -1690,6 +1700,99 @@ export default function VehicleDetailPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={isInventoryModalOpen} onOpenChange={setIsInventoryModalOpen}>
+        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[750px] max-h-[85vh] flex flex-col p-0 border-[var(--fd-border-strong)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-lg)] backdrop-blur-sm rounded-[var(--fd-r-lg)]">
+          <DialogHeader className="p-4 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] shrink-0">
+            <div className="flex items-center justify-between w-full">
+              <DialogTitle className="flex items-center gap-2 text-base font-bold text-[var(--fd-text)]">
+                <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse" />
+                {activeCompartment ? getCompartmentLabel(activeCompartment) : "Bölme Seçin"} Envanteri
+              </DialogTitle>
+            </div>
+            <p className="text-[11px] text-[var(--fd-text3)] mt-0.5 font-sans">Bu bölmedeki tüm kayıtlı ekipman ve envanter yönetimi</p>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)] p-3 rounded-lg">
+              <div className="text-xs text-[var(--fd-text2)] font-sans">
+                Toplam <span className="font-mono font-bold text-[var(--fd-accent)]">{activeItems.length}</span> kalem ekipman listeleniyor.
+              </div>
+              <div className="flex items-center gap-2">
+                {!isEr && (
+                  <>
+                    <button
+                      onClick={handleOpenAddModal}
+                      className="h-9 flex items-center justify-center gap-1.5 text-xs font-bold px-3 rounded-lg bg-[var(--fd-surface)] text-cyan-300 border border-cyan-500/50 shadow-[var(--fd-shadow)] hover:bg-cyan-500/10 transition-all font-mono uppercase tracking-wider cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Yeni Ekipman
+                    </button>
+                    <button
+                      onClick={() => setIsEditingList(!isEditingList)}
+                      className={cn(
+                        "h-9 flex items-center justify-center gap-1.5 text-xs font-bold px-3 rounded-lg transition-all font-mono uppercase tracking-wider border shadow-md cursor-pointer",
+                        isEditingList
+                          ? "bg-[var(--fd-amber)]/15 text-amber-300 border-[var(--fd-amber)]/40 hover:bg-[var(--fd-amber)]/25"
+                          : "bg-[var(--fd-surface)] text-[var(--fd-text2)] border-[var(--fd-border-strong)] hover:bg-[var(--fd-surface2)]"
+                      )}
+                    >
+                      <Wrench className="w-3.5 h-3.5" />
+                      {isEditingList ? "Kapat" : "Düzenle"}
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowTimeline(!showTimeline)}
+                  className={cn(
+                    "h-9 flex items-center justify-center gap-1.5 text-xs font-semibold px-3 rounded-lg transition-colors border cursor-pointer",
+                    showTimeline
+                      ? "bg-[var(--fd-surface)] text-[var(--fd-text)] border border-[var(--fd-border)]"
+                      : "bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent)] hover:bg-[var(--fd-surface2)]"
+                  )}
+                >
+                  <History className="w-3.5 h-3.5" />
+                  Geçmiş
+                </button>
+              </div>
+            </div>
+
+            {activeCompartment ? (
+              <div className="border border-[var(--fd-border)] rounded-lg overflow-hidden">
+                <InventoryList 
+                  items={activeItems} 
+                  isEditingList={isEditingList}
+                  onEditItem={handleOpenEditModal}
+                  onDeleteItem={handleDeleteEquipment}
+                />
+              </div>
+            ) : (
+              <div className="p-8 text-center text-[var(--fd-text3)] italic">Lütfen bir araç bölmesi seçin.</div>
+            )}
+
+            {/* Audit Timeline inline in modal */}
+            {showTimeline && activeCompartment && vehicle && (
+              <div className="border border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-3">
+                <div className="text-xs font-bold text-[var(--fd-text)] flex items-center gap-2 border-b border-[var(--fd-border)] pb-2 font-sans">
+                  <History className="w-3.5 h-3.5" />
+                  Vardiya Devir Logları — {getCompartmentLabel(activeCompartment)}
+                </div>
+                <AuditTimeline plaka={vehicle.plaka} compartmentKey={activeCompartment} />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="p-3 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] flex items-center justify-end shrink-0">
+            <Button
+              variant="outline"
+              className="border-[var(--fd-border-strong)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] cursor-pointer"
+              onClick={handleCloseInventoryModal}
+            >
+              Kapat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Hidden Print Area */}
       <div id="vehicle-print-area" className="hidden print:block print:w-full">
