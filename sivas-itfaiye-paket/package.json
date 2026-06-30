@@ -1,0 +1,15 @@
+{
+  "name": "sivas-itfaiye-yonetim-sistemi",
+  "version": "2.4.0",
+  "private": true,
+  "description": "Sivas Belediyesi İtfaiye Yönetim Bilgi Sistemi — tasarım prototipi",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}

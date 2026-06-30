@@ -38,8 +38,14 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
 
   const isAuthorized = user && (
     user.rol === 'Admin' || 
+    user.rol === 'Editor' ||
+    (user.unvan || '').toLowerCase().includes('müdür') ||
     (user.unvan || '').toLowerCase().includes('amir') || 
-    (user.unvan || '').toLowerCase().includes('çavuş')
+    (user.unvan || '').toLowerCase().includes('çavuş') ||
+    (user.unvan || '').toLowerCase().includes('çvş')
+  ) && !(
+    (user.unvan || '').toLowerCase() === 'er' || 
+    (user.unvan || '').toLowerCase() === 'itfaiye eri'
   )
 
   const todayStr = useMemo(() => {
@@ -413,46 +419,47 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-        <span className="text-sm text-slate-400">Saatlik Nöbet Çizelgesi Yükleniyor...</span>
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--fd-accent)]" />
+        <span className="text-sm text-[var(--fd-text3)]">Saatlik Nöbet Çizelgesi Yükleniyor...</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-white/5 bg-slate-950/45 text-xs light:bg-slate-100 light:border-slate-200 light:text-slate-900">
-        <div className="flex items-center gap-2 text-slate-300 light:text-slate-800">
-          <Clock className="w-4 h-4 text-cyan-400" />
-          <span>Saatlik Karargah Çizelgesi bugün için geçerlidir: <strong className="text-white light:text-slate-950">{new Date().toLocaleDateString("tr-TR")}</strong></span>
+    <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Date & Info Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)]/30 text-xs text-[var(--fd-text2)]">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-[var(--fd-accent)]" />
+          <span>Saatlik Karargah Çizelgesi bugün için geçerlidir: <strong className="text-[var(--fd-text)]">{new Date().toLocaleDateString("tr-TR")}</strong></span>
         </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 transition-colors font-bold cursor-pointer text-xs shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--fd-border)] text-[var(--fd-accent)] hover:bg-[var(--fd-surface2)] bg-[var(--fd-surface)] transition-colors font-bold cursor-pointer text-xs shrink-0"
           >
-            <Printer className="w-3.5 h-3.5 animate-pulse" /> Yazdır / PDF İndir
+            <Printer className="w-3.5 h-3.5" /> Yazdır / PDF İndir
           </button>
           {isAuthorized ? (
-            <span className="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+            <span className="flex items-center gap-1 text-[var(--fd-success)] font-bold bg-[var(--fd-success)]/10 px-2.5 py-1 rounded-full border border-[var(--fd-success)]/20">
               <ShieldCheck className="w-3.5 h-3.5" /> Nöbet Düzenleme Yetkisi Var
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-amber-500 font-medium bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+            <span className="flex items-center gap-1 text-[var(--fd-amber)] font-medium bg-[var(--fd-amber)]/10 px-2.5 py-1 rounded-full border border-[var(--fd-amber)]/20">
               <ShieldAlert className="w-3.5 h-3.5" /> Sadece Görüntüleme Yetkisi
             </span>
           )}
         </div>
       </div>
 
-      {/* 24 Saatlik Sabit Görevler */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-white/10 bg-slate-950/40">
-        {/* Santral Nöbetçileri */}
+      {/* 24 Hour Fixed Duties Panel */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)]">
+        {/* Santral Operators */}
         <div className="space-y-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Building className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Nöbetçi Santral Operatörleri (24 Saat Nöbet Boyunca)</span>
+          <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)] flex items-center gap-2">
+            <Building className="w-3.5 h-3.5 text-[var(--fd-accent)]" />
+            <span>Nöbetçi Santral Operatörleri (24 Saat Nöbet)</span>
           </label>
           
           <div className="space-y-2">
@@ -469,9 +476,9 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                         value={currentVal}
                         disabled={isSaving}
                         onChange={(e) => handleCellChange("TÜM GÜN", key, e.target.value)}
-                        className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
+                        className="w-full h-10 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1.5 text-xs text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]/30 font-semibold cursor-pointer"
                       >
-                        <option value="">{index === 0 ? "Santral Görevlisi Seçiniz" : `Ekstra Santral Görevlisi #${index}`}</option>
+                        <option value="">{index === 0 ? "Santral Operatorü Seçiniz" : `Ekstra Santral Operatörü #${index}`}</option>
                         {personnel.map(p => (
                           <option key={p.sicil_no} value={p.sicil_no}>
                             {p.ad} {p.soyad} ({p.unvan || 'Er'})
@@ -479,7 +486,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                         ))}
                       </select>
                     ) : (
-                      <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
+                      <div className="h-10 flex items-center px-4 rounded-lg border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-xs font-semibold text-[var(--fd-text3)]">
                         {currentVal ? (
                           (() => {
                             const p = personnel.find(per => per.sicil_no === currentVal)
@@ -492,7 +499,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                     )}
                     {isSaving && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                        <Loader2 className="w-4 h-4 animate-spin text-[var(--fd-accent)]" />
                       </div>
                     )}
                   </div>
@@ -501,7 +508,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                       type="button"
                       onClick={() => handleDeleteSlot(key)}
                       disabled={isSaving}
-                      className="h-11 px-3 flex items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 cursor-pointer shrink-0 text-xs font-bold"
+                      className="h-10 px-3 flex items-center justify-center rounded-lg border border-[var(--fd-danger)]/25 bg-[var(--fd-danger)]/5 text-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/15 transition-colors disabled:opacity-50 cursor-pointer shrink-0 text-xs font-bold"
                       title="Nöbetçiyi Sil"
                     >
                       Sil
@@ -516,18 +523,18 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
             <button
               type="button"
               onClick={handleAddSantralSlot}
-              className="w-full py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/5 text-xs font-bold transition-all cursor-pointer"
+              className="w-full py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--fd-border)] text-[var(--fd-accent)] hover:bg-[var(--fd-surface2)]/40 bg-[var(--fd-surface)] text-xs font-bold transition-all cursor-pointer"
             >
               + Ekstra Santral Nöbetçisi Ekle
             </button>
           )}
         </div>
 
-        {/* 112 Nöbetçileri */}
+        {/* 112 Representatives */}
         <div className="space-y-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <MapPin className="w-3.5 h-3.5 text-danger" />
-            <span>Nöbetçi 112 Temsilcileri (24 Saat Nöbet Boyunca)</span>
+          <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)] flex items-center gap-2">
+            <MapPin className="w-3.5 h-3.5 text-[var(--fd-danger)]" />
+            <span>Nöbetçi 112 Temsilcileri (24 Saat Nöbet)</span>
           </label>
           
           <div className="space-y-2">
@@ -544,9 +551,9 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                         value={currentVal}
                         disabled={isSaving}
                         onChange={(e) => handleCellChange("TÜM GÜN", key, e.target.value)}
-                        className="w-full h-11 rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-semibold"
+                        className="w-full h-10 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1.5 text-xs text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]/30 font-semibold cursor-pointer"
                       >
-                        <option value="">{index === 0 ? "112 Görevlisi Seçiniz" : `Ekstra 112 Görevlisi #${index}`}</option>
+                        <option value="">{index === 0 ? "112 Temsilcisi Seçiniz" : `Ekstra 112 Temsilcisi #${index}`}</option>
                         {personnel.map(p => (
                           <option key={p.sicil_no} value={p.sicil_no}>
                             {p.ad} {p.soyad} ({p.unvan || 'Er'})
@@ -554,7 +561,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                         ))}
                       </select>
                     ) : (
-                      <div className="h-11 flex items-center px-4 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-xs font-semibold text-slate-400">
+                      <div className="h-10 flex items-center px-4 rounded-lg border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-xs font-semibold text-[var(--fd-text3)]">
                         {currentVal ? (
                           (() => {
                             const p = personnel.find(per => per.sicil_no === currentVal)
@@ -567,7 +574,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                     )}
                     {isSaving && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                        <Loader2 className="w-4 h-4 animate-spin text-[var(--fd-accent)]" />
                       </div>
                     )}
                   </div>
@@ -576,7 +583,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                       type="button"
                       onClick={() => handleDeleteSlot(key)}
                       disabled={isSaving}
-                      className="h-11 px-3 flex items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 cursor-pointer shrink-0 text-xs font-bold"
+                      className="h-10 px-3 flex items-center justify-center rounded-lg border border-[var(--fd-danger)]/25 bg-[var(--fd-danger)]/5 text-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/15 transition-colors disabled:opacity-50 cursor-pointer shrink-0 text-xs font-bold"
                       title="Nöbetçiyi Sil"
                     >
                       Sil
@@ -591,7 +598,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
             <button
               type="button"
               onClick={handleAdd112Slot}
-              className="w-full py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-danger/30 text-danger hover:bg-danger/5 text-xs font-bold transition-all cursor-pointer"
+              className="w-full py-2 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--fd-border)] text-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/5 bg-[var(--fd-surface)] text-xs font-bold transition-all cursor-pointer"
             >
               + Ekstra 112 Temsilcisi Ekle
             </button>
@@ -600,24 +607,24 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       </div>
 
       {/* Grid Matrix Table */}
-      <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-slate-950/20 light:bg-white light:border-slate-200/80 light:shadow-sm">
+      <div className="w-full overflow-x-auto rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)]">
         <table className="w-full border-collapse text-sm text-left">
-          <thead className="text-[10px] text-slate-400 uppercase bg-slate-950/60 border-b border-white/10 font-bold tracking-wider light:bg-slate-50 light:text-slate-600 light:border-slate-200">
+          <thead className="text-[10px] text-[var(--fd-text3)] uppercase bg-[var(--fd-surface2)]/60 border-b border-[var(--fd-border)] font-semibold tracking-wider">
             <tr>
-              <th className="px-4 py-3 text-center border-r border-white/5 w-[180px] light:border-slate-200">Saat Aralığı</th>
+              <th className="px-4 py-3 text-center border-r border-[var(--fd-border)] w-[180px]">Saat Aralığı</th>
               <th className="px-4 py-3 text-center">
                 <div className="flex items-center justify-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-amber-400 light:text-amber-600" />
-                  <span className="light:text-slate-900">Nizamiye Nöbeti (2 Saatlik Döngü)</span>
+                  <Shield className="w-3.5 h-3.5 text-[var(--fd-accent)]" />
+                  <span>Nizamiye Nöbeti (2 Saatlik Döngü)</span>
                 </div>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 light:divide-slate-200">
+          <tbody className="divide-y divide-[var(--fd-border)]/40">
             {HOURS.map((hour) => (
-              <tr key={hour} className="hover:bg-white/[0.01] light:hover:bg-slate-50 transition-colors h-14">
+              <tr key={hour} className="hover:bg-[var(--fd-surface2)]/40 transition-colors h-14">
                 {/* Hour Cell */}
-                <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-300 text-center bg-slate-950/20 border-r border-white/5 light:bg-slate-50/50 light:text-slate-700 light:border-slate-200">
+                <td className="px-4 py-2.5 font-mono text-xs font-semibold text-[var(--fd-text2)] text-center bg-[var(--fd-surface2)]/20 border-r border-[var(--fd-border)]">
                   {hour}
                 </td>
                 
@@ -635,17 +642,17 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                             value={currentVal}
                             disabled={isSaving}
                             onChange={(e) => handleCellChange(hour, place, e.target.value)}
-                            className="w-full h-10 rounded-lg border border-white/10 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 font-medium light:bg-slate-100 light:border-slate-200 light:text-slate-900"
+                            className="w-full h-10 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1.5 text-xs text-[var(--fd-text2)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]/30 font-medium cursor-pointer"
                           >
-                            <option value="" className="light:bg-white light:text-slate-900">Nöbetçi Seçiniz</option>
+                            <option value="">Nöbetçi Seçiniz</option>
                             {personnel.map(p => (
-                              <option key={p.sicil_no} value={p.sicil_no} className="light:bg-white light:text-slate-900">
+                              <option key={p.sicil_no} value={p.sicil_no}>
                                 {p.ad} {p.soyad} ({p.unvan || 'Er'})
                               </option>
                             ))}
                           </select>
                         ) : (
-                          <div className="h-10 flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-lg border border-dashed border-white/5 bg-slate-950/40 text-slate-400 light:bg-slate-50 light:border-slate-200 light:text-slate-650">
+                          <div className="h-10 flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-lg border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-[var(--fd-text3)]">
                             {currentVal ? (
                               (() => {
                                 const p = personnel.find(per => per.sicil_no === currentVal)
@@ -658,7 +665,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                         )}
                         {isSaving && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--fd-accent)]" />
                           </div>
                         )}
                       </div>

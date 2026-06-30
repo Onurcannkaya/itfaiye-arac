@@ -160,10 +160,10 @@ export function Vehicle3DSchematic({
   }
 
   return (
-    <div className={cn("w-full max-w-full overflow-hidden flex flex-col xl:flex-row gap-5 p-4 rounded-xl border border-cyan-500/10 bg-slate-950/80 backdrop-blur-xl select-none text-slate-100", className)}>
+    <div className={cn("w-full max-w-full overflow-hidden flex flex-col xl:flex-row gap-[calc(var(--fd-sp)*2.5)] p-[calc(var(--fd-sp)*2)] rounded-[var(--fd-r)] border border-[var(--fd-border)] bg-[var(--fd-surface)] select-none text-[var(--fd-text)]", className)}>
       
       {/* 1. SOL PANEL: Taktiksel Telemetri & Profil Kontrolü */}
-      <div className="w-full xl:w-72 shrink-0 flex flex-col justify-between border border-cyan-500/10 rounded-lg p-4 bg-slate-950/90 relative overflow-hidden">
+      <div className="w-full xl:w-72 shrink-0 flex flex-col justify-between border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2)] bg-[var(--fd-surface2)] relative overflow-hidden">
         {/* Cyber Glass effect background lines */}
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.04] pointer-events-none" />
         
@@ -171,29 +171,29 @@ export function Vehicle3DSchematic({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3 mb-4">
             <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-cyan-400 animate-pulse" />
-              <span className="font-mono text-xs font-bold tracking-widest text-cyan-400">HUD GARAJI v23.3</span>
+              <Cpu className="w-4 h-4 text-[var(--fd-accent)] animate-pulse" />
+              <span className="font-mono text-xs font-bold tracking-widest text-[var(--fd-accent)]">HUD GARAJI v23.3</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="font-mono text-[9px] text-emerald-400 font-bold">GRID LOCK</span>
+              <span className="font-mono text-[9px] text-[var(--fd-success)] font-bold">GRID LOCK</span>
             </div>
           </div>
 
           {/* Profil Switcher */}
           <div className="space-y-2 mb-5">
-            <label className="font-mono text-[10px] text-slate-500 font-bold tracking-wider uppercase block">AKTİF LOJİSTİK PROFİLİ</label>
+            <label className="font-mono text-[10px] text-[var(--fd-text3)] font-bold tracking-wider uppercase block">AKTİF LOJİSTİK PROFİLİ</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setProfile("sol")}
                 className={cn(
                   "min-h-[44px] min-w-[44px] py-2 px-3 rounded font-mono text-xs font-bold border transition-all flex items-center justify-center gap-1.5",
                   profile === "sol"
-                    ? "bg-cyan-500/15 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]"
-                    : "bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700"
+                    ? "bg-cyan-500/15 border-cyan-500 text-[var(--fd-accent)] shadow-[0_0_10px_rgba(6,182,212,0.15)]"
+                    : "bg-slate-900/60 border-slate-800 text-[var(--fd-text3)] hover:text-slate-300 hover:border-slate-700"
                 )}
               >
                 <Radio className="w-3.5 h-3.5" />
@@ -204,8 +204,8 @@ export function Vehicle3DSchematic({
                 className={cn(
                   "min-h-[44px] min-w-[44px] py-2 px-3 rounded font-mono text-xs font-bold border transition-all flex items-center justify-center gap-1.5",
                   profile === "sag"
-                    ? "bg-cyan-500/15 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]"
-                    : "bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700"
+                    ? "bg-cyan-500/15 border-cyan-500 text-[var(--fd-accent)] shadow-[0_0_10px_rgba(6,182,212,0.15)]"
+                    : "bg-slate-900/60 border-slate-800 text-[var(--fd-text3)] hover:text-slate-300 hover:border-slate-700"
                 )}
               >
                 <Radio className="w-3.5 h-3.5" />
@@ -216,19 +216,19 @@ export function Vehicle3DSchematic({
 
           {/* Telemetri List */}
           <div className="space-y-3 font-mono text-[11px]">
-            <div className="border border-slate-900 rounded p-2.5 bg-slate-950/60 space-y-2">
-              <div className="flex justify-between items-center text-slate-400">
+            <div className="border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] p-[calc(var(--fd-sp)*1.25)] bg-[var(--fd-surface)] space-y-[calc(var(--fd-sp)*1)]">
+              <div className="flex justify-between items-center text-[var(--fd-text2)]">
                 <span>ARAÇ TİPİ:</span>
-                <span className="text-slate-200 font-bold">{vehicleType || "Taktiksel Arazöz"}</span>
+                <span className="text-[var(--fd-text)] font-bold">{vehicleType || "Taktiksel Arazöz"}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-400">
+              <div className="flex justify-between items-center text-[var(--fd-text2)]">
                 <span>AKTİF PROFiL:</span>
-                <span className="text-cyan-400 font-bold">{profile.toUpperCase()} GÖRÜNÜM</span>
+                <span className="text-[var(--fd-accent)] font-bold">{profile.toUpperCase()} GÖRÜNÜM</span>
               </div>
-              <div className="flex justify-between items-center text-slate-400">
+              <div className="flex justify-between items-center text-[var(--fd-text2)]">
                 <span>SİNYAL SEVİYESİ:</span>
-                <span className="text-emerald-400 font-bold flex items-center gap-1">
-                  <Activity className="w-3 h-3 text-emerald-400" />
+                <span className="text-[var(--fd-success)] font-bold flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-[var(--fd-success)]" />
                   100% (STABİL)
                 </span>
               </div>
@@ -238,35 +238,35 @@ export function Vehicle3DSchematic({
             <div className="space-y-2">
               {suKapasite !== undefined && suKapasite > 0 && (
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                  <div className="flex justify-between text-[10px] text-[var(--fd-text3)] font-bold">
                     <span>SU DEPOSU SEVİYESİ</span>
-                    <span className="text-cyan-400">{(suKapasite * 0.85).toLocaleString("tr-TR")} LT (%85)</span>
+                    <span className="text-[var(--fd-accent)]">{(suKapasite * 0.85).toLocaleString("tr-TR")} LT (%85)</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded" style={{ width: "85%" }} />
+                    <div className="h-full bg-[var(--fd-accent)] rounded" style={{ width: "85%" }} />
                   </div>
                 </div>
               )}
 
               {kopukKapasite !== undefined && kopukKapasite > 0 && (
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                  <div className="flex justify-between text-[10px] text-[var(--fd-text3)] font-bold">
                     <span>KÖPÜK TANKI KAPASİTESİ</span>
-                    <span className="text-emerald-400">{(kopukKapasite * 0.92).toLocaleString("tr-TR")} LT (%92)</span>
+                    <span className="text-[var(--fd-success)]">{(kopukKapasite * 0.92).toLocaleString("tr-TR")} LT (%92)</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded" style={{ width: "92%" }} />
+                    <div className="h-full bg-[var(--fd-success)] rounded" style={{ width: "92%" }} />
                   </div>
                 </div>
               )}
 
               <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                <div className="flex justify-between text-[10px] text-[var(--fd-text3)] font-bold">
                   <span>SAYILAN BÖLME</span>
-                  <span className="text-yellow-500">{compartmentKeys.length} BÖLME</span>
+                  <span className="text-[var(--fd-amber)]">{compartmentKeys.length} BÖLME</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded" style={{ width: "100%" }} />
+                  <div className="h-full bg-[var(--fd-amber)] rounded" style={{ width: "100%" }} />
                 </div>
               </div>
             </div>
@@ -279,22 +279,22 @@ export function Vehicle3DSchematic({
             onClick={() => setHudActive(!hudActive)}
             className={cn(
               "min-h-[44px] min-w-[44px] py-1.5 px-3 rounded font-mono text-[9px] font-bold border transition-colors flex items-center gap-1",
-              hudActive ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "bg-slate-900 border-slate-800 text-slate-500"
+              hudActive ? "bg-cyan-500/10 border-cyan-500/30 text-[var(--fd-accent)]" : "bg-slate-900 border-slate-800 text-[var(--fd-text3)]"
             )}
           >
             <Eye className="w-3 h-3" />
             HUD AKTİF
           </button>
           
-          <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-mono">
-            <RefreshCw className="w-3 h-3 text-cyan-500 animate-spin" style={{ animationDuration: '4s' }} />
+          <div className="flex items-center gap-1.5 text-[var(--fd-text3)] text-[10px] font-mono">
+            <RefreshCw className="w-3 h-3 text-[var(--fd-accent)] animate-spin" style={{ animationDuration: '4s' }} />
             <span>RADAR TARANIYOR</span>
           </div>
         </div>
       </div>
 
       {/* 2. SAĞ PANEL: İnteraktif SVG Şeması */}
-      <div className="flex-1 bg-slate-950 border border-cyan-500/10 rounded-lg relative overflow-hidden flex items-center justify-center p-3 select-none min-h-[300px] sm:min-h-[380px] lg:min-h-[420px] max-w-full w-full">
+      <div className="flex-1 bg-[var(--fd-surface3)]/30 border border-[var(--fd-border)] rounded-[var(--fd-r)] relative overflow-hidden flex items-center justify-center p-3 select-none min-h-[300px] sm:min-h-[380px] lg:min-h-[420px] max-w-full w-full">
         {/* Cyber Holographic Grid */}
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.06] pointer-events-none" />
         
@@ -322,13 +322,13 @@ export function Vehicle3DSchematic({
             
             {/* Shutter carbon fiber pattern */}
             <pattern id="shutter-pattern" width="8" height="6" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="1" x2="8" y2="1" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="1" />
+              <line x1="0" y1="1" x2="8" y2="1" stroke="var(--fd-border)" strokeWidth="1" />
               <line x1="0" y1="4" x2="8" y2="4" stroke="rgba(15, 23, 42, 0.7)" strokeWidth="1" />
             </pattern>
 
             {/* Cyber Grid background */}
             <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(6, 182, 212, 0.08)" strokeWidth="1" />
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--fd-border)" strokeWidth="1" />
             </pattern>
 
             {/* Glowing filter for active compartments (Cyan) */}
@@ -353,24 +353,24 @@ export function Vehicle3DSchematic({
           {/* 2.1 TELEMETRY FRAME CORNERS */}
           {hudActive && (
             <g className="opacity-40">
-              <path d="M 20 40 L 20 20 L 40 20" fill="none" stroke="#06b6d4" strokeWidth="1.5" />
-              <path d="M 780 40 L 780 20 L 760 20" fill="none" stroke="#06b6d4" strokeWidth="1.5" />
-              <path d="M 20 320 L 20 340 L 40 340" fill="none" stroke="#06b6d4" strokeWidth="1.5" />
-              <path d="M 780 320 L 780 340 L 760 340" fill="none" stroke="#06b6d4" strokeWidth="1.5" />
+              <path d="M 20 40 L 20 20 L 40 20" fill="none" stroke="var(--fd-accent)" strokeWidth="1.5" />
+              <path d="M 780 40 L 780 20 L 760 20" fill="none" stroke="var(--fd-accent)" strokeWidth="1.5" />
+              <path d="M 20 320 L 20 340 L 40 340" fill="none" stroke="var(--fd-accent)" strokeWidth="1.5" />
+              <path d="M 780 320 L 780 340 L 760 340" fill="none" stroke="var(--fd-accent)" strokeWidth="1.5" />
               
               {/* Horizontal grid markings */}
-              <line x1="50" y1="20" x2="750" y2="20" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="1" strokeDasharray="5,15" />
-              <line x1="50" y1="340" x2="750" y2="340" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="1" strokeDasharray="5,15" />
+              <line x1="50" y1="20" x2="750" y2="20" stroke="var(--fd-border)" strokeWidth="1" strokeDasharray="5,15" />
+              <line x1="50" y1="340" x2="750" y2="340" stroke="var(--fd-border)" strokeWidth="1" strokeDasharray="5,15" />
             </g>
           )}
 
           {/* 2.2 TACTICAL HUD INFO STRIPS */}
           {hudActive && (
-            <g className="font-mono text-[9px] fill-cyan-400/60 select-none">
-              <text x="30" y="32" className="font-bold fill-cyan-400 uppercase tracking-widest">{sideLabel}</text>
+            <g className="font-mono text-[9px] fill-[var(--fd-accent)]/60 select-none">
+              <text x="30" y="32" className="font-bold fill-[var(--fd-accent)] uppercase tracking-widest">{sideLabel}</text>
               <text x="770" y="32" textAnchor="end" className="fill-emerald-400 font-bold">SECURE NETWORK COMMS: 100%</text>
-              <text x="30" y="333" className="fill-slate-500">SİVAS BELEDİYESİ İTFAİYE BİLGİ HUD SİSTEMİ</text>
-              <text x="770" y="333" textAnchor="end" className="fill-slate-500">SYS_STATUS: ACTIVE_OK</text>
+              <text x="30" y="333" className="fill-[var(--fd-text3)]">SİVAS BELEDİYESİ İTFAİYE BİLGİ HUD SİSTEMİ</text>
+              <text x="770" y="333" textAnchor="end" className="fill-[var(--fd-text3)]">SYS_STATUS: ACTIVE_OK</text>
             </g>
           )}
 
@@ -378,22 +378,22 @@ export function Vehicle3DSchematic({
           <g transform="translate(0, 20)">
             {/* Ground grid shadow effect */}
             <ellipse cx="380" cy="285" rx="340" ry="12" fill="rgba(8, 12, 24, 0.8)" filter="blur(6px)" />
-            <ellipse cx="380" cy="285" rx="300" ry="6" fill="rgba(6, 182, 212, 0.1)" />
+            <ellipse cx="380" cy="285" rx="300" ry="6" fill="var(--fd-accent-soft)" />
 
             {/* Rear bumper structure */}
             <path d="M 38,245 L 30,245 L 30,265 L 38,265 Z" fill="rgba(71, 85, 105, 0.9)" stroke="#64748b" strokeWidth="1" />
             
             {/* Top water cannon nozzle */}
-            <path d="M 480,85 L 510,50 L 530,50 L 525,58 L 500,85 Z" fill="#1e293b" stroke="#06b6d4" strokeWidth="1.5" />
-            <line x1="530" y1="50" x2="570" y2="45" stroke="#22c55e" strokeWidth="2" strokeDasharray="4,4" className="animate-pulse" />
-            <circle cx="570" cy="45" r="4" fill="rgba(34, 197, 94, 0.4)" className="animate-ping" />
-            <circle cx="570" cy="45" r="2" fill="#22c55e" />
+            <path d="M 480,85 L 510,50 L 530,50 L 525,58 L 500,85 Z" fill="#1e293b" stroke="var(--fd-accent)" strokeWidth="1.5" />
+            <line x1="530" y1="50" x2="570" y2="45" stroke="var(--fd-success)" strokeWidth="2" strokeDasharray="4,4" className="animate-pulse" />
+            <circle cx="570" cy="45" r="4" fill="rgba(22, 163, 74, 0.4)" className="animate-ping" />
+            <circle cx="570" cy="45" r="2" fill="var(--fd-success)" />
 
             {/* Top roof ladder */}
-            <rect x="150" y="65" width="310" height="15" rx="2" fill="rgba(15, 23, 42, 0.8)" stroke="rgba(6, 182, 212, 0.5)" strokeWidth="1.2" />
+            <rect x="150" y="65" width="310" height="15" rx="2" fill="rgba(15, 23, 42, 0.8)" stroke="var(--fd-accent-soft2)" strokeWidth="1.2" />
             {/* Ladder steps */}
             {Array.from({ length: 18 }).map((_, idx) => (
-              <line key={idx} x1={165 + idx * 16} y1="65" x2={165 + idx * 16} y2="80" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+              <line key={idx} x1={165 + idx * 16} y1="65" x2={165 + idx * 16} y2="80" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
             ))}
 
             {/* MAIN VEHICLE SHIELD BODY */}
@@ -416,7 +416,7 @@ export function Vehicle3DSchematic({
                 Z
               "
               fill="url(#cyber-glass)"
-              stroke="rgba(6, 182, 212, 0.4)"
+              stroke="var(--fd-accent-soft2)"
               strokeWidth="2"
             />
 
@@ -429,8 +429,8 @@ export function Vehicle3DSchematic({
             {/* Front windshield panel (Cyan glowing cyber style) */}
             <path
               d="M 625,92 L 642,92 L 675,145 L 625,145 Z"
-              fill="rgba(6, 182, 212, 0.15)"
-              stroke="#06b6d4"
+              fill="var(--fd-accent-soft)"
+              stroke="var(--fd-accent)"
               strokeWidth="1.5"
               filter="drop-shadow(0 0 4px rgba(6,182,212,0.25))"
             />
@@ -440,14 +440,14 @@ export function Vehicle3DSchematic({
             {/* Cyber Side Windshield (Kabin camı) */}
             <path
               d="M 545,92 L 615,92 L 615,145 L 545,145 Z"
-              fill="rgba(6, 182, 212, 0.1)"
-              stroke="rgba(6, 182, 212, 0.5)"
+              fill="var(--fd-accent-soft)"
+              stroke="var(--fd-accent-soft2)"
               strokeWidth="1.2"
             />
 
             {/* Front headlamp glow */}
-            <polygon points="705,188 718,188 718,202 705,202" fill="#eab308" filter="drop-shadow(0 0 5px #eab308)" />
-            <polygon points="705,206 718,206 718,218 705,218" fill="#eab308" />
+            <polygon points="705,188 718,188 718,202 705,202" fill="var(--fd-amber)" filter="drop-shadow(0 0 5px #eab308)" />
+            <polygon points="705,206 718,206 718,218 705,218" fill="var(--fd-amber)" />
             <polygon points="718,188 760,175 760,225 718,218" fill="rgba(234, 179, 8, 0.05)" />
 
             {/* Front heavy bumper */}
@@ -457,19 +457,19 @@ export function Vehicle3DSchematic({
             <line x1="713" y1="230" x2="721" y2="241" stroke="#eab308" strokeWidth="1.5" />
 
             {/* Blue Siren light on cab roof */}
-            <path d="M 525,83 L 535,83 L 532,74 L 528,74 Z" fill="#3b82f6" filter="drop-shadow(0 0 8px #3b82f6)" />
-            <circle cx="530" cy="78" r="8" fill="rgba(59, 130, 246, 0.25)" className="animate-ping" style={{ animationDuration: '2s' }} />
+            <path d="M 525,83 L 535,83 L 532,74 L 528,74 Z" fill="var(--fd-info)" filter="drop-shadow(0 0 8px #3b82f6)" />
+            <circle cx="530" cy="78" r="8" fill="rgba(37, 99, 235, 0.25)" className="animate-ping" style={{ animationDuration: '2s' }} />
 
             {/* Red Siren light on rear body */}
-            <path d="M 125,103 L 135,103 L 132,95 L 128,95 Z" fill="#ef4444" filter="drop-shadow(0 0 8px #ef4444)" />
-            <circle cx="130" cy="99" r="8" fill="rgba(239, 68, 68, 0.25)" className="animate-ping" style={{ animationDuration: '3s' }} />
+            <path d="M 125,103 L 135,103 L 132,95 L 128,95 Z" fill="var(--fd-danger)" filter="drop-shadow(0 0 8px #ef4444)" />
+            <circle cx="130" cy="99" r="8" fill="rgba(220, 38, 38, 0.25)" className="animate-ping" style={{ animationDuration: '3s' }} />
 
             {/* 2.4 DETAILED WHEELS (Lastikler) */}
             {/* Rear wheel 1 */}
             <g transform="translate(250, 245)">
-              <circle cx="0" cy="0" r="32" fill="#090d16" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="2.5" />
+              <circle cx="0" cy="0" r="32" fill="#090d16" stroke="var(--fd-accent-soft2)" strokeWidth="2.5" />
               <circle cx="0" cy="0" r="22" fill="#1e293b" stroke="rgba(6, 182, 212, 0.2)" strokeWidth="1" />
-              <circle cx="0" cy="0" r="12" fill="#090d16" stroke="rgba(6, 182, 212, 0.5)" strokeWidth="1" />
+              <circle cx="0" cy="0" r="12" fill="#090d16" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
               {/* Rim holes */}
               {Array.from({ length: 6 }).map((_, i) => (
                 <circle key={i} cx={Math.cos((i * Math.PI) / 3) * 16} cy={Math.sin((i * Math.PI) / 3) * 16} r="2.5" fill="#475569" />
@@ -478,9 +478,9 @@ export function Vehicle3DSchematic({
 
             {/* Rear wheel 2 */}
             <g transform="translate(365, 245)">
-              <circle cx="0" cy="0" r="32" fill="#090d16" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="2.5" />
+              <circle cx="0" cy="0" r="32" fill="#090d16" stroke="var(--fd-accent-soft2)" strokeWidth="2.5" />
               <circle cx="0" cy="0" r="22" fill="#1e293b" stroke="rgba(6, 182, 212, 0.2)" strokeWidth="1" />
-              <circle cx="0" cy="0" r="12" fill="#090d16" stroke="rgba(6, 182, 212, 0.5)" strokeWidth="1" />
+              <circle cx="0" cy="0" r="12" fill="#090d16" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
               {/* Rim holes */}
               {Array.from({ length: 6 }).map((_, i) => (
                 <circle key={i} cx={Math.cos((i * Math.PI) / 3) * 16} cy={Math.sin((i * Math.PI) / 3) * 16} r="2.5" fill="#475569" />
@@ -489,9 +489,9 @@ export function Vehicle3DSchematic({
 
             {/* Front wheel */}
             <g transform="translate(628, 245)">
-              <circle cx="0" cy="0" r="32" fill="#090d16" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="2.5" />
+              <circle cx="0" cy="0" r="32" fill="#090d16" stroke="var(--fd-accent-soft2)" strokeWidth="2.5" />
               <circle cx="0" cy="0" r="22" fill="#1e293b" stroke="rgba(6, 182, 212, 0.2)" strokeWidth="1" />
-              <circle cx="0" cy="0" r="12" fill="#090d16" stroke="rgba(6, 182, 212, 0.5)" strokeWidth="1" />
+              <circle cx="0" cy="0" r="12" fill="#090d16" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
               {/* Rim holes */}
               {Array.from({ length: 6 }).map((_, i) => (
                 <circle key={i} cx={Math.cos((i * Math.PI) / 3) * 16} cy={Math.sin((i * Math.PI) / 3) * 16} r="2.5" fill="#475569" />
@@ -499,8 +499,8 @@ export function Vehicle3DSchematic({
             </g>
 
             {/* Decorative decals on cabin door */}
-            <text x="560" y="165" fill="rgba(6, 182, 212, 0.35)" fontSize="7" fontFamily="monospace" fontWeight="bold" letterSpacing="1">SİVAS İTFAİYESİ</text>
-            <text x="560" y="174" fill="rgba(6, 182, 212, 0.2)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">FILO NO: 58-AC</text>
+            <text x="560" y="165" fill="var(--fd-text2)" fontSize="7" fontFamily="monospace" fontWeight="bold" letterSpacing="1">SİVAS İTFAİYESİ</text>
+            <text x="560" y="174" fill="var(--fd-text3)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">FILO NO: 58-AC</text>
 
             {/* 2.5 INTERACTIVE HOTSPOT OVERLAYS (COMPARTMENTS) */}
             
@@ -525,7 +525,7 @@ export function Vehicle3DSchematic({
                 {ustuStatus.isActive && (
                   <g opacity="0.3">
                     {Array.from({ length: 12 }).map((_, i) => (
-                      <line key={i} x1={155 + i * 26} y1="35" x2={165 + i * 26} y2="63" stroke="#22c55e" strokeWidth="2" />
+                      <line key={i} x1={155 + i * 26} y1="35" x2={165 + i * 26} y2="63" stroke="var(--fd-success)" strokeWidth="2" />
                     ))}
                   </g>
                 )}
@@ -596,7 +596,7 @@ export function Vehicle3DSchematic({
                 {/* Roll Shutter Slats */}
                 <rect x="149" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
                 {/* Door locking mechanism line */}
-                <line x1="145" y1="178" x2="250" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+                <line x1="145" y1="178" x2="250" y2="178" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
                 <circle cx="197" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
               </g>
             )}
@@ -621,7 +621,7 @@ export function Vehicle3DSchematic({
                 {/* Roll Shutter Slats */}
                 <rect x="264" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
                 {/* Door locking mechanism line */}
-                <line x1="260" y1="178" x2="365" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+                <line x1="260" y1="178" x2="365" y2="178" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
                 <circle cx="312" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
               </g>
             )}
@@ -646,7 +646,7 @@ export function Vehicle3DSchematic({
                 {/* Roll Shutter Slats */}
                 <rect x="379" y="119" width="97" height="117" fill="url(#shutter-pattern)" opacity="0.75" />
                 {/* Door locking mechanism line */}
-                <line x1="375" y1="178" x2="480" y2="178" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
+                <line x1="375" y1="178" x2="480" y2="178" stroke="var(--fd-accent-soft2)" strokeWidth="1" />
                 <circle cx="427" cy="178" r="3" fill="rgba(6, 182, 212, 0.8)" />
               </g>
             )}
@@ -669,9 +669,9 @@ export function Vehicle3DSchematic({
                   filter={getColors(kabinStatus).glow}
                 />
                 {/* Steering wheel vector representation */}
-                <circle cx="610" cy="165" r="9" fill="none" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="2" />
-                <line x1="610" y1="156" x2="610" y2="174" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-                <line x1="601" y1="165" x2="619" y2="165" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
+                <circle cx="610" cy="165" r="9" fill="none" stroke="var(--fd-accent-soft2)" strokeWidth="2" />
+                <line x1="610" y1="156" x2="610" y2="174" stroke="var(--fd-accent-soft2)" strokeWidth="1.5" />
+                <line x1="601" y1="165" x2="619" y2="165" stroke="var(--fd-accent-soft2)" strokeWidth="1.5" />
               </g>
             )}
 
@@ -702,7 +702,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(305, 49)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={ustuStatus.isActive ? 10 : 7} fill="none" stroke={ustuStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={ustuStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="3" fill={ustuStatus.isActive ? "#22c55e" : "#06b6d4"} className={ustuStatus.isActive ? "animate-pulse" : ""} />
-                {ustuStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
+                {ustuStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
               </g>
             )}
 
@@ -711,7 +711,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(60, 178)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={arkaKapakStatus.isActive ? 9 : 7} fill="none" stroke={arkaKapakStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={arkaKapakStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="3" fill={arkaKapakStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {arkaKapakStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
+                {arkaKapakStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
               </g>
             )}
 
@@ -720,7 +720,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(110, 178)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={arkaBolmeStatus.isActive ? 9 : 7} fill="none" stroke={arkaBolmeStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={arkaBolmeStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="3" fill={arkaBolmeStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {arkaBolmeStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
+                {arkaBolmeStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
               </g>
             )}
 
@@ -729,7 +729,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(197, 178)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={arkaStatus.isActive ? 11 : 8} fill="none" stroke={arkaStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={arkaStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="4" fill={arkaStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {arkaStatus.isActive && <circle cx="0" cy="0" r="18" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.6s' }} />}
+                {arkaStatus.isActive && <circle cx="0" cy="0" r="18" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.6s' }} />}
               </g>
             )}
 
@@ -738,7 +738,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(312, 178)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={ortaStatus.isActive ? 11 : 8} fill="none" stroke={ortaStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={ortaStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="4" fill={ortaStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {ortaStatus.isActive && <circle cx="0" cy="0" r="18" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.6s' }} />}
+                {ortaStatus.isActive && <circle cx="0" cy="0" r="18" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.6s' }} />}
               </g>
             )}
 
@@ -747,7 +747,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(427, 178)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={onStatus.isActive ? 11 : 8} fill="none" stroke={onStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={onStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="4" fill={onStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {onStatus.isActive && <circle cx="0" cy="0" r="18" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.6s' }} />}
+                {onStatus.isActive && <circle cx="0" cy="0" r="18" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.6s' }} />}
               </g>
             )}
 
@@ -756,7 +756,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(565, 178)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={kabinStatus.isActive ? 10 : 7} fill="none" stroke={kabinStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={kabinStatus.isActive ? 2 : 1} />
                 <circle cx="0" cy="0" r="3" fill={kabinStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {kabinStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="#22c55e" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
+                {kabinStatus.isActive && <circle cx="0" cy="0" r="16" fill="none" stroke="var(--fd-success)" strokeWidth="0.8" className="animate-ping" style={{ animationDuration: '1.8s' }} />}
               </g>
             )}
 
@@ -765,7 +765,7 @@ export function Vehicle3DSchematic({
               <g transform="translate(312, 251)" className="pointer-events-none">
                 <circle cx="0" cy="0" r={iciStatus.isActive ? 8 : 6} fill="none" stroke={iciStatus.isActive ? "#22c55e" : "#06b6d4"} strokeWidth={iciStatus.isActive ? 1.5 : 1} />
                 <circle cx="0" cy="0" r="2.5" fill={iciStatus.isActive ? "#22c55e" : "#06b6d4"} />
-                {iciStatus.isActive && <circle cx="0" cy="0" r="12" fill="none" stroke="#22c55e" strokeWidth="0.6" className="animate-ping" style={{ animationDuration: '2s' }} />}
+                {iciStatus.isActive && <circle cx="0" cy="0" r="12" fill="none" stroke="var(--fd-success)" strokeWidth="0.6" className="animate-ping" style={{ animationDuration: '2s' }} />}
               </g>
             )}
 
@@ -806,13 +806,13 @@ export function Vehicle3DSchematic({
                       <path
                         d={`M ${startX},${startY} L ${midX},${midY} L ${labelX},${labelY}`}
                         fill="none"
-                        stroke="#22c55e"
+                        stroke="var(--fd-success)"
                         strokeWidth="1.2"
                         filter="drop-shadow(0 0 3px rgba(34,197,94,0.6))"
                       />
                       
                       {/* End node bracket anchor */}
-                      <circle cx={startX} cy={startY} r="1.5" fill="#22c55e" />
+                      <circle cx={startX} cy={startY} r="1.5" fill="var(--fd-success)" />
                       
                       {/* Callout box overlay */}
                       <g transform={`translate(${align === "left" ? labelX : labelX - 110}, ${labelY - 12})`}>
@@ -823,17 +823,17 @@ export function Vehicle3DSchematic({
                           width="120"
                           height="26"
                           rx="3"
-                          fill="rgba(8, 12, 24, 0.95)"
-                          stroke="#22c55e"
+                          fill="var(--fd-surface)"
+                          stroke="var(--fd-success)"
                           strokeWidth="1"
                           filter="drop-shadow(0 0 8px rgba(34,197,94,0.15))"
                         />
                         {/* Decorative glowing cyan bullet */}
-                        <circle cx="8" cy="13" r="2.5" fill="#22c55e" className="animate-pulse" />
+                        <circle cx="8" cy="13" r="2.5" fill="var(--fd-success)" className="animate-pulse" />
                         
                         {/* Shutter key texts */}
-                        <text x="18" y="10" fill="#22c55e" fontSize="7.5" fontFamily="monospace" fontWeight="bold">{name}</text>
-                        <text x="18" y="20" fill="rgba(34, 197, 94, 0.75)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">HEARTBEAT LOCK_SECURED</text>
+                        <text x="18" y="10" fill="var(--fd-success)" fontSize="7.5" fontFamily="monospace" fontWeight="bold">{name}</text>
+                        <text x="18" y="20" fill="var(--fd-success)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">HEARTBEAT LOCK_SECURED</text>
                       </g>
                     </g>
                   );
@@ -849,7 +849,7 @@ export function Vehicle3DSchematic({
                   y1="25"
                   x2={radarPulse * 8}
                   y2="280"
-                  stroke="rgba(6, 182, 212, 0.08)"
+                  stroke="var(--fd-border)"
                   strokeWidth="2"
                 />
                 <line
@@ -857,7 +857,7 @@ export function Vehicle3DSchematic({
                   y1="25"
                   x2={radarPulse * 8 + 3}
                   y2="280"
-                  stroke="rgba(6, 182, 212, 0.04)"
+                  stroke="var(--fd-border)"
                   strokeWidth="1"
                 />
               </g>
@@ -867,8 +867,8 @@ export function Vehicle3DSchematic({
 
         {/* Floating cyber lock details */}
         {activeCompartment && (
-          <div className="absolute top-4 right-4 bg-slate-950/90 border border-emerald-500/30 rounded px-2.5 py-1.5 font-mono text-[9px] text-emerald-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.1)] z-20">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="absolute top-4 right-4 bg-slate-950/90 border border-emerald-500/30 rounded px-2.5 py-1.5 font-mono text-[9px] text-[var(--fd-success)] flex items-center gap-1.5 shadow-[0_0_12px_rgba(34,197,94,0.1)] z-20">
+            <ShieldCheck className="w-3.5 h-3.5 text-[var(--fd-success)]" />
             <span>SEÇİLİ BÖLME KİLİTLENDİ: [{(COMPARTMENT_NAMES[activeCompartment] || activeCompartment).toUpperCase()}]</span>
           </div>
         )}

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";

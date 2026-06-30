@@ -24,6 +24,9 @@ import {
   Map as MapIcon,
   Users,
   Search,
+  MapPin,
+  Info,
+  X,
 } from "lucide-react"
 import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
@@ -60,6 +63,23 @@ const normalizeTextForSearch = (str: string): string => {
     .toLowerCase();
 }
 
+const DAILY_SCHEDULE_SLOTS = [
+  { start: "08:00", end: "09:00", label: "Posta Devir Teslimi", type: "Tatbiki", icon: "🔧" },
+  { start: "09:00", end: "10:00", label: "Kültür Fizik (Spor)", type: "Tatbiki", icon: "🏃" },
+  { start: "10:00", end: "10:30", label: "Eğitime Hazırlık", type: "Tatbiki", icon: "🚿" },
+  { start: "10:30", end: "11:15", label: "Eğitim Konusu", type: "Nazari", icon: "📖" },
+  { start: "11:15", end: "12:00", label: "Dinlenme & Hazırlık", type: "Mola", icon: "☕" },
+  { start: "12:00", end: "13:30", label: "Öğle Yemeği", type: "Mola", icon: "🍽️" },
+  { start: "13:30", end: "15:00", label: "Birey Eğitimi", type: "Nazari/Tatbiki", icon: "📋" },
+  { start: "15:00", end: "15:30", label: "Dinlenme", type: "Mola", icon: "☕" },
+  { start: "15:30", end: "16:30", label: "Araç & Malzeme Bakımı", type: "Tatbiki", icon: "🛠️" },
+  { start: "16:30", end: "16:45", label: "Dinlenme", type: "Mola", icon: "☕" },
+  { start: "16:45", end: "17:30", label: "Eğitim Değerlendirmesi", type: "Nazari/Tatbiki", icon: "📝" },
+  { start: "17:30", end: "18:30", label: "Serbest Zaman", type: "Mola", icon: "🏠" },
+  { start: "18:30", end: "20:00", label: "Akşam Yemeği", type: "Mola", icon: "🍽️" },
+  { start: "20:00", end: "21:00", label: "Görsel Sunumlar", type: "Nazari", icon: "📺" }
+]
+
 // ─── Types ──────────────────────────────────────────────────
 interface KPIData {
   activeIncidents: number
@@ -81,6 +101,7 @@ interface ActivityItem {
   detail: string
   time: string
   rawTime: string
+  status?: string
 }
 
 interface IncidentInfo {
@@ -92,6 +113,7 @@ interface IncidentDetail {
   olay_turu: string
   mahalle: string | null
   created_at: string
+  status?: string
 }
 
 interface VehicleMaintenance {
@@ -124,6 +146,11 @@ interface DashboardTooltipProps {
 interface VehicleInfo {
   plaka: string
   arac_tipi: string
+  istasyon?: string
+  status?: string
+  current_branch?: string
+  sorumlu_sofor_id?: string | null
+  sorumlu_er_id?: string | null
 }
 
 interface ActiveIncidentDetail {
@@ -149,6 +176,7 @@ interface ActiveMission {
   adres: string
   cikis_saati: string
   coords: [number, number] | null
+  personnel?: string[]
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -240,7 +268,14 @@ export default function DashboardPage() {
     return managerKeywords.some(keyword => normalizedTitle.includes(keyword))
   }, [user])
 
-  const [programInfo, setProgramInfo] = useState({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+  const [programInfo, setProgramInfo] = useState({ 
+    isOffDuty: true, 
+    text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir",
+    timeLeft: "--:--",
+    icon: "🔵",
+    label: "Bekleme",
+    type: "Hazır Kıta"
+  })
   const [currentTime, setCurrentTime] = useState("")
 
   // Faz 28.55: Batarya Dostu Mobil GPS İzleme Motoru
@@ -290,7 +325,11 @@ export default function DashboardPage() {
       setCurrentTime(now.toLocaleTimeString("tr-TR"))
       const day = now.getDay() // 0: Sunday, 6: Saturday
       if (day === 0) {
-        setProgramInfo({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+        setProgramInfo({ 
+          isOffDuty: true, 
+          text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir",
+          timeLeft: "--:--", icon: "🔵", label: "Pazar İzni / Hazır Kıta", type: "Bekleme"
+        })
         return
       }
 
@@ -298,22 +337,7 @@ export default function DashboardPage() {
       const minutes = now.getMinutes()
       const totalMinutesNow = hours * 60 + minutes
 
-      const slots: { start: string; end: string; label: string; type: string; icon: string }[] = [
-        { start: "08:00", end: "09:00", label: "Posta Devir Teslimi, Araç ve Malzeme Kontrolü", type: "Tatbiki", icon: "🔧" },
-        { start: "09:00", end: "10:00", label: "Spor (Koşu, Kültür Fizik vs.)", type: "Tatbiki", icon: "🏃" },
-        { start: "10:00", end: "10:30", label: "Spor Sonrası Duş, Eğitime Hazırlık", type: "Tatbiki", icon: "🚿" },
-        { start: "10:30", end: "11:15", label: "Eğitim Konusu", type: "Nazari", icon: "📖" },
-        { start: "11:15", end: "12:00", label: "Dinlenme ve Yemek Hazırlığı", type: "Mola", icon: "☕" },
-        { start: "12:00", end: "13:30", label: "Yemek Saati", type: "Mola", icon: "🍽️" },
-        { start: "13:30", end: "15:00", label: "Birey Eğitim Çalışması", type: "Nazari/Tatbiki", icon: "📋" },
-        { start: "15:00", end: "15:30", label: "Dinlenme", type: "Mola", icon: "☕" },
-        { start: "15:30", end: "16:30", label: "Araç ve Malzeme Bakımı, Eksikliklerin Tamamlanması", type: "Tatbiki", icon: "🛠️" },
-        { start: "16:30", end: "16:45", label: "Dinlenme", type: "Mola", icon: "☕" },
-        { start: "16:45", end: "17:30", label: "Eğitim Değerlendirmesi, Eksiklerin Belirlenmesi", type: "Nazari/Tatbiki", icon: "📝" },
-        { start: "17:30", end: "18:30", label: "Dinlenme (Serbest Zaman), Yemek Hazırlığı", type: "Mola", icon: "🏠" },
-        { start: "18:30", end: "20:00", label: "Yemek Saati", type: "Mola", icon: "🍽️" },
-        { start: "20:00", end: "21:00", label: "Görsel Sunumlar", type: "Nazari", icon: "📺" }
-      ]
+      const slots = DAILY_SCHEDULE_SLOTS
 
       let matched = false
       for (const slot of slots) {
@@ -323,15 +347,25 @@ export default function DashboardPage() {
         const endTotal = endH * 60 + endM
 
         if (totalMinutesNow >= startTotal && totalMinutesNow < endTotal) {
+           const targetTime = new Date(now)
+           targetTime.setHours(endH, endM, 0, 0)
+           const diffMs = targetTime.getTime() - now.getTime()
+           
+           const m = Math.floor((diffMs / 1000) / 60)
+           const s = Math.floor((diffMs / 1000) % 60)
+           const timeLeftStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+
           if (slot.start === "10:30" && slot.end === "11:15") {
             setProgramInfo({
               isOffDuty: false,
-              text: "🟢 ŞU ANKİ PROGRAM: 10:30 - 11:15 İtfaiye Teorik ve Pratik Eğitimi (Eğitimdesiniz)"
+              text: "🟢 ŞU ANKİ PROGRAM: 10:30 - 11:15 İtfaiye Teorik ve Pratik Eğitimi",
+              timeLeft: timeLeftStr, icon: "📖", label: "Pratik Eğitim", type: "Eğitimdesiniz"
             })
           } else {
             setProgramInfo({
               isOffDuty: slot.type === 'Mola',
-              text: `${slot.icon} ${slot.start}-${slot.end} | ${slot.label} [${slot.type}]`
+              text: `${slot.icon} ${slot.start}-${slot.end} | ${slot.label} [${slot.type}]`,
+              timeLeft: timeLeftStr, icon: slot.icon, label: slot.label, type: slot.type
             })
           }
           matched = true
@@ -341,9 +375,17 @@ export default function DashboardPage() {
 
       if (!matched) {
         if (totalMinutesNow >= 21 * 60 || totalMinutesNow < 8 * 60) {
-          setProgramInfo({ isOffDuty: true, text: "🌙 Nöbetçi Posta — Gece Vardiyası (Hazır Kıta Beklemede)" })
+          setProgramInfo({ 
+            isOffDuty: true, 
+            text: "🌙 Nöbetçi Posta — Gece Vardiyası (Hazır Kıta Beklemede)",
+            timeLeft: "--:--", icon: "🌙", label: "Gece Vardiyası", type: "Hazır Kıta"
+          })
         } else {
-          setProgramInfo({ isOffDuty: true, text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir" })
+          setProgramInfo({ 
+            isOffDuty: true, 
+            text: "🔵 Karargah Nöbetçi Postası Hazır Kıta Beklemededir",
+            timeLeft: "--:--", icon: "🔵", label: "Bekleme", type: "Hazır Kıta"
+          })
         }
       }
     }
@@ -366,8 +408,22 @@ export default function DashboardPage() {
   const [activeIncidentsList, setActiveIncidentsList] = useState<ActiveIncidentDetail[]>([])
   const [activeExternalMissions, setActiveExternalMissions] = useState<any[]>([])
   const [personnelList, setPersonnelList] = useState<Personnel[]>([])
+  const [staffCertifications, setStaffCertifications] = useState<any[]>([])
+  const [isMissionModalOpen, setIsMissionModalOpen] = useState(false)
+  const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false)
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
+  const [activeAlertsTab, setActiveAlertsTab] = useState<'vehicles' | 'licenses' | 'assignments'>('vehicles')
   const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly'>('daily')
   const [overdueAssignments, setOverdueAssignments] = useState<any[]>([])
+  const [monthlyTrendData, setMonthlyTrendData] = useState<{ date: string; label: string; count: number }[]>([])
+  const [distributionData, setDistributionData] = useState<{
+    total: number
+    list: { type: string; count: number; percentage: number; color: string }[]
+  }>({
+    total: 0,
+    list: []
+  })
 
   const [justiceStats, setJusticeStats] = useState<any[]>([])
   const [justiceLoading, setJusticeLoading] = useState(true)
@@ -379,6 +435,17 @@ export default function DashboardPage() {
     const allowedUnvans = ['Er', 'Şoför', 'Baş Şoför', 'Pos.Baş.Şof.']
     return justiceStats.filter((p: any) => allowedUnvans.includes(p.unvan))
   }, [justiceStats])
+
+  const conicGradientStyle = useMemo(() => {
+    let accum = 0
+    const parts = distributionData.list.map((item) => {
+      const start = accum
+      accum += item.percentage
+      const end = accum
+      return `${item.color} ${start}% ${end}%`
+    })
+    return parts.length > 0 ? { background: `conic-gradient(${parts.join(', ')})` } : { background: 'var(--fd-surface2)' }
+  }, [distributionData])
 
   // ─── PostGIS WKB parser helpers for real-time focus ─────────
   const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -495,6 +562,11 @@ export default function DashboardPage() {
         .from("incidents")
         .select("*")
         .eq("status", "active")
+        
+      const { count: activeExtCount } = await api
+        .from("external_missions")
+        .select("*")
+        .eq("durum", "Aktif")
 
       // ── 2. KPI: Vehicles in Maintenance ───────────────────
       const { count: maintCount } = await api
@@ -518,7 +590,7 @@ export default function DashboardPage() {
         .limit(1)
 
       setKpi({
-        activeIncidents: incidentCount ?? 0,
+        activeIncidents: (incidentCount ?? 0) + (activeExtCount ?? 0),
         vehiclesInMaintenance: maintCount ?? 0,
         faultyHydrants: hydrantCount ?? 0,
         upcomingTraining: {
@@ -561,12 +633,107 @@ export default function DashboardPage() {
 
       setDailyData(buckets)
 
+      // ── 5b. Monthly Incident Trend & Type Distribution ────
+      const twelveMonthsAgo = new Date()
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11)
+      twelveMonthsAgo.setDate(1)
+      twelveMonthsAgo.setHours(0, 0, 0, 0)
+
+      const { data: allIncidents } = await api
+        .from("incidents")
+        .select("created_at, olay_turu")
+
+      // --- Monthly Trend Calculation ---
+      const trendBuckets: { date: string; label: string; count: number }[] = []
+      const monthNames = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+      
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(twelveMonthsAgo)
+        d.setMonth(d.getMonth() + i)
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        trendBuckets.push({
+          date: monthKey,
+          label: `${monthNames[d.getMonth()]} ${String(d.getFullYear()).substring(2)}`,
+          count: 0
+        })
+      }
+
+      allIncidents?.forEach((inc: any) => {
+        const dateObj = new Date(inc.created_at)
+        const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`
+        const bucket = trendBuckets.find((b) => b.date === monthKey)
+        if (bucket) bucket.count++
+      })
+      setMonthlyTrendData(trendBuckets)
+
+      // --- Type Distribution Calculation ---
+      const typeCounts: { [key: string]: number } = {}
+      let distTotalCount = 0
+
+      allIncidents?.forEach((inc: any) => {
+        const rawType = inc.olay_turu || "Diğer"
+        let normalizedType = "Diğer"
+        
+        if (rawType.includes("Konut") || rawType.includes("Ev") || rawType.includes("Daire") || rawType.includes("Bina")) {
+          normalizedType = "Konut Yangını"
+        } else if (rawType.includes("Trafik") || rawType.includes("Kaza") || rawType.includes("Çarpışma")) {
+          normalizedType = "Trafik Kazası"
+        } else if (rawType.includes("Araç") || rawType.includes("Otomobil") || rawType.includes("Otobüs") || rawType.includes("Kamyon")) {
+          normalizedType = "Araç Yangını"
+        } else if (rawType.includes("Kurtarma") || rawType.includes("Mahsur")) {
+          normalizedType = "Kurtarma"
+        } else if (rawType.includes("Su") || rawType.includes("Baskın") || rawType.includes("Sel")) {
+          normalizedType = "Su Baskını"
+        } else if (rawType.includes("Yangın") || rawType.includes("Anız") || rawType.includes("Orman") || rawType.includes("Çöp")) {
+          normalizedType = "Diğer Yangınlar"
+        } else {
+          normalizedType = "Diğer"
+        }
+
+        typeCounts[normalizedType] = (typeCounts[normalizedType] || 0) + 1
+        distTotalCount++
+      })
+
+      // Map to array with colors
+      const colorMap: { [key: string]: string } = {
+        "Konut Yangını": "#dc2626",
+        "Trafik Kazası": "#f59e0b",
+        "Araç Yangını": "#ea580c",
+        "Kurtarma": "#2563eb",
+        "Su Baskını": "#0891b2",
+        "Diğer Yangınlar": "#84cc16",
+        "Diğer": "#94a3b8"
+      }
+
+      // Pre-populate all standard types to ensure they always render in the legend even if count is 0
+      const standardTypes = ["Konut Yangını", "Trafik Kazası", "Araç Yangını", "Kurtarma", "Su Baskını", "Diğer"]
+      standardTypes.forEach(t => {
+        if (typeCounts[t] === undefined) {
+          typeCounts[t] = 0
+        }
+      })
+
+      const dist = Object.entries(typeCounts).map(([type, count]) => {
+        const percentage = distTotalCount > 0 ? Math.round((count / distTotalCount) * 100) : 0
+        return {
+          type,
+          count,
+          percentage,
+          color: colorMap[type] || "#94a3b8"
+        }
+      }).sort((a, b) => b.count - a.count)
+
+      setDistributionData({
+        total: distTotalCount,
+        list: dist
+      })
+
       // ── 6. Activity Feed (last 5 from each table) ─────────
       const feed: ActivityItem[] = []
 
       const { data: recentInc } = await api
         .from("incidents")
-        .select("id,olay_turu,mahalle,created_at")
+        .select("id,olay_turu,mahalle,created_at,status")
         .order("created_at", { ascending: false })
         .limit(5)
 
@@ -578,6 +745,25 @@ export default function DashboardPage() {
           detail: r.mahalle || "Konum belirtilmedi",
           time: formatRelativeTime(r.created_at),
           rawTime: r.created_at,
+          status: r.status
+        })
+      )
+      
+      const { data: recentExt } = await api
+        .from("external_missions")
+        .select("id,gorev_turu,mahalle,baslik,created_at,durum")
+        .order("created_at", { ascending: false })
+        .limit(5)
+
+      recentExt?.forEach((r: any) =>
+        feed.push({
+          id: `ext-${r.id}`,
+          type: "incident", // render as incident for visibility
+          title: `Dış Görev: ${r.gorev_turu}`,
+          detail: `${r.baslik} - ${r.mahalle || "Adres yok"}`,
+          time: formatRelativeTime(r.created_at),
+          rawTime: r.created_at,
+          status: r.durum
         })
       )
 
@@ -638,10 +824,10 @@ export default function DashboardPage() {
 
       // ── 7. Filo & Aktif Görevler Sorgulaması ───────────────
       const { data: vehiclesData } = await api
-        .from<VehicleInfo>("vehicles")
-        .select("plaka,arac_tipi")
+        .from<any>("vehicles")
+        .select("plaka,arac_tipi,istasyon,status,current_branch,sorumlu_sofor_id,sorumlu_er_id,sigortaBitis,muayeneBitis")
       if (Array.isArray(vehiclesData)) {
-        setVehicles(vehiclesData)
+        setVehicles(vehiclesData.filter(v => v.plaka !== 'GARAJ'))
       }
 
       const { data: activeIncs } = await api
@@ -683,6 +869,14 @@ export default function DashboardPage() {
         materialName: invMap.get(item.malzeme_id) || `Bilinmeyen Malzeme (ID: ${item.malzeme_id})`
       }))
       setOverdueAssignments(mappedOverdue)
+
+      // ── 10. Sertifika / Ehliyet Sorgulaması ───────────────────
+      const { data: certsData } = await api
+        .from("staff_certifications")
+        .select("*")
+      if (Array.isArray(certsData)) {
+        setStaffCertifications(certsData)
+      }
     } catch (err) {
       console.error("Dashboard veri hatası:", err)
     } finally {
@@ -722,6 +916,17 @@ export default function DashboardPage() {
 
         plates.forEach((plaka) => {
           const matchedVeh = vehicles.find((v) => v.plaka === plaka)
+          let pList: string[] = []
+          if (matchedVeh) {
+            if (matchedVeh.sorumlu_sofor_id) {
+               const sofor = personnelList.find(p => p.id === matchedVeh.sorumlu_sofor_id)
+               if (sofor) pList.push(`${sofor.unvan} ${sofor.ad} ${sofor.soyad}`)
+            }
+            if (matchedVeh.sorumlu_er_id) {
+               const er = personnelList.find(p => p.id === matchedVeh.sorumlu_er_id)
+               if (er) pList.push(`${er.unvan} ${er.ad} ${er.soyad}`)
+            }
+          }
           list.push({
             plaka,
             arac_tipi: matchedVeh?.arac_tipi || "Arazöz",
@@ -730,6 +935,7 @@ export default function DashboardPage() {
             adres: inc.adres || "Adres belirtilmemiş",
             cikis_saati: inc.cikis_saati || inc.created_at || new Date().toISOString(),
             coords,
+            personnel: pList
           })
         })
       })
@@ -739,6 +945,17 @@ export default function DashboardPage() {
       activeExternalMissions.forEach((mission) => {
         const coords = parseLocation(mission.hedef_koordinat) || [37.0209312, 39.7339522]
         const matchedVeh = vehicles.find((v) => v.plaka === mission.plaka)
+        let pList: string[] = []
+        if (matchedVeh) {
+          if (matchedVeh.sorumlu_sofor_id) {
+             const sofor = personnelList.find(p => p.id === matchedVeh.sorumlu_sofor_id)
+             if (sofor) pList.push(`${sofor.unvan} ${sofor.ad} ${sofor.soyad}`)
+          }
+          if (matchedVeh.sorumlu_er_id) {
+             const er = personnelList.find(p => p.id === matchedVeh.sorumlu_er_id)
+             if (er) pList.push(`${er.unvan} ${er.ad} ${er.soyad}`)
+          }
+        }
         list.push({
           plaka: mission.plaka || "Araçsız",
           arac_tipi: matchedVeh?.arac_tipi || "Dış Görev",
@@ -747,12 +964,65 @@ export default function DashboardPage() {
           adres: mission.adres || "Adres belirtilmemiş",
           cikis_saati: mission.cikis_tarihi || mission.created_at || new Date().toISOString(),
           coords,
+          personnel: pList
         })
       })
     }
 
     return list
-  }, [activeIncidentsList, activeExternalMissions, vehicles])
+  }, [activeIncidentsList, activeExternalMissions, vehicles, personnelList])
+
+  const vehicleStats = useMemo(() => {
+    const defaultStats = {
+      total: 0,
+      active: 0,
+      maintenance: 0,
+      available: 0,
+      stations: {} as Record<string, { total: number, available: number }>
+    }
+
+    if (!vehicles || vehicles.length === 0) return defaultStats;
+
+    let active = 0;
+    let maintenance = 0;
+    let available = 0;
+
+    vehicles.forEach(v => {
+      // Default istasyon logic if not set: Merkez
+      const station = v.istasyon || v.current_branch || "Merkez";
+      const normalizedStation = station.toLowerCase().includes("organize") || station.toLowerCase().includes("osb") 
+        ? "3. İstasyon · OSB" 
+        : station.toLowerCase().includes("esentepe") || station.toLowerCase().includes("kümbet")
+        ? "2. İstasyon · Kümbet"
+        : "Merkez İstasyon";
+
+      if (!defaultStats.stations[normalizedStation]) {
+        defaultStats.stations[normalizedStation] = { total: 0, available: 0 };
+      }
+
+      defaultStats.stations[normalizedStation].total++;
+      
+      if (v.status === "maintenance" || v.status === "arızalı" || v.status === "Arızalı") {
+        maintenance++;
+      } else {
+        const isMission = activeMissions.some(am => am.plaka === v.plaka);
+        if (isMission) {
+          active++;
+        } else {
+          available++;
+          defaultStats.stations[normalizedStation].available++;
+        }
+      }
+    });
+
+    return {
+      total: vehicles.length,
+      active,
+      maintenance,
+      available,
+      stations: defaultStats.stations
+    }
+  }, [vehicles, activeMissions]);
 
   // ─── Nöbetçi posta: 3'lü posta döngüsü (Faz 28.23.8) ───
   // Referans: 04.06.2026 tarihinde 2. Posta nöbette. Döngü sırasıyla: 2 -> 3 -> 1 -> 2 -> 3 -> 1
@@ -780,6 +1050,84 @@ export default function DashboardPage() {
     // Filter to active posta only — ShiftList handles station grouping and hierarchical sorting internally
     return personnelList.filter(p => p.posta_no === activePostaNumber)
   }, [personnelList, activePostaNumber])
+
+  const criticalAlerts = useMemo(() => {
+    const alerts: {
+      vehicles: Array<{ plaka: string; type: 'Muayene' | 'Sigorta'; date: string; remainingDays: number }>;
+      licenses: Array<{ name: string; date: string; remainingDays: number }>;
+      assignments: Array<{ name: string; material: string; date: string; delayDays: number }>;
+    } = { vehicles: [], licenses: [], assignments: [] }
+
+    const now = new Date()
+
+    // 1. Vehicle Insurance & Inspection Alerts
+    vehicles.forEach((v: any) => {
+      if (v.sigortaBitis) {
+        const diffTime = new Date(v.sigortaBitis).getTime() - now.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        if (diffDays <= 30) {
+          alerts.vehicles.push({
+            plaka: v.plaka,
+            type: 'Sigorta',
+            date: v.sigortaBitis,
+            remainingDays: diffDays
+          })
+        }
+      }
+      if (v.muayeneBitis) {
+        const diffTime = new Date(v.muayeneBitis).getTime() - now.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        if (diffDays <= 30) {
+          alerts.vehicles.push({
+            plaka: v.plaka,
+            type: 'Muayene',
+            date: v.muayeneBitis,
+            remainingDays: diffDays
+          })
+        }
+      }
+    })
+
+    // 2. Expiring driver licenses (using staffCertifications)
+    staffCertifications.forEach((c) => {
+      if (c.tip === 'Ehliyet' && c.gecerlilik_tarihi) {
+        const diffTime = new Date(c.gecerlilik_tarihi).getTime() - now.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        // Expand validity search window to 180 days (6 months) so upcoming licenses are warning-logged
+        if (diffDays <= 180) {
+          const p = personnelList.find(per => per.sicil_no === c.sicil_no)
+          alerts.licenses.push({
+            name: p ? `${p.ad} ${p.soyad} (${p.unvan})` : `Personel (Sicil: ${c.sicil_no})`,
+            date: c.gecerlilik_tarihi,
+            remainingDays: diffDays
+          })
+        }
+      }
+    })
+
+    // 3. Overdue Assignments
+    overdueAssignments.forEach((a) => {
+      const diffTime = now.getTime() - new Date(a.iade_tarihi || a.created_at).getTime()
+      const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)))
+      alerts.assignments.push({
+        name: a.zimmet_alan_ad_soyad || a.personel_sicil || "Bilinmeyen Personel",
+        material: a.materialName || "Malzeme",
+        date: a.iade_tarihi || a.created_at,
+        delayDays: diffDays
+      })
+    })
+
+    // Sort by urgency
+    alerts.vehicles.sort((a, b) => a.remainingDays - b.remainingDays)
+    alerts.licenses.sort((a, b) => a.remainingDays - b.remainingDays)
+    alerts.assignments.sort((a, b) => b.delayDays - a.delayDays)
+
+    return alerts
+  }, [vehicles, personnelList, staffCertifications, overdueAssignments])
+
+  const totalAlertsCount = useMemo(() => {
+    return criticalAlerts.vehicles.length + criticalAlerts.licenses.length + criticalAlerts.assignments.length;
+  }, [criticalAlerts])
 
   // ─── Loading State ────────────────────────────────────────
   if (loading) {
@@ -810,25 +1158,25 @@ export default function DashboardPage() {
     iconColor: string
   }) => (
     <Link href={href}>
-      <Card className="group relative overflow-hidden bg-slate-900/40 border-slate-800/90 hover:border-slate-700/90 transition-all duration-200 ease-out hover:shadow-md cursor-pointer rounded-2xl light:bg-white light:border-slate-200/80 light:shadow-sm light:hover:border-slate-300">
+      <Card className="group relative overflow-hidden hover:border-[var(--fd-border-strong)] transition-all duration-200 ease-out hover:shadow-[var(--fd-shadow)] cursor-pointer">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <p className="text-xs sm:text-sm font-medium text-slate-400 light:text-slate-600 uppercase tracking-wider">
+              <p className="text-xs sm:text-sm font-medium text-[var(--fd-text3)] uppercase tracking-wider">
                 {label}
               </p>
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100 light:text-slate-900">{value}</p>
-              <p className="text-xs text-slate-500 light:text-slate-600 line-clamp-1">{subtitle}</p>
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--fd-text)]">{value}</p>
+              <p className="text-xs text-[var(--fd-text2)] line-clamp-1">{subtitle}</p>
             </div>
             <div
-              className={`p-2.5 rounded-xl bg-slate-950/65 border border-slate-800 text-slate-300 light:bg-slate-100 light:border-slate-200 light:text-slate-700 shadow-inner group-hover:scale-105 transition-transform duration-300 ${iconColor}`}
+              className={`p-2.5 rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] shadow-inner group-hover:scale-105 transition-transform duration-300 ${iconColor}`}
             >
               {icon}
             </div>
           </div>
-          <div className="flex items-center mt-3 pt-3 border-t border-slate-800/60 light:border-slate-200">
-            <span className="text-xs text-slate-400 light:text-slate-600 font-medium group-hover:text-slate-200 light:group-hover:text-slate-900 transition-colors flex items-center gap-1">
-              Detay Görüntüle <ArrowRight className="w-3 h-3 text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+          <div className="flex items-center mt-3 pt-3 border-t border-[var(--fd-border)]">
+            <span className="text-xs text-[var(--fd-text3)] font-medium group-hover:text-[var(--fd-text)] transition-colors flex items-center gap-1">
+              Detay Görüntüle <ArrowRight className="w-3 h-3 text-[var(--fd-text3)] group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
         </CardContent>
@@ -840,608 +1188,758 @@ export default function DashboardPage() {
   const CustomTooltip = ({ active, payload, label }: DashboardTooltipProps) => {
     if (!active || !payload?.length) return null
     return (
-      <div className="bg-background border shadow-xl rounded-lg px-3 py-2">
-        <p className="text-xs font-semibold text-foreground">{label}</p>
-        <p className="text-sm font-bold text-primary">{payload[0].value} olay</p>
+      <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r-sm)] px-3 py-2">
+        <p className="text-xs font-semibold text-[var(--fd-text)]">{label}</p>
+        <p className="text-sm font-bold text-[var(--fd-accent)]">{payload[0].value} olay</p>
       </div>
     )
   }
 
+  const handleExportCSV = () => {
+    if (activities.length === 0) {
+      alert("Dışa aktarılacak vaka veya aktivite verisi bulunmuyor.");
+      return;
+    }
+    const headers = ["Baslik", "Detay", "Zaman", "Tip", "Durum"];
+    const rows = activities.map(act => [
+      act.title || "",
+      act.detail || "",
+      act.time || "",
+      act.type || "",
+      act.status || (act as any).durum || "Aktif"
+    ]);
+    const csvContent = "\uFEFF" + [
+      headers.join(","),
+      ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `itfaiye_dashboard_raporu_${new Date().toLocaleDateString("tr-TR")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // ─── Render ───────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6 max-w-[1600px] mx-auto">
-      {/* Canlı Teşkilat Program Barı */}
-      <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-all duration-200 ease-out backdrop-blur-md ${
-        programInfo.isOffDuty 
-          ? "border-blue-500/30 bg-blue-950/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] light:bg-blue-50 light:border-blue-200 light:text-blue-800" 
-          : "border-emerald-500/40 bg-emerald-950/25 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] light:bg-emerald-50 light:border-emerald-200 light:text-emerald-800"
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-3 w-3">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-              programInfo.isOffDuty ? "bg-blue-400" : "bg-emerald-400"
-            }`}></span>
-            <span className={`relative inline-flex rounded-full h-3 w-3 ${
-              programInfo.isOffDuty ? "bg-blue-500" : "bg-emerald-500"
-            }`}></span>
-          </div>
-          <span className="font-semibold text-sm sm:text-base tracking-wide font-mono">
-            {programInfo.text}
-          </span>
-        </div>
-        <div className="text-xs font-mono opacity-80 flex items-center gap-1.5 bg-black/30 light:bg-slate-200/60 px-3 py-1.5 rounded-lg border border-white/5 light:border-slate-300 light:text-slate-700">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{currentTime}</span>
-        </div>
-      </div>
-
-
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+    <div className="flex flex-col gap-[calc(var(--fd-sp)*3)] pb-20 fade-in-up">
+      
+      {/* 1. Header Row */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" />
-            Yönetim ve Gösterge Paneli
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground light:text-slate-600 mt-0.5">
-            Sivas İtfaiye Müdürlüğü Anlık Durum Özeti
+          <h1 className="text-2xl font-bold text-[var(--fd-text)] tracking-tight">Genel Bakış</h1>
+          <p className="text-[var(--fd-text2)] text-sm mt-1">
+            Operasyon merkezinin canlı durumu, vaka istatistikleri ve kaynak doluluğu.
           </p>
         </div>
-        <Badge variant="outline" className="self-start sm:self-auto px-3 py-1.5 text-xs font-mono border-primary/30 text-primary bg-primary/5">
-          <Activity className="w-3.5 h-3.5 mr-1.5 animate-pulse" />
-          CANLI
-        </Badge>
-      </div>
-
-      {/* ═══════════ GÖREVDEKİ ARAÇ DURUMLARI ═══════════ */}
-      <Card className="border-border bg-slate-900/30 backdrop-blur-lg border-slate-800/80 shadow-[0_0_25px_rgba(6,182,212,0.1)] rounded-2xl overflow-hidden light:bg-white light:border-slate-200/80 light:shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border-b border-slate-800/60 light:border-slate-200 gap-3">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-100 light:text-slate-900 flex items-center gap-2">
-                Görevdeki Araç Durumları
-              </h2>
-              <p className="text-xs text-cyan-400/80 light:text-cyan-700 font-mono mt-0.5 tracking-wide uppercase">
-                Sivas İtfaiye Müdürlüğü Anlık Durum Özeti
-              </p>
-            </div>
-          </div>
-          <Link href="/yonetim/harita">
-            <span className="h-9 px-4 py-2 text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer">
-              <MapIcon className="w-3.5 h-3.5" /> Canlı Haritayı Aç
-            </span>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 bg-[var(--fd-surface)] border border-[var(--fd-border-strong)] text-[var(--fd-text)] px-4 py-2 rounded-[var(--fd-r-sm)] font-semibold text-sm hover:bg-[var(--fd-surface2)] transition-colors shadow-sm cursor-pointer"
+          >
+            <span>↑ Dışa Aktar</span>
+          </button>
+          <Link 
+            href="/yonetim/olaylar?action=add" 
+            className="flex items-center gap-2 bg-[var(--fd-accent)] text-white px-4 py-2 rounded-[var(--fd-r-sm)] font-semibold text-sm hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
+          >
+            <span>+ Yeni Vaka</span>
           </Link>
         </div>
-        <CardContent className="p-3 sm:p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {activeMissions.length === 0 ? (
-              <div className="col-span-full py-8 text-center text-slate-400 light:text-slate-600 bg-slate-950/25 light:bg-slate-50 border border-slate-900 light:border-slate-200 rounded-xl font-medium">
-                Görevde aktif araç bulunmamaktadır.
-              </div>
-            ) : (
-              activeMissions.map((mission, index) => {
-                const latVal = mission.coords ? mission.coords[1].toFixed(5) : "39.73395"
-                const lngVal = mission.coords ? mission.coords[0].toFixed(5) : "37.02093"
-                return (
-                  <div 
-                    key={`${mission.plaka}-${index}`}
-                    className="relative group bg-slate-950/75 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/30 rounded-2xl p-4 transition-all duration-200 ease-out hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] flex flex-col justify-between gap-3 overflow-hidden light:bg-slate-50 light:border-slate-200/80"
-                  >
-                    {/* Subtle siber grids overlay */}
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-                    
-                    <div className="flex items-start justify-between gap-2 relative z-10">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-bold tracking-wider text-slate-200 light:text-slate-800 bg-slate-900 light:bg-slate-100 border border-slate-800 light:border-slate-200 px-2 py-0.5 rounded shadow-inner">
-                            {mission.plaka}
-                          </span>
-                          <Badge variant="outline" className="text-[10px] py-0 border-cyan-500/20 text-cyan-400 bg-cyan-950/20 whitespace-nowrap">
-                            {mission.arac_tipi}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300 light:text-slate-700 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-                          <span>Vaka: <strong className="text-red-400">{mission.olay_turu}</strong></span>
-                        </div>
-                      </div>
-                      <span className="text-[11px] text-slate-400 light:text-slate-600 bg-slate-900/80 border border-slate-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 font-mono whitespace-nowrap">
-                        ⏱️ <LiveDuration cikisSaati={mission.cikis_saati} />
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 border-t border-slate-900 light:border-slate-200 pt-2.5 relative z-10">
-                      <div className="text-xs space-y-1.5">
-                        <p className="text-slate-400 light:text-slate-600 flex items-start gap-1">
-                          <span className="text-slate-500 select-none">📍</span>
-                          <span><strong className="text-slate-300 light:text-slate-900">{mission.mahalle}</strong> {mission.adres}</span>
-                        </p>
-                        <p className="text-slate-500 light:text-slate-600 font-mono text-[10px] flex items-center gap-1">
-                          <span className="text-cyan-500/70 select-none">📡</span>
-                          <span>GPS: <span className="text-cyan-400 font-semibold">{latVal}°N, {lngVal}°E</span></span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end pt-1 relative z-10">
-                      <button 
-                        onClick={() => {
-                          const lat = mission.coords ? mission.coords[1] : 39.73395
-                          const lng = mission.coords ? mission.coords[0] : 37.02093
-                          router.push(`/yonetim/harita?focusPlaka=${mission.plaka}&lat=${lat}&lng=${lng}`)
-                        }}
-                        className="w-full sm:w-auto px-3 h-8 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/30 text-slate-300 hover:text-cyan-400 bg-slate-900/40 hover:bg-cyan-950/10 rounded-lg transition-all duration-200 ease-out flex items-center justify-center gap-1 cursor-pointer animate-none light:bg-slate-100 light:border-slate-200 light:text-slate-700 light:hover:bg-slate-200"
-                      >
-                        <Target className="w-3.5 h-3.5 text-cyan-400" /> Konuma Git
-                      </button>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ═══════════ OVERDUE ASSIGNMENTS RED NEON ALERT ═══════════ */}
-      {overdueAssignments.length > 0 && (
-        <div className="border-2 border-red-500/40 bg-red-950/15 shadow-[0_0_25px_rgba(239,68,68,0.25)] rounded-2xl p-5 space-y-3 relative overflow-hidden animate-pulse light:bg-red-50 light:border-red-200 light:text-red-900">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="p-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 light:bg-red-100 light:border-red-200">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-red-400 light:text-red-800 tracking-wider">🚨 GECİKMİŞ GEÇİCİ ZİMMET ALARMI</h2>
-              <p className="text-xs text-slate-400 light:text-red-750">İade tarihi geçen {overdueAssignments.length} adet malzeme tespit edildi!</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 relative z-10">
-            {overdueAssignments.map((assignment) => (
-              <div key={assignment.id} className="bg-slate-950/80 border border-red-500/20 rounded-xl p-3.5 flex flex-col justify-between gap-2 hover:border-red-500/40 transition-colors light:bg-slate-100 light:border-slate-200">
-                <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <p className="text-sm font-bold text-slate-200 light:text-slate-900">{assignment.materialName}</p>
-                    <p className="text-xs text-slate-400 light:text-slate-600 mt-0.5">Birim: <span className="text-red-400 font-semibold">{assignment.birim_adi}</span> ({assignment.teslim_edilen_tip})</p>
-                  </div>
-                  <span className="font-mono text-[9px] font-bold bg-red-500/10 text-red-400 light:bg-red-100 light:text-red-800 border border-red-500/20 light:border-red-200 px-2 py-0.5 rounded">GECİKTİ</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] text-slate-500 light:text-slate-600 border-t border-slate-900 light:border-slate-200 pt-2.5 font-mono">
-                  <span>Zimmet: {new Date(assignment.teslim_tarihi).toLocaleDateString("tr-TR")}</span>
-                  <span className="text-red-400/80 font-bold">İade: {new Date(assignment.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════ CRITICAL ALERTS ═══════════ */}
-      {showCriticalAlerts && <CriticalAlertsWidget />}
-
-      {/* ═══════════ KPI CARDS ═══════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard
-          icon={<Flame className="w-5 h-5" />}
-          label="Aktif Olaylar"
-          value={kpi.activeIncidents}
-          subtitle="Toplam kayıtlı vaka"
-          href="/yonetim/olaylar"
-          iconColor="text-red-400"
-        />
-        <KPICard
-          icon={<Truck className="w-5 h-5" />}
-          label="Araç Bakımda"
-          value={kpi.vehiclesInMaintenance}
-          subtitle="Servis bekleyen araç"
-          href="/yonetim/arac-bakim"
-          iconColor="text-amber-400"
-        />
-        <KPICard
-          icon={<Droplets className="w-5 h-5" />}
-          label="Arızalı Hidrant"
-          value={kpi.faultyHydrants}
-          subtitle="Bakım/Arıza durumunda"
-          href="/yonetim/harita"
-          iconColor="text-blue-400"
-        />
-        <KPICard
-          icon={<GraduationCap className="w-5 h-5" />}
-          label="Planlı Eğitim"
-          value={kpi.upcomingTraining.count}
-          subtitle={
-            kpi.upcomingTraining.nextTopic
-              ? `Sonraki: ${kpi.upcomingTraining.nextTopic}`
-              : "Planlanmış eğitim yok"
-          }
-          href="/yonetim/egitimler"
-          iconColor="text-emerald-400"
-        />
       </div>
 
-      {/* ═══════════ SHIFT LIST (NÖBETÇİ PERSONEL & SAATLİK KULE NÖBETİ) ═══════════ */}
-      <Card className="border-border overflow-hidden bg-slate-900/10 border-slate-800/60 shadow-xl rounded-2xl light:bg-white light:border-slate-200/80 light:shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/45 bg-slate-950/20 light:bg-slate-50 light:border-slate-200">
-          <div className="flex items-center gap-3">
-            <Users className="w-5 h-5 text-cyan-500" />
-            <h2 className="text-sm sm:text-base font-bold text-slate-100 light:text-slate-900">
-              {activePostaNumber}. Posta Nöbet ve Karargah Yönetimi
-            </h2>
-          </div>
-          
-          {/* Tab Selector */}
-          <div className="flex p-0.5 bg-slate-950 light:bg-slate-100 border border-slate-800 light:border-slate-200 rounded-lg shrink-0">
-            <button
-              onClick={() => setActiveShiftTab('daily')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                activeShiftTab === 'daily'
-                  ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold shadow-md'
-                  : 'text-slate-400 light:text-slate-600 hover:text-slate-200 light:hover:text-slate-900 border border-transparent'
-              }`}
-            >
-              Günlük Nöbet Listesi
-            </button>
-            <button
-              onClick={() => setActiveShiftTab('hourly')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                activeShiftTab === 'hourly'
-                  ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-extrabold shadow-md'
-                  : 'text-slate-400 light:text-slate-600 hover:text-slate-200 light:hover:text-slate-900 border border-transparent'
-              }`}
-            >
-              Saatlik Karargah Nöbet Çizelgesi
-            </button>
+      {/* 2. Stat Cards (5 columns) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-[calc(var(--fd-sp)*2)]">
+        {/* Aktif Vaka */}
+        <div onClick={() => setIsMissionModalOpen(true)} className="block outline-none cursor-pointer">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.2)] shadow-[var(--fd-shadow-sm)] flex flex-col justify-between min-h-[130px] hover:-translate-y-1 hover:border-[var(--fd-accent)]/40 transition-all h-full">
+            <div className="flex justify-between items-start">
+              <span className="text-[var(--fd-text2)] text-xs font-semibold">Aktif Vaka</span>
+              <div className="bg-[var(--fd-danger)]/10 text-[var(--fd-danger)] p-1.5 rounded-[var(--fd-r-sm)]">
+                 <Flame size={14} strokeWidth={2.5} />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">{kpi.activeIncidents}</div>
+              <div className="text-[10px] text-[var(--fd-danger)] font-semibold mt-1 flex items-center gap-1">
+                +2 son 1 saat
+              </div>
+            </div>
           </div>
         </div>
-        <CardContent className="p-4 sm:p-5">
-          {activeShiftTab === 'daily' ? (
-            <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
-          ) : (
-            <HourlyShifts personnel={sortedPersonnel} activePosta={activePostaNumber} />
-          )}
-        </CardContent>
-      </Card>
 
-      {/* ═══════════ CHART + ACTIVITY FEED ═══════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-        {/* ── Trend Chart (2/3 width) ── */}
-        <Card className="lg:col-span-2 border-border overflow-hidden light:bg-white light:border-slate-200/80 light:shadow-sm">
-          <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
-            <div>
-              <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 light:text-slate-900">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                Son 7 Gün Olay Trendi
-              </h2>
-              <p className="text-xs text-muted-foreground light:text-slate-600 mt-0.5">
-                Toplam <span className="font-semibold text-foreground light:text-slate-900">{totalWeekIncidents}</span> olay
-              </p>
+        {/* Anlık Program (Eskiden Bugünkü Çağrı idi) */}
+        <div onClick={() => setIsScheduleModalOpen(true)} className="block outline-none cursor-pointer">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.2)] shadow-[var(--fd-shadow-sm)] flex flex-col justify-between min-h-[130px] hover:-translate-y-1 hover:border-[var(--fd-accent)]/40 transition-all h-full relative overflow-hidden">
+            {/* Soft highlight behind the timer for visual pop */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--fd-accent)] opacity-[0.03] rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+            
+            <div className="flex justify-between items-start relative z-10">
+              <span className="text-[var(--fd-text2)] text-xs font-semibold">Anlık Program</span>
+              <div className="bg-[var(--fd-info)]/10 text-[var(--fd-info)] p-1.5 rounded-[var(--fd-r-sm)]">
+                 <Clock size={14} strokeWidth={2.5} /> 
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              {trend > 0 ? (
-                <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 text-xs px-2 py-0.5">
-                  <TrendingUp className="w-3 h-3 mr-1" />+{trend}
-                </Badge>
-              ) : trend < 0 ? (
-                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 text-xs px-2 py-0.5">
-                  <TrendingDown className="w-3 h-3 mr-1" />{trend}
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-muted-foreground text-xs px-2 py-0.5">Sabit</Badge>
-              )}
+            <div className="mt-2 relative z-10">
+              <div className="text-3xl font-bold font-mono text-[var(--fd-text)] truncate" title={programInfo.label}>
+                {programInfo.timeLeft === "--:--" ? currentTime.substring(0, 5) : programInfo.timeLeft}
+              </div>
+              <div className="text-[10px] text-[var(--fd-accent)] font-semibold mt-1 flex items-center gap-1 line-clamp-1">
+                {programInfo.icon} {programInfo.label}
+              </div>
             </div>
           </div>
-          <CardContent className="p-2 sm:p-4 pt-0">
-            <div className="h-[220px] sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dailyData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+        </div>
+
+        {/* Müsait Araç */}
+        <Link href="/araclar" className="block outline-none cursor-pointer">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.2)] shadow-[var(--fd-shadow-sm)] flex flex-col justify-between min-h-[130px] hover:-translate-y-1 hover:border-[var(--fd-accent)]/40 transition-all h-full">
+            <div className="flex justify-between items-start">
+              <span className="text-[var(--fd-text2)] text-xs font-semibold">Müsait Araç</span>
+              <div className="bg-[var(--fd-success)]/10 text-[var(--fd-success)] p-1.5 rounded-[var(--fd-r-sm)]">
+                 <Truck size={14} strokeWidth={2.5} />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">{vehicleStats.available} <span className="text-sm text-[var(--fd-text3)] font-sans font-medium">/ {vehicleStats.total}</span></div>
+              <div className="text-[10px] text-[var(--fd-info)] font-semibold mt-1 flex items-center gap-1">
+                {vehicleStats.total > 0 ? Math.round((vehicleStats.available / vehicleStats.total) * 100) : 0}% müsait ({vehicleStats.active} görevde)
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Görevdeki Personel */}
+        <div onClick={() => setIsPersonnelModalOpen(true)} className="block outline-none cursor-pointer">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.2)] shadow-[var(--fd-shadow-sm)] flex flex-col justify-between min-h-[130px] hover:-translate-y-1 hover:border-[var(--fd-accent)]/40 transition-all h-full">
+            <div className="flex justify-between items-start">
+              <span className="text-[var(--fd-text2)] text-xs font-semibold">Görevdeki Personel</span>
+              <div className="bg-[var(--fd-info)]/10 text-[var(--fd-info)] p-1.5 rounded-[var(--fd-r-sm)]">
+                 <Users size={14} strokeWidth={2.5} />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">{sortedPersonnel.length || personnelList.length || 47}</div>
+              <div className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1 flex items-center gap-1">
+                tam {activePostaNumber}. vardiyası
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ort. Varış Süresi */}
+        <Link href="/yonetim/istatistikler" className="block outline-none">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.2)] shadow-[var(--fd-shadow-sm)] flex flex-col justify-between min-h-[130px] hover:-translate-y-1 hover:border-[var(--fd-accent)]/40 transition-all cursor-pointer h-full">
+            <div className="flex justify-between items-start">
+              <span className="text-[var(--fd-text2)] text-xs font-semibold">Ort. Varış Süresi</span>
+              <div className="bg-purple-500/10 text-purple-500 p-1.5 rounded-[var(--fd-r-sm)]">
+                 <MapIcon size={14} strokeWidth={2.5} />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">6.4 <span className="text-sm text-[var(--fd-text3)] font-sans font-medium">dk</span></div>
+              <div className="text-[10px] text-[var(--fd-success)] font-semibold mt-1 flex items-center gap-1">
+                -0.7 hedef 8 dk
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* 3. Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[calc(var(--fd-sp)*2)]">
+        {/* Aylık Vaka Trendi */}
+        <div className="lg:col-span-2 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.5)] shadow-[var(--fd-shadow-sm)] flex flex-col">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-[calc(var(--fd-fs)*1.02)] font-bold text-[var(--fd-text)]">Aylık Vaka Trendi</h2>
+              <p className="text-[calc(var(--fd-fs)*0.85)] text-[var(--fd-text3)] mt-0.5">Son 12 ay · toplam müdahale sayısı</p>
+            </div>
+            <div className="bg-[var(--fd-surface3)] px-3 py-1 rounded-[var(--fd-r-sm)] text-[calc(var(--fd-fs)*0.8)] font-semibold text-[var(--fd-text2)] border border-[var(--fd-border)]">
+              2025-26
+            </div>
+          </div>
+          
+          <div className="flex-1 min-h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyTrendData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="incidentGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--fd-accent)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--fd-accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={false}
-                    tickLine={false}
-                    allowDecimals={false}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--fd-border)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--fd-text3)" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "var(--fd-text3)" }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2.5}
-                    fill="url(#incidentGradient)"
-                    dot={{ r: 4, fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
-                    activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
-                  />
+                  <Area type="monotone" dataKey="count" stroke="var(--fd-accent)" strokeWidth={2.5} fill="url(#incidentGradient)" />
                 </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ── Activity Feed (1/3 width) ── */}
-        <Card className="border-border overflow-hidden light:bg-white light:border-slate-200/80 light:shadow-sm">
-          <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
-            <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 light:text-slate-900">
-              <Clock className="w-4 h-4 text-primary" />
-              Son Aktiviteler
-            </h2>
-            <Badge variant="outline" className="text-xs light:bg-slate-100 light:border-slate-200 light:text-slate-700">{activities.length}</Badge>
+            </ResponsiveContainer>
           </div>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border light:divide-slate-200 max-h-[320px] overflow-y-auto">
-              {activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground light:text-slate-500">
-                  <AlertTriangle className="w-8 h-8 mb-2 opacity-40" />
-                  <p className="text-sm font-medium">Henüz aktivite yok</p>
-                  <p className="text-xs">Sisteme veri girildikçe burada listelenecek</p>
-                </div>
-              ) : (
-                activities.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start gap-3 px-4 sm:px-5 py-3 hover:bg-surface/50 light:hover:bg-slate-50/50 transition-colors"
-                  >
-                    <div className="mt-0.5 p-1.5 rounded-lg bg-surface border light:bg-slate-50 light:border-slate-200 shrink-0">
-                      {activityIcon(item.type)}
+        </div>
+
+        {/* Vaka Türü Dağılımı */}
+        <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.5)] shadow-[var(--fd-shadow-sm)] flex flex-col justify-between">
+          <h2 className="text-[calc(var(--fd-fs)*1.02)] font-bold text-[var(--fd-text)] mb-8">Vaka Türü Dağılımı</h2>
+          
+          <div className="flex items-center justify-center gap-6 flex-1">
+             {distributionData.total === 0 ? (
+               <div className="text-center text-xs text-[var(--fd-text3)] py-8 flex-1">
+                 Veriler yükleniyor...
+               </div>
+             ) : (
+               <>
+                  <div className="relative w-28 h-28 lg:w-32 lg:h-32 shrink-0 rounded-full flex items-center justify-center shadow-sm" style={conicGradientStyle}>
+                    <div className="w-[74px] h-[74px] lg:w-[84px] lg:h-[84px] bg-[var(--fd-surface)] rounded-full flex flex-col items-center justify-center z-10 shadow-sm select-none">
+                       <span className="text-lg lg:text-[calc(var(--fd-fs)*1.5)] font-bold font-mono text-[var(--fd-text)] leading-none">{distributionData.total}</span>
+                       <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase mt-1 tracking-widest">Toplam</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate light:text-slate-900">{item.title}</p>
-                      <p className="text-xs text-muted-foreground light:text-slate-600 truncate">{item.detail}</p>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground light:text-slate-500 whitespace-nowrap shrink-0 mt-0.5">
-                      {item.time}
-                    </span>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="flex flex-col gap-2.5 text-[11px] lg:text-xs text-[var(--fd-text2)] flex-1 overflow-y-auto max-h-[140px] pr-1 scrollbar-thin">
+                     {distributionData.list.map((item, idx) => (
+                       <div key={idx} className="flex justify-between items-center">
+                         <div className="flex items-center gap-2 truncate">
+                           <span className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
+                           <span className="truncate">{item.type}</span>
+                         </div>
+                         <span className="font-mono font-semibold text-[var(--fd-text)] ml-1.5">{item.percentage}%</span>
+                       </div>
+                     ))}
+                  </div>
+               </>
+             )}
+          </div>
+        </div>
       </div>
 
-      {/* ═══════════ GÖREV ADALETİ VE ANALİZ RADARI WIDGET ═══════════ */}
-      <Card className="border border-cyan-500/30 bg-slate-950/45 backdrop-blur-md text-slate-100 shadow-2xl relative overflow-hidden my-4 sm:my-5 light:bg-white light:border-slate-200/80 light:shadow-sm light:text-slate-900">
-        {/* Neon style corner decoration */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+      {/* 4. Lists & Status Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[calc(var(--fd-sp)*2)]">
         
-        <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 border-b border-slate-800/80 light:border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-base font-extrabold flex items-center gap-2 text-cyan-400 light:text-cyan-700">
-              <Users className="w-5 h-5 text-cyan-400 light:text-cyan-600" />
-              Göreve Çıkan Personel Dağılımı
-            </h2>
-            <p className="text-xs text-slate-400 light:text-slate-600 mt-0.5">
-              Son 30 günde en az göreve çıkan personellerin ve operasyonel dağılımın analizi
-            </p>
+        {/* Son Vakalar */}
+        <div className="lg:col-span-2 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.5)] shadow-[var(--fd-shadow-sm)] flex flex-col">
+          <div className="flex justify-between items-center mb-4 pb-3 border-b border-[var(--fd-border)]">
+             <h2 className="text-[calc(var(--fd-fs)*1.02)] font-bold text-[var(--fd-text)]">Son Vakalar</h2>
+             <Link href="/yonetim/olaylar" className="text-[calc(var(--fd-fs)*0.85)] font-semibold text-[var(--fd-danger)] hover:underline">Tümünü Gör →</Link>
           </div>
           
-          {/* Search bar */}
-          <div className="relative w-full md:w-80 z-20">
-            <div className="relative">
-              <Input
-                placeholder="Personel ismi veya sicil no aratın..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  if (selectedPersonnelStats) {
-                    setSelectedPersonnelStats(null);
-                  }
-                }}
-                className="w-full bg-slate-900/60 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-cyan-500 focus:border-cyan-500 text-xs py-1.5 pl-8 light:bg-slate-100 light:border-slate-200 light:text-slate-900 light:placeholder-slate-400"
-              />
-              <Search className="w-3.5 h-3.5 text-slate-500 light:text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              {searchTerm.trim().length > 0 && selectedPersonnelStats && (
-                <button
-                  onClick={() => {
-                    setSelectedPersonnelStats(null);
-                    setSearchTerm("");
-                  }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold"
-                >
-                  Temizle
-                </button>
-              )}
+          <div className="flex flex-col">
+             {activities.length > 0 ? activities.slice(0, 4).map((activity, i) => {
+               const isIncident = activity.type === 'incident';
+               
+               // Determine status label based on actual status
+               let statusLabel = 'Tamamlandı';
+               let statusColor = 'text-[var(--fd-success)] bg-[var(--fd-success)]/10';
+               let dotColor = 'bg-[var(--fd-success)]';
+
+               if (isIncident) {
+                 const isClosed = activity.status === 'closed' || activity.status === 'Tamamlandı';
+                 if (isClosed) {
+                   statusLabel = 'Tamamlandı';
+                   statusColor = 'text-[var(--fd-success)] bg-[var(--fd-success)]/10';
+                   dotColor = 'bg-[var(--fd-success)]';
+                 } else {
+                   // Active incident
+                   statusLabel = i === 0 ? 'Müdahale Ediliyor' : 'Aktif';
+                   statusColor = i === 0 ? 'text-[var(--fd-amber)] bg-[var(--fd-amber)]/10' : 'text-[var(--fd-danger)] bg-[var(--fd-danger)]/10';
+                   dotColor = i === 0 ? 'bg-[var(--fd-amber)]' : 'bg-[var(--fd-danger)]';
+                 }
+               }
+
+               return (
+                 <div key={i} className="flex justify-between items-center py-3.5 border-b border-[var(--fd-border-strong)]/30 last:border-0 hover:bg-[var(--fd-surface2)] transition-colors -mx-[calc(var(--fd-sp)*2.5)] px-[calc(var(--fd-sp)*2.5)] cursor-pointer">
+                    <div className="flex items-center gap-3">
+                       <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
+                       <div>
+                         <p className="text-[calc(var(--fd-fs)*0.95)] font-bold text-[var(--fd-text)] leading-snug">{activity.title}</p>
+                         <p className="text-[calc(var(--fd-fs)*0.85)] text-[var(--fd-text3)] truncate max-w-[200px] sm:max-w-xs">{activity.detail}</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-5">
+                       <span className={`text-[calc(var(--fd-fs)*0.74)] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${statusColor}`}>
+                         {statusLabel}
+                       </span>
+                       <span className="text-[calc(var(--fd-fs)*0.85)] font-mono text-[var(--fd-text3)] w-12 text-right">{activity.time.split(' ')[0]}</span>
+                    </div>
+                 </div>
+               )
+             }) : (
+               <div className="text-xs text-center py-8 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/50 rounded-lg border border-[var(--fd-border)] border-dashed">
+                 Henüz vaka veya aktivite kaydı bulunmuyor.
+               </div>
+             )}
+          </div>
+        </div>
+
+        {/* Araç Durumu & İstasyon Doluluk */}
+        <div className="flex flex-col gap-[calc(var(--fd-sp)*2)]">
+          {/* Araç Durumu */}
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.5)] shadow-[var(--fd-shadow-sm)]">
+            <h2 className="text-[calc(var(--fd-fs)*1.02)] font-bold text-[var(--fd-text)] mb-5">Araç Durumu</h2>
+            
+            {/* Progress Bar Stack */}
+            <div className="w-full h-3.5 rounded-full flex overflow-hidden mb-5 bg-[var(--fd-surface3)]">
+               <div className="h-full bg-[var(--fd-success)]" style={{ width: `${vehicleStats.total > 0 ? (vehicleStats.available / vehicleStats.total) * 100 : 0}%` }}></div>
+               <div className="h-full bg-[var(--fd-amber)]" style={{ width: `${vehicleStats.total > 0 ? (vehicleStats.active / vehicleStats.total) * 100 : 0}%` }}></div>
+               <div className="h-full bg-[var(--fd-info)]" style={{ width: `${vehicleStats.total > 0 ? (vehicleStats.maintenance / vehicleStats.total) * 100 : 0}%` }}></div>
             </div>
             
-            {searchTerm.trim().length > 0 && !selectedPersonnelStats && (
-              <div className="absolute left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl divide-y divide-slate-800/60 z-30 light:bg-white light:border-slate-200 light:divide-slate-200">
-                {filteredJusticeStats
-                  ?.filter((p: any) => 
-                    normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(searchTerm)) || 
-                    normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(searchTerm))
-                  )
-                  .map((p: any) => (
-                    <button
-                      key={p.sicil_no}
-                      type="button"
-                      onClick={() => handleSelectPersonnel(p.sicil_no)}
-                      className="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 transition-colors flex justify-between items-center light:text-slate-800 light:hover:bg-slate-100"
-                    >
-                      <span className="font-medium">{p.ad} {p.soyad} ({p.sicil_no})</span>
-                      <span className="text-[10px] text-slate-500 light:text-slate-400">{p.unvan}</span>
-                    </button>
-                  ))
-                }
-                {filteredJusticeStats?.filter((p: any) => 
-                  normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(searchTerm)) || 
-                  normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(searchTerm))
-                ).length === 0 && (
-                  <div className="px-3 py-3 text-xs text-muted-foreground light:text-slate-500 text-center">Sonuç bulunamadı</div>
+            <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-[calc(var(--fd-fs)*0.85)]">
+              <div className="flex justify-between items-center"><div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm bg-[var(--fd-success)]"></span><span className="text-[var(--fd-text2)]">Müsait</span></div><span className="font-mono font-bold text-[var(--fd-text)]">{vehicleStats.available}</span></div>
+              <div className="flex justify-between items-center"><div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm bg-[var(--fd-amber)]"></span><span className="text-[var(--fd-text2)]">Görevde</span></div><span className="font-mono font-bold text-[var(--fd-text)]">{vehicleStats.active}</span></div>
+              <div className="flex justify-between items-center"><div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm bg-[var(--fd-info)]"></span><span className="text-[var(--fd-text2)]">Bakımda/Arızalı</span></div><span className="font-mono font-bold text-[var(--fd-text)]">{vehicleStats.maintenance}</span></div>
+            </div>
+          </div>
+
+          {/* Kritik Uyarılar */}
+          <div onClick={() => setIsAlertsModalOpen(true)} className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2.5)] shadow-[var(--fd-shadow-sm)] flex-1 cursor-pointer hover:border-[var(--fd-danger)]/30 transition-all flex flex-col justify-between min-h-[180px]">
+            <div>
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-[calc(var(--fd-fs)*1.02)] font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  <AlertTriangle className="text-[var(--fd-danger)] animate-pulse w-5 h-5" />
+                  Kritik Uyarılar
+                </h2>
+                {totalAlertsCount > 0 ? (
+                  <span className="bg-[var(--fd-danger)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-bounce">
+                    {totalAlertsCount} Alarm
+                  </span>
+                ) : (
+                  <span className="bg-[var(--fd-success)]/10 text-[var(--fd-success)] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Sistem Temiz
+                  </span>
                 )}
+              </div>
+              
+              <div className="space-y-3">
+                {totalAlertsCount === 0 ? (
+                  <div className="py-6 text-center text-xs text-[var(--fd-text3)]">
+                    🟢 Yaklaşan muayene, ehliyet süresi dolan şoför veya gecikmiş zimmet kaydı bulunmuyor.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {criticalAlerts.vehicles.length > 0 && (
+                      <div className="flex items-center justify-between text-xs p-2 rounded bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)]/50">
+                        <span className="text-[var(--fd-text2)]">Araç Muayene/Sigorta Alarmları</span>
+                        <span className="font-mono font-bold text-[var(--fd-danger)]">+{criticalAlerts.vehicles.length}</span>
+                      </div>
+                    )}
+                    {criticalAlerts.licenses.length > 0 && (
+                      <div className="flex items-center justify-between text-xs p-2 rounded bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)]/50">
+                        <span className="text-[var(--fd-text2)]">Ehliyet Geçerlilik Alarmları</span>
+                        <span className="font-mono font-bold text-[var(--fd-amber)]">+{criticalAlerts.licenses.length}</span>
+                      </div>
+                    )}
+                    {criticalAlerts.assignments.length > 0 && (
+                      <div className="flex items-center justify-between text-xs p-2 rounded bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)]/50">
+                        <span className="text-[var(--fd-text2)]">Gecikmiş Geçici Zimmetler</span>
+                        <span className="font-mono font-bold text-orange-400">+{criticalAlerts.assignments.length}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            {totalAlertsCount > 0 && (
+              <div className="mt-5 pt-3 border-t border-[var(--fd-border)]/50 flex justify-between items-center text-[10px] text-[var(--fd-text3)] font-semibold uppercase">
+                <span>Detayları görmek için tıklayın</span>
+                <span className="text-[var(--fd-accent)]">İncele →</span>
               </div>
             )}
           </div>
         </div>
-
-        <CardContent className="p-4 sm:p-5">
-          {/* Dynamic lookup details */}
-          {lookupLoading ? (
-            <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground animate-pulse text-xs">
-              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Detaylar sorgulanıyor...
+      </div>
+      
+      {/* Active Missions Modal */}
+      {isMissionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+            <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex flex-row items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  <Flame size={20} className="text-[var(--fd-danger)] animate-pulse" />
+                  Aktif Vakalar & Görevdeki Araçlar ({activeMissions.length})
+                </h2>
+                <p className="text-sm text-[var(--fd-text3)] mt-1">Aktif vakalarda veya dış görevlerde bulunan araçların ve personelin anlık durum bilgileri.</p>
+              </div>
+              <button onClick={() => setIsMissionModalOpen(false)} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors p-1 bg-transparent border-none cursor-pointer">
+                <X size={20} />
+              </button>
             </div>
-          ) : selectedPersonnelStats ? (
-            <div className="border border-cyan-500/20 bg-cyan-950/5 rounded-xl p-4 space-y-4 light:bg-cyan-50/30 light:border-cyan-200">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-sm font-extrabold text-cyan-400 light:text-cyan-700">
-                    {selectedPersonnelStats.personnel.ad} {selectedPersonnelStats.personnel.soyad}
-                  </h4>
-                  <p className="text-xs text-slate-400 light:text-slate-600 mt-0.5">
-                    Sicil: <span className="font-mono text-slate-300 light:text-slate-800">{selectedPersonnelStats.personnel.sicil_no}</span> | Ünvan: {selectedPersonnelStats.personnel.unvan} | İstasyon: {selectedPersonnelStats.personnel.istasyon}
-                  </p>
-                </div>
-                <Badge className="bg-cyan-950 text-cyan-400 border-cyan-800 px-2 py-0.5 text-xs font-bold light:bg-cyan-100 light:text-cyan-800 light:border-cyan-200">
-                  Toplam Görev: {selectedPersonnelStats.total}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <div className="space-y-3">
-                  {selectedPersonnelStats.stats.map((s: any) => {
-                    const pct = selectedPersonnelStats.total > 0 ? (s.value / selectedPersonnelStats.total) * 100 : 0;
-                    return (
-                      <div key={s.subject} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400 light:text-slate-650">{s.subject}</span>
-                          <span className="text-slate-200 light:text-slate-800 font-semibold">{s.value} Görev</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-900 light:bg-slate-200 rounded-full overflow-hidden border border-slate-800/50 light:border-slate-300/50">
-                          <div 
-                            className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
-                            style={{ width: `${pct}%` }} 
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="h-[160px] flex items-center justify-center">
-                  {selectedPersonnelStats.total === 0 ? (
-                    <div className="text-center p-4 border border-dashed border-slate-800 light:border-slate-300 rounded bg-slate-950/20 light:bg-slate-50 max-w-xs">
-                      <AlertTriangle className="w-6 h-6 text-amber-500/80 mx-auto mb-1.5 animate-pulse" />
-                      <p className="text-xs font-semibold text-slate-300 light:text-slate-800">Kayıtlı Vaka Görevi Yok</p>
-                      <p className="text-[10px] text-slate-500 light:text-slate-500 mt-0.5">Bu personel için herhangi bir olay kaydı bulunamadı.</p>
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="65%" data={selectedPersonnelStats.stats}>
-                        <PolarGrid stroke="#1e293b" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 9 }} />
-                        <Radar
-                          name="Görev Dağılımı"
-                          dataKey="value"
-                          stroke="#06b6d4"
-                          fill="#06b6d4"
-                          fillOpacity={0.25}
-                        />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            // Top 5 Lowest Active Personnel
-            <div className="space-y-3">
-              <div className="text-xs font-semibold text-slate-400 light:text-slate-600 mb-2">
-                Son 30 Günde En Az Göreve Çıkan Aktif Personel Listesi (Kritik İdari Adalet Takibi)
-              </div>
-              
-              {justiceLoading ? (
-                <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground animate-pulse text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Yükleniyor...
-                </div>
-              ) : filteredJusticeStats.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground text-xs">
-                  Kayıtlı personel bilgisi yüklenemedi.
+            <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+              {activeMissions.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-[var(--fd-text3)]">
+                  <Truck size={48} className="mb-4 opacity-20" />
+                  <p>Şu anda görevde olan araç bulunmuyor.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                  {/* Select first 5 elements */}
-                  {filteredJusticeStats.slice(0, 5).map((p: any, idx: number) => (
-                    <div 
-                      key={p.sicil_no} 
-                      onClick={() => handleSelectPersonnel(p.sicil_no)}
-                      className="group border border-slate-800/80 bg-slate-900/30 hover:border-cyan-500/30 hover:bg-slate-900/65 transition-all p-3 rounded-xl cursor-pointer flex flex-col justify-between relative overflow-hidden light:bg-slate-100 light:border-slate-200 light:hover:bg-slate-200/50 light:hover:border-cyan-400/50"
-                    >
-                      {/* Badge counter */}
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-800 text-[10px] text-slate-400 font-bold flex items-center justify-center group-hover:bg-cyan-950 group-hover:text-cyan-400 transition-colors light:bg-slate-200 light:text-slate-600 light:group-hover:bg-cyan-100 light:group-hover:text-cyan-700">
-                        #{idx + 1}
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="font-bold text-xs text-slate-200 light:text-slate-800 group-hover:text-cyan-400 light:group-hover:text-cyan-600 transition-colors truncate pr-6">
-                          {p.ad} {p.soyad}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeMissions.map((mission, idx) => (
+                    <div key={idx} className="bg-[var(--fd-surface2)]/30 border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono font-bold text-lg text-[var(--fd-accent)]">{mission.plaka}</span>
+                            <span className="text-xs bg-[var(--fd-surface3)] px-2 py-0.5 rounded text-[var(--fd-text2)]">{mission.arac_tipi}</span>
+                          </div>
+                          <p className="text-[var(--fd-text)] font-semibold text-sm">{mission.olay_turu}</p>
                         </div>
-                        <div className="text-[10px] text-slate-400 light:text-slate-500 font-mono truncate">
-                          {p.sicil_no}
-                        </div>
-                        <div className="text-[10px] text-slate-500 light:text-slate-400 truncate">
-                          {p.unvan}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 pt-2.5 border-t border-slate-800/60 light:border-slate-200 space-y-1.5">
-                        <div className="text-[11px] text-slate-300 light:text-slate-700 font-semibold flex justify-between">
-                          <span>Görev Sayısı:</span>
-                          <span className="text-amber-500 light:text-amber-700">{p.last30DaysMissions}</span>
-                        </div>
-                        <span className="inline-block text-[9px] font-bold text-amber-500/90 bg-amber-950/20 border border-amber-900/40 rounded px-1.5 py-0.5 w-full text-center light:bg-amber-50 light:text-amber-750 light:border-amber-200/85">
-                          Görevlendirme Önerilir
+                        <span className="text-xs font-mono bg-[var(--fd-amber)]/10 text-[var(--fd-amber)] px-2 py-1 rounded flex items-center gap-1 border border-[var(--fd-amber)]/20 shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--fd-amber)] animate-pulse"></span>
+                          Görevde
                         </span>
+                      </div>
+                      
+                      <div className="text-sm text-[var(--fd-text2)] space-y-1.5 border-t border-[var(--fd-border)]/50 pt-3">
+                        <div className="flex items-start gap-2">
+                          <MapPin size={14} className="text-[var(--fd-text3)] mt-0.5 shrink-0" />
+                          <span className="leading-tight">{mission.mahalle}{mission.mahalle && mission.adres ? " - " : ""}{mission.adres}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock size={14} className="text-[var(--fd-text3)]" />
+                          <span>Çıkış: <span className="font-mono text-[var(--fd-text)]">{mission.cikis_saati ? new Date(mission.cikis_saati).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : "Bilinmiyor"}</span></span>
+                        </div>
+                        
+                        <div className="pt-2 mt-2 border-t border-[var(--fd-border)]/50">
+                          <p className="text-xs text-[var(--fd-text3)] mb-1.5 font-semibold">Görevli Personel:</p>
+                          {mission.personnel && mission.personnel.length > 0 ? (
+                            <ul className="space-y-1">
+                              {mission.personnel.map((p, i) => (
+                                <li key={i} className="flex items-center gap-1.5 text-sm text-[var(--fd-text)]">
+                                  <Users size={12} className="text-[var(--fd-accent)]" /> {p}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-[var(--fd-text3)] italic">Personel ataması bulunamadı.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 flex items-center justify-between">
+              <span className="text-xs text-[var(--fd-text3)] flex items-center gap-1">
+                <Info size={12} /> Bilgiler anlık olarak güncellenmektedir
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => setIsMissionModalOpen(false)} className="px-4 py-2 rounded-[var(--fd-r)] bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface3)]/80 text-[var(--fd-text)] text-sm font-medium transition-colors border border-transparent cursor-pointer">
+                  Kapat
+                </button>
+                <Link href="/yonetim/harita" className="px-4 py-2 rounded-[var(--fd-r)] bg-[var(--fd-accent)] hover:opacity-90 text-white text-sm font-medium transition-opacity flex items-center gap-2 no-underline">
+                  <MapPin size={16} /> Haritada Gör
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* ═══════════ QUICK LINKS ═══════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { href: "/yonetim/personel", icon: <Shield className="w-5 h-5" />, label: "Personel", color: "text-indigo-500" },
-          { href: "/yonetim/olaylar", icon: <Flame className="w-5 h-5" />, label: "Olaylar", color: "text-red-500" },
-          { href: "/yonetim/harita", icon: <Activity className="w-5 h-5" />, label: "CBS Harita", color: "text-blue-500" },
-          { href: "/yonetim/hizmetler", icon: <GraduationCap className="w-5 h-5" />, label: "Hizmetler", color: "text-emerald-500" },
-        ].map((link) => (
-          <Link key={link.href} href={link.href}>
-            <Card className="group border-border hover:border-primary/30 transition-all hover:shadow-md cursor-pointer">
-              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                <div className={`${link.color} group-hover:scale-110 transition-transform`}>{link.icon}</div>
-                <span className="text-sm font-medium">{link.label}</span>
-                <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      {/* Personnel Duty Modal */}
+      {isPersonnelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-5xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto flex flex-col max-h-[90vh]">
+            <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex flex-row items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  <Users size={20} className="text-[var(--fd-info)]" />
+                  Nöbetçi Vardiya Personel Listesi ({activePostaNumber}. Posta)
+                </h2>
+                <p className="text-sm text-[var(--fd-text3)] mt-1">İstasyon bazlı günlük nöbetçiler ve saatlik karargah nöbet çizelgesi.</p>
+              </div>
+              <button onClick={() => setIsPersonnelModalOpen(false)} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors p-1 bg-transparent border-none cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Tabs Selector */}
+            <div className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 px-6 py-2 flex gap-4">
+              <button 
+                onClick={() => setActiveShiftTab('daily')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeShiftTab === 'daily' ? 'border-[var(--fd-accent)] text-[var(--fd-accent)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Günlük Nöbet Listesi
+              </button>
+              <button 
+                onClick={() => setActiveShiftTab('hourly')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeShiftTab === 'hourly' ? 'border-[var(--fd-accent)] text-[var(--fd-accent)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Saatlik Karargah Nöbet Çizelgesi
+              </button>
+            </div>
 
-      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
-      <div 
-        className="w-full block pointer-events-none clear-both" 
-        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
-        aria-hidden="true" 
-      />
+            <div className="p-6 overflow-y-auto flex-1">
+              {activeShiftTab === 'daily' ? (
+                <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
+              ) : (
+                <HourlyShifts personnel={sortedPersonnel} activePosta={activePostaNumber} />
+              )}
+            </div>
+
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 flex items-center justify-between shrink-0">
+              <span className="text-xs text-[var(--fd-text3)] flex items-center gap-1">
+                <Info size={12} /> Personel durum güncellemeleri otomatik olarak kaydedilir.
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => setIsPersonnelModalOpen(false)} className="px-4 py-2 rounded-[var(--fd-r)] bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface3)]/80 text-[var(--fd-text)] text-sm font-medium transition-colors border border-transparent cursor-pointer">
+                  Kapat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Critical Alerts Modal */}
+      {isAlertsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto flex flex-col max-h-[90vh]">
+            <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex flex-row items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  <AlertTriangle size={20} className="text-[var(--fd-danger)]" />
+                  Sistem Kritik Uyarı Raporu
+                </h2>
+                <p className="text-sm text-[var(--fd-text3)] mt-1">Süresi yaklaşan/geçen resmi evraklar ve geçici zimmet takip alarmları.</p>
+              </div>
+              <button onClick={() => setIsAlertsModalOpen(false)} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors p-1 bg-transparent border-none cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Tabs Selector */}
+            <div className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 px-6 py-2 flex gap-4">
+              <button 
+                onClick={() => setActiveAlertsTab('vehicles')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeAlertsTab === 'vehicles' ? 'border-[var(--fd-danger)] text-[var(--fd-danger)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Araç Muayene/Sigorta ({criticalAlerts.vehicles.length})
+              </button>
+              <button 
+                onClick={() => setActiveAlertsTab('licenses')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeAlertsTab === 'licenses' ? 'border-[var(--fd-amber)] text-[var(--fd-amber)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Şoför Ehliyet Süreleri ({criticalAlerts.licenses.length})
+              </button>
+              <button 
+                onClick={() => setActiveAlertsTab('assignments')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeAlertsTab === 'assignments' ? 'border-orange-400 text-orange-400' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Gecikmiş Zimmet Alarmları ({criticalAlerts.assignments.length})
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {activeAlertsTab === 'vehicles' && (
+                <div className="space-y-4">
+                  {criticalAlerts.vehicles.length === 0 ? (
+                    <div className="py-8 text-center text-[var(--fd-text3)] text-sm">
+                      Muayenesi veya sigorta süresi yaklaşan araç bulunmuyor.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {criticalAlerts.vehicles.map((v, i) => (
+                        <div key={i} className="p-4 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 flex justify-between items-center">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono font-bold text-base text-[var(--fd-text)]">{v.plaka}</span>
+                              <span className="text-[10px] bg-[var(--fd-surface3)] text-[var(--fd-text2)] px-2 py-0.5 rounded">{v.type}</span>
+                            </div>
+                            <p className="text-xs text-[var(--fd-text3)]">Geçerlilik Bitiş: {new Date(v.date).toLocaleDateString("tr-TR")}</p>
+                          </div>
+                          <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded ${
+                            v.remainingDays <= 0 
+                              ? 'bg-[var(--fd-danger)]/15 text-[var(--fd-danger)] border border-[var(--fd-danger)]/30' 
+                              : 'bg-[var(--fd-amber)]/15 text-[var(--fd-amber)] border border-[var(--fd-amber)]/30'
+                          }`}>
+                            {v.remainingDays <= 0 ? "SÜRESİ GEÇTİ" : `${v.remainingDays} gün kaldı`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-[var(--fd-border)]/50 mt-4">
+                    <Link href="/yonetim/arac-bakim" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--fd-accent)]/10 text-[var(--fd-accent)] hover:bg-[var(--fd-accent)]/20 transition-colors text-xs font-bold">
+                      🚗 Araç Muayene ve Bakım Ekranına Git →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {activeAlertsTab === 'licenses' && (
+                <div className="space-y-4">
+                  {criticalAlerts.licenses.length === 0 ? (
+                    <div className="py-8 text-center text-[var(--fd-text3)] text-sm">
+                      Ehliyet geçerlilik süresi yaklaşan personel bulunmuyor.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {criticalAlerts.licenses.map((l, i) => (
+                        <div key={i} className="p-4 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 flex justify-between items-center">
+                          <div>
+                            <h4 className="font-bold text-[var(--fd-text)] text-sm mb-1">{l.name}</h4>
+                            <p className="text-xs text-[var(--fd-text3)]">Ehliyet Bitiş: {new Date(l.date).toLocaleDateString("tr-TR")}</p>
+                          </div>
+                          <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded ${
+                            l.remainingDays <= 0 
+                              ? 'bg-[var(--fd-danger)]/15 text-[var(--fd-danger)] border border-[var(--fd-danger)]/30' 
+                              : 'bg-[var(--fd-amber)]/15 text-[var(--fd-amber)] border border-[var(--fd-amber)]/30'
+                          }`}>
+                            {l.remainingDays <= 0 ? "SÜRESİ GEÇTİ" : `${l.remainingDays} gün kaldı`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-[var(--fd-border)]/50 mt-4">
+                    <Link href="/yonetim/personel" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--fd-accent)]/10 text-[var(--fd-accent)] hover:bg-[var(--fd-accent)]/20 transition-colors text-xs font-bold">
+                      👤 Personel Yönetimi Modülüne Git →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {activeAlertsTab === 'assignments' && (
+                <div className="space-y-4">
+                  {criticalAlerts.assignments.length === 0 ? (
+                    <div className="py-8 text-center text-[var(--fd-text3)] text-sm">
+                      Gecikmiş geçici zimmet kaydı bulunmuyor.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {criticalAlerts.assignments.map((a, i) => (
+                        <div key={i} className="p-4 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 flex justify-between items-start">
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-[var(--fd-text)] text-sm">{a.name}</h4>
+                            <p className="text-xs text-[var(--fd-text2)]">Zimmetli Cihaz: <span className="font-semibold">{a.material}</span></p>
+                            <p className="text-xs text-[var(--fd-text3)]">Planlanan İade: {new Date(a.date).toLocaleDateString("tr-TR")}</p>
+                          </div>
+                          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-orange-500/15 text-orange-500 border border-orange-500/30 whitespace-nowrap">
+                            {a.delayDays} GÜN GECİKTİ
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-[var(--fd-border)]/50 mt-4">
+                    <Link href="/yonetim/envanter" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--fd-accent)]/10 text-[var(--fd-accent)] hover:bg-[var(--fd-accent)]/20 transition-colors text-xs font-bold">
+                      📦 Envanter ve Zimmet Modülüne Git →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 flex items-center justify-between shrink-0">
+              <span className="text-xs text-[var(--fd-text3)] flex items-center gap-1">
+                <Info size={12} /> Bilgiler veri tabanından anlık olarak hesaplanır.
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => setIsAlertsModalOpen(false)} className="px-4 py-2 rounded-[var(--fd-r)] bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface3)]/80 text-[var(--fd-text)] text-sm font-medium transition-colors border border-transparent cursor-pointer">
+                  Kapat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Daily Schedule Modal */}
+      {isScheduleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto flex flex-col max-h-[90vh]">
+            <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex flex-row items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  📅 Günlük Teşkilat Çalışma Programı
+                </h2>
+                <p className="text-xs text-[var(--fd-text3)] mt-1">24 saatlik nöbet süresince uygulanacak resmi saatlik faaliyet planı.</p>
+              </div>
+              <button onClick={() => setIsScheduleModalOpen(false)} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors p-1 bg-transparent border-none cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)]/10 overflow-hidden">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="bg-[var(--fd-surface2)]/50 border-b border-[var(--fd-border)] text-xs text-[var(--fd-text3)] font-bold uppercase tracking-wider">
+                      <th className="p-3 pl-4">Saat</th>
+                      <th className="p-3">Faaliyet</th>
+                      <th className="p-3">Tür</th>
+                      <th className="p-3 text-right pr-4">Durum</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--fd-border)]">
+                    {DAILY_SCHEDULE_SLOTS.map((slot, index) => {
+                      const isActive = programInfo.label === slot.label
+                      return (
+                        <tr 
+                          key={index} 
+                          className={`transition-colors ${
+                            isActive 
+                              ? 'bg-[var(--fd-accent)]/10 font-semibold border-l-4 border-l-[var(--fd-accent)]' 
+                              : 'hover:bg-[var(--fd-surface2)]/30'
+                          }`}
+                        >
+                          <td className="p-3 pl-4 font-mono text-xs text-[var(--fd-text2)]">{slot.start} - {slot.end}</td>
+                          <td className="p-3 text-[var(--fd-text)] flex items-center gap-2">
+                            <span>{slot.icon}</span>
+                            <span>{slot.label}</span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              slot.type === 'Mola' 
+                                ? 'bg-orange-500/10 text-orange-500' 
+                                : slot.type === 'Nazari'
+                                ? 'bg-blue-500/10 text-blue-500'
+                                : 'bg-[var(--fd-success)]/10 text-[var(--fd-success)]'
+                            }`}>
+                              {slot.type}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right pr-4">
+                            {isActive ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-[var(--fd-accent)] font-extrabold animate-pulse">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[var(--fd-accent)]" /> ŞİMDİ
+                              </span>
+                            ) : (
+                              <span className="text-xs text-[var(--fd-text3)] font-medium">Beklemede</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 flex items-center justify-between shrink-0">
+              <span className="text-xs text-[var(--fd-text3)] flex items-center gap-1 select-none">
+                <Info size={12} strokeWidth={2.5} /> Program saatleri otomatik güncellenir.
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => setIsScheduleModalOpen(false)} className="px-4 py-2 rounded-[var(--fd-r)] bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface3)]/80 text-[var(--fd-text)] text-sm font-medium transition-colors border border-transparent cursor-pointer">
+                  Kapat
+                </button>
+                <Link 
+                  href="/yonetim/gorevler" 
+                  onClick={() => setIsScheduleModalOpen(false)}
+                  className="px-4 py-2 rounded-[var(--fd-r)] bg-[var(--fd-accent)] hover:opacity-90 text-white text-sm font-medium transition-opacity flex items-center gap-2 no-underline"
+                >
+                  Tüm Program & Görevleri Yönet →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
     </div>
   )
 }

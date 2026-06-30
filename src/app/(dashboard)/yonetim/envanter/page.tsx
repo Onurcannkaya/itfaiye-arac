@@ -117,18 +117,18 @@ const CLEAN_COMPARTMENT_OPTIONS = [
 ];
 
 const DURUM_OPTIONS = [
-  { value: "Tam", label: "Tam (Eksiksiz)", colorClass: "text-emerald-400" },
-  { value: "Eksik", label: "Eksik (Hasarsız)", colorClass: "text-amber-400" },
-  { value: "Arızalı", label: "Arızalı (Bakımda)", colorClass: "text-rose-400" },
-  { value: "Kayıp/Yok", label: "Kayıp / Yok", colorClass: "text-slate-400" },
-  { value: "🔄 GEÇİCİ ZİMMETTE", label: "🔄 GEÇİCİ ZİMMETTE", colorClass: "text-cyan-400" }
+  { value: "Tam", label: "Tam (Eksiksiz)", colorClass: "text-[var(--fd-success)]" },
+  { value: "Eksik", label: "Eksik (Hasarsız)", colorClass: "text-[var(--fd-amber)]" },
+  { value: "Arızalı", label: "Arızalı (Bakımda)", colorClass: "text-[var(--fd-danger)]" },
+  { value: "Kayıp/Yok", label: "Kayıp / Yok", colorClass: "text-[var(--fd-text3)]" },
+  { value: "🔄 GEÇİCİ ZİMMETTE", label: "🔄 GEÇİCİ ZİMMETTE", colorClass: "text-[var(--fd-info)]" }
 ];
 
 function InfoTooltip({ content }: { content: string }) {
   return (
     <div className="relative group inline-block ml-1.5 align-middle">
-      <HelpCircle className="w-4 h-4 text-slate-400 hover:text-cyan-400 cursor-help transition-colors" />
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block bg-slate-950/95 backdrop-blur-md text-slate-200 text-xs rounded-xl p-2.5 w-64 border border-slate-800 shadow-2xl z-50 transition-all text-center leading-normal font-sans font-medium whitespace-normal">
+      <HelpCircle className="w-4 h-4 text-[var(--fd-text3)] hover:text-[var(--fd-accent)] cursor-help transition-colors" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block bg-[var(--fd-surface2)]/95 backdrop-blur-md text-[var(--fd-text2)] text-xs rounded-xl p-2.5 w-64 border border-[var(--fd-border)] shadow-2xl z-50 transition-all text-center leading-normal font-sans font-medium whitespace-normal">
         {content}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-950" />
       </div>
@@ -147,6 +147,7 @@ function VehicleInventoryTab() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [selectedPlaka, setSelectedPlaka] = useState<string>("")
   const [tableRows, setTableRows] = useState<InventoryRow[]>([])
+  const [expandedCompartments, setExpandedCompartments] = useState<Record<string, boolean>>({})
 
   // Temporary Assignment States
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
@@ -336,11 +337,11 @@ function VehicleInventoryTab() {
   // Render plate as a beautiful realistic Turkish license plate badge
   const renderPlateHeader = (plaka: string) => {
     const isPlate = plaka.match(/(58\s+[A-Z]+\s+\d+)/i);
-    if (!isPlate) return <span className="font-bold tracking-tight text-slate-300 font-sans">{plaka}</span>;
+    if (!isPlate) return <span className="font-bold tracking-tight text-[var(--fd-text2)] font-sans">{plaka}</span>;
     return (
-      <div className="inline-flex items-center border border-slate-700/60 rounded bg-slate-900 overflow-hidden text-[10px] font-mono leading-none shadow-[0_2px_5px_rgba(0,0,0,0.4)] border-b-2 border-slate-950">
+      <div className="inline-flex items-center border border-[var(--fd-border-strong)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] overflow-hidden text-[10px] font-mono leading-none shadow-[var(--fd-shadow-sm)] border-b-2 border-[var(--fd-border-strong)]">
         <span className="bg-blue-600 text-white px-1 py-1 text-[8px] font-black select-none">TR</span>
-        <span className="px-1.5 py-1 text-slate-100 font-black tracking-tight whitespace-nowrap">{plaka}</span>
+        <span className="px-1.5 py-1 text-[var(--fd-text)] font-black tracking-tight whitespace-nowrap">{plaka}</span>
       </div>
     );
   };
@@ -505,8 +506,14 @@ function VehicleInventoryTab() {
           });
 
           setTableRows(mapped);
+          if (mapped.length > 0) {
+            setExpandedCompartments({ [mapped[0].bolme_kapak]: true });
+          } else {
+            setExpandedCompartments({});
+          }
         } else {
           setTableRows([]);
+          setExpandedCompartments({});
         }
       } catch (err) {
         console.error("Araç envanter yükleme hatası:", err)
@@ -526,17 +533,47 @@ function VehicleInventoryTab() {
 
   // Add new row handler
   const handleAddNewItem = () => {
+    const defaultComp = selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi";
     setTableRows(prev => [
       ...prev,
       {
         internalId: Math.random().toString(36).substring(7),
         plaka: selectedPlaka,
-        bolme_kapak: selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi",
+        bolme_kapak: defaultComp,
         malzeme_adi: "",
         adet: 1,
         durum: "Tam"
       }
     ]);
+    setExpandedCompartments(prev => ({
+      ...prev,
+      [defaultComp]: true
+    }))
+  };
+
+  const handleAddNewItemInCompartment = (comp: string) => {
+    setTableRows(prev => [
+      ...prev,
+      {
+        internalId: Math.random().toString(36).substring(7),
+        plaka: selectedPlaka,
+        bolme_kapak: comp,
+        malzeme_adi: "",
+        adet: 1,
+        durum: "Tam"
+      }
+    ]);
+    setExpandedCompartments(prev => ({
+      ...prev,
+      [comp]: true
+    }))
+  };
+
+  const toggleCompartment = (comp: string) => {
+    setExpandedCompartments(prev => ({
+      ...prev,
+      [comp]: !prev[comp]
+    }))
   };
 
   // Delete row handler
@@ -748,6 +785,20 @@ function VehicleInventoryTab() {
     return Array.from(set).filter(Boolean);
   }, [tableRows]);
 
+  const compartmentsToRender = useMemo(() => {
+    const present = new Set(tableRows.map(r => r.bolme_kapak))
+    const list = CLEAN_COMPARTMENT_OPTIONS.filter(c => present.has(c))
+    tableRows.forEach(r => {
+      if (r.bolme_kapak && !list.includes(r.bolme_kapak)) {
+        list.push(r.bolme_kapak)
+      }
+    })
+    if (list.length === 0) {
+      list.push(selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi")
+    }
+    return list
+  }, [tableRows, selectedPlaka]);
+
   const printCompartments = printFilter === "all" ? distinctCompartments : [printFilter];
 
   // Dynamic distribution mapping for stock query tab cards
@@ -776,10 +827,10 @@ function VehicleInventoryTab() {
       <div className="flex flex-col min-h-screen space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8">
         
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 pb-4 print:hidden gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[var(--fd-border)] pb-4 print:hidden gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-              <Combine className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--fd-text)] flex items-center gap-2">
+              <Combine className="w-8 h-8 text-[var(--fd-accent)] drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
               QR & Envanter Yönetimi
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
@@ -793,7 +844,7 @@ function VehicleInventoryTab() {
               <select 
                 value={printFilter} 
                 onChange={e => setPrintFilter(e.target.value)} 
-                className="h-11 w-full sm:w-auto rounded-lg border border-white/10 bg-slate-900/80 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shrink-0 font-medium font-mono min-h-[44px]"
+                className="h-11 w-full sm:w-auto rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 text-sm text-[var(--fd-text)] focus:outline-none focus:ring-2 focus:border-[var(--fd-accent)] shrink-0 font-medium font-mono min-h-[44px]"
               >
                 <option value="all">Tüm Bölmeler</option>
                 {distinctCompartments.map(c => (
@@ -817,7 +868,7 @@ function VehicleInventoryTab() {
             <Button 
               onClick={exportStockMatrixToCSV} 
               variant="secondary" 
-              className="w-full sm:w-auto h-11 shrink-0 font-bold border border-white/10 bg-slate-800/85 hover:bg-slate-800 text-slate-100 min-h-[44px]"
+              className="w-full sm:w-auto h-11 shrink-0 font-bold border border-[var(--fd-border)] bg-slate-800/85 hover:bg-[var(--fd-surface3)] text-[var(--fd-text)] min-h-[44px]"
             >
               <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-400" />
               Excel (CSV) İndir
@@ -826,16 +877,16 @@ function VehicleInventoryTab() {
         </div>
 
         {/* Tab Selection Row */}
-        <div className="flex gap-2 p-1 bg-slate-900/60 backdrop-blur-md rounded-xl border border-white/5 self-start print:hidden">
+        <div className="flex gap-2 p-1 bg-[var(--fd-surface2)] backdrop-blur-md rounded-xl border border-white/5 self-start print:hidden">
           <button
             onClick={() => setActiveTab("crud")}
-            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "crud" ? "bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-slate-200"}`}
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "crud" ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]" : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)]"}`}
           >
             🚗 Araç Envanter Editörü (CRUD)
           </button>
           <button
             onClick={() => setActiveTab("matrix")}
-            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "matrix" ? "bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-slate-200"}`}
+            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === "matrix" ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]" : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)]"}`}
           >
             📊 Genel Stok & Sorgu Matrisi
           </button>
@@ -844,8 +895,8 @@ function VehicleInventoryTab() {
         {/* Dynamic Display Tab Body */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4 print:hidden">
-            <Combine className="w-12 h-12 text-cyan-400 animate-spin" />
-            <p className="text-slate-400 font-mono text-sm tracking-wider">ENVANTER VERİLERİ ÇEKİLİYOR...</p>
+            <Combine className="w-12 h-12 text-[var(--fd-accent)] animate-spin" />
+            <p className="text-[var(--fd-text3)] font-mono text-sm tracking-wider">ENVANTER VERİLERİ ÇEKİLİYOR...</p>
           </div>
         ) : (
           
@@ -853,17 +904,17 @@ function VehicleInventoryTab() {
           activeTab === "crud" ? (
             <div className="space-y-6">
               {/* Vehicle Selection Header Card */}
-              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
+              <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
                 <CardContent className="p-5 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                   
                   {/* Target Plate Select Dropdown */}
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
+                    <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">HEDEF ARAÇ PLAKASI</label>
                     <div className="relative">
                       <select
                         value={selectedPlaka}
                         onChange={(e) => setSelectedPlaka(e.target.value)}
-                        className="w-full h-12 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+                        className="w-full h-12 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3.5 font-mono font-bold text-[var(--fd-text)] text-sm md:text-base focus:outline-none focus:ring-2 focus:border-[var(--fd-accent)] cursor-pointer"
                       >
                         <option value="">-- Araç / Depo Seçin --</option>
                         {vehicles.map(v => (
@@ -879,14 +930,14 @@ function VehicleInventoryTab() {
 
                   {/* Separator / Arrow */}
                   <div className="flex items-center justify-center pt-4 md:pt-6 px-2">
-                    <ArrowRight className="text-cyan-500/40 w-5 h-5 hidden md:block" />
+                    <ArrowRight className="text-[var(--fd-accent)]/40 w-5 h-5 hidden md:block" />
                   </div>
 
                   {/* Durum Bilgisi Counter Box */}
-                  <div className="flex-1 bg-slate-950/40 p-3 rounded-xl border border-white/5 border-dashed flex justify-between items-center h-12">
+                  <div className="flex-1 bg-[var(--fd-surface2)]/40 p-3 rounded-xl border border-white/5 border-dashed flex justify-between items-center h-12">
                     <div>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase font-mono leading-none mb-1">Durum Bilgisi</p>
-                      <p className="text-xs text-slate-300 font-semibold leading-none">Toplam Malzeme Çeşitliliği</p>
+                      <p className="text-[9px] font-bold text-[var(--fd-text3)] uppercase font-mono leading-none mb-1">Durum Bilgisi</p>
+                      <p className="text-xs text-[var(--fd-text2)] font-semibold leading-none">Toplam Malzeme Çeşitliliği</p>
                     </div>
                     <span className="font-mono bg-rose-500/10 text-rose-400 border border-rose-500/25 px-2.5 py-1 rounded text-xs font-bold shrink-0">
                       {tableRows.length} Kalem
@@ -898,26 +949,26 @@ function VehicleInventoryTab() {
 
               {/* Admin/Editor Vehicle Details Edit Tools */}
               {canEdit && selectedPlaka && selectedPlaka !== "GARAJ" && (
-                <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
+                <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
                   <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-end">
                     <div className="w-full sm:w-32">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">FİLO NUMARASI</label>
+                      <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">FİLO NUMARASI</label>
                       <input
                         type="number"
                         value={editFiloNo}
                         onChange={(e) => setEditFiloNo(e.target.value)}
                         placeholder="Örn: 3"
-                        className="w-full h-11 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-mono font-bold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        className="w-full h-11 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3.5 font-mono font-bold text-[var(--fd-text)] text-sm focus:outline-none focus:ring-2 focus:border-[var(--fd-accent)]"
                       />
                     </div>
                     <div className="flex-1 w-full font-sans">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">AÇIKLAMA / ÇAĞRI ADI</label>
+                      <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">AÇIKLAMA / ÇAĞRI ADI</label>
                       <input
                         type="text"
                         value={editAciklama}
                         onChange={(e) => setEditAciklama(e.target.value)}
                         placeholder="Örn: Ford Kargo Merdiven"
-                        className="w-full h-11 rounded-xl border border-white/10 bg-slate-950/80 px-3.5 font-bold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        className="w-full h-11 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3.5 font-bold text-[var(--fd-text)] text-sm focus:outline-none focus:ring-2 focus:border-[var(--fd-accent)]"
                       />
                     </div>
                     <button
@@ -932,14 +983,14 @@ function VehicleInventoryTab() {
 
               {/* CRUD Editor Table Matrix Card */}
               {!selectedPlaka ? (
-                <Card className="bg-slate-950/40 border border-slate-800/40 py-16 text-center rounded-2xl print:hidden">
-                  <p className="text-slate-500 italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası veya garaj deposunu seçin.</p>
+                <Card className="bg-[var(--fd-surface2)]/40 border border-[var(--fd-border)]/40 py-16 text-center rounded-2xl print:hidden">
+                  <p className="text-[var(--fd-text3)] italic text-sm">Düzenleme yapmak için lütfen üst menüden bir taktik araç plakası veya garaj deposunu seçin.</p>
                 </Card>
               ) : (
-                <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl print:hidden">
-                  <CardHeader className="bg-slate-950/40 border-b border-white/10 flex flex-row items-center justify-between p-5">
-                    <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
-                      <Combine className="w-4 h-4 text-cyan-400" />
+                <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl print:hidden">
+                  <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] flex flex-row items-center justify-between p-5">
+                    <CardTitle className="text-base font-bold text-[var(--fd-text2)] flex items-center gap-2 tracking-tight">
+                      <Combine className="w-4 h-4 text-[var(--fd-accent)]" />
                       <span>
                         {selectedPlaka === "GARAJ" 
                           ? "Garaj Deposu Envanter Editörü" 
@@ -956,9 +1007,9 @@ function VehicleInventoryTab() {
                       onClick={handleAddNewItem} 
                       size="sm" 
                       variant="secondary" 
-                      className="font-bold border border-white/10 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs rounded-lg px-3 py-1.5"
+                      className="font-bold border border-[var(--fd-border)] bg-slate-800/80 hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] text-xs rounded-lg px-3 py-1.5"
                     >
-                      <Plus className="w-3.5 h-3.5 mr-1 text-cyan-400"/>
+                      <Plus className="w-3.5 h-3.5 mr-1 text-[var(--fd-accent)]"/>
                       Yeni Satır
                     </Button>
                   </CardHeader>
@@ -966,110 +1017,163 @@ function VehicleInventoryTab() {
                     
                     {loadingRows ? (
                       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                        <p className="text-slate-500 font-mono text-xs">Ayrıntılı envanter listesi yükleniyor...</p>
+                        <Loader2 className="w-8 h-8 text-[var(--fd-accent)] animate-spin" />
+                        <p className="text-[var(--fd-text3)] font-mono text-xs">Ayrıntılı envanter listesi yükleniyor...</p>
+                      </div>
+                    ) : tableRows.length === 0 ? (
+                      <div className="py-16 text-center text-[var(--fd-text3)] italic font-mono text-xs">
+                        Bu araca ait malzeme kaydı bulunamadı. "Yeni Satır" butonuna basarak envanter ekleyin.
                       </div>
                     ) : (
-                      <div className="overflow-x-auto w-full">
-                        <table className="w-full text-sm min-w-[700px]">
-                          <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
-                            <tr>
-                              <th className="px-5 py-3.5 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
-                              <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
-                              <th className="px-5 py-3.5 text-left font-semibold w-24">ADET</th>
-                              <th className="px-5 py-3.5 text-left font-semibold w-40">DURUM</th>
-                              <th className="px-5 py-3.5 text-center font-semibold w-40">İŞLEMLER</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-white/5 font-medium">
-                            {tableRows.length === 0 ? (
-                              <tr>
-                                <td colSpan={5} className="py-12 text-center text-slate-500 italic font-mono text-xs">
-                                  Bu araca ait malzeme kaydı bulunamadı. "Yeni Satır" butonuna basarak envanter ekleyin.
-                                </td>
-                              </tr>
-                            ) : (
-                              tableRows.map((row) => (
-                                <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
-                                  {/* Compartment select */}
-                                  <td className="px-5 py-2.5 align-middle">
-                                    <select
-                                      value={row.bolme_kapak}
-                                      onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
-                                      className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono"
-                                    >
-                                      {CLEAN_COMPARTMENT_OPTIONS.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                      ))}
-                                    </select>
-                                  </td>
+                      <div className="flex flex-col divide-y divide-[var(--fd-border)]/60">
+                        {compartmentsToRender.map((comp) => {
+                          const rowsInComp = tableRows.filter(r => r.bolme_kapak === comp)
+                          const isExpanded = !!expandedCompartments[comp]
 
-                                  {/* Material Name input */}
-                                  <td className="px-5 py-2.5 align-middle">
-                                    <Input 
-                                      placeholder="Malzeme ismi..."
-                                      value={row.malzeme_adi}
-                                      onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
-                                      className="bg-slate-950/60 border-white/10 text-slate-200 text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-full"
-                                    />
-                                  </td>
+                          return (
+                            <div key={comp} className="flex flex-col">
+                              {/* Accordion Header */}
+                              <button
+                                type="button"
+                                onClick={() => toggleCompartment(comp)}
+                                className="w-full flex items-center justify-between p-4 bg-[var(--fd-surface2)]/15 hover:bg-[var(--fd-surface2)]/40 transition-colors border-0 cursor-pointer select-none text-left"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[10px] text-[var(--fd-accent)] font-bold font-mono w-4">
+                                    {isExpanded ? "▼" : "▶"}
+                                  </span>
+                                  <span className="text-sm font-bold text-[var(--fd-text)]">
+                                    {comp}
+                                  </span>
+                                  <Badge variant="muted" className="text-[10px] font-mono px-2 py-0.5 bg-[var(--fd-surface3)] text-[var(--fd-text2)] border border-[var(--fd-border)]">
+                                    {rowsInComp.length} Malzeme
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleAddNewItemInCompartment(comp)
+                                    }}
+                                    size="sm"
+                                    variant="secondary"
+                                    className="h-7 px-2.5 font-bold border border-[var(--fd-border)] bg-slate-800/80 hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] text-[10px] rounded-lg"
+                                  >
+                                    + Yeni Ekle
+                                  </Button>
+                                </div>
+                              </button>
 
-                                  {/* Quantity input */}
-                                  <td className="px-5 py-2.5 align-middle">
-                                    <Input 
-                                      type="number"
-                                      min="1"
-                                      value={row.adet}
-                                      onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
-                                      className="bg-slate-950/60 border-white/10 text-slate-200 font-mono text-xs focus:border-cyan-500/50 focus:ring-cyan-500/50 h-10 w-20 text-center"
-                                    />
-                                  </td>
+                              {/* Accordion Content */}
+                              {isExpanded && (
+                                <div className="overflow-x-auto w-full bg-[var(--fd-surface2)]/5 border-t border-[var(--fd-border)]/60 animate-in slide-in-from-top-1 duration-150">
+                                  <table className="w-full text-sm min-w-[700px]">
+                                    <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-[var(--fd-border)]/40 font-mono">
+                                      <tr>
+                                        <th className="px-5 py-3 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
+                                        <th className="px-5 py-3 text-left font-semibold">MALZEME ADI</th>
+                                        <th className="px-5 py-3 text-left font-semibold w-24">ADET</th>
+                                        <th className="px-5 py-3 text-left font-semibold w-40">DURUM</th>
+                                        <th className="px-5 py-3 text-center font-semibold w-40">İŞLEMLER</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--fd-border)]/30 font-medium">
+                                      {rowsInComp.length === 0 ? (
+                                        <tr>
+                                          <td colSpan={5} className="py-8 text-center text-[var(--fd-text3)] italic font-mono text-xs">
+                                            Bu bölmede kayıtlı malzeme bulunamadı. "+ Yeni Ekle" butonuna basarak ekleyin.
+                                          </td>
+                                        </tr>
+                                      ) : (
+                                        rowsInComp.map((row) => (
+                                          <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
+                                            {/* Compartment select */}
+                                            <td className="px-5 py-2 align-middle">
+                                              <select
+                                                value={row.bolme_kapak}
+                                                onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
+                                                className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono"
+                                              >
+                                                {CLEAN_COMPARTMENT_OPTIONS.map(option => (
+                                                  <option key={option} value={option}>{option}</option>
+                                                ))}
+                                              </select>
+                                            </td>
 
-                                  {/* Status select */}
-                                  <td className="px-5 py-2.5 align-middle">
-                                    <select
-                                      value={row.durum}
-                                      onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
-                                      className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/80 text-slate-200 px-3 py-1 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 outline-none font-mono font-bold"
-                                    >
-                                      {DURUM_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value} className={opt.colorClass}>
-                                          {opt.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </td>
+                                            {/* Material Name input */}
+                                            <td className="px-5 py-2 align-middle">
+                                              <Input 
+                                                placeholder="Malzeme ismi..."
+                                                value={row.malzeme_adi}
+                                                onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
+                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9 w-full"
+                                              />
+                                            </td>
 
-                                  {/* Actions cell */}
-                                  <td className="px-5 py-2.5 text-center align-middle flex items-center justify-center gap-2">
-                                    <button
-                                      onClick={() => handleOpenAssignmentModal(row)}
-                                      disabled={!row.malzeme_adi}
-                                      className="h-10 px-2.5 flex items-center justify-center text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors border border-transparent hover:border-cyan-500/20 text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
-                                      title="Geçici Zimmetle"
-                                    >
-                                      <span>🔄</span>
-                                      <span className="hidden sm:inline">Zimmetle</span>
-                                    </button>
-                                    <button 
-                                      onClick={() => handleDeleteItem(row.internalId)}
-                                      className="h-10 w-10 flex items-center justify-center text-slate-500 hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[44px]"
-                                      title="Satırı Kaldır"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
+                                            {/* Quantity input */}
+                                            <td className="px-5 py-2 align-middle">
+                                              <Input 
+                                                type="number"
+                                                min="1"
+                                                value={row.adet}
+                                                onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
+                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9 w-20 text-center"
+                                              />
+                                            </td>
+
+                                            {/* Status select */}
+                                            <td className="px-5 py-2 align-middle">
+                                              <select
+                                                value={row.durum}
+                                                onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
+                                                className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono font-bold"
+                                              >
+                                                {DURUM_OPTIONS.map(opt => (
+                                                  <option key={opt.value} value={opt.value} className={opt.colorClass}>
+                                                    {opt.label}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </td>
+
+                                            {/* Actions cell */}
+                                            <td className="px-5 py-2 text-center align-middle flex items-center justify-center gap-1.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenAssignmentModal(row)}
+                                                disabled={!row.malzeme_adi}
+                                                className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
+                                                title="Geçici Zimmetle"
+                                              >
+                                                <span>🔄</span>
+                                                <span className="hidden sm:inline">Zimmetle</span>
+                                              </button>
+                                              <button 
+                                                type="button"
+                                                onClick={() => handleDeleteItem(row.internalId)}
+                                                className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px]"
+                                                title="Satırı Kaldır"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        ))
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </CardContent>
                   
                   {/* Save bar */}
-                  <div className="p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
+                  <div className="p-4 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
                     {saveSuccess && (
                       <span className="text-xs font-mono font-bold text-emerald-400 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25 justify-center">
                         ✓ VERİTABANINA YAZILDI VE MÜHÜRLENDİ
@@ -1103,16 +1207,16 @@ function VehicleInventoryTab() {
             <div className="space-y-6">
               
               {/* Dynamic query search bar */}
-              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
+              <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
                 <CardContent className="p-5">
                   <div className="relative">
-                    <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+                    <Search className="absolute left-4 top-3.5 text-[var(--fd-text3)] w-5 h-5" />
                     <Input
                       type="text"
                       placeholder="Malzeme ismi ile matriste süzme yapın (Örn: Ala Hortum, Motopomp, Jeneratör)..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="bg-slate-900/60 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/50 h-12 pl-12 rounded-xl"
+                      className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] focus:border-[var(--fd-accent)] h-12 pl-12 rounded-xl"
                     />
                   </div>
                 </CardContent>
@@ -1121,59 +1225,59 @@ function VehicleInventoryTab() {
               {/* Dynamic Search Cards for vehicle distributions (visible only when search has text) */}
               {searchQuery.trim() !== "" && (
                 <div className="space-y-4 print:hidden">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono pl-1">ARAMA SONUÇLARI MATRİS DIŞI DAĞILIM KARTLARI</h3>
+                  <h3 className="text-xs font-bold text-[var(--fd-text3)] uppercase tracking-wider font-mono pl-1">ARAMA SONUÇLARI MATRİS DIŞI DAĞILIM KARTLARI</h3>
                   
                   {filteredInventory.length === 0 ? (
-                    <Card className="bg-slate-950/40 border border-slate-800/40 py-8 text-center rounded-2xl">
-                      <p className="text-slate-500 italic text-sm">Aranan malzeme cinsiyle eşleşen envanter kaydı bulunamadı.</p>
+                    <Card className="bg-[var(--fd-surface2)]/40 border border-[var(--fd-border)]/40 py-8 text-center rounded-2xl">
+                      <p className="text-[var(--fd-text3)] italic text-sm">Aranan malzeme cinsiyle eşleşen envanter kaydı bulunamadı.</p>
                     </Card>
                   ) : (
                     <div className="grid grid-cols-1 gap-4">
                       {filteredInventory.map(item => {
                         const dists = distributionMap[item.id] || [];
                         return (
-                          <Card key={item.id} className="bg-slate-950/75 border border-slate-800/60 rounded-2xl overflow-hidden shadow-lg hover:border-cyan-500/35 transition-all duration-200">
-                            <CardHeader className="bg-slate-950/40 border-b border-white/5 p-4 flex flex-row justify-between items-center">
-                              <span className="font-bold text-slate-200 text-sm">{item.malzeme_adi}</span>
-                              <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded text-xs font-bold">
+                          <Card key={item.id} className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] overflow-hidden shadow-lg hover:border-cyan-500/35 transition-all duration-200">
+                            <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-white/5 p-4 flex flex-row justify-between items-center">
+                              <span className="font-bold text-[var(--fd-text2)] text-sm">{item.malzeme_adi}</span>
+                              <span className="font-mono bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent-soft2)] px-2 py-0.5 rounded text-xs font-bold">
                                 Toplam: {item.toplam} Adet (Depo)
                               </span>
                             </CardHeader>
                             <CardContent className="p-4 space-y-4">
                               
                               {/* Depot list */}
-                              <div className="grid grid-cols-4 gap-2 bg-slate-950/40 p-2.5 rounded-xl border border-white/5 text-center">
+                              <div className="grid grid-cols-4 gap-2 bg-[var(--fd-surface2)]/40 p-2.5 rounded-xl border border-white/5 text-center">
                                 <div>
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">Merkez</span>
-                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.merkez}</p>
+                                  <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase font-mono">Merkez</span>
+                                  <p className="font-mono font-bold text-[var(--fd-text2)] text-xs mt-0.5">{item.merkez}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">Esentepe</span>
-                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.esentepe}</p>
+                                  <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase font-mono">Esentepe</span>
+                                  <p className="font-mono font-bold text-[var(--fd-text2)] text-xs mt-0.5">{item.esentepe}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">OSB</span>
-                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.organize}</p>
+                                  <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase font-mono">OSB</span>
+                                  <p className="font-mono font-bold text-[var(--fd-text2)] text-xs mt-0.5">{item.organize}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[9px] font-bold text-slate-500 uppercase font-mono">Depo</span>
-                                  <p className="font-mono font-bold text-slate-300 text-xs mt-0.5">{item.depo}</p>
+                                  <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase font-mono">Depo</span>
+                                  <p className="font-mono font-bold text-[var(--fd-text2)] text-xs mt-0.5">{item.depo}</p>
                                 </div>
                               </div>
 
                               {/* Vehicles distribution */}
                               <div className="space-y-2">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                  <Truck className="w-3.5 h-3.5 text-cyan-500" /> Taktik Araç Zimmet Dağılımı (Garaj Hariç)
+                                <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                  <Truck className="w-3.5 h-3.5 text-[var(--fd-accent)]" /> Taktik Araç Zimmet Dağılımı (Garaj Hariç)
                                 </span>
                                 {dists.filter(d => d.plaka !== "GARAJ").length === 0 ? (
-                                  <p className="text-[11px] text-slate-500 italic font-mono pl-1">Araç üzerinde aktif zimmet bulunmamaktadır.</p>
+                                  <p className="text-[11px] text-[var(--fd-text3)] italic font-mono pl-1">Araç üzerinde aktif zimmet bulunmamaktadır.</p>
                                 ) : (
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     {dists.filter(d => d.plaka !== "GARAJ").map(d => (
-                                      <div key={d.plaka} className="bg-slate-900/60 px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
-                                        <span className="font-mono text-xs text-slate-400 font-bold">{d.plaka}</span>
-                                        <span className="font-mono text-xs text-cyan-400 font-extrabold bg-cyan-400/5 px-2 py-0.5 rounded border border-cyan-400/10">{d.adet}</span>
+                                      <div key={d.plaka} className="bg-[var(--fd-surface2)] px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
+                                        <span className="font-mono text-xs text-[var(--fd-text3)] font-bold">{d.plaka}</span>
+                                        <span className="font-mono text-xs text-[var(--fd-accent)] font-extrabold bg-[var(--fd-accent-soft)] px-2 py-0.5 rounded border border-[var(--fd-accent-soft2)]">{d.adet}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -1190,23 +1294,23 @@ function VehicleInventoryTab() {
               )}
 
               {/* Master stock pivot table matrix (Excel layout) */}
-              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
-                <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
-                  <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
-                    <Layers className="w-5 h-5 text-cyan-400" />
+              <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
+                <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex justify-between items-center flex-row">
+                  <CardTitle className="text-base font-bold text-[var(--fd-text2)] flex items-center gap-2 tracking-tight">
+                    <Layers className="w-5 h-5 text-[var(--fd-accent)]" />
                     <span>Sivas İtfaiyesi Genel Stok Durumu</span>
                   </CardTitle>
-                  <span className="font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-3 py-1 rounded-lg text-xs font-bold">
+                  <span className="font-mono bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent-soft2)] px-3 py-1 rounded-lg text-xs font-bold">
                     Genel Çeşitlilik: {filteredInventory.length} Kalem
                   </span>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-800 relative">
                     <table className="w-full text-xs min-w-[1600px] border-collapse">
-                      <thead className="bg-slate-950/90 text-xs text-slate-400 uppercase tracking-wider border-b border-white/10 font-mono sticky top-0 z-20 backdrop-blur-md">
+                      <thead className="bg-[var(--fd-surface2)]/90 text-xs text-[var(--fd-text3)] uppercase tracking-wider border-b border-[var(--fd-border)] font-mono sticky top-0 z-20 backdrop-blur-md">
                         <tr>
-                          <th className="px-4 py-4 text-left font-semibold w-16 sticky left-0 bg-slate-950 z-30 border-r border-white/10">S.No</th>
-                          <th className="px-4 py-4 text-left font-semibold min-w-[240px] sticky left-16 bg-slate-950 z-30 border-r border-white/10">Malzeme (Cinsi)</th>
+                          <th className="px-4 py-4 text-left font-semibold w-16 sticky left-0 bg-[var(--fd-surface2)] z-30 border-r border-[var(--fd-border)]">S.No</th>
+                          <th className="px-4 py-4 text-left font-semibold min-w-[240px] sticky left-16 bg-[var(--fd-surface2)] z-30 border-r border-[var(--fd-border)]">Malzeme (Cinsi)</th>
                           {/* Dynamically mapped vehicles */}
                           {vehicleColumns.map(plaka => (
                             <th key={plaka} className="px-3 py-4 text-center font-semibold w-28 border-r border-white/5 whitespace-nowrap">
@@ -1214,17 +1318,17 @@ function VehicleInventoryTab() {
                             </th>
                           ))}
                           {/* Warehouse branches */}
-                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">MERKEZ</th>
-                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">ESENTEPE</th>
-                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">ORGANİZE</th>
-                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-slate-900/40 text-slate-300">DEPO</th>
-                          <th className="px-4 py-4 text-right font-bold w-32 bg-cyan-950/40 text-cyan-400 sticky right-0 z-30 border-l border-cyan-500/20">TOPLAM STOK</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-[var(--fd-surface2)]/40 text-[var(--fd-text2)]">MERKEZ</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-[var(--fd-surface2)]/40 text-[var(--fd-text2)]">ESENTEPE</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-[var(--fd-surface2)]/40 text-[var(--fd-text2)]">ORGANİZE</th>
+                          <th className="px-3 py-4 text-center font-bold w-24 border-r border-white/5 bg-[var(--fd-surface2)]/40 text-[var(--fd-text2)]">DEPO</th>
+                          <th className="px-4 py-4 text-right font-bold w-32 bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] sticky right-0 z-30 border-l border-[var(--fd-accent-soft2)]">TOPLAM STOK</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 font-medium">
                         {filteredInventory.length === 0 ? (
                           <tr>
-                            <td colSpan={vehicleColumns.length + 7} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                            <td colSpan={vehicleColumns.length + 7} className="py-12 text-center text-[var(--fd-text3)] italic font-mono text-xs">
                               Gösterilecek malzeme cinsi bulunmamaktadır.
                             </td>
                           </tr>
@@ -1248,8 +1352,8 @@ function VehicleInventoryTab() {
                             return (
                               <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150 border-b border-white/5">
                                 {/* Sticky columns */}
-                                <td className="px-4 py-3 text-slate-400 font-mono text-xs sticky left-0 bg-slate-950/95 z-10 border-r border-white/10">{idx + 1}</td>
-                                <td className="px-4 py-3 text-slate-100 font-bold text-sm sticky left-16 bg-slate-950/95 z-10 border-r border-white/10 truncate max-w-[240px]" title={item.malzeme_adi}>
+                                <td className="px-4 py-3 text-[var(--fd-text3)] font-mono text-xs sticky left-0 bg-[var(--fd-surface2)]/95 z-10 border-r border-[var(--fd-border)]">{idx + 1}</td>
+                                <td className="px-4 py-3 text-[var(--fd-text)] font-bold text-sm sticky left-16 bg-[var(--fd-surface2)]/95 z-10 border-r border-[var(--fd-border)] truncate max-w-[240px]" title={item.malzeme_adi}>
                                   {item.malzeme_adi}
                                 </td>
                                 {/* Vehicle Cells */}
@@ -1261,7 +1365,7 @@ function VehicleInventoryTab() {
                                       className="px-3 py-3 text-center font-mono border-r border-white/5 align-middle"
                                     >
                                       {qty > 0 ? (
-                                        <span className="inline-flex items-center justify-center bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
+                                        <span className="inline-flex items-center justify-center bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent-soft2)] font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
                                           {qty}
                                         </span>
                                       ) : (
@@ -1271,7 +1375,7 @@ function VehicleInventoryTab() {
                                   )
                                 })}
                                 {/* Branch Cells */}
-                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-[var(--fd-surface2)]/20 align-middle">
                                   {item.merkez > 0 ? (
                                     <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
                                       {item.merkez}
@@ -1280,7 +1384,7 @@ function VehicleInventoryTab() {
                                     <span className="text-slate-700/40 select-none">·</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-[var(--fd-surface2)]/20 align-middle">
                                   {item.esentepe > 0 ? (
                                     <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
                                       {item.esentepe}
@@ -1289,7 +1393,7 @@ function VehicleInventoryTab() {
                                     <span className="text-slate-700/40 select-none">·</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-[var(--fd-surface2)]/20 align-middle">
                                   {item.organize > 0 ? (
                                     <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
                                       {item.organize}
@@ -1298,7 +1402,7 @@ function VehicleInventoryTab() {
                                     <span className="text-slate-700/40 select-none">·</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-slate-900/20 align-middle">
+                                <td className="px-3 py-3 text-center font-mono border-r border-white/5 bg-[var(--fd-surface2)]/20 align-middle">
                                   {item.depo > 0 ? (
                                     <span className="inline-flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20 font-bold px-2 py-0.5 rounded-md text-xs min-w-[24px]">
                                       {item.depo}
@@ -1308,7 +1412,7 @@ function VehicleInventoryTab() {
                                   )}
                                 </td>
                                 {/* Sticky Dynamic Verified Total */}
-                                <td className="px-4 py-3 text-right bg-cyan-950/20 sticky right-0 z-10 border-l border-cyan-500/20 align-middle">
+                                <td className="px-4 py-3 text-right bg-[var(--fd-accent-soft)] sticky right-0 z-10 border-l border-[var(--fd-accent-soft2)] align-middle">
                                   <span className="inline-flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold px-2.5 py-0.5 rounded-lg text-xs min-w-[28px]">
                                     {liveTotal}
                                   </span>
@@ -1324,9 +1428,9 @@ function VehicleInventoryTab() {
               </Card>
 
               {/* standalone Garaj Deposu list (Müstakil Rapor) */}
-              <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden mt-6">
-                <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
-                  <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2 tracking-tight">
+              <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden mt-6">
+                <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex justify-between items-center flex-row">
+                  <CardTitle className="text-base font-bold text-[var(--fd-text2)] flex items-center gap-2 tracking-tight">
                     <Warehouse className="w-5 h-5 text-amber-500" />
                     <span>🏠 Garaj Deposu Zimmet Listesi (Müstakil Rapor)</span>
                   </CardTitle>
@@ -1337,7 +1441,7 @@ function VehicleInventoryTab() {
                 <CardContent className="p-0">
                   <div className="overflow-x-auto max-h-[40vh] scrollbar-thin scrollbar-thumb-slate-800">
                     <table className="w-full text-sm">
-                      <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
+                      <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
                         <tr>
                           <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
                           <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi</th>
@@ -1348,16 +1452,16 @@ function VehicleInventoryTab() {
                       <tbody className="divide-y divide-white/5 font-medium">
                         {garajInventory.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                            <td colSpan={4} className="py-12 text-center text-[var(--fd-text3)] italic font-mono text-xs">
                               Garaj deposuna zimmetli herhangi bir malzeme bulunmamaktadır.
                             </td>
                           </tr>
                         ) : (
                           garajInventory.map((item, idx) => (
                             <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
-                              <td className="px-5 py-3 text-slate-400 font-mono text-xs">{idx + 1}</td>
-                              <td className="px-5 py-3 text-slate-200 font-bold">{item.malzeme_adi}</td>
-                              <td className="px-5 py-3 text-slate-400 font-mono text-xs">{item.bolme_kapak}</td>
+                              <td className="px-5 py-3 text-[var(--fd-text3)] font-mono text-xs">{idx + 1}</td>
+                              <td className="px-5 py-3 text-[var(--fd-text2)] font-bold">{item.malzeme_adi}</td>
+                              <td className="px-5 py-3 text-[var(--fd-text3)] font-mono text-xs">{item.bolme_kapak}</td>
                               <td className="px-5 py-3 text-right text-amber-400 font-mono font-bold text-sm">{item.adet}</td>
                             </tr>
                           ))
@@ -1411,28 +1515,28 @@ function VehicleInventoryTab() {
 
         {/* --- Temporary Assignment Modal --- */}
         <Dialog open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen}>
-          <DialogContent className="max-w-md bg-slate-950 border border-slate-800/80 shadow-[0_0_30px_rgba(6,182,212,0.15)] text-slate-100 p-6 rounded-2xl">
+          <DialogContent className="max-w-md bg-[var(--fd-surface2)] border border-[var(--fd-border)]/80 shadow-[0_0_30px_rgba(6,182,212,0.15)] text-[var(--fd-text)] p-6 rounded-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-[var(--fd-accent)]">
                 <span>🔄 Malzeme Geçici Zimmet Formu</span>
               </DialogTitle>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-[var(--fd-text3)] mt-1">
                 Seçili malzemeyi başka bir personele, araca ya da dış birime geçici süreliğine zimmetleyin.
               </p>
             </DialogHeader>
 
             <div className="space-y-4 my-4 font-sans text-sm">
-              <div className="bg-slate-900/60 border border-slate-800 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">ZİMMETLENECEK MALZEME</span>
-                <p className="font-bold text-slate-200 mt-0.5">{assignmentRow?.malzeme_adi} ({assignmentRow?.adet} Adet)</p>
+              <div className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] p-3 rounded-xl">
+                <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase block font-mono">ZİMMETLENECEK MALZEME</span>
+                <p className="font-bold text-[var(--fd-text2)] mt-0.5">{assignmentRow?.malzeme_adi} ({assignmentRow?.adet} Adet)</p>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TESLİM EDİLEN TİP</label>
+                <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">TESLİM EDİLEN TİP</label>
                 <select
                   value={recipientType}
                   onChange={(e) => setRecipientType(e.target.value as any)}
-                  className="w-full h-11 rounded-xl border border-white/10 bg-slate-950 px-3 font-semibold text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  className="w-full h-11 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 font-semibold text-[var(--fd-text)] text-sm focus:outline-none focus:ring-2 focus:border-[var(--fd-accent)]"
                 >
                   <option value="PERSONEL">Personel</option>
                   <option value="ARAC">Araç</option>
@@ -1441,54 +1545,54 @@ function VehicleInventoryTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TESLİM EDİLEN BİRİM / KİŞİ ADI</label>
+                <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">TESLİM EDİLEN BİRİM / KİŞİ ADI</label>
                 <Input
                   type="text"
                   placeholder={recipientType === 'PERSONEL' ? "Personel adını girin..." : recipientType === 'ARAC' ? "Plaka girin..." : "Dış birim/kurum adı..."}
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11"
+                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] h-11"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">İRTİBAT TELEFONU (İSTEĞE BAĞLI)</label>
+                <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">İRTİBAT TELEFONU (İSTEĞE BAĞLI)</label>
                 <Input
                   type="text"
                   placeholder="Telefon numarası..."
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
-                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11"
+                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] h-11"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TAHMİNİ İADE TARİHİ</label>
+                <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">TAHMİNİ İADE TARİHİ</label>
                 <Input
                   type="date"
                   value={estimatedReturnDate}
                   onChange={(e) => setEstimatedReturnDate(e.target.value)}
-                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] h-11 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">TUTAR/ÜCRET (İSTEĞE BAĞLI - TAMİR İÇİNSE)</label>
+                <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider mb-1.5 font-mono">TUTAR/ÜCRET (İSTEĞE BAĞLI - TAMİR İÇİNSE)</label>
                 <Input
                   type="number"
                   placeholder="Ücret girin (TL)..."
                   value={costInput}
                   onChange={(e) => setCostInput(e.target.value)}
-                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
+                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] h-11 font-mono"
                 />
               </div>
             </div>
 
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setAssignmentModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
+              <Button variant="outline" onClick={() => setAssignmentModalOpen(false)} className="w-full sm:w-auto border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)]">
                 İptal
               </Button>
-              <Button onClick={handleCreateAssignment} className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+              <Button onClick={handleCreateAssignment} className="w-full sm:w-auto bg-[var(--fd-accent)] hover:bg-[var(--fd-accent)] text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]">
                 Zimmeti Onayla & Mühürle
               </Button>
             </DialogFooter>
@@ -1827,13 +1931,13 @@ export default function EnvanterPage() {
       <div className="flex flex-col min-h-screen space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8">
         
         {/* Siberian-matte Top-level Tabs */}
-        <div className="flex gap-2.5 p-1 bg-slate-900/80 backdrop-blur-lg rounded-2xl border border-white/5 self-start print:hidden">
+        <div className="flex gap-2.5 p-1 bg-[var(--fd-surface2)] backdrop-blur-lg rounded-2xl border border-white/5 self-start print:hidden">
           <button
             onClick={() => setActiveSection("vehicles")}
             className={`px-5 py-2.5 text-xs md:text-sm font-extrabold rounded-xl transition-all flex items-center gap-2 ${
               activeSection === "vehicles" 
-                ? "bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.4)]" 
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]" 
+                : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)]"
             }`}
           >
             <Truck className="w-4 h-4" />
@@ -1843,8 +1947,8 @@ export default function EnvanterPage() {
             onClick={() => setActiveSection("assignments")}
             className={`px-5 py-2.5 text-xs md:text-sm font-extrabold rounded-xl transition-all flex items-center gap-2 ${
               activeSection === "assignments" 
-                ? "bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.4)]" 
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]" 
+                : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)]"
             }`}
           >
             <RefreshCw className="w-4 h-4" />
@@ -1858,9 +1962,9 @@ export default function EnvanterPage() {
         ) : (
           <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             {/* Header Section */}
-            <div className="border-b border-white/10 pb-4">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-                <RefreshCw className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+            <div className="border-b border-[var(--fd-border)] pb-4">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--fd-text)] flex items-center gap-2">
+                <RefreshCw className="w-8 h-8 text-[var(--fd-accent)] drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                 Geçici Zimmet Kontrol Merkezi
               </h1>
               <p className="text-muted-foreground mt-1 text-sm">
@@ -1870,56 +1974,56 @@ export default function EnvanterPage() {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-slate-900/35 border-slate-800/90 rounded-2xl">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)]">
                 <CardContent className="p-4 sm:p-5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Toplam Zimmet</span>
-                  <p className="text-2xl sm:text-3xl font-bold text-slate-100 mt-1">{stats.total}</p>
+                  <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider block font-mono">Toplam Zimmet</span>
+                  <p className="text-2xl sm:text-3xl font-bold text-[var(--fd-text)] mt-1">{stats.total}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/35 border-slate-800/90 rounded-2xl border-l-2 border-l-cyan-500/50">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] border-l-4 border-l-[var(--fd-accent)]">
                 <CardContent className="p-4 sm:p-5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Aktif Zimmetler</span>
-                  <p className="text-2xl sm:text-3xl font-bold text-cyan-400 mt-1">{stats.active}</p>
+                  <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider block font-mono">Aktif Zimmetler</span>
+                  <p className="text-2xl sm:text-3xl font-bold text-[var(--fd-accent)] mt-1">{stats.active}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/35 border-slate-800/90 rounded-2xl border-l-2 border-l-red-500/50">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] border-l-2 border-l-red-500/50">
                 <CardContent className="p-4 sm:p-5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Süresi Geçenler</span>
+                  <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider block font-mono">Süresi Geçenler</span>
                   <p className="text-2xl sm:text-3xl font-bold text-red-400 mt-1 animate-pulse">{stats.overdue}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-slate-900/35 border-slate-800/90 rounded-2xl border-l-2 border-l-emerald-500/50">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] border-l-2 border-l-emerald-500/50">
                 <CardContent className="p-4 sm:p-5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">İade Edilenler</span>
+                  <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider block font-mono">İade Edilenler</span>
                   <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mt-1">{stats.returned}</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Filter card */}
-            <Card className="bg-slate-950/75 border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl">
+            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl">
               <CardContent className="p-4 flex items-center gap-3">
-                <Search className="text-slate-400 w-5 h-5 shrink-0" />
+                <Search className="text-[var(--fd-text3)] w-5 h-5 shrink-0" />
                 <Input
                   type="text"
                   placeholder="Malzeme adı veya teslim alan birime göre filtreleyin..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="bg-slate-900/60 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/50 h-11 rounded-xl"
+                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] focus:border-[var(--fd-accent)] h-11 rounded-xl"
                 />
               </CardContent>
             </Card>
 
             {/* Main Assignments Grid */}
-            <Card className="bg-slate-950/75 border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
-              <CardHeader className="bg-slate-950/40 border-b border-white/10 p-5 flex justify-between items-center flex-row">
-                <CardTitle className="text-base font-bold text-slate-200 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-cyan-400" />
+            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden">
+              <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex justify-between items-center flex-row">
+                <CardTitle className="text-base font-bold text-[var(--fd-text2)] flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[var(--fd-accent)]" />
                   <span>Resmi Geçici Zimmet Kayıtları</span>
                 </CardTitle>
                 <button 
                   onClick={loadAssignments}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors border border-white/5"
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-[var(--fd-text2)] rounded-lg transition-colors border border-white/5"
                   title="Yenile"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -1928,13 +2032,13 @@ export default function EnvanterPage() {
               <CardContent className="p-0">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                    <p className="text-slate-500 font-mono text-xs">Geçici zimmet kayıtları yükleniyor...</p>
+                    <Loader2 className="w-8 h-8 text-[var(--fd-accent)] animate-spin" />
+                    <p className="text-[var(--fd-text3)] font-mono text-xs">Geçici zimmet kayıtları yükleniyor...</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto w-full">
                     <table className="w-full text-sm min-w-[950px]">
-                      <thead className="bg-slate-950/60 text-[10px] text-slate-400 uppercase tracking-wider border-b border-white/5 font-mono">
+                      <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-white/5 font-mono">
                         <tr>
                           <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
                           <th className="px-5 py-3.5 text-left font-semibold">ZİMMETLENEN YER (ALICI)</th>
@@ -1947,7 +2051,7 @@ export default function EnvanterPage() {
                       <tbody className="divide-y divide-white/5 font-medium">
                         {filteredAssignments.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="py-12 text-center text-slate-500 italic font-mono text-xs">
+                            <td colSpan={6} className="py-12 text-center text-[var(--fd-text3)] italic font-mono text-xs">
                               Gösterilecek geçici zimmet kaydı bulunmamaktadır.
                             </td>
                           </tr>
@@ -1961,7 +2065,7 @@ export default function EnvanterPage() {
                               <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
                                 
                                 {/* Malzeme Adı */}
-                                <td className="px-5 py-4 font-bold text-slate-200">
+                                <td className="px-5 py-4 font-bold text-[var(--fd-text2)]">
                                   <div className="flex items-center gap-2">
                                     {isOverdue && (
                                       <span className="animate-pulse bg-red-500/15 text-red-400 border border-red-500/30 text-[9px] font-mono px-2 py-0.5 rounded font-bold shadow-[0_0_8px_rgba(239,68,68,0.4)]">
@@ -1975,8 +2079,8 @@ export default function EnvanterPage() {
                                 {/* Zimmetlenen Yer */}
                                 <td className="px-5 py-4">
                                   <div className="flex flex-col">
-                                    <span className="text-slate-300 font-bold">{item.birim_adi}</span>
-                                    <span className="text-[10px] text-slate-500 uppercase font-mono mt-0.5">
+                                    <span className="text-[var(--fd-text2)] font-bold">{item.birim_adi}</span>
+                                    <span className="text-[10px] text-[var(--fd-text3)] uppercase font-mono mt-0.5">
                                       {item.teslim_edilen_tip === 'PERSONEL' ? 'Personel' : 
                                        item.teslim_edilen_tip === 'ARAC' ? 'Araç' : 'Dış Birim'}
                                     </span>
@@ -1984,12 +2088,12 @@ export default function EnvanterPage() {
                                 </td>
 
                                 {/* Teslim Tarihi */}
-                                <td className="px-5 py-4 text-center font-mono text-xs text-slate-300 align-middle">
+                                <td className="px-5 py-4 text-center font-mono text-xs text-[var(--fd-text2)] align-middle">
                                   {new Date(item.teslim_tarihi).toLocaleDateString("tr-TR")}
                                 </td>
 
                                 {/* İade Tarihi */}
-                                <td className={`px-5 py-4 text-center font-mono text-xs align-middle ${isOverdue ? 'text-red-400 font-bold' : 'text-slate-300'}`}>
+                                <td className={`px-5 py-4 text-center font-mono text-xs align-middle ${isOverdue ? 'text-red-400 font-bold' : 'text-[var(--fd-text2)]'}`}>
                                   {new Date(item.tahmini_iade_tarihi).toLocaleDateString("tr-TR")}
                                 </td>
 
@@ -2001,7 +2105,7 @@ export default function EnvanterPage() {
                                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' 
                                         : isOverdue 
                                           ? 'bg-red-500/10 text-red-400 border border-red-500/25' 
-                                          : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/25'
+                                          : 'bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent-soft2)]'
                                     }`}
                                   >
                                     {isReturned ? 'İADE ALINDI' : isActive ? 'ZİMMETTE' : 'SÜRESİ GEÇTİ'}
@@ -2013,7 +2117,7 @@ export default function EnvanterPage() {
                                   <div className="flex items-center justify-center gap-2">
                                     <button
                                       onClick={() => setActivePrintAssignment(item)}
-                                      className="h-10 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/5 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all min-h-[44px]"
+                                      className="h-10 px-3 bg-slate-800 hover:bg-slate-700 text-[var(--fd-text2)] border border-white/5 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all min-h-[44px]"
                                       title="Resmi Teslim Formunu Yazdır"
                                     >
                                       <Printer className="w-4 h-4 text-orange-400" />

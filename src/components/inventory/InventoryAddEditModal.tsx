@@ -115,20 +115,20 @@ export function InventoryAddEditModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-950/90 border border-cyan-500/20 w-full max-w-md rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.15)] animate-in slide-in-from-bottom-4 zoom-in-95 overflow-hidden">
+      <div className="bg-[var(--fd-surface)] border border-[var(--fd-border-strong)] w-full max-w-md rounded-[var(--fd-r-lg)] shadow-[var(--fd-shadow-lg)] animate-in slide-in-from-bottom-4 zoom-in-95 overflow-hidden">
         
         {/* Cyber Neon Glow Header */}
-        <div className="flex items-center justify-between p-5 border-b border-cyan-500/10 bg-slate-900/30 relative">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+        <div className="flex items-center justify-between p-5 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 relative">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--fd-accent)]" />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-              <Package className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--fd-accent-soft)] flex items-center justify-center border border-[var(--fd-accent-soft2)]">
+              <Package className="w-5 h-5 text-[var(--fd-accent)]" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-100 font-mono tracking-wide">
+              <h2 className="text-lg font-bold text-[var(--fd-text)] font-mono tracking-wide">
                 {isEdit ? "Ekipman Düzenle" : "Yeni Ekipman Ekle"}
               </h2>
-              <p className="text-[10px] text-cyan-400 font-mono uppercase tracking-widest mt-0.5">
+              <p className="text-[10px] text-[var(--fd-accent)] font-mono uppercase tracking-widest mt-0.5">
                 {isEdit ? "Mevcut kaydı güncelle" : "Taktik envantere malzeme ekle"}
               </p>
             </div>
@@ -138,7 +138,7 @@ export function InventoryAddEditModal({
             size="icon" 
             onClick={onClose} 
             disabled={loading} 
-            className="rounded-full hover:bg-slate-800 text-slate-400 hover:text-white"
+            className="rounded-full hover:bg-[var(--fd-surface3)] text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -147,19 +147,19 @@ export function InventoryAddEditModal({
         {/* Form Body */}
         <form onSubmit={handleSave} className="p-5 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs flex items-start gap-2 animate-shake">
+            <div className="p-3 bg-[rgba(220,38,38,0.11)] border border-[rgba(220,38,38,0.2)] rounded-[var(--fd-r)] text-[var(--fd-danger)] text-xs flex items-start gap-2 animate-shake">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <p className="font-medium font-mono">{error}</p>
             </div>
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-400 font-mono uppercase tracking-wider">Malzeme Adı</label>
+            <label className="text-xs font-bold text-[var(--fd-text2)] font-mono uppercase tracking-wider">Malzeme Adı</label>
             <Input 
               value={formData.malzeme} 
               onChange={e => setFormData({...formData, malzeme: e.target.value})} 
               placeholder="Örn: Hortum 20m, SCBA Maskesi vb." 
-              className="bg-slate-900/50 border-cyan-500/10 text-slate-200 placeholder-slate-600 focus:border-cyan-500/50 rounded-xl h-11"
+              className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)] h-11"
               required
               autoFocus
             />
@@ -167,20 +167,20 @@ export function InventoryAddEditModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 font-mono uppercase tracking-wider">Miktar (Adet)</label>
+              <label className="text-xs font-bold text-[var(--fd-text2)] font-mono uppercase tracking-wider">Miktar (Adet)</label>
               <Input 
                 type="number" 
                 min="1"
                 value={formData.adet} 
                 onChange={e => setFormData({...formData, adet: Math.max(1, parseInt(e.target.value, 10) || 1)})} 
-                className="bg-slate-900/50 border-cyan-500/10 text-slate-200 focus:border-cyan-500/50 rounded-xl h-11"
+                className="bg-slate-900/50 border-cyan-500/10 text-slate-200 focus:border-[var(--fd-border)]0 rounded-xl h-11"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 font-mono uppercase tracking-wider">Durum</label>
+              <label className="text-xs font-bold text-[var(--fd-text2)] font-mono uppercase tracking-wider">Durum</label>
               <select 
-                className="w-full h-11 px-3 py-2 rounded-xl border border-cyan-500/10 bg-slate-900/80 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                className="w-full h-11 px-3 py-2 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-sm text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]"
                 value={formData.durum} 
                 onChange={e => setFormData({...formData, durum: e.target.value})}
               >
@@ -191,10 +191,10 @@ export function InventoryAddEditModal({
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-cyan-500/5">
-            <label className="text-xs font-bold text-slate-400 font-mono uppercase tracking-wider">Atandığı Bölme</label>
+          <div className="space-y-1.5 pt-2 border-t border-[var(--fd-border)]">
+            <label className="text-xs font-bold text-[var(--fd-text2)] font-mono uppercase tracking-wider">Atandığı Bölme</label>
             <select 
-              className="w-full h-11 px-3 py-2 rounded-xl border border-cyan-500/10 bg-slate-900/80 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 font-mono"
+              className="w-full h-11 px-3 py-2 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-sm text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)] font-mono"
               value={formData.bolme} 
               onChange={e => setFormData({...formData, bolme: e.target.value})}
             >
@@ -208,20 +208,20 @@ export function InventoryAddEditModal({
           </div>
 
           {/* Footer Buttons */}
-          <div className="p-4 bg-slate-900/20 border-t border-cyan-500/5 -mx-5 -mb-5 flex justify-end gap-3">
+          <div className="p-4 bg-slate-900/20 border-t border-[var(--fd-border)] -mx-5 -mb-5 flex justify-end gap-3">
             <Button 
               type="button" 
               variant="outline" 
               onClick={onClose} 
               disabled={loading}
-              className="rounded-xl border-cyan-500/10 bg-slate-950 hover:bg-slate-900 text-slate-300 font-mono"
+              className="rounded-[var(--fd-r-sm)] border border-[var(--fd-border-strong)] bg-[var(--fd-surface)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text2)] font-mono"
             >
               İptal
             </Button>
             <Button 
               type="submit" 
               disabled={loading} 
-              className="rounded-xl font-bold bg-cyan-600 hover:bg-cyan-500 text-white font-mono gap-2 border border-cyan-500/30"
+              className="rounded-[var(--fd-r-sm)] font-bold bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-mono gap-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               <span>{isEdit ? "Güncelle" : "Ekle"}</span>

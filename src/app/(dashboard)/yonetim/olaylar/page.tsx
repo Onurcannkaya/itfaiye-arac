@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { api } from "@/lib/api"
-import { Card, CardContent } from "@/components/ui/Card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { 
@@ -23,6 +23,12 @@ export default function OlaylarPage() {
 
   useEffect(() => {
     fetchData()
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('action') === 'add') {
+        setIsAdding(true)
+      }
+    }
   }, [])
 
   const fetchData = async () => {
@@ -79,46 +85,88 @@ export default function OlaylarPage() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Yükleniyor...</div>
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-[var(--fd-accent)]" />
+        <p className="text-[var(--fd-text3)] text-sm">Vaka & Olay Raporları yükleniyor...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="flex flex-col min-h-screen space-y-6 max-w-6xl mx-auto pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8">
+    <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in duration-300">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--fd-border)] pb-4">
         <div>
-          <h1 className="text-2xl font-bold">Vaka & Olay Raporları</h1>
-          <p className="text-muted-foreground text-sm">Resmi EK-12, EK-16 ve EK-7 İtfaiye Olay Raporu</p>
+          <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-[var(--fd-text)]">Vaka & Olay Raporları</h1>
+          <p className="text-[var(--fd-text3)] text-xs mt-1">Resmi EK-12, EK-16 ve EK-7 İtfaiye Olay Raporu</p>
         </div>
         {!isAdding && !ek16Incident && (
-          <Button onClick={() => setIsAdding(true)} className="gap-2">
+          <Button
+            onClick={() => setIsAdding(true)}
+            className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
+          >
             <Plus className="w-4 h-4" /> Yeni Vaka Ekle
           </Button>
         )}
       </div>
 
+      {/* Yeni Vaka Ekleme Modal Dialog */}
       {isAdding && (
-        <div className="mt-4">
-          <IncidentWizard 
-            mode="add"
-            personnelList={personnelList}
-            vehicleList={vehicleList}
-            onCancel={handleCancel}
-            onSuccess={handleSuccess}
-          />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+          <Card className="w-full max-w-5xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+            <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-4 sm:p-5 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-[var(--fd-accent)]" />
+                  Yeni Vaka Kaydı Oluştur
+                </CardTitle>
+                <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas İtfaiye Müdürlüğü Resmi Olay Kayıt Sihirbazı</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 rounded-[var(--fd-r-sm)]"
+                onClick={handleCancel}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </CardHeader>
+            <div className="p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
+              <IncidentWizard 
+                mode="add"
+                personnelList={personnelList}
+                vehicleList={vehicleList}
+                onCancel={handleCancel}
+                onSuccess={handleSuccess}
+              />
+            </div>
+          </Card>
         </div>
       )}
 
+      {/* EK-16 Modal Dialog */}
       {ek16Incident && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
-          <div className="w-full max-w-5xl bg-background border rounded-xl shadow-2xl relative my-auto">
-            <div className="flex items-center justify-between p-4 border-b bg-surface/50 rounded-t-xl sticky top-0 z-10 backdrop-blur-md">
-              <h2 className="text-lg font-bold">EK-16 Vaka Kapanış Raporu - {ek16Incident.mahalle}</h2>
-              <Button variant="ghost" size="icon" onClick={handleCancel}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+          <Card className="w-full max-w-5xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+            <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-4 sm:p-5 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold text-[var(--fd-text)] flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[var(--fd-accent)]" />
+                  EK-16 Vaka Kapanış Raporu — {ek16Incident.mahalle}
+                </CardTitle>
+                <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Resmi Kapanış Belgesi</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 rounded-[var(--fd-r-sm)]"
+                onClick={handleCancel}
+              >
                 <X className="w-5 h-5" />
               </Button>
-            </div>
+            </CardHeader>
             <div className="p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
               <IncidentWizard 
                 mode={ek16Incident.status === 'closed' ? 'readonly' : 'edit'}
@@ -129,48 +177,49 @@ export default function OlaylarPage() {
                 onSuccess={handleSuccess}
               />
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
-      {!isAdding && (
-        // ======================= LIST VIEW =======================
-        <div className="grid grid-cols-1 gap-4">
+      {/* ======================= LIST VIEW ======================= */}
+      <div className="grid grid-cols-1 gap-4">
           {incidents.length === 0 ? (
-            <div className="text-center p-12 border border-dashed rounded-xl text-muted-foreground bg-surface/50">
+            <div className="text-center p-12 border border-dashed border-[var(--fd-border)] rounded-[var(--fd-r)] text-[var(--fd-text3)] bg-[var(--fd-surface2)]/30 font-semibold">
               Henüz girilmiş bir vaka kaydı bulunmamaktadır.
             </div>
           ) : (
             incidents.map(inc => {
               const triage = getTriageInfo(inc.olay_turu)
               return (
-                <Card key={inc.id} className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:border-primary/50 transition-all duration-200">
-                  <CardContent className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
+                <Card key={inc.id} className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] hover:border-[var(--fd-accent)]/40 transition-all duration-200">
+                  <CardContent className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
                       <div 
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border"
+                        className="w-11 h-11 rounded-[var(--fd-r-sm)] flex items-center justify-center shrink-0 border"
                         style={{
                           backgroundColor: `${triage.color}15`,
                           color: triage.color,
                           borderColor: `${triage.color}25`
                         }}
                       >
-                        <AlertCircle className="w-6 h-6" />
+                        <AlertCircle className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <Badge variant={inc.olay_turu === 'Asılsız İhbar' ? 'outline' : 'default'} className={inc.olay_turu === 'Yangın' ? 'bg-danger hover:bg-danger/90' : ''}>
+                          <Badge variant={triage.badgeVariant}>
                             {inc.olay_turu}
                           </Badge>
-                          <Badge className={`${triage.bgClass} font-bold text-xs px-2.5 py-0.5 rounded-full border-none`}>
+                          <Badge variant={triage.badgeVariant} className="text-[9px] px-1.5 py-0">
                             {triage.badgeText}
                           </Badge>
-                          <span className="font-semibold text-lg">{inc.mahalle}</span>
+                          <span className="font-bold text-base text-[var(--fd-text)]">{inc.mahalle}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-1">{inc.adres}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground font-mono">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> İhbar: {new Date(inc.ihbar_saati).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                          {inc.cikis_sebebi && <span className="opacity-50">| Sebep: {inc.cikis_sebebi}</span>}
+                        <p className="text-xs text-[var(--fd-text3)] line-clamp-1 font-medium">{inc.adres}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[var(--fd-text3)] font-[var(--fd-fontmono)]">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> İhbar: {new Date(inc.ihbar_saati).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                          {inc.cikis_sebebi && <span className="opacity-60">| Sebep: {inc.cikis_sebebi}</span>}
                         </div>
                       </div>
                     </div>
@@ -178,13 +227,17 @@ export default function OlaylarPage() {
                   {/* Desktop Action Area */}
                   <div className="hidden md:flex md:flex-col gap-2 items-end md:min-w-[170px]">
                     {inc.status === 'closed' && (
-                      <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
+                      <Badge variant="success" className="text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
                     )}
                     <div className="flex gap-2 w-full">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className={`flex-1 text-xs transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)] ${inc.status === 'closed' ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/40' : 'border-danger/30 text-danger hover:bg-danger/10'}`}
+                        className={`flex-1 text-xs transition-all duration-200 active:scale-[0.97] rounded-[var(--fd-r-sm)] border-[var(--fd-border)] ${
+                          inc.status === 'closed' 
+                            ? 'text-[var(--fd-success)] hover:bg-[rgba(22,163,74,0.08)]' 
+                            : 'text-[var(--fd-danger)] hover:bg-[rgba(220,38,38,0.08)]'
+                        }`}
                         onClick={() => setEk16Incident(inc)}
                       >
                         <FileText className="w-3.5 h-3.5 mr-1.5" />
@@ -193,7 +246,7 @@ export default function OlaylarPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-danger/30 text-danger hover:bg-danger/10 h-9 w-9 shrink-0"
+                        className="border-[var(--fd-border)] text-[var(--fd-danger)] hover:bg-[rgba(220,38,38,0.08)] h-9 w-9 shrink-0 rounded-[var(--fd-r-sm)]"
                         title="Vakayı Sil"
                         onClick={() => handleDelete(inc.id)}
                       >
@@ -203,16 +256,16 @@ export default function OlaylarPage() {
                   </div>
 
                   {/* Mobile Action Area */}
-                  <div className="flex md:hidden flex-col gap-3 w-full border-t border-border/50 pt-4 mt-3 animate-in slide-in-from-bottom-2 duration-200">
+                  <div className="flex md:hidden flex-col gap-2.5 w-full border-t border-[var(--fd-border)]/50 pt-3 mt-2">
                     {inc.status === 'closed' ? (
                       <div className="flex flex-col gap-2.5 w-full">
                         {/* Status & Delete Row */}
                         <div className="flex items-center justify-between w-full">
-                          <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] text-[11px] font-bold px-3 py-1">KAPALI</Badge>
+                          <Badge variant="success" className="text-[10px] px-3 py-1">KAPALI</Badge>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-danger/30 text-danger hover:bg-danger/10 text-[11px] px-3 py-1 gap-1.5 h-8 font-medium transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                            className="border-[var(--fd-border)] text-[var(--fd-danger)] hover:bg-[rgba(220,38,38,0.08)] text-[11px] px-3 py-1 gap-1.5 h-8 font-medium rounded-[var(--fd-r-sm)] transition-all duration-200 active:scale-[0.97]"
                             onClick={() => handleDelete(inc.id)}
                           >
                             <Trash2 className="w-3.5 h-3.5" /> Vakayı Sil
@@ -223,17 +276,17 @@ export default function OlaylarPage() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="w-full text-xs border-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/10 h-10 gap-1.5 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                          className="w-full text-xs border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] h-10 gap-1.5 rounded-[var(--fd-r-sm)] transition-all duration-200 active:scale-[0.97]"
                           onClick={() => setEk16Incident(inc)}
                         >
-                          <FileText className="w-4 h-4 text-sky-500" /> Raporu Gör
+                          <FileText className="w-4 h-4 text-[var(--fd-info)]" /> Raporu Gör
                         </Button>
                         
                         {/* Lower Button: EK-16 Raporu */}
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="w-full text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 h-10 gap-1.5 font-semibold bg-emerald-500/5 transition-all duration-200 active:scale-[0.97] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                          className="w-full text-xs text-[var(--fd-success)] border-[var(--fd-border)] hover:bg-[rgba(22,163,74,0.06)] h-10 gap-1.5 font-semibold bg-[rgba(22,163,74,0.04)] rounded-[var(--fd-r-sm)] transition-all duration-200 active:scale-[0.97]"
                           onClick={() => setEk16Incident(inc)}
                         >
                           <FileText className="w-4 h-4" /> EK-16 Raporu
@@ -244,7 +297,7 @@ export default function OlaylarPage() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="flex-1 text-xs border-danger/30 text-danger hover:bg-danger/10 h-10 gap-1.5"
+                          className="flex-1 text-xs border-[var(--fd-border)] text-[var(--fd-danger)] hover:bg-[rgba(220,38,38,0.08)] h-10 gap-1.5 rounded-[var(--fd-r-sm)]"
                           onClick={() => setEk16Incident(inc)}
                         >
                           <FileText className="w-4 h-4" /> Raporu Gör
@@ -252,7 +305,7 @@ export default function OlaylarPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="border-danger/30 text-danger hover:bg-danger/10 h-10 w-10 shrink-0"
+                          className="border-[var(--fd-border)] text-[var(--fd-danger)] hover:bg-[rgba(220,38,38,0.08)] h-10 w-10 shrink-0 rounded-[var(--fd-r-sm)]"
                           title="Vakayı Sil"
                           onClick={() => handleDelete(inc.id)}
                         >
@@ -268,7 +321,6 @@ export default function OlaylarPage() {
             })
           )}
         </div>
-      )}
 
       {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
       <div 

@@ -103,6 +103,7 @@ export default function VehicleDetailPage() {
   const [activeCompartment, setActiveCompartment] = useState<string | null>(null)
   const [showTimeline, setShowTimeline] = useState(false)
   const [maintenanceLogs, setMaintenanceLogs] = useState<AracBakimGecmisi[]>([])
+  const [visibleMaintenanceCount, setVisibleMaintenanceCount] = useState(5)
 
   // Manuel Bakım Giriş Modalı States
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false)
@@ -678,6 +679,24 @@ export default function VehicleDetailPage() {
       dryMaintStatus = "Güvenli";
     }
 
+    const hud1Bg = (isArazoz || suCapacity > 0)
+      ? "bg-[rgba(37,99,235,0.12)] dark:bg-[rgba(37,99,235,0.22)]"
+      : "bg-[rgba(22,163,74,0.12)] dark:bg-[rgba(22,163,74,0.22)]";
+
+    const hud2Bg = (isArazoz || kopukCapacity > 0)
+      ? "bg-[rgba(245,158,11,0.12)] dark:bg-[rgba(245,158,11,0.22)]"
+      : "bg-[rgba(22,163,74,0.12)] dark:bg-[rgba(22,163,74,0.22)]";
+
+    const hud3Bg = "bg-[rgba(37,99,235,0.12)] dark:bg-[rgba(37,99,235,0.22)]";
+
+    const hud4Bg = dryDaysLeft > 30
+      ? "bg-[rgba(22,163,74,0.12)] dark:bg-[rgba(22,163,74,0.22)]"
+      : dryDaysLeft > 0
+        ? "bg-[rgba(245,158,11,0.12)] dark:bg-[rgba(245,158,11,0.22)]"
+        : "bg-[rgba(220,38,38,0.12)] dark:bg-[rgba(220,38,38,0.22)]";
+
+    const hud5Bg = "bg-[var(--fd-accent-soft2)]";
+
     return (
       <div 
         className="flex flex-nowrap overflow-x-auto gap-3 pb-2 md:pb-0 print:hidden w-full max-w-full md:grid md:grid-cols-5 scrollbar-thin scrollbar-thumb-cyan-500/20" 
@@ -685,64 +704,64 @@ export default function VehicleDetailPage() {
       >
         {/* HUD-1: MEKANİK / SIVI SEVİYESİ */}
         {isArazoz || suCapacity > 0 ? (
-          <Card className="bg-slate-950/45 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-[0_0_15px_rgba(6,182,212,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+          <Card className={`${hud1Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Droplet className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.4)] shrink-0" />
-                  <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-1: SU TANKI</span>
+                  <Droplet className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                  <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-1: SU TANKI</span>
                 </div>
-                <span className="text-[8px] font-mono text-cyan-500 px-1 bg-cyan-500/10 border border-cyan-500/20 rounded">AKTİF</span>
+                <span className="text-[10px] font-mono text-[var(--fd-text)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">AKTİF</span>
               </div>
               <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
+                <div className="flex items-baseline justify-between text-sm font-bold text-[var(--fd-text)]">
                   <span>{suVal.toLocaleString("tr-TR")} L</span>
-                  <span className="text-[9px] text-slate-500">/ {suCapacity.toLocaleString("tr-TR")} L</span>
+                  <span className="text-xs text-[var(--fd-text3)]">/ {suCapacity.toLocaleString("tr-TR")} L</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-cyan-500/10">
-                  <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(34,211,238,0.6)]" style={{ width: "85%" }} />
+                <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
+                  <div className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" style={{ width: "85%" }} />
                 </div>
               </div>
             </CardContent>
           </Card>
         ) : isMerdivenli ? (
-          <Card className="bg-slate-950/45 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-[0_0_15px_rgba(6,182,212,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+          <Card className={`${hud1Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Maximize className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.4)] shrink-0" />
-                  <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-1: BOM STATÜ</span>
+                  <Maximize className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                  <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-1: BOM STATÜ</span>
                 </div>
-                <span className="text-[8px] font-mono text-cyan-500 px-1 bg-cyan-500/10 border border-cyan-500/20 rounded">OK</span>
+                <span className="text-[10px] font-mono text-[var(--fd-text)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">OK</span>
               </div>
               <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
+                <div className="flex items-baseline justify-between text-sm font-bold text-[var(--fd-text)]">
                   <span>%100 KARARLI</span>
-                  <span className="text-[9px] text-slate-500">MIL-STD</span>
+                  <span className="text-xs text-[var(--fd-text3)]">MIL-STD</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-cyan-500/10">
-                  <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(34,211,238,0.6)]" style={{ width: "100%" }} />
+                <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
+                  <div className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" style={{ width: "100%" }} />
                 </div>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <Card className="bg-slate-955/45 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-all shadow-[0_0_15px_rgba(6,182,212,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+          <Card className={`${hud1Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Wrench className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.4)] shrink-0" />
-                  <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-1: EKİPMAN</span>
+                  <Wrench className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                  <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-1: EKİPMAN</span>
                 </div>
-                <span className="text-[8px] font-mono text-cyan-500 px-1 bg-cyan-500/10 border border-cyan-500/20 rounded">SAĞLIKLI</span>
+                <span className="text-[10px] font-mono text-[var(--fd-text)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">SAĞLIKLI</span>
               </div>
               <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-cyan-400">
+                <div className="flex items-baseline justify-between text-sm font-bold text-[var(--fd-text)]">
                   <span>%100 STABİL</span>
-                  <span className="text-[9px] text-slate-500">{totalItemsCount} Malzeme</span>
+                  <span className="text-xs text-[var(--fd-text3)]">{totalItemsCount} Malzeme</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-cyan-500/10">
-                  <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(34,211,238,0.6)]" style={{ width: "100%" }} />
+                <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
+                  <div className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" style={{ width: "100%" }} />
                 </div>
               </div>
             </CardContent>
@@ -751,64 +770,64 @@ export default function VehicleDetailPage() {
 
         {/* HUD-2: YARDIMCI GÜÇ / İKİNCİ SEVİYE */}
         {isArazoz || kopukCapacity > 0 ? (
-          <Card className="bg-slate-950/45 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-all shadow-[0_0_15px_rgba(245,158,11,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+          <Card className={`${hud2Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
-                  <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-2: KÖPÜK TANKI</span>
+                  <Flame className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                  <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-2: KÖPÜK TANKI</span>
                 </div>
-                <span className="text-[8px] font-mono text-amber-500 px-1 bg-amber-500/10 border border-amber-500/20 rounded">AKTİF</span>
+                <span className="text-[10px] font-mono text-[var(--fd-text)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">AKTİF</span>
               </div>
               <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-amber-400">
+                <div className="flex items-baseline justify-between text-sm font-bold text-[var(--fd-text)]">
                   <span>{kopukVal.toLocaleString("tr-TR")} L</span>
-                  <span className="text-[9px] text-slate-500">/ {kopukCapacity.toLocaleString("tr-TR")} L</span>
+                  <span className="text-xs text-[var(--fd-text3)]">/ {kopukCapacity.toLocaleString("tr-TR")} L</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-amber-500/10">
-                  <div className="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]" style={{ width: "90%" }} />
+                <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
+                  <div className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" style={{ width: "90%" }} />
                 </div>
               </div>
             </CardContent>
           </Card>
         ) : isMerdivenli ? (
-          <Card className="bg-slate-955/45 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-all shadow-[0_0_15px_rgba(245,158,11,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+          <Card className={`${hud2Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
-                  <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-2: HİDROLİK</span>
+                  <Activity className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                  <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-2: HİDROLİK</span>
                 </div>
-                <span className="text-[8px] font-mono text-amber-500 px-1 bg-amber-500/10 border border-amber-500/20 rounded">STABİL</span>
+                <span className="text-[10px] font-mono text-[var(--fd-text)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">STABİL</span>
               </div>
               <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-amber-400">
+                <div className="flex items-baseline justify-between text-sm font-bold text-[var(--fd-text)]">
                   <span>210 BAR</span>
-                  <span className="text-[9px] text-slate-500">NOMİNAL</span>
+                  <span className="text-xs text-[var(--fd-text3)]">NOMİNAL</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-amber-500/10">
-                  <div className="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]" style={{ width: "84%" }} />
+                <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
+                  <div className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" style={{ width: "84%" }} />
                 </div>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <Card className="bg-slate-955/45 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-all shadow-[0_0_15px_rgba(245,158,11,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+          <Card className={`${hud2Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
             <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
-                  <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-2: JENERATÖR</span>
+                  <Zap className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                  <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-2: JENERATÖR</span>
                 </div>
-                <span className="text-[8px] font-mono text-amber-500 px-1 bg-amber-500/10 border border-amber-500/20 rounded">OK</span>
+                <span className="text-[10px] font-mono text-[var(--fd-text)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">OK</span>
               </div>
               <div className="mt-2 space-y-1">
-                <div className="flex items-baseline justify-between text-xs font-mono font-bold text-amber-400">
+                <div className="flex items-baseline justify-between text-sm font-bold text-[var(--fd-text)]">
                   <span>%85 YAKIT</span>
-                  <span className="text-[9px] text-slate-500">STABİL GÜÇ</span>
+                  <span className="text-xs text-[var(--fd-text3)]">STABİL GÜÇ</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-amber-500/10">
-                  <div className="bg-gradient-to-r from-amber-600 to-amber-400 h-full rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]" style={{ width: "85%" }} />
+                <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
+                  <div className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" style={{ width: "85%" }} />
                 </div>
               </div>
             </CardContent>
@@ -816,23 +835,23 @@ export default function VehicleDetailPage() {
         )}
 
         {/* HUD-3: CANLI ANTİFRİZ DERECESİ */}
-        <Card className="bg-slate-950/45 backdrop-blur-md border border-sky-500/20 hover:border-sky-500/40 transition-all shadow-[0_0_15px_rgba(14,165,233,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+        <Card className={`${hud3Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-sky-400 drop-shadow-[0_0_4px_rgba(14,165,233,0.4)] shrink-0" />
-                <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-3: ANTİFRİZ</span>
+                <ShieldCheck className="w-4 h-4 text-[var(--fd-info)]  shrink-0" />
+                <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-3: ANTİFRİZ</span>
               </div>
-              <span className="text-[8px] font-mono text-sky-400 px-1 bg-sky-500/10 border border-sky-500/20 rounded">{antifreezeStatus}</span>
+              <span className="text-[10px] font-mono text-[var(--fd-info)] px-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded">{antifreezeStatus}</span>
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline justify-between">
-                <span className="text-sm font-bold font-mono text-sky-400">{antifreezeDeg}</span>
-                <span className="text-[8px] text-slate-500 truncate font-mono max-w-[80px]" title={antifreezeDate}>{antifreezeDate}</span>
+                <span className="text-sm font-bold font-mono text-[var(--fd-info)]">{antifreezeDeg}</span>
+                <span className="text-[10px] text-[var(--fd-text3)] truncate font-mono max-w-[80px]" title={antifreezeDate}>{antifreezeDate}</span>
               </div>
-              <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-sky-500/10">
+              <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
                 <div 
-                  className="bg-gradient-to-r from-sky-600 to-sky-400 h-full rounded-full shadow-[0_0_8px_rgba(14,165,233,0.6)]" 
+                  className="bg-[var(--fd-text)] h-full rounded-full shadow-[var(--fd-shadow)]" 
                   style={{ width: `${Math.min(Math.round((Math.abs(parseInt(antifreezeDeg)) / 50) * 100), 100)}%` }} 
                 />
               </div>
@@ -841,36 +860,36 @@ export default function VehicleDetailPage() {
         </Card>
 
         {/* HUD-4: KURU BAKIM / ŞAFT YAĞLAMA SAYACI */}
-        <Card className="bg-slate-955/45 backdrop-blur-md border border-amber-500/20 hover:border-amber-500/40 transition-all shadow-[0_0_15px_rgba(245,158,11,0.03)] w-[175px] shrink-0 md:w-auto md:shrink">
+        <Card className={`${hud4Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)] shrink-0" />
-                <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-4: KURU BAKIM</span>
+                <Clock className="w-4 h-4 text-[var(--fd-text)]  shrink-0" />
+                <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-4: KURU BAKIM</span>
               </div>
               <span className={cn(
-                "text-[8px] font-mono px-1 rounded border",
+                "text-[10px] font-mono px-1 rounded border",
                 dryDaysLeft > 30 
-                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" 
+                  ? "text-[var(--fd-text)] bg-[var(--fd-surface)] border-[var(--fd-border)]" 
                   : dryDaysLeft > 0 
-                    ? "text-amber-400 bg-amber-500/10 border-amber-500/20 font-bold animate-pulse" 
-                    : "text-rose-400 bg-rose-500/10 border-rose-500/20 font-bold animate-pulse"
+                    ? "text-[var(--fd-text)] bg-[var(--fd-surface)] border-[var(--fd-border)] font-bold animate-pulse" 
+                    : "text-[var(--fd-danger)] bg-[var(--fd-surface)] border-[var(--fd-border)] font-bold animate-pulse"
               )}>
                 {dryMaintStatus}
               </span>
             </div>
             <div className="mt-2 space-y-1">
               <div className="flex items-baseline justify-between">
-                <span className="text-xs font-bold font-mono text-amber-400">{dryDaysLeft} Gün</span>
-                <span className="text-[8px] text-slate-500 font-mono">Kaldı</span>
+                <span className="text-xs font-bold font-mono text-[var(--fd-text)]">{dryDaysLeft} Gün</span>
+                <span className="text-[10px] text-[var(--fd-text3)] font-mono">Kaldı</span>
               </div>
-              <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-amber-500/10">
+              <div className="w-full bg-[var(--fd-surface)] h-2 rounded-full overflow-hidden border border-[var(--fd-border)]">
                 <div 
                   className={cn(
-                    "h-full rounded-full shadow-[0_0_8px]",
+                    "h-full rounded-full shadow-[var(--fd-shadow)]",
                     dryDaysLeft > 30 
-                      ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-emerald-500/60" 
-                      : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-amber-500/60"
+                      ? "bg-[var(--fd-text)] shadow-[var(--fd-shadow)]" 
+                      : "bg-[var(--fd-text)] shadow-[var(--fd-shadow)]"
                   )} 
                   style={{ width: `${dryMaintPercent}%` }} 
                 />
@@ -880,19 +899,19 @@ export default function VehicleDetailPage() {
         </Card>
 
         {/* HUD-5: SİBER TELEMETRİ (KM & PTO) */}
-        <Card className="bg-slate-955/45 backdrop-blur-md border border-slate-500/15 hover:border-slate-500/30 transition-all w-[175px] shrink-0 md:w-auto md:shrink">
+        <Card className={`${hud5Bg} backdrop-blur-md border border-[var(--fd-border)] hover:border-[var(--fd-border)] transition-all shadow-[var(--fd-shadow)] w-[175px] shrink-0 md:w-auto md:shrink`}>
           <CardContent className="p-3 flex flex-col justify-between h-full min-h-[105px]">
             <div className="flex items-center gap-1.5">
-              <Compass className="w-4 h-4 text-slate-400 shrink-0" />
-              <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider font-bold">HUD-5: TELEMETRİ</span>
+              <Compass className="w-4 h-4 text-[var(--fd-text2)] shrink-0" />
+              <span className="text-xs text-[var(--fd-text2)] font-mono uppercase tracking-wider font-bold">HUD-5: TELEMETRİ</span>
             </div>
             <div className="mt-1.5 space-y-1 text-[11px] font-mono">
-              <div className="flex justify-between items-center text-slate-300">
-                <span className="text-[8px] text-slate-500 uppercase">KM:</span>
+              <div className="flex justify-between items-center text-[var(--fd-text2)]">
+                <span className="text-[10px] text-[var(--fd-text3)] uppercase">KM:</span>
                 <span className="font-bold">{kmStr}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-300">
-                <span className="text-[8px] text-slate-500 uppercase">PTO:</span>
+              <div className="flex justify-between items-center text-[var(--fd-text2)]">
+                <span className="text-[10px] text-[var(--fd-text3)] uppercase">PTO:</span>
                 <span className="font-bold">{ptoStr}</span>
               </div>
             </div>
@@ -905,13 +924,13 @@ export default function VehicleDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 border-b border-border/50 pb-4 print:hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 border-b border-[var(--fd-border)] pb-[calc(var(--fd-sp)*2)] print:hidden">
         <div className="flex items-center space-x-4">
-          <Link href="/araclar" className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-muted transition-colors sm:mr-2 shrink-0 min-h-[44px] min-w-[44px]">
+          <Link href="/araclar" className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--fd-accent-soft)] transition-colors sm:mr-2 shrink-0 min-h-[44px] min-w-[44px]">
               <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="bg-primary/10 p-3 rounded-xl border border-primary/20 shrink-0 w-fit">
-              <Truck className="w-8 h-8 text-primary" />
+          <div className="bg-[var(--fd-accent-soft)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] border border-[var(--fd-accent-soft2)] shrink-0 w-fit">
+              <Truck className="w-8 h-8 text-[var(--fd-accent)]" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
@@ -924,13 +943,13 @@ export default function VehicleDetailPage() {
                 {vehicle.durum === "aktif" ? "Aktif" : vehicle.durum === "bakimda" ? "Bakımda" : "Arızalı"}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-sm mt-1">{vehicle.aciklama || vehicle.arac_tipi || vehicle.aracTipi}</p>
+            <p className="text-[var(--fd-text3)] text-sm mt-1">{vehicle.aciklama || vehicle.arac_tipi || vehicle.aracTipi}</p>
           </div>
         </div>
         
         <button 
           onClick={handlePrint}
-          className="min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-md active:scale-95 shrink-0"
+          className="min-h-[44px] flex items-center justify-center gap-2 px-[calc(var(--fd-sp)*2)] py-[calc(var(--fd-sp)*1)] bg-[var(--fd-accent)] text-[#ffffff] font-bold rounded-[var(--fd-r-sm)] hover:opacity-90 transition-colors shadow-[var(--fd-shadow-sm)] active:scale-95 shrink-0"
         >
           <Printer className="w-5 h-5" />
           <span>Toplu Etiket Yazdır</span>
@@ -939,8 +958,8 @@ export default function VehicleDetailPage() {
 
       {/* Manuel Plaka / Kod Sorgulama Çubuğu (Glassmorphic HUD) */}
       <div className="relative w-full max-w-xl mx-auto z-40 print:hidden pt-2">
-        <div className="relative flex items-center bg-slate-950/45 backdrop-blur-md border border-cyan-500/20 rounded-xl px-3 py-1 shadow-[0_0_15px_rgba(6,182,212,0.05)] focus-within:border-cyan-500/50 focus-within:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all">
-          <Search className="w-5 h-5 text-cyan-400 mr-2 shrink-0 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)]" />
+        <div className="relative flex items-center bg-[var(--fd-surface)] backdrop-blur-md border border-[var(--fd-border)] rounded-[var(--fd-r)] px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*0.5)] shadow-[var(--fd-shadow-sm)] focus-within:border-[var(--fd-accent)] transition-all">
+          <Search className="w-5 h-5 text-[var(--fd-text)] mr-2 shrink-0 " />
           <input
             type="text"
             placeholder="Manuel Plaka veya Araç Kodu Sorgula..."
@@ -948,12 +967,12 @@ export default function VehicleDetailPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setTimeout(() => setIsSearchFocused(false), 250)}
-            className="w-full bg-transparent border-0 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-0 h-11 min-h-[44px] font-mono tracking-wider"
+            className="w-full bg-transparent border-0 text-[var(--fd-text)] placeholder-[var(--fd-text3)] text-sm focus:outline-none focus:ring-0 h-11 min-h-[44px] font-mono tracking-wider"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="text-slate-400 hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-800/50 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="text-[var(--fd-text2)] hover:text-[var(--fd-text)] p-1.5 rounded-full hover:bg-[var(--fd-surface2)] min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="w-4 h-4" />
             </button>
@@ -962,7 +981,7 @@ export default function VehicleDetailPage() {
 
         {/* Canlı Filtreleme Sonuçları */}
         {isSearchFocused && filteredVehicles.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-slate-950/90 backdrop-blur-xl border border-cyan-500/30 rounded-xl shadow-[0_4px_25px_rgba(0,0,0,0.8)] overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--fd-surface)] backdrop-blur-xl border border-[var(--fd-border)] rounded-xl shadow-[var(--fd-shadow)] overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
             {filteredVehicles.map((v) => (
               <button
                 key={v.plaka}
@@ -971,22 +990,22 @@ export default function VehicleDetailPage() {
                   router.push(`/araclar/${slug}`)
                   setSearchQuery("")
                 }}
-                className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-cyan-500/10 border-b border-cyan-500/5 last:border-b-0 transition-colors font-mono"
+                className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-[var(--fd-surface2)] border-b border-cyan-500/5 last:border-b-0 transition-colors font-mono"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/20">
+                  <div className="p-1.5 bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)] text-[var(--fd-text)] border border-[var(--fd-border)]">
                     <Truck className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-100 font-bold tracking-wider">{v.plaka}</span>
-                    <span className="block text-[10px] text-slate-400 uppercase mt-0.5">{v.aracTipi}</span>
+                    <span className="text-[var(--fd-text)] font-bold tracking-wider">{v.plaka}</span>
+                    <span className="block text-[10px] text-[var(--fd-text2)] uppercase mt-0.5">{v.aracTipi}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={v.durum === "aktif" ? "success" : v.durum === "bakimda" ? "warning" : "danger"} className="text-[9px]">
+                  <Badge variant={v.durum === "aktif" ? "success" : v.durum === "bakimda" ? "warning" : "danger"} className="text-xs">
                     {v.durum === "aktif" ? "Aktif" : v.durum === "bakimda" ? "Bakımda" : "Arızalı"}
                   </Badge>
-                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                  <ChevronRight className="w-4 h-4 text-[var(--fd-text3)]" />
                 </div>
               </button>
             ))}
@@ -998,10 +1017,10 @@ export default function VehicleDetailPage() {
       {renderTelemetryCards()}
 
       {/* İnteraktif Araç Şeması */}
-      <Card className="border-cyan-500/10 overflow-hidden">
-        <CardHeader className="pb-2 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent">
+      <Card className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] overflow-hidden">
+        <CardHeader className="pb-[calc(var(--fd-sp)*1)] border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_2px_rgba(34,211,238,0.3)]" />
+            <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse shadow-[var(--fd-shadow)]" />
             İnteraktif Araç Şeması — Bölme Seçin
           </CardTitle>
         </CardHeader>
@@ -1019,15 +1038,15 @@ export default function VehicleDetailPage() {
 
       {/* Siber Taktik Araç Yapılandırma HUD */}
       {!isEr && (
-        <Card className="bg-slate-955/45 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.05)] overflow-hidden transition-all duration-300 print:hidden">
-          <CardHeader className="pb-3 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <CardTitle className="text-base flex items-center gap-2 font-mono text-cyan-400">
-              <Wrench className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] animate-pulse" />
+        <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] overflow-hidden transition-all duration-300 print:hidden">
+          <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2 font-mono text-[var(--fd-text)]">
+              <Wrench className="w-5 h-5 text-[var(--fd-text)]  animate-pulse" />
               <span>🔧 SİBER TAKTİK ARAÇ YAPILANDIRMA HUD</span>
             </CardTitle>
             <button
               onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center px-4 py-1.5 text-xs font-bold border border-cyan-500/30 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono transition-all uppercase tracking-wider self-end sm:self-auto"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center px-4 py-1.5 text-xs font-bold border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface)] hover:bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] font-mono transition-all uppercase tracking-wider self-end sm:self-auto"
             >
               {isConfigPanelOpen ? "PANELİ KAPAT" : "PANELİ AÇ"}
             </button>
@@ -1036,22 +1055,22 @@ export default function VehicleDetailPage() {
           {isConfigPanelOpen && (
             <CardContent className="pt-4 space-y-6 animate-in fade-in duration-200">
               {/* Tank Kapasiteleri */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/30 border border-slate-800/80 rounded-xl p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2)]">
                 <div className="space-y-1">
-                  <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider font-bold">Su Tankı Kapasitesi (Litre)</label>
+                  <label className="block text-xs font-mono text-[var(--fd-text2)] uppercase tracking-wider font-bold">Su Tankı Kapasitesi (Litre)</label>
                   <input
                     type="number"
-                    className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-sm font-mono text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*1)] text-sm font-mono text-[var(--fd-text)] focus:outline-none focus:border-[var(--fd-accent)]"
                     value={tempSuKapasite}
                     onChange={(e) => setTempSuKapasite(parseInt(e.target.value) || 0)}
                     min="0"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider font-bold">Köpük Tankı Kapasitesi (Litre)</label>
+                  <label className="block text-xs font-mono text-[var(--fd-text2)] uppercase tracking-wider font-bold">Köpük Tankı Kapasitesi (Litre)</label>
                   <input
                     type="number"
-                    className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-sm font-mono text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*1)] text-sm font-mono text-[var(--fd-text)] focus:outline-none focus:border-[var(--fd-accent)]"
                     value={tempKopukKapasite}
                     onChange={(e) => setTempKopukKapasite(parseInt(e.target.value) || 0)}
                     min="0"
@@ -1060,14 +1079,14 @@ export default function VehicleDetailPage() {
               </div>
 
               {/* Yeni Bölme Ekleme */}
-              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 space-y-3">
-                <h3 className="text-xs font-bold font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <Plus className="w-4 h-4 text-cyan-400" />
+              <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2)] space-y-3">
+                <h3 className="text-xs font-bold font-mono text-[var(--fd-text)] uppercase tracking-widest flex items-center gap-1.5">
+                  <Plus className="w-4 h-4 text-[var(--fd-text)]" />
                   Yeni Lojistik Bölme Entegrasyonu
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                   <div className="space-y-1">
-                    <label className="block text-[10px] font-mono text-slate-400 uppercase font-bold">Şablon Seçin</label>
+                    <label className="block text-[10px] font-mono text-[var(--fd-text2)] uppercase font-bold">Şablon Seçin</label>
                     <select
                       value={newCompPreset}
                       onChange={(e) => {
@@ -1078,7 +1097,7 @@ export default function VehicleDetailPage() {
                           setNewCompKey("")
                         }
                       }}
-                      className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*1)] text-xs font-mono text-[var(--fd-text2)] focus:outline-none focus:border-[var(--fd-accent)]"
                     >
                       <option value="custom">-- Özel İsim (Kendin Tanımla) --</option>
                       {Object.entries(COMPARTMENT_NAMES).map(([key, label]) => (
@@ -1087,21 +1106,21 @@ export default function VehicleDetailPage() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-[10px] font-mono text-slate-400 uppercase font-bold">Bölme İsmi / Kodu</label>
+                    <label className="block text-[10px] font-mono text-[var(--fd-text2)] uppercase font-bold">Bölme İsmi / Kodu</label>
                     <input
                       type="text"
                       disabled={newCompPreset !== "custom"}
                       placeholder={newCompPreset !== "custom" ? "Seçilen şablon ismi kullanılacak" : "Örn: Ön Bagaj, Tavan Sepeti"}
                       value={newCompPreset !== "custom" ? getCompartmentLabel(newCompPreset) : newCompKey}
                       onChange={(e) => setNewCompKey(e.target.value)}
-                      className="w-full bg-slate-950 border border-cyan-500/25 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 disabled:opacity-50 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full bg-[var(--fd-surface)] border border-cyan-500/25 rounded-lg px-3 py-2 text-xs font-mono text-[var(--fd-text)] disabled:opacity-50 focus:outline-none focus:border-cyan-500/50"
                     />
                   </div>
                   <button
                     onClick={handleAddCompartment}
-                    className="px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/40 text-cyan-300 font-bold rounded-lg text-xs font-mono tracking-wider transition-all min-h-[44px] h-auto flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.1)]"
+                    className="px-4 py-2 bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent-soft2)] border border-[var(--fd-border)] text-[var(--fd-accent)] font-bold rounded-lg text-xs font-mono tracking-wider transition-all min-h-[44px] h-auto flex items-center justify-center gap-1.5 shadow-[var(--fd-shadow)]"
                   >
-                    <Plus className="w-4 h-4 text-cyan-400" />
+                    <Plus className="w-4 h-4 text-[var(--fd-text)]" />
                     BÖLME EKLE
                   </button>
                 </div>
@@ -1109,31 +1128,31 @@ export default function VehicleDetailPage() {
 
               {/* Mevcut Bölmeler Tablosu */}
               <div className="space-y-2">
-                <h3 className="text-xs font-bold font-mono text-cyan-400 uppercase tracking-widest">
+                <h3 className="text-xs font-bold font-mono text-[var(--fd-text)] uppercase tracking-widest">
                   Mevcut Bölme Konfigürasyonu
                 </h3>
-                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border border border-cyan-500/10 rounded-xl bg-slate-950/60 max-h-72" style={{ WebkitOverflowScrolling: "touch" }}>
+                <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border border border-[var(--fd-border)] rounded-xl bg-[var(--fd-surface)] max-h-72" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="w-full text-left border-collapse text-xs font-mono">
                     <thead>
-                      <tr className="bg-slate-900/80 border-b border-cyan-500/10 text-slate-400 font-bold">
+                      <tr className="bg-[var(--fd-surface)] border-b border-[var(--fd-border)] text-[var(--fd-text2)] font-bold">
                         <th className="p-3">Bölme / Kapak</th>
                         <th className="p-3">Ekipman</th>
                         <th className="p-3">İsim Değiştir (Siber Aktarım)</th>
                         <th className="p-3 text-right">İşlemler</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900">
+                    <tbody className="divide-y divide-[var(--fd-border)]">
                       {Object.keys(tempBolmeler).map((key) => {
                         const itemsCount = tempBolmeler[key]?.length || 0;
                         const renameVal = renameInputs[key] ?? getCompartmentLabel(key);
                         return (
                           <tr key={key} className="hover:bg-cyan-500/[0.02] transition-colors">
-                            <td className="p-3 font-bold text-slate-200">
-                              <span className="block text-[10px] text-slate-500">{key}</span>
+                            <td className="p-3 font-bold text-[var(--fd-text)]">
+                              <span className="block text-[10px] text-[var(--fd-text3)]">{key}</span>
                               <span>{getCompartmentLabel(key)}</span>
                             </td>
                             <td className="p-3">
-                              <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-bold">
+                              <span className="px-2 py-0.5 rounded bg-[var(--fd-surface)] border border-[var(--fd-border)] text-[10px] text-[var(--fd-text2)] font-bold">
                                 {itemsCount} Parça
                               </span>
                             </td>
@@ -1143,12 +1162,12 @@ export default function VehicleDetailPage() {
                                   type="text"
                                   value={renameVal}
                                   onChange={(e) => handleRenameChange(key, e.target.value)}
-                                  className="bg-slate-900 border border-cyan-500/25 rounded-lg px-2.5 py-1 text-xs text-slate-300 w-full focus:outline-none focus:border-cyan-500/50 font-mono"
+                                  className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-[calc(var(--fd-sp)*1.25)] py-[calc(var(--fd-sp)*0.5)] text-xs text-[var(--fd-text2)] w-full focus:outline-none focus:border-[var(--fd-accent)] font-mono"
                                 />
                                 <button
                                   onClick={() => applyRename(key)}
                                   disabled={renameVal.trim() === getCompartmentLabel(key) || !renameVal.trim()}
-                                  className="min-h-[44px] min-w-[44px] flex items-center justify-center px-3 py-1 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 rounded-lg text-[10px] font-bold hover:bg-emerald-500/30 transition-colors disabled:opacity-30 shrink-0"
+                                  className="min-h-[44px] min-w-[44px] flex items-center justify-center px-3 py-1 bg-[var(--fd-surface)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-lg text-[10px] font-bold hover:bg-emerald-500/30 transition-colors disabled:opacity-30 shrink-0"
                                 >
                                   Uygula
                                 </button>
@@ -1157,7 +1176,7 @@ export default function VehicleDetailPage() {
                             <td className="p-3 text-right">
                               <button
                                 onClick={() => handleDeleteCompartment(key)}
-                                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 rounded-lg hover:text-rose-300 transition-colors"
+                                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--fd-surface)] hover:bg-[var(--fd-danger)]/25 border border-[var(--fd-border)] text-[var(--fd-danger)] rounded-lg hover:text-rose-300 transition-colors"
                                 title="Bölmeyi Tamamen Sil"
                               >
                                 <X className="w-3.5 h-3.5" />
@@ -1168,7 +1187,7 @@ export default function VehicleDetailPage() {
                       })}
                       {Object.keys(tempBolmeler).length === 0 && (
                         <tr>
-                          <td colSpan={4} className="p-4 text-center text-slate-500 italic">
+                          <td colSpan={4} className="p-4 text-center text-[var(--fd-text3)] italic">
                             Hiç tanımlı bölme bulunmamaktadır.
                           </td>
                         </tr>
@@ -1179,7 +1198,7 @@ export default function VehicleDetailPage() {
               </div>
 
               {/* Kaydetme Butonları */}
-              <div className="flex items-center justify-end gap-3 border-t border-cyan-500/10 pt-4">
+              <div className="flex items-center justify-end gap-3 border-t border-[var(--fd-border)] pt-4">
                 <button
                   onClick={() => {
                     if (window.confirm("Yaptığınız tüm değişiklikler sıfırlanacaktır. Emin misiniz?")) {
@@ -1189,14 +1208,14 @@ export default function VehicleDetailPage() {
                       setIsConfigPanelOpen(false)
                     }
                   }}
-                  className="min-h-[44px] flex items-center justify-center px-4 py-2 border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-400 font-bold rounded-lg text-xs font-mono tracking-wider transition-all"
+                  className="min-h-[44px] flex items-center justify-center px-4 py-2 border border-[var(--fd-border-strong)] bg-[var(--fd-surface)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text2)] font-bold rounded-lg text-xs font-mono tracking-wider transition-all"
                 >
                   İPTAL ET / SIFIRLA
                 </button>
                 <button
                   onClick={handleSaveConfig}
                   disabled={savingConfig}
-                  className="min-h-[44px] flex items-center justify-center px-5 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-slate-100 font-bold rounded-lg text-xs font-mono tracking-wider transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] disabled:opacity-50 gap-2"
+                  className="min-h-[44px] flex items-center justify-center px-5 py-2 bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-bold rounded-[var(--fd-r-sm)] text-xs font-mono tracking-wider transition-all shadow-[var(--fd-shadow-sm)] disabled:opacity-50 gap-2"
                 >
                   {savingConfig ? (
                     <>
@@ -1205,7 +1224,7 @@ export default function VehicleDetailPage() {
                     </>
                   ) : (
                     <>
-                      <ShieldCheck className="w-4 h-4 text-cyan-200" />
+                      <ShieldCheck className="w-4 h-4 #ffffff" />
                       YAPILANDIRMAYI MÜHÜRLE
                     </>
                   )}
@@ -1218,14 +1237,14 @@ export default function VehicleDetailPage() {
 
       <div className="flex flex-col md:grid md:grid-cols-3 gap-6 relative">
         {/* Bölme Listesi */}
-        <Card className="md:col-span-1 h-fit md:sticky md:top-4">
-          <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
+        <Card className="md:col-span-1 h-fit md:sticky md:top-4 border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)]">
+          <CardHeader className="pb-3 border-b border-border/50 bg-[var(--fd-surface2)]/50">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center space-x-2">
-                <PackageSearch className="w-5 h-5 text-muted-foreground" />
+                <PackageSearch className="w-5 h-5 text-[var(--fd-text3)]" />
                 <span>Bölmeler</span>
               </span>
-              <span className="text-xs text-muted-foreground font-normal">
+              <span className="text-xs text-[var(--fd-text3)] font-normal">
                 {totalItems} malzeme{issueItems > 0 && <span className="text-danger ml-1">({issueItems} sorunlu)</span>}
               </span>
             </CardTitle>
@@ -1242,27 +1261,27 @@ export default function VehicleDetailPage() {
                      key={key}
                      onClick={() => handleSelectCompartment(key)}
                      className={cn(
-                       "flex items-center justify-between px-5 py-3 border-b border-border/30 last:border-0 hover:bg-muted/50 transition-colors text-left w-full min-h-[44px]",
-                       isActive && "bg-primary/5 text-primary border-l-4 border-l-primary font-bold shadow-sm"
+                       "flex items-center justify-between px-5 py-3 border-b border-border/30 last:border-0 hover:bg-[var(--fd-surface2)] transition-colors text-left w-full min-h-[44px]",
+                       isActive && "bg-[var(--fd-accent)]/5 text-[var(--fd-accent)] border-l-4 border-l-primary font-bold shadow-sm"
                      )}
                    >
                      <div className="flex items-center gap-3">
                        <div className={cn(
                          "p-2 rounded-lg border transition-colors shrink-0",
                          isActive 
-                           ? "bg-primary/10 border-primary/20 text-primary" 
-                           : "bg-muted/40 border-border/50 text-muted-foreground"
+                           ? "bg-[var(--fd-accent)]/10 border-primary/20 text-[var(--fd-accent)]" 
+                           : "bg-[var(--fd-surface3)] border-border/50 text-[var(--fd-text3)]"
                        )}>
                          <IconComponent className="w-4 h-4" />
                        </div>
                        <div>
                          <span className="block text-sm font-semibold tracking-tight">{getCompartmentLabel(key)}</span>
-                         <span className="block text-[11px] text-muted-foreground mt-0.5">{itemCount} malzeme</span>
+                         <span className="block text-[11px] text-[var(--fd-text3)] mt-0.5">{itemCount} malzeme</span>
                        </div>
                      </div>
                      <div className="flex items-center gap-2">
-                       {issues > 0 && <Badge variant="danger" className="text-[9px] px-1.5">{issues}</Badge>}
-                       <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", isActive && "text-primary translate-x-1")} />
+                       {issues > 0 && <Badge variant="danger" className="text-xs px-1.5">{issues}</Badge>}
+                       <ChevronRight className={cn("w-4 h-4 text-[var(--fd-text3)] transition-transform", isActive && "text-[var(--fd-accent)] translate-x-1")} />
                      </div>
                    </button>
                  )
@@ -1273,11 +1292,11 @@ export default function VehicleDetailPage() {
 
         {/* Envanter Listesi + Audit Trail */}
         <div className="md:col-span-2 space-y-4">
-          <Card className="shadow-sm">
-             <CardHeader className="pb-3 border-b border-border/50 bg-slate-950/95 backdrop-blur-md sticky top-0 z-40 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+          <Card className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)]">
+             <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface)] sticky top-0 z-40 shadow-[var(--fd-shadow-sm)]">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                    <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse"></span>
                     <span>{activeCompartment ? getCompartmentLabel(activeCompartment) : "Bölme Seçin"} Envanteri</span>
                   </CardTitle>
                   {activeCompartment && (
@@ -1286,9 +1305,9 @@ export default function VehicleDetailPage() {
                         <>
                           <button
                             onClick={handleOpenAddModal}
-                            className="min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] hover:bg-cyan-500/30 hover:text-cyan-200 transition-all font-mono uppercase tracking-wider"
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--fd-surface)] text-cyan-300 border border-cyan-500/50 shadow-[var(--fd-shadow)] hover:shadow-[var(--fd-shadow)] hover:bg-cyan-500/30 hover:#ffffff transition-all font-mono uppercase tracking-wider"
                           >
-                            <Plus className="w-3.5 h-3.5 text-cyan-400 drop-shadow-[0_0_3px_rgba(6,182,212,0.6)]" />
+                            <Plus className="w-3.5 h-3.5 text-[var(--fd-text)] " />
                             Yeni Ekipman
                           </button>
                           <button
@@ -1296,11 +1315,11 @@ export default function VehicleDetailPage() {
                             className={cn(
                               "min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all font-mono uppercase tracking-wider border shadow-md",
                               isEditingList
-                                ? "bg-amber-500/25 text-amber-300 border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.4)] hover:shadow-[0_0_20px_rgba(245,158,11,0.7)] hover:bg-amber-500/35 hover:text-amber-200"
-                                : "bg-slate-900/60 text-slate-300 border-slate-700 hover:bg-slate-800 hover:border-slate-600 shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+                                ? "bg-[var(--fd-amber)]/25 text-amber-300 border-[var(--fd-amber)]/60 shadow-[var(--fd-shadow)] hover:shadow-[var(--fd-shadow)] hover:bg-[var(--fd-amber)]/35 hover:text-amber-200"
+                                : "bg-[var(--fd-surface)] text-[var(--fd-text2)] border-[var(--fd-border-strong)] hover:bg-[var(--fd-surface2)] hover:border-[var(--fd-border-strong)] shadow-[var(--fd-shadow)]"
                             )}
                           >
-                            <Wrench className={cn("w-3.5 h-3.5", isEditingList ? "text-amber-400 drop-shadow-[0_0_3px_rgba(245,158,11,0.6)]" : "text-slate-400")} />
+                            <Wrench className={cn("w-3.5 h-3.5", isEditingList ? "text-[var(--fd-text)] " : "text-[var(--fd-text2)]")} />
                             {isEditingList ? "Kapat" : "Düzenle"}
                           </button>
                         </>
@@ -1310,8 +1329,8 @@ export default function VehicleDetailPage() {
                         className={cn(
                           "min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors",
                           showTimeline
-                            ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
-                            : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/50"
+                            ? "bg-[var(--fd-surface)] text-[var(--fd-text)] border border-[var(--fd-border)]"
+                            : "bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent)] text-[var(--fd-text3)] hover:bg-[var(--fd-surface2)] border border-border/50"
                         )}
                       >
                         <History className="w-3.5 h-3.5" />
@@ -1330,17 +1349,17 @@ export default function VehicleDetailPage() {
                      onDeleteItem={handleDeleteEquipment}
                    />
                 ) : (
-                   <div className="p-8 text-center text-muted-foreground">Lütfen sol menüden veya şemadan bir araç bölmesi seçin.</div>
+                   <div className="p-8 text-center text-[var(--fd-text3)]">Lütfen sol menüden veya şemadan bir araç bölmesi seçin.</div>
                 )}
              </CardContent>
           </Card>
 
           {/* Audit Timeline */}
           {showTimeline && activeCompartment && (
-            <Card className="border-cyan-500/10 animate-in fade-in slide-in-from-top-3">
-              <CardHeader className="pb-3 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent">
+            <Card className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] animate-in fade-in slide-in-from-top-3">
+              <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <History className="w-4 h-4 text-cyan-400" />
+                  <History className="w-4 h-4 text-[var(--fd-text)]" />
                   Vardiya Devir Logları — {getCompartmentLabel(activeCompartment)}
                 </CardTitle>
               </CardHeader>
@@ -1353,34 +1372,35 @@ export default function VehicleDetailPage() {
       </div>
 
       {/* Cam Morfolojili Premium Bakım & Tamir Kronolojisi Zaman Çizelgesi */}
-      <Card className="bg-slate-955/40 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.05)] overflow-hidden transition-all duration-300 print:hidden mt-8">
-        <CardHeader className="pb-3 border-b border-border/50 bg-gradient-to-r from-cyan-500/[0.03] to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] overflow-hidden transition-all duration-300 print:hidden mt-[calc(var(--fd-sp)*4)]">
+        <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <CardTitle className="text-base flex items-center gap-2 font-mono text-cyan-400">
-              <History className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_4px_rgba(6,182,212,0.4)] animate-pulse" />
+            <CardTitle className="text-base flex items-center gap-2 font-mono text-[var(--fd-text)]">
+              <History className="w-5 h-5 text-[var(--fd-text)]  animate-pulse" />
               <span>📋 KRONOLOJİK BAKIM & TAMİR ZAMAN ÇİZELGESİ</span>
             </CardTitle>
             {!isEr && (
               <Button
                 onClick={() => setIsMaintenanceModalOpen(true)}
-                className="bg-cyan-500/10 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-500/30 text-cyan-400 text-xs font-bold px-3 py-1 h-7 rounded-lg transition duration-150 flex items-center gap-1 shrink-0"
+                className="bg-[var(--fd-surface)] hover:bg-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-border)] text-[var(--fd-text)] text-xs font-bold px-3 py-1 h-7 rounded-lg transition duration-150 flex items-center gap-1 shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Manuel Bakım Ekle
               </Button>
             )}
           </div>
-          <div className="text-xs text-slate-400 font-mono">
-            Toplam: <span className="text-cyan-400 font-bold">{maintenanceLogs.length}</span> Kayıt Bildirildi
+          <div className="text-xs text-[var(--fd-text2)] font-mono">
+            Toplam: <span className="text-[var(--fd-text)] font-bold">{maintenanceLogs.length}</span> Kayıt Bildirildi
           </div>
         </CardHeader>
         <CardContent className="pt-6">
           {maintenanceLogs.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 italic font-mono">
+            <div className="p-8 text-center text-[var(--fd-text3)] italic font-mono">
               Bu araca ait kayıtlı bakım geçmişi bulunmamaktadır.
             </div>
           ) : (
-            <div className="relative border-l border-cyan-500/20 ml-4 pl-6 md:ml-6 md:pl-8 space-y-6">
-              {maintenanceLogs.map((log, idx) => {
+            <>
+              <div className="relative border-l border-[var(--fd-border)] ml-[calc(var(--fd-sp)*2)] pl-[calc(var(--fd-sp)*3)] md:ml-[calc(var(--fd-sp)*3)] md:pl-[calc(var(--fd-sp)*4)] space-y-[calc(var(--fd-sp)*3)]">
+                {maintenanceLogs.slice(0, visibleMaintenanceCount).map((log, idx) => {
                 const isTamir = log.tip === 'tamir';
                 
                 // Parse date
@@ -1403,19 +1423,19 @@ export default function VehicleDetailPage() {
                   <div key={log.id || idx} className="relative group">
                     {/* Timeline Node Glow Bullet */}
                     <span className={cn(
-                      "absolute -left-[31px] md:-left-[41px] top-1.5 w-4.5 h-4.5 rounded-full border-2 bg-slate-950 transition-all group-hover:scale-125 z-10",
+                      "absolute -left-[calc(var(--fd-sp)*3.88)] md:-left-[calc(var(--fd-sp)*5.12)] top-1.5 w-[18px] h-[18px] rounded-full border-2 bg-[var(--fd-surface)] transition-all group-hover:scale-125 z-10",
                       isTamir 
-                        ? "border-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] group-hover:shadow-[0_0_12px_rgba(244,63,94,0.9)]" 
-                        : "border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] group-hover:shadow-[0_0_12px_rgba(245,158,11,0.9)]"
+                        ? "border-[var(--fd-danger)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]" 
+                        : "border-[var(--fd-amber)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]"
                     )}>
                       <span className={cn(
                         "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full",
-                        isTamir ? "bg-rose-500" : "bg-amber-500"
+                        isTamir ? "bg-[var(--fd-danger)]" : "bg-[var(--fd-amber)]"
                       )} />
                     </span>
 
                     {/* Glassmorphic Event Card */}
-                    <div className="bg-slate-900/30 border border-slate-800/80 group-hover:border-cyan-500/20 rounded-xl p-4 transition-all duration-300 shadow-sm group-hover:shadow-[0_0_15px_rgba(6,182,212,0.03)]">
+                    <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] group-hover:border-[var(--fd-border-strong)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*2)] transition-all duration-300 shadow-[var(--fd-shadow-sm)] group-hover:shadow-[var(--fd-shadow)]">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                         
                         {/* Event Title / Type & Date */}
@@ -1423,14 +1443,14 @@ export default function VehicleDetailPage() {
                           <span className={cn(
                             "px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider border uppercase",
                             isTamir 
-                              ? "bg-rose-500/10 border-rose-500/20 text-rose-400" 
-                              : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                              ? "bg-[var(--fd-surface)] border-[var(--fd-border)] text-[var(--fd-danger)]" 
+                              : "bg-[rgba(245,158,11,0.11)] border-transparent text-[var(--fd-amber)]"
                           )}>
                             {isTamir ? "🔧 TAMİR & PARÇA" : "🛢️ PERİYODİK BAKIM"}
                           </span>
                           
-                          <div className="flex items-center gap-1 text-xs text-slate-400 font-mono">
-                            <CalendarDays className="w-3.5 h-3.5 text-slate-500" />
+                          <div className="flex items-center gap-1 text-xs text-[var(--fd-text2)] font-mono">
+                            <CalendarDays className="w-3.5 h-3.5 text-[var(--fd-text3)]" />
                             <span>{day} {month} {year}</span>
                           </div>
                         </div>
@@ -1440,10 +1460,10 @@ export default function VehicleDetailPage() {
                           <span className={cn(
                             "px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider border uppercase",
                             log.durum === 'Onaylandı' || log.durum === 'Tamamlandı'
-                              ? "bg-emerald-950/30 border-emerald-500/20 text-emerald-400"
+                              ? "bg-[rgba(22,163,74,0.11)] border-transparent text-[var(--fd-success)]"
                               : log.durum === 'Bekliyor'
-                                ? "bg-amber-950/30 border-amber-500/20 text-amber-400 animate-pulse"
-                                : "bg-rose-950/30 border-rose-500/20 text-rose-400"
+                                ? "bg-[rgba(245,158,11,0.11)] border-transparent text-[var(--fd-amber)] animate-pulse"
+                                : "bg-rose-950/30 border-[var(--fd-border)] text-[var(--fd-danger)]"
                           )}>
                             {log.durum === 'Onaylandı' || log.durum === 'Tamamlandı' ? 'Onaylandı' : log.durum === 'Bekliyor' ? 'Onay Bekliyor' : log.durum || 'Bilinmiyor'}
                           </span>
@@ -1451,8 +1471,8 @@ export default function VehicleDetailPage() {
                           <span className={cn(
                             "px-3 py-1 rounded-lg text-xs font-bold font-mono border",
                             hasMaliyet 
-                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.03)]" 
-                              : "bg-slate-800/50 border-slate-700 text-slate-400"
+                              ? "bg-[rgba(245,158,11,0.11)] border-transparent text-[var(--fd-amber)] shadow-[var(--fd-shadow)]" 
+                              : "bg-[var(--fd-surface)] border-[var(--fd-border-strong)] text-[var(--fd-text2)]"
                           )}>
                             {formattedMaliyet}
                           </span>
@@ -1461,15 +1481,15 @@ export default function VehicleDetailPage() {
                       </div>
 
                       {/* Description */}
-                      <p className="mt-3 text-sm text-slate-300 leading-relaxed font-mono font-light whitespace-pre-line selection:bg-cyan-500/20">
+                      <p className="mt-3 text-sm text-[var(--fd-text2)] leading-relaxed font-mono font-light whitespace-pre-line selection:bg-cyan-500/20">
                         {log.aciklama}
                       </p>
 
                       {/* Highlighted Cyber Metrics (If any) */}
                       {kmHighlight && (
                         <div className="mt-2.5 flex items-center gap-1.5">
-                          <span className="text-[10px] text-slate-500 font-mono uppercase">Tespit Edilen Telemetri:</span>
-                          <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+                          <span className="text-[10px] text-[var(--fd-text3)] font-mono uppercase">Tespit Edilen Telemetri:</span>
+                          <span className="px-1.5 py-0.5 rounded bg-[var(--fd-surface)] border border-[var(--fd-border)] text-[var(--fd-text)] font-mono text-[10px] font-bold uppercase tracking-wider">
                             {kmHighlight}
                           </span>
                         </div>
@@ -1480,7 +1500,19 @@ export default function VehicleDetailPage() {
                 );
               })}
             </div>
-          )}
+            {maintenanceLogs.length > visibleMaintenanceCount && (
+              <div className="flex justify-center pt-6 pb-2">
+                <Button
+                  onClick={() => setVisibleMaintenanceCount(prev => prev + 5)}
+                  variant="secondary"
+                  className="font-bold border border-[var(--fd-border)] bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] text-xs rounded-xl px-6 py-2.5 flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition-all duration-200"
+                >
+                  <span>🔽</span> Daha Fazla Göster ({maintenanceLogs.length - visibleMaintenanceCount} kayıt kaldı)
+                </Button>
+              </div>
+            )}
+          </>
+        )}
         </CardContent>
       </Card>
 
@@ -1497,27 +1529,27 @@ export default function VehicleDetailPage() {
 
       {isMaintenanceModalOpen && vehicle && (
         <Dialog open={isMaintenanceModalOpen} onOpenChange={setIsMaintenanceModalOpen}>
-          <DialogContent className="w-[94vw] sm:w-full sm:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
-            <DialogHeader className="p-5 border-b border-slate-900 bg-slate-900/20 shrink-0">
-              <DialogTitle className="flex items-center gap-2 text-lg text-slate-100">
-                <Wrench className="w-5 h-5 text-cyan-400" />
+          <DialogContent className="w-[94vw] sm:w-full sm:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border border-[var(--fd-border-strong)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r-lg)]">
+            <DialogHeader className="p-5 border-b border-[var(--fd-border)] bg-[var(--fd-surface)] shrink-0">
+              <DialogTitle className="flex items-center gap-2 text-lg text-[var(--fd-text)]">
+                <Wrench className="w-5 h-5 text-[var(--fd-text)]" />
                 Manuel Bakım & Tamir Ekle
               </DialogTitle>
             </DialogHeader>
 
             <form onSubmit={handleSaveMaintenance} className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
-                <div className="bg-slate-900/30 p-3 rounded-xl border border-slate-850/60 text-xs text-slate-400 flex items-center gap-2 font-mono">
+                <div className="bg-[var(--fd-surface)] p-3 rounded-xl border border-[var(--fd-border)] text-xs text-[var(--fd-text2)] flex items-center gap-2 font-mono">
                   <span>🚒 Plaka:</span>
-                  <span className="font-bold text-slate-200">{vehicle.plaka}</span>
+                  <span className="font-bold text-[var(--fd-text)]">{vehicle.plaka}</span>
                   <span>| Model:</span>
-                  <span className="font-bold text-slate-200">{vehicle.marka} {vehicle.model}</span>
+                  <span className="font-bold text-[var(--fd-text)]">{vehicle.marka} {vehicle.model}</span>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-slate-400">İşlem Türü</label>
+                  <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">İşlem Türü</label>
                   <select 
-                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    className="flex h-11 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm ring-offset-background"
                     value={maintenanceForm.islem_turu}
                     onChange={(e) => setMaintenanceForm(prev => ({ ...prev, islem_turu: e.target.value }))}
                   >
@@ -1532,10 +1564,10 @@ export default function VehicleDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase text-slate-400">İşlem Tarihi</label>
+                    <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">İşlem Tarihi</label>
                     <input 
                       type="date"
-                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background font-mono"
+                      className="flex h-11 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm ring-offset-background font-mono"
                       value={maintenanceForm.tarih}
                       onChange={(e) => setMaintenanceForm(prev => ({ ...prev, tarih: e.target.value }))}
                       required
@@ -1543,11 +1575,11 @@ export default function VehicleDetailPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase text-slate-400">Araç Kilometresi (KM)</label>
+                    <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">Araç Kilometresi (KM)</label>
                     <input 
                       type="number"
                       placeholder="Örn: 124500"
-                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background font-mono"
+                      className="flex h-11 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm ring-offset-background font-mono"
                       value={maintenanceForm.kilometre}
                       onChange={(e) => setMaintenanceForm(prev => ({ ...prev, kilometre: e.target.value }))}
                     />
@@ -1555,18 +1587,18 @@ export default function VehicleDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-slate-400">Maliyet (₺ TRY)</label>
+                  <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">Maliyet (₺ TRY)</label>
                   <input 
                     type="number"
                     placeholder="Örn: 4500"
-                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background font-mono"
+                    className="flex h-11 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm ring-offset-background font-mono"
                     value={maintenanceForm.maliyet}
                     onChange={(e) => setMaintenanceForm(prev => ({ ...prev, maliyet: e.target.value }))}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-slate-400">Açıklama / Detaylar</label>
+                  <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">Açıklama / Detaylar</label>
                   <textarea 
                     rows={4}
                     placeholder="Yapılan işlemler, değişen parçalar vb..."
@@ -1578,7 +1610,7 @@ export default function VehicleDetailPage() {
                 </div>
               </div>
 
-              <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
+              <DialogFooter className="p-4 sm:p-5 border-t border-[var(--fd-border)] bg-[var(--fd-surface)] flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
                 <Button 
                   type="button"
                   variant="outline" 
@@ -1591,7 +1623,7 @@ export default function VehicleDetailPage() {
                 <Button 
                   type="submit" 
                   disabled={isSavingMaintenance} 
-                  className="w-full sm:w-auto min-w-[140px] h-10 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold"
+                  className="w-full sm:w-auto min-w-[140px] h-10 bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-bold"
                 >
                   {isSavingMaintenance ? (
                     <span className="flex items-center gap-2">

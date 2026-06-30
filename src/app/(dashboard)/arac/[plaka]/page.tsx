@@ -105,8 +105,8 @@ export default function VehicleDeepLinkPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-3">
-          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground text-sm">Araç bilgileri yükleniyor...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-[var(--fd-accent)] mx-auto" />
+          <p className="text-[var(--fd-text3)] text-sm">Araç bilgileri yükleniyor...</p>
         </div>
       </div>
     )
@@ -118,12 +118,12 @@ export default function VehicleDeepLinkPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="max-w-md w-full text-center">
           <CardContent className="p-8 space-y-4">
-            <Truck className="w-16 h-16 text-muted-foreground/30 mx-auto" />
+            <Truck className="w-16 h-16 text-[var(--fd-text3)]/30 mx-auto" />
             <h2 className="text-xl font-bold">Araç Bulunamadı</h2>
-            <p className="text-sm text-muted-foreground">
-              <code className="bg-muted px-2 py-0.5 rounded">{plakaSlug}</code> plakasına sahip araç sistemde kayıtlı değil.
+            <p className="text-sm text-[var(--fd-text3)]">
+              <code className="bg-[var(--fd-surface3)] px-2 py-0.5 rounded">{plakaSlug}</code> plakasına sahip araç sistemde kayıtlı değil.
             </p>
-            <Link href="/araclar" className="inline-flex items-center gap-2 text-primary text-sm font-medium hover:underline">
+            <Link href="/araclar" className="inline-flex items-center gap-2 text-[var(--fd-accent)] text-sm font-medium hover:underline">
               <ArrowLeft className="w-4 h-4" /> Araç Listesine Dön
             </Link>
           </CardContent>
@@ -136,18 +136,18 @@ export default function VehicleDeepLinkPage() {
   if (mode === "success") {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-md w-full text-center border-success/30">
+        <Card className="max-w-md w-full text-center border-[var(--fd-success)]/30">
           <CardContent className="p-8 space-y-4">
-            <CheckCircle2 className="w-16 h-16 text-success mx-auto" />
-            <h2 className="text-xl font-bold text-success">İşlem Başarılı!</h2>
-            <p className="text-sm text-muted-foreground">{successMsg}</p>
+            <CheckCircle2 className="w-16 h-16 text-[var(--fd-success)] mx-auto" />
+            <h2 className="text-xl font-bold text-[var(--fd-success)]">İşlem Başarılı!</h2>
+            <p className="text-sm text-[var(--fd-text3)]">{successMsg}</p>
             <div className="flex gap-2 justify-center">
-              <Link href="/araclar" className="inline-flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-medium transition-colors">
+              <Link href="/araclar" className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--fd-surface3)] hover:opacity-80 rounded-[var(--fd-r-sm)] text-sm font-medium transition-colors">
                 <Truck className="w-4 h-4" /> Araçlar
               </Link>
               <button
                 onClick={() => setMode("choose")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--fd-accent)] text-[#ffffff] rounded-[var(--fd-r-sm)] text-sm font-medium hover:opacity-90 transition-colors"
               >
                 <ScanLine className="w-4 h-4" /> Tekrar Kontrol
               </button>
@@ -164,11 +164,11 @@ export default function VehicleDeepLinkPage() {
       {/* Vehicle Header */}
       <div className="text-center space-y-2">
         <Badge variant="success" className="text-xs mb-2">QR ile Açıldı</Badge>
-        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
-          <Truck className="w-8 h-8 text-primary" />
+        <div className="w-16 h-16 bg-[var(--fd-accent)]/10 rounded-[var(--fd-r-lg)] flex items-center justify-center mx-auto">
+          <Truck className="w-8 h-8 text-[var(--fd-accent)]" />
         </div>
-        <h1 className="text-2xl font-black tracking-wider">{vehicle.plaka}</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-2xl font-black tracking-wider text-[var(--fd-text)]">{vehicle.plaka}</h1>
+        <p className="text-[var(--fd-text2)] text-sm">
           {vehicle.arac_tipi || vehicle.aracTipi}
           {vehicle.marka ? ` — ${vehicle.marka}` : ""}
         </p>
@@ -192,25 +192,25 @@ export default function VehicleDeepLinkPage() {
           }}
           disabled={vehicleCompartments.length === 0}
           className={cn(
-            "w-full p-4 border-2 rounded-2xl flex items-center gap-4 transition-all group text-left",
+            "w-full p-4 border-2 rounded-[var(--fd-r-lg)] flex items-center gap-4 transition-all group text-left",
             vehicleCompartments.length > 0
-              ? "bg-cyan-500/5 hover:bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40"
-              : "bg-muted/30 border-border/30 opacity-50 cursor-not-allowed"
+              ? "bg-[var(--fd-info)]/5 hover:bg-[var(--fd-info)]/10 border-[var(--fd-info)]/20 hover:border-[var(--fd-info)]/40"
+              : "bg-[var(--fd-surface3)] border-[var(--fd-border)] opacity-50 cursor-not-allowed"
           )}
         >
-          <div className="w-12 h-12 bg-cyan-500/15 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-            <ClipboardCheck className="w-6 h-6 text-cyan-500" />
+          <div className="w-12 h-12 bg-[var(--fd-info)]/15 rounded-[var(--fd-r)] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <ClipboardCheck className="w-6 h-6 text-[var(--fd-info)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-base">📋 Bölme / Envanter Sayımı</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="font-bold text-base text-[var(--fd-text)]">Bölme / Envanter Sayımı</p>
+            <p className="text-xs text-[var(--fd-text3)] mt-0.5">
               {vehicleCompartments.length > 0
                 ? `${vehicleCompartments.length} bölme mevcut`
                 : "Bu araçta tanımlı bölme yok"}
             </p>
           </div>
           {vehicleCompartments.length > 1 && (
-            <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
+            <ChevronDown className="w-5 h-5 text-[var(--fd-text3)] shrink-0" />
           )}
         </button>
 
@@ -221,9 +221,9 @@ export default function VehicleDeepLinkPage() {
               <button
                 key={key}
                 onClick={() => handleCompartmentSelect(key)}
-                className="w-full p-3 bg-muted/40 hover:bg-muted border border-border/50 rounded-xl text-left text-sm font-medium transition-colors flex items-center gap-2"
+                className="w-full p-3 bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] text-left text-sm font-medium transition-colors flex items-center gap-2 text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
               >
-                <div className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-[var(--fd-info)] shrink-0" />
                 {COMPARTMENT_NAMES[key] || key}
               </button>
             ))}
@@ -233,14 +233,14 @@ export default function VehicleDeepLinkPage() {
         {/* Option 2: Daily Check */}
         <button
           onClick={() => setMode("daily")}
-          className="w-full p-4 bg-emerald-500/5 hover:bg-emerald-500/10 border-2 border-emerald-500/20 hover:border-emerald-500/40 rounded-2xl flex items-center gap-4 transition-all group text-left"
+          className="w-full p-4 bg-[var(--fd-success)]/5 hover:bg-[var(--fd-success)]/10 border-2 border-[var(--fd-success)]/20 hover:border-[var(--fd-success)]/40 rounded-[var(--fd-r-lg)] flex items-center gap-4 transition-all group text-left"
         >
-          <div className="w-12 h-12 bg-emerald-500/15 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-            <Truck className="w-6 h-6 text-emerald-500" />
+          <div className="w-12 h-12 bg-[var(--fd-success)]/15 rounded-[var(--fd-r)] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <Truck className="w-6 h-6 text-[var(--fd-success)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-base">🚒 Günlük Araç Kontrolü</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="font-bold text-base text-[var(--fd-text)]">Günlük Araç Kontrolü</p>
+            <p className="text-xs text-[var(--fd-text3)] mt-0.5">
               Yakıt, su, köpük, pompa ve genel durum kontrolü
             </p>
           </div>
@@ -249,14 +249,14 @@ export default function VehicleDeepLinkPage() {
         {/* Option 3: 🚨 Arıza / Hasar Raporla (min-h-44px touch friendly) */}
         <button
           onClick={() => setIsArizaOpen(true)}
-          className="w-full p-4 bg-red-950/20 hover:bg-red-950/30 border-2 border-red-500/20 hover:border-red-500/40 rounded-2xl flex items-center gap-4 transition-all group text-left min-h-[44px] shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+          className="w-full p-4 bg-[var(--fd-danger)]/10 hover:bg-[var(--fd-danger)]/20 border-2 border-[var(--fd-danger)]/20 hover:border-[var(--fd-danger)]/40 rounded-[var(--fd-r-lg)] flex items-center gap-4 transition-all group text-left min-h-[44px]"
         >
-          <div className="w-12 h-12 bg-red-500/15 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-red-500/20">
-            <AlertTriangle className="w-6 h-6 text-red-500" />
+          <div className="w-12 h-12 bg-[var(--fd-danger)]/15 rounded-[var(--fd-r)] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform border border-[var(--fd-danger)]/20">
+            <AlertTriangle className="w-6 h-6 text-[var(--fd-danger)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-base text-red-400">🚨 Arıza / Hasar Raporla</p>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="font-bold text-base text-[var(--fd-danger)]">Arıza / Hasar Raporla</p>
+            <p className="text-xs text-[var(--fd-text2)] mt-0.5">
               Saha başında tespit edilen hasarı anında garaja bildir
             </p>
           </div>
@@ -265,40 +265,40 @@ export default function VehicleDeepLinkPage() {
 
       {/* Cam Morfolojili Arıza Bildirim Pop-up Modalı */}
       {isArizaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md bg-slate-950/90 backdrop-blur-md border border-red-900/50 shadow-[0_0_30px_rgba(239,68,68,0.25)] overflow-hidden rounded-2xl p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] overflow-hidden rounded-[var(--fd-r-lg)] p-6 relative">
             <button 
               onClick={() => setIsArizaOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white rounded-lg h-9 w-9 p-0 flex items-center justify-center"
+              className="absolute top-4 right-4 text-[var(--fd-text3)] hover:text-[var(--fd-text)] rounded-lg h-9 w-9 p-0 flex items-center justify-center"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-                <h3 className="text-lg font-black text-red-400 tracking-wider">ARIZA / HASAR BİLDİRİMİ</h3>
+                <AlertTriangle className="w-6 h-6 text-[var(--fd-danger)]" />
+                <h3 className="text-lg font-black text-[var(--fd-danger)] tracking-wider">ARIZA / HASAR BİLDİRİMİ</h3>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--fd-text2)] leading-relaxed">
                 Bu bildirim Sivas Belediyesi İtfaiye Garajı arıza takip veritabanına anlık kayıt oluşturur.
               </p>
 
               <form onSubmit={handleArizaSubmit} className="space-y-4 pt-2">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Araç Plakası / Bilgisi</label>
+                  <label className="text-xs font-bold text-[var(--fd-text3)] uppercase tracking-wider block">Araç Plakası / Bilgisi</label>
                   <input 
                     type="text" 
                     readOnly 
                     value={vehicle.plaka} 
-                    className="w-full bg-slate-900 border border-slate-800 text-slate-400 rounded-xl px-3.5 py-2.5 text-sm cursor-not-allowed font-bold"
+                    className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text3)] rounded-xl px-3.5 py-2.5 text-sm cursor-not-allowed font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Arıza Yapılan Bölme / Kapak</label>
+                  <label className="text-xs font-bold text-[var(--fd-text3)] uppercase tracking-wider block">Arıza Yapılan Bölme / Kapak</label>
                   <select
                     value={arizaBolme}
                     onChange={(e) => setArizaBolme(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-red-500 font-semibold"
+                    className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[var(--fd-danger)] font-semibold"
                   >
                     <option value="Genel Araç Gövdesi">Genel Araç Gövdesi</option>
                     {vehicleCompartments.map((key: string) => (
@@ -310,26 +310,26 @@ export default function VehicleDeepLinkPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Arıza Tanımı / Açıklaması <span className="text-red-500">*</span></label>
+                  <label className="text-xs font-bold text-[var(--fd-text3)] uppercase tracking-wider block">Arıza Tanımı / Açıklaması <span className="text-[var(--fd-danger)]">*</span></label>
                   <textarea
                     required
                     rows={3}
                     value={arizaAciklama}
                     onChange={(e) => setArizaAciklama(e.target.value)}
                     placeholder="Arıza detayını yazınız..."
-                    className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-red-500 font-medium resize-none"
+                    className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[var(--fd-danger)] font-medium resize-none"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   disabled={isSavingAriza || !arizaAciklama.trim()}
-                  className="w-full bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl h-11 flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.3)] min-h-[44px]"
+                  className="w-full bg-[var(--fd-danger)] hover:opacity-90 text-white font-bold rounded-xl h-11 flex items-center justify-center gap-1.5 shadow-md min-h-[44px]"
                 >
                   {isSavingAriza ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <>🚨 Arızayı Merkeze Raporla</>
+                    <>Arızayı Merkeze Raporla</>
                   )}
                 </Button>
               </form>

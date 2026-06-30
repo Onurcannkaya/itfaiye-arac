@@ -64,7 +64,7 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
   if (!nextInspectionDate || nextInspectionDate === 'Tarih Girilmedi') {
     return {
       text: 'Tarih Girilmedi',
-      badgeClass: 'bg-slate-900/60 text-slate-400 border border-slate-800'
+      badgeClass: 'bg-[var(--fd-surface2)]/60 text-[var(--fd-text3)] border border-[var(--fd-border)]'
     };
   }
 
@@ -72,7 +72,7 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
   if (isNaN(inspectionDate.getTime())) {
     return {
       text: 'Geçersiz Tarih',
-      badgeClass: 'bg-slate-900/60 text-slate-400 border border-slate-800'
+      badgeClass: 'bg-[var(--fd-surface2)]/60 text-[var(--fd-text3)] border border-[var(--fd-border)]'
     };
   }
 
@@ -86,17 +86,17 @@ function getInspectionStatus(nextInspectionDate: string | undefined | null) {
   if (remainingDays <= 0) {
     return {
       text: '⚠️ Muayene Süresi Geçti!',
-      badgeClass: 'bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)] animate-pulse'
+      badgeClass: 'bg-[rgba(220,38,38,0.08)] dark:bg-[rgba(220,38,38,0.15)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.15)] dark:border-[rgba(220,38,38,0.25)] shadow-[0_0_10px_rgba(239,68,68,0.1)] animate-pulse'
     };
   } else if (remainingDays <= 30) {
     return {
       text: `⏳ Son ${remainingDays} Gün`,
-      badgeClass: 'bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+      badgeClass: 'bg-[rgba(245,158,11,0.08)] dark:bg-[rgba(245,158,11,0.15)] text-[var(--fd-amber)] border border-[rgba(245,158,11,0.15)] dark:border-[rgba(245,158,11,0.25)] shadow-[0_0_10px_rgba(245,158,11,0.1)]'
     };
   } else {
     return {
       text: `✅ ${remainingDays} Gün Kaldı`,
-      badgeClass: 'bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+      badgeClass: 'bg-[rgba(22,163,74,0.08)] dark:bg-[rgba(22,163,74,0.15)] text-[var(--fd-success)] border border-[rgba(22,163,74,0.15)] dark:border-[rgba(22,163,74,0.25)] shadow-[0_0_10px_rgba(16,185,129,0.1)]'
     };
   }
 }
@@ -612,52 +612,69 @@ export default function AracBakimPage() {
   const getStatusBadge = (durum: string) => {
     switch (durum) {
       case 'Onaylandı': 
-        return <Badge className="bg-emerald-950/50 border border-emerald-500/30 text-emerald-400 font-semibold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
+        return <Badge className="bg-[rgba(22,163,74,0.08)] dark:bg-[rgba(22,163,74,0.15)] border border-[rgba(22,163,74,0.15)] dark:border-[rgba(22,163,74,0.25)] text-[var(--fd-success)] font-semibold px-2.5 py-1 rounded-[var(--fd-r-sm)]">Onaylandı</Badge>
       case 'Bekliyor':
-        return <Badge className="bg-amber-950/50 border border-amber-500/30 text-amber-400 font-semibold px-2.5 py-1 rounded-lg">Onay Bekliyor</Badge>
+        return <Badge className="bg-[rgba(245,158,11,0.08)] dark:bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.15)] dark:border-[rgba(245,158,11,0.25)] text-[var(--fd-amber)] font-semibold px-2.5 py-1 rounded-[var(--fd-r-sm)]">Onay Bekliyor</Badge>
       default: 
-        return <Badge className="bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-lg">Tamamlandı</Badge>
+        return <Badge className="bg-slate-800 text-[var(--fd-text2)] font-semibold px-2.5 py-1 rounded-[var(--fd-r-sm)]">Tamamlandı</Badge>
+    }
+  }
+  const handleMudahaleEt = () => {
+    const firstAlert = activeUnresolvedAlerts[0]
+    if (firstAlert) {
+      setBakimForm({
+        plaka: firstAlert.plaka,
+        islem_turu: 'Arıza/Tamir',
+        kilometre: '',
+        aciklama: `ONARILDI: ${firstAlert.aciklama}`,
+        maliyet: '',
+        kaydi_acan_sicil_no: user?.sicilNo || ''
+      })
+      setKayitTuru('bakim')
+      setIsCreateOpen(true)
+    } else {
+      setIsCreateOpen(true)
     }
   }
 
   if (loading) {
     return (
       <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2 min-h-[50vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
-        <span className="text-cyan-400/80 font-bold tracking-wider">Taktik Bakım & Yakıt Veritabanı Sorgulanıyor...</span>
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--fd-accent)]" />
+        <span className="text-[var(--fd-accent)]/80 font-bold tracking-wider">Taktik Bakım & Yakıt Veritabanı Sorgulanıyor...</span>
       </div>
     )
   }
 
   return (
     <PageGuard pageId="arac_bakim">
-      <div className="flex flex-col min-h-full space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+      <div className="flex flex-col min-h-full space-y-6 w-full max-w-full px-4 md:px-8 pb-12 animate-in fade-in duration-300">
 
         {/* 🚨 Cyber Neon Active Unresolved Alerts Banner */}
         {activeUnresolvedAlerts.length > 0 && (
-          <div className="w-full bg-red-950/30 border border-red-500/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_15px_rgba(239,68,68,0.15)] backdrop-blur-md">
+          <div className="w-full bg-[rgba(220,38,38,0.06)] dark:bg-[rgba(220,38,38,0.12)] border border-[rgba(220,38,38,0.15)] dark:border-[rgba(220,38,38,0.25)] rounded-[var(--fd-r)] p-[calc(var(--fd-sp)*1.2)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[var(--fd-shadow-sm)]">
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
-              <span className="text-red-400 text-xs font-semibold tracking-wider uppercase">AKTİF KRİTİK ARIZA UYARILARI</span>
+              <span className="text-[var(--fd-text)] text-xs font-bold tracking-wider uppercase">AKTİF KRİTİK ARIZA UYARILARI</span>
             </div>
             
             <div className="flex-1 overflow-hidden px-4">
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-6">
                 {activeUnresolvedAlerts.slice(0, 3).map((alertItem) => (
-                  <div key={alertItem.id} className="text-xs text-red-200 font-semibold flex items-center gap-1">
-                    <span className="bg-red-500/20 px-1.5 py-0.5 rounded text-[10px] font-bold text-red-400">{alertItem.plaka}</span>
-                    <span className="truncate max-w-[250px]">{alertItem.aciklama}</span>
+                  <div key={alertItem.id} className="text-xs text-[var(--fd-text)] font-semibold flex items-center gap-1.5">
+                    <span className="border border-[var(--fd-border-strong)] rounded bg-[var(--fd-surface2)] px-1.5 py-0.5 text-[10px] font-mono font-bold text-[var(--fd-text2)]">{alertItem.plaka}</span>
+                    <span className="truncate max-w-[250px] text-[var(--fd-text2)] font-medium">{alertItem.aciklama}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <Button
-              onClick={() => setActiveTab('bakim')}
-              className="bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-slate-950 border border-red-500/20 text-xs px-3 py-1.5 min-h-[44px] rounded-lg font-bold transition-all duration-200 ease-out active:scale-95 shrink-0"
+              onClick={handleMudahaleEt}
+              className="bg-[rgba(220,38,38,0.08)] dark:bg-[rgba(220,38,38,0.15)] hover:bg-[var(--fd-danger)] text-[var(--fd-danger)] hover:text-[#ffffff] border border-[rgba(220,38,38,0.15)] dark:border-[rgba(220,38,38,0.25)] text-xs px-3 py-1.5 min-h-[44px] rounded-[var(--fd-r-sm)] font-bold transition-all duration-200 ease-out active:scale-95 shrink-0"
             >
               Müdahale Et
             </Button>
@@ -665,12 +682,12 @@ export default function AracBakimPage() {
         )}
 
         {/* ═══ Sayfa Başlığı ═══ */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--fd-border)] pb-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2 text-slate-100">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2 text-[var(--fd-text)]">
               🚒 Araç Bakım & Yakıt Takibi
             </h1>
-            <p className="text-slate-400 text-sm mt-1">Sivas İtfaiyesi araç filosunun bakım, arıza ve yakıt kayıtlarının yerel kurumsal veritabanı paneli</p>
+            <p className="text-[var(--fd-text3)] text-sm mt-1">Sivas İtfaiyesi araç filosunun bakım, arıza ve yakıt kayıtlarının yerel kurumsal veritabanı paneli</p>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -680,11 +697,11 @@ export default function AracBakimPage() {
               <Plus className="w-4 h-4" /> Yeni Kayıt Ekle
             </Button>
             {isMudur ? (
-              <Badge className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-semibold px-3 py-1 text-xs">
+              <Badge className="bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] text-[var(--fd-accent)] font-semibold px-3 py-1 text-xs">
                 Müdür Yetki Modu
               </Badge>
             ) : (
-              <Badge className="bg-slate-800 border border-slate-700 text-slate-400 font-bold px-3 py-1 text-xs">
+              <Badge className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text3)] font-bold px-3 py-1 text-xs">
                 Salt Okunur
               </Badge>
             )}
@@ -695,20 +712,20 @@ export default function AracBakimPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           
           {/* Skorbord 1: Kritik Antifriz Alarmı */}
-          <Card className="bg-slate-900/40 backdrop-blur-xl border border-red-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-red-500/40 transition-all duration-200 ease-out">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-red-500 group-hover:scale-110 transition duration-500">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] border-t-4 border-t-[var(--fd-danger)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] relative overflow-hidden group hover:border-[var(--fd-border-strong)] transition-all duration-200 ease-out">
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-[var(--fd-danger)] group-hover:scale-110 transition duration-500">
               <Droplets className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-red-400 font-semibold tracking-wider uppercase">KRİTİK ANTİFRİZ ALARMI</span>
-                <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">
+                <span className="text-xs text-[var(--fd-danger)] font-semibold tracking-wider uppercase">KRİTİK ANTİFRİZ ALARMI</span>
+                <div className="p-2 bg-red-500/10 border border-red-500/20 text-[var(--fd-danger)] rounded-xl">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-red-500">{antifreezeRiskList.length} Riskli Araç</h3>
-                <p className="text-[10px] text-slate-400 mt-1">Sivas kış şartları (-25°C altı koruma yetersiz) ölçümleri</p>
+                <h3 className="text-3xl font-bold text-[var(--fd-danger)]">{antifreezeRiskList.length} Riskli Araç</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] mt-1">Sivas kış şartları (-25°C altı koruma yetersiz) ölçümleri</p>
               </div>
 
               {antifreezeRiskList.length > 0 ? (
@@ -717,15 +734,15 @@ export default function AracBakimPage() {
                     <button
                       key={item.plaka}
                       onClick={() => jumpToVehicle(item.plaka)}
-                      className="bg-red-950/40 hover:bg-red-500 hover:text-slate-950 text-red-400 font-bold border border-red-500/20 px-2 py-0.5 rounded text-[10px] tracking-wider transition active:scale-95 flex items-center gap-1"
+                      className="bg-[rgba(220,38,38,0.08)] dark:bg-[rgba(220,38,38,0.15)] hover:bg-[var(--fd-danger)] text-[var(--fd-danger)] hover:text-[#ffffff] border border-[rgba(220,38,38,0.15)] dark:border-[rgba(220,38,38,0.25)] px-2.5 py-0.5 rounded-[var(--fd-r-sm)] text-xs font-bold transition flex items-center gap-1"
                       title={`${item.model} (${item.deg}°C)`}
                     >
-                      {item.plaka} <span className="text-[9px] opacity-75">{item.deg}°C</span>
+                      {item.plaka} <span className="text-[10px] opacity-80">{item.deg}°C</span>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-emerald-400 font-bold pt-2 flex items-center gap-1.5">
+                <div className="text-[11px] text-[var(--fd-success)] font-bold pt-2 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Tüm araçlar kış şartlarına dayanıklı
                 </div>
               )}
@@ -733,20 +750,20 @@ export default function AracBakimPage() {
           </Card>
 
           {/* Skorbord 2: Kuru Bakım Sayaç Risk Grubu */}
-          <Card className="bg-slate-950/40 backdrop-blur-xl border border-amber-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-amber-500/40 transition duration-300">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] border-t-4 border-t-[var(--fd-amber)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] relative overflow-hidden group hover:border-[var(--fd-border-strong)] transition duration-300">
             <div className="absolute -right-4 -bottom-4 opacity-5 text-amber-500 group-hover:scale-110 transition duration-500">
               <Clock className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-amber-400 font-semibold tracking-wider uppercase">KURU BAKIM SAYACI</span>
-                <div className="p-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                <span className="text-xs text-[var(--fd-amber)] font-semibold tracking-wider uppercase">KURU BAKIM SAYACI</span>
+                <div className="p-2 bg-amber-500/10 border border-amber-500/20 text-[var(--fd-amber)] rounded-xl">
                   <Clock className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-amber-400">{dryMaintRiskList.length} Araç</h3>
-                <p className="text-[10px] text-slate-400 mt-1">6 aylık şaft/gres yağlama sayacı 15 günden az kalanlar</p>
+                <h3 className="text-3xl font-bold text-[var(--fd-amber)]">{dryMaintRiskList.length} Araç</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] mt-1">6 aylık şaft/gres yağlama sayacı 15 günden az kalanlar</p>
               </div>
 
               {dryMaintRiskList.length > 0 ? (
@@ -755,15 +772,15 @@ export default function AracBakimPage() {
                     <button
                       key={item.plaka}
                       onClick={() => jumpToVehicle(item.plaka)}
-                      className="bg-amber-950/40 hover:bg-amber-500 hover:text-slate-950 text-amber-400 font-bold border border-amber-500/20 px-2 py-0.5 rounded text-[10px] tracking-wider transition active:scale-95 flex items-center gap-1"
+                      className="bg-[rgba(245,158,11,0.08)] dark:bg-[rgba(245,158,11,0.15)] hover:bg-[var(--fd-amber)] text-[var(--fd-amber)] hover:text-[#ffffff] border border-[rgba(245,158,11,0.15)] dark:border-[rgba(245,158,11,0.25)] px-2.5 py-0.5 rounded-[var(--fd-r-sm)] text-xs font-bold transition flex items-center gap-1"
                       title={`${item.model} (${item.daysLeft} gün kaldı)`}
                     >
-                      {item.plaka} <span className="text-[9px] opacity-75">{item.daysLeft}g</span>
+                      {item.plaka} <span className="text-[10px] opacity-80">{item.daysLeft}g</span>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-emerald-400 font-bold pt-2 flex items-center gap-1.5">
+                <div className="text-[11px] text-[var(--fd-success)] font-bold pt-2 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Tüm gres şaft yağlama periyotları nominal
                 </div>
               )}
@@ -771,23 +788,23 @@ export default function AracBakimPage() {
           </Card>
 
           {/* Skorbord 3: Toplam Bütçe & Yakıt İstatistiği */}
-          <Card className="bg-slate-950/40 backdrop-blur-xl border border-cyan-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-cyan-500/40 transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-cyan-500 group-hover:scale-110 transition duration-500">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] border-t-4 border-t-[var(--fd-accent)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] relative overflow-hidden group hover:border-[var(--fd-border-strong)] transition duration-300">
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-[var(--fd-accent)] group-hover:scale-110 transition duration-500">
               <TrendingUp className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-cyan-400 font-semibold tracking-wider uppercase">FİLO MALİYET MÜHRÜ</span>
-                <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+                <span className="text-xs text-[var(--fd-accent)] font-semibold tracking-wider uppercase">FİLO MALİYET MÜHRÜ</span>
+                <div className="p-2 bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] text-[var(--fd-accent)] rounded-xl">
                   <TrendingUp className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-cyan-400">₺{(totalBakimMaliyet + totalYakitMaliyet).toLocaleString('tr-TR')}</h3>
-                <p className="text-[10px] text-slate-400 mt-1">Bakım (₺{totalBakimMaliyet.toLocaleString('tr-TR')}) + Yakıt (₺{totalYakitMaliyet.toLocaleString('tr-TR')})</p>
+                <h3 className="text-3xl font-bold text-[var(--fd-accent)]">₺{(totalBakimMaliyet + totalYakitMaliyet).toLocaleString('tr-TR')}</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] mt-1">Bakım (₺{totalBakimMaliyet.toLocaleString('tr-TR')}) + Yakıt (₺{totalYakitMaliyet.toLocaleString('tr-TR')})</p>
               </div>
 
-              <div className="flex justify-between text-[11px] text-slate-300 pt-2 border-t border-slate-900">
+              <div className="flex justify-between text-[11px] text-[var(--fd-text2)] pt-2 border-t border-[var(--fd-border)]">
                 <span>{totalBakimCount} Onaylı Tamir</span>
                 <span>{totalYakitCount} Yakıt Kaydı</span>
               </div>
@@ -795,20 +812,20 @@ export default function AracBakimPage() {
           </Card>
 
           {/* Skorbord 4: Muayene Takip Alarmı */}
-          <Card className="bg-slate-950/40 backdrop-blur-xl border border-cyan-500/20 p-4 rounded-xl shadow-lg relative overflow-hidden group hover:border-cyan-500/40 transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-cyan-500 group-hover:scale-110 transition duration-500">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] border-t-4 border-t-[var(--fd-info)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] relative overflow-hidden group hover:border-[var(--fd-border-strong)] transition duration-300">
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-[var(--fd-accent)] group-hover:scale-110 transition duration-500">
               <Calendar className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-cyan-400 font-semibold tracking-wider uppercase">MUAYENE PLANI ALARMI</span>
-                <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+                <span className="text-xs text-[var(--fd-accent)] font-semibold tracking-wider uppercase">MUAYENE PLANI ALARMI</span>
+                <div className="p-2 bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] text-[var(--fd-accent)] rounded-xl">
                   <Calendar className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-cyan-400">{inspectionRiskList.length} Risk Sınırında</h3>
-                <p className="text-[10px] text-slate-400 mt-1">Muayene süresi geçmiş veya 30 günden az kalmış araçlar</p>
+                <h3 className="text-3xl font-bold text-[var(--fd-accent)]">{inspectionRiskList.length} Risk Sınırında</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] mt-1">Muayene süresi geçmiş veya 30 günden az kalmış araçlar</p>
               </div>
 
               {inspectionRiskList.length > 0 ? (
@@ -817,15 +834,15 @@ export default function AracBakimPage() {
                     <button
                       key={item.plaka}
                       onClick={() => jumpToVehicle(item.plaka)}
-                      className="bg-cyan-950/40 hover:bg-cyan-500 hover:text-slate-950 text-cyan-400 font-bold border border-cyan-500/20 px-2 py-0.5 rounded text-[10px] tracking-wider transition active:scale-95 flex items-center gap-1"
+                      className="bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-accent-soft2)] px-2.5 py-0.5 rounded-[var(--fd-r-sm)] text-xs font-bold transition flex items-center gap-1"
                       title={`${item.model} (${item.remainingDays <= 0 ? 'Süre Geçti' : `${item.remainingDays} gün`})`}
                     >
-                      {item.plaka} <span className="text-[9px] opacity-75">{item.remainingDays <= 0 ? 'Geçti' : `${item.remainingDays}g`}</span>
+                      {item.plaka} <span className="text-[10px] opacity-80">{item.remainingDays <= 0 ? 'Geçti' : `${item.remainingDays}g`}</span>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-emerald-400 font-bold pt-2 flex items-center gap-1.5">
+                <div className="text-[11px] text-[var(--fd-success)] font-bold pt-2 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Tüm araç muayeneleri güncel
                 </div>
               )}
@@ -834,58 +851,58 @@ export default function AracBakimPage() {
         </div>
 
         {/* ═══ 2. Taktik Filtre Paneli & Sekmeler ═══ */}
-        <div className="flex flex-col gap-4 bg-slate-950/40 border border-slate-900 p-4 rounded-xl backdrop-blur-xl">
+        <div className="flex flex-col gap-4 bg-[var(--fd-surface)] border border-[var(--fd-border)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] backdrop-blur-xl">
           
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
             
             {/* Sekmeli Navigasyon */}
-            <div className="flex flex-wrap bg-slate-900/60 rounded-xl p-1 border border-slate-800 self-stretch lg:self-start gap-1">
+            <div className="flex flex-wrap bg-[var(--fd-surface2)] rounded-[var(--fd-r)] p-1 border border-[var(--fd-border)] self-stretch lg:self-start gap-1">
               <button
                 onClick={() => setActiveTab('bakim')}
-                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-[var(--fd-r-sm)] text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'bakim'
-                    ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)] font-black'
+                    : 'text-[var(--fd-text3)] hover:text-[var(--fd-text2)]'
                 }`}
               >
                 <Wrench className="w-3.5 h-3.5" /> Bakım & Arıza ({totalBakimCount})
               </button>
               <button
                 onClick={() => setActiveTab('yakit')}
-                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-[var(--fd-r-sm)] text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'yakit'
-                    ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)] font-black'
+                    : 'text-[var(--fd-text3)] hover:text-[var(--fd-text2)]'
                 }`}
               >
                 <Fuel className="w-3.5 h-3.5" /> Yakıt Günlükleri ({totalYakitCount})
               </button>
               <button
                 onClick={() => setActiveTab('sarf')}
-                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-[var(--fd-r-sm)] text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'sarf'
-                    ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)] font-black'
+                    : 'text-[var(--fd-text3)] hover:text-[var(--fd-text2)]'
                 }`}
               >
                 <Droplets className="w-3.5 h-3.5" /> Sarf İstatistikleri ({sarfStats.length})
               </button>
               <button
                 onClick={() => setActiveTab('muayene')}
-                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-[var(--fd-r-sm)] text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'muayene'
-                    ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)] font-black'
+                    : 'text-[var(--fd-text3)] hover:text-[var(--fd-text2)]'
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" /> Muayene Takip Sayaçları ({vehicles.length})
               </button>
               <button
                 onClick={() => setActiveTab('onay')}
-                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1.5 sm:px-4 sm:py-2.5 min-h-[38px] sm:min-h-[44px] rounded-[var(--fd-r-sm)] text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'onay'
-                    ? 'bg-indigo-600 text-white shadow-md font-black'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[var(--fd-info)] text-[#ffffff] shadow-[var(--fd-shadow-sm)] font-black'
+                    : 'text-[var(--fd-text3)] hover:text-[var(--fd-text2)]'
                 }`}
               >
                 <CheckCircle className="w-3.5 h-3.5" /> Müdür Onayı
@@ -905,11 +922,11 @@ export default function AracBakimPage() {
                   placeholder="Plaka, işlem veya açıklama ara..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 pl-9 py-2 min-h-[44px] text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition font-medium"
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r)] px-3 pl-9 py-2 min-h-[44px] text-sm text-[var(--fd-text)] focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                 />
-                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--fd-text3)]" />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3.5 text-[var(--fd-text3)] hover:text-[var(--fd-text2)]">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -918,7 +935,7 @@ export default function AracBakimPage() {
               <select
                 value={selectedPlaka}
                 onChange={e => setSelectedPlaka(e.target.value)}
-                className="min-h-[44px] rounded-xl border border-slate-800 bg-slate-900 text-slate-200 px-3 text-xs font-semibold focus:outline-none focus:border-cyan-500 transition"
+                className="min-h-[44px] rounded-[var(--fd-r)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 text-xs font-semibold focus:outline-none focus:border-[var(--fd-accent)] transition"
               >
                 <option value="all">Tüm Araçlar</option>
                 {vehicles.map(v => (
@@ -935,30 +952,30 @@ export default function AracBakimPage() {
 
         {/* ═══ Sekme 1: Bakım & Arıza Geçmişi (570+ Kayıt) ═══ */}
         {activeTab === 'bakim' && (
-          <Card className="border-slate-900 bg-slate-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <CardHeader className="border-b border-slate-900 bg-slate-900/10 pb-4">
+          <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] backdrop-blur-md shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+            <CardHeader className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 pb-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-base font-black tracking-wider uppercase text-slate-300 flex items-center gap-2">
-                    <Wrench className="w-5 h-5 text-cyan-400" /> BAKIM & ARIZA GEÇMİŞİ
+                  <CardTitle className="text-base font-black tracking-wider uppercase text-[var(--fd-text2)] flex items-center gap-2">
+                    <Wrench className="w-5 h-5 text-[var(--fd-accent)]" /> BAKIM & ARIZA GEÇMİŞİ
                   </CardTitle>
-                  <p className="text-xs text-slate-500 mt-1">Belediye Postgres DB üzerinden anlık çekilen gerçek itfaiye bakım günlükleri</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Belediye Postgres DB üzerinden anlık çekilen gerçek itfaiye bakım günlükleri</p>
                 </div>
-                <span className="text-[10px] font-mono bg-slate-900 border border-slate-800 text-slate-400 px-2.5 py-1 rounded-md">
+                <span className="text-[10px] font-mono bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text3)] px-2.5 py-1 rounded-md">
                   KAYIT: {filteredApprovedLogs.length}
                 </span>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {filteredApprovedLogs.length === 0 ? (
-                <div className="text-center p-12 text-slate-500 bg-slate-950/20">
+                <div className="text-center p-12 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/20">
                   Arama kriterlerinize veya seçili filtreye uygun onaylı bakım kaydı bulunamadı.
                 </div>
               ) : (
                 <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[900px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                      <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/60 text-[var(--fd-text3)] font-bold text-xs uppercase tracking-wider">
                         <th className="p-4 text-left">Araç Plakası</th>
                         <th className="p-4 text-left">İşlem Kategori</th>
                         <th className="p-4 text-left">Tarih</th>
@@ -968,44 +985,44 @@ export default function AracBakimPage() {
                         <th className="p-4 text-right">Aksiyon</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900/50">
+                    <tbody className="divide-y divide-[var(--fd-border)]/50">
                       {filteredApprovedLogs.map(m => (
-                        <tr key={`vm-${m.id}`} className="hover:bg-slate-900/20 transition duration-150 group">
+                        <tr key={`vm-${m.id}`} className="hover:bg-[var(--fd-surface2)]/40 transition duration-150 group">
                           <td className="p-4 align-middle">
-                            <span className="font-bold text-slate-200 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-md text-xs tracking-wider">
+                            <span className="font-bold text-[var(--fd-text)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2.5 py-1 rounded-[var(--fd-r-sm)] text-xs tracking-wider">
                               {m.plaka}
                             </span>
                           </td>
                           <td className="p-4 align-middle">
                             <Badge className={`font-semibold px-2 py-0.5 rounded-md text-[11px] ${
                               m.tip === 'tamir' 
-                                ? 'bg-red-950/40 border border-red-500/20 text-red-400' 
-                                : 'bg-cyan-950/40 border border-cyan-500/20 text-cyan-400'
+                                ? 'bg-[rgba(220,38,38,0.08)] dark:bg-[rgba(220,38,38,0.15)] border border-[rgba(220,38,38,0.15)] dark:border-[rgba(220,38,38,0.25)] text-[var(--fd-danger)]' 
+                                : 'bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] text-[var(--fd-accent)]'
                             }`}>
                               {m.tip === 'tamir' ? 'TAMİR / ARIZA' : 'YAĞ BAKIMI'}
                             </Badge>
                           </td>
-                          <td className="p-4 align-middle text-slate-400 font-medium text-xs">
+                          <td className="p-4 align-middle text-[var(--fd-text3)] font-medium text-xs">
                             <div className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                              <Calendar className="w-3.5 h-3.5 text-[var(--fd-text3)]" />
                               {new Date(m.tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </div>
                           </td>
-                          <td className="p-4 align-middle text-slate-300 text-xs max-w-sm truncate" title={m.aciklama}>
+                          <td className="p-4 align-middle text-[var(--fd-text2)] text-xs max-w-sm truncate" title={m.aciklama}>
                             {m.aciklama}
                           </td>
                           <td className="p-4 align-middle text-right font-mono font-bold text-sm">
                             {Number(m.maliyet) > 0 ? (
-                              <span className="text-red-400">₺{Number(m.maliyet).toLocaleString('tr-TR')}</span>
+                              <span className="text-[var(--fd-danger)]">₺{Number(m.maliyet).toLocaleString('tr-TR')}</span>
                             ) : (
-                              <span className="text-slate-600">—</span>
+                              <span className="text-[var(--fd-text3)]">—</span>
                             )}
                           </td>
                           <td className="p-4 align-middle text-center">{getStatusBadge(m.durum || 'Onaylandı')}</td>
                           <td className="p-4 align-middle text-right">
                             <Button
                               onClick={() => jumpToVehicle(m.plaka)}
-                              className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 font-bold text-xs min-h-[44px] min-w-[100px] rounded-lg transition duration-150 active:scale-95 ml-auto flex items-center justify-center gap-1 border border-cyan-500/20"
+                              className="bg-cyan-500/10 hover:bg-cyan-500 text-[var(--fd-accent)] hover:text-slate-950 font-bold text-xs min-h-[44px] min-w-[100px] rounded-[var(--fd-r-sm)] transition duration-150 active:scale-95 ml-auto flex items-center justify-center gap-1 border border-cyan-500/20"
                             >
                               🔍 Aracı İncele
                             </Button>
@@ -1022,30 +1039,30 @@ export default function AracBakimPage() {
 
         {/* ═══ Sekme 2: Yakıt Günlükleri ═══ */}
         {activeTab === 'yakit' && (
-          <Card className="border-slate-900 bg-slate-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <CardHeader className="border-b border-slate-900 bg-slate-900/10 pb-4">
+          <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] backdrop-blur-md shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+            <CardHeader className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 pb-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-base font-black tracking-wider uppercase text-slate-300 flex items-center gap-2">
-                    <Fuel className="w-5 h-5 text-cyan-400" /> YAKIT ALIM GÜNLÜKLERİ
+                  <CardTitle className="text-base font-black tracking-wider uppercase text-[var(--fd-text2)] flex items-center gap-2">
+                    <Fuel className="w-5 h-5 text-[var(--fd-accent)]" /> YAKIT ALIM GÜNLÜKLERİ
                   </CardTitle>
-                  <p className="text-xs text-slate-500 mt-1">Sivas Belediyesi İtfaiye filosu yakıt ikmal geçmişi</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas Belediyesi İtfaiye filosu yakıt ikmal geçmişi</p>
                 </div>
-                <span className="text-[10px] font-mono bg-slate-900 border border-slate-800 text-slate-400 px-2.5 py-1 rounded-md">
+                <span className="text-[10px] font-mono bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text3)] px-2.5 py-1 rounded-md">
                   KAYIT: {filteredFuelLogs.length}
                 </span>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {filteredFuelLogs.length === 0 ? (
-                <div className="text-center p-12 text-slate-500 bg-slate-950/20">
+                <div className="text-center p-12 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/20">
                   Arama kriterlerinize veya seçili filtreye uygun yakıt kaydı bulunamadı.
                 </div>
               ) : (
                 <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[900px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                      <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/60 text-[var(--fd-text3)] font-bold text-xs uppercase tracking-wider">
                         <th className="p-4 text-left">Araç Plakası</th>
                         <th className="p-4 text-left">Tarih</th>
                         <th className="p-4 text-right">Litre</th>
@@ -1056,47 +1073,47 @@ export default function AracBakimPage() {
                         <th className="p-4 text-right">Aksiyon</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900/50">
+                    <tbody className="divide-y divide-[var(--fd-border)]/50">
                       {filteredFuelLogs.map(log => (
-                        <tr key={log.id} className="hover:bg-slate-900/20 transition duration-150 group">
+                        <tr key={log.id} className="hover:bg-[var(--fd-surface2)]/40 transition duration-150 group">
                           <td className="p-4 align-middle">
-                            <span className="font-bold text-slate-200 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-md text-xs tracking-wider">
+                            <span className="font-bold text-[var(--fd-text)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2.5 py-1 rounded-[var(--fd-r-sm)] text-xs tracking-wider">
                               {log.plaka}
                             </span>
                           </td>
-                          <td className="p-4 align-middle text-slate-400 font-medium text-xs">
+                          <td className="p-4 align-middle text-[var(--fd-text3)] font-medium text-xs">
                             <div className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                              <Calendar className="w-3.5 h-3.5 text-[var(--fd-text3)]" />
                               {new Date(log.tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </div>
                           </td>
-                          <td className="p-4 align-middle text-right font-bold text-cyan-400">
+                          <td className="p-4 align-middle text-right font-bold text-[var(--fd-accent)]">
                             <div className="flex items-center justify-end gap-1 font-mono">
-                              <Droplets className="w-3.5 h-3.5 text-cyan-500" /> {log.litre} lt
+                              <Droplets className="w-3.5 h-3.5 text-[var(--fd-accent)]" /> {log.litre} lt
                             </div>
                           </td>
-                          <td className="p-4 align-middle text-right font-mono font-bold text-slate-100">
+                          <td className="p-4 align-middle text-right font-mono font-bold text-[var(--fd-text)]">
                             ₺{(Number(log.tutar) || 0).toLocaleString('tr-TR')}
                           </td>
-                          <td className="p-4 align-middle text-slate-400 font-mono text-xs">
+                          <td className="p-4 align-middle text-[var(--fd-text3)] font-mono text-xs">
                             {Number(log.kmAt) > 0 ? `${Number(log.kmAt).toLocaleString('tr-TR')} KM` : '—'}
                           </td>
-                          <td className="p-4 align-middle text-slate-400 text-xs">
+                          <td className="p-4 align-middle text-[var(--fd-text3)] text-xs">
                             <div className="flex items-center gap-1.5">
-                              <MapPin className="w-3.5 h-3.5 text-slate-600" />
+                              <MapPin className="w-3.5 h-3.5 text-[var(--fd-text3)]" />
                               {log.istasyon || '—'}
                             </div>
                           </td>
-                          <td className="p-4 align-middle text-slate-300 text-xs font-semibold">
+                          <td className="p-4 align-middle text-[var(--fd-text2)] text-xs font-semibold">
                             <div className="flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5 text-slate-600" />
+                              <User className="w-3.5 h-3.5 text-[var(--fd-text3)]" />
                               {log.kayitEden || '—'}
                             </div>
                           </td>
                           <td className="p-4 align-middle text-right">
                             <Button
                               onClick={() => jumpToVehicle(log.plaka)}
-                              className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 font-bold text-xs min-h-[44px] min-w-[100px] rounded-lg transition duration-150 active:scale-95 ml-auto flex items-center justify-center gap-1 border border-cyan-500/20"
+                              className="bg-cyan-500/10 hover:bg-cyan-500 text-[var(--fd-accent)] hover:text-slate-950 font-bold text-xs min-h-[44px] min-w-[100px] rounded-[var(--fd-r-sm)] transition duration-150 active:scale-95 ml-auto flex items-center justify-center gap-1 border border-cyan-500/20"
                             >
                               🔍 Aracı İncele
                             </Button>
@@ -1113,25 +1130,25 @@ export default function AracBakimPage() {
 
         {/* ═══ Sekme 3: Sarf Malzeme Takip Entegrasyonu ═══ */}
         {activeTab === 'sarf' && (
-          <Card className="border-slate-900 bg-slate-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <CardHeader className="border-b border-slate-900 bg-slate-900/10 pb-4">
+          <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] backdrop-blur-md shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+            <CardHeader className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 pb-4">
               <div>
-                <CardTitle className="text-base font-black tracking-wider uppercase text-slate-300 flex items-center gap-2">
-                  <Droplets className="w-5 h-5 text-cyan-400" /> MOTOR YAĞI & ANTİFRİZ TOPLAM SARF İSTATİSTİKLERİ
+                <CardTitle className="text-base font-black tracking-wider uppercase text-[var(--fd-text2)] flex items-center gap-2">
+                  <Droplets className="w-5 h-5 text-[var(--fd-accent)]" /> MOTOR YAĞI & ANTİFRİZ TOPLAM SARF İSTATİSTİKLERİ
                 </CardTitle>
-                <p className="text-xs text-slate-500 mt-1">İlgili araçların bakım geçmişindeki motor yağı ekleme ve radyatör antifriz takviye verilerinin dynamic analizi</p>
+                <p className="text-xs text-[var(--fd-text3)] mt-1">İlgili araçların bakım geçmişindeki motor yağı ekleme ve radyatör antifriz takviye verilerinin dynamic analizi</p>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {sarfStats.length === 0 ? (
-                <div className="text-center p-12 text-slate-500 bg-slate-950/20">
+                <div className="text-center p-12 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/20">
                   Henüz yağ veya antifriz sarfiyatına dair veri kaydı bulunmamaktadır.
                 </div>
               ) : (
                 <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[700px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                      <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/60 text-[var(--fd-text3)] font-bold text-xs uppercase tracking-wider">
                         <th className="p-4 text-left">Araç Plakası</th>
                         <th className="p-4 text-left">Marka / Model</th>
                         <th className="p-4 text-right">Toplam Motor Yağı İlavesi</th>
@@ -1140,28 +1157,28 @@ export default function AracBakimPage() {
                         <th className="p-4 text-right">Aksiyon</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900/50">
+                    <tbody className="divide-y divide-[var(--fd-border)]/50">
                       {sarfStats.map(item => (
-                        <tr key={item.plaka} className="hover:bg-slate-900/20 transition duration-150">
+                        <tr key={item.plaka} className="hover:bg-[var(--fd-surface2)]/40 transition duration-150">
                           <td className="p-4 align-middle">
-                            <span className="font-bold text-slate-200 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-md text-xs tracking-wider">
+                            <span className="font-bold text-[var(--fd-text)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2.5 py-1 rounded-[var(--fd-r-sm)] text-xs tracking-wider">
                               {item.plaka}
                             </span>
                           </td>
-                          <td className="p-4 align-middle text-slate-300 font-semibold">{item.model}</td>
-                          <td className="p-4 align-middle text-right font-mono font-bold text-amber-400">
+                          <td className="p-4 align-middle text-[var(--fd-text2)] font-semibold">{item.model}</td>
+                          <td className="p-4 align-middle text-right font-mono font-bold text-[var(--fd-amber)]">
                             {item.yag > 0 ? `${item.yag} Litre` : '—'}
                           </td>
-                          <td className="p-4 align-middle text-right font-mono font-bold text-cyan-400">
+                          <td className="p-4 align-middle text-right font-mono font-bold text-[var(--fd-accent)]">
                             {item.antifriz > 0 ? `${item.antifriz} Litre` : '—'}
                           </td>
-                          <td className="p-4 align-middle text-center text-xs text-slate-500 font-medium">
+                          <td className="p-4 align-middle text-center text-xs text-[var(--fd-text3)] font-medium">
                             {item.count} Kez Yağ/Sıvı İşlemi
                           </td>
                           <td className="p-4 align-middle text-right">
                             <Button
                               onClick={() => jumpToVehicle(item.plaka)}
-                              className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 font-bold text-xs min-h-[44px] min-w-[100px] rounded-lg transition duration-150 active:scale-95 ml-auto flex items-center justify-center gap-1 border border-cyan-500/20"
+                              className="bg-cyan-500/10 hover:bg-cyan-500 text-[var(--fd-accent)] hover:text-slate-950 font-bold text-xs min-h-[44px] min-w-[100px] rounded-[var(--fd-r-sm)] transition duration-150 active:scale-95 ml-auto flex items-center justify-center gap-1 border border-cyan-500/20"
                             >
                               🔍 Aracı İncele
                             </Button>
@@ -1178,17 +1195,17 @@ export default function AracBakimPage() {
 
         {/* ═══ Sekme 4: Müdür Onay Alanı ═══ */}
         {activeTab === 'onay' && (
-          <Card className="border-slate-900 bg-slate-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <CardHeader className="border-b border-slate-900 bg-slate-900/10 pb-4">
+          <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] backdrop-blur-md shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+            <CardHeader className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 pb-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-base font-black tracking-wider uppercase text-slate-300 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-cyan-400" /> MÜDÜR ONAY YÖNETİMİ
+                  <CardTitle className="text-base font-black tracking-wider uppercase text-[var(--fd-text2)] flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-[var(--fd-accent)]" /> MÜDÜR ONAY YÖNETİMİ
                   </CardTitle>
-                  <p className="text-xs text-slate-500 mt-1">Durumu &quot;Bekliyor&quot; olan itfaiye arıza ve bakım girişlerinin onay paneli</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Durumu &quot;Bekliyor&quot; olan itfaiye arıza ve bakım girişlerinin onay paneli</p>
                 </div>
                 {pendingApprovals.length > 0 && (
-                  <Badge className="bg-red-950/40 border border-red-500/30 text-red-400 font-black px-3 py-1 text-xs animate-pulse">
+                  <Badge className="bg-red-950/40 border border-red-500/30 text-[var(--fd-danger)] font-black px-3 py-1 text-xs animate-pulse">
                     {pendingApprovals.length} İstek Bekliyor
                   </Badge>
                 )}
@@ -1196,28 +1213,28 @@ export default function AracBakimPage() {
             </CardHeader>
             <CardContent className="p-0">
               {!isMudur ? (
-                <div className="p-8 bg-slate-950/20 flex items-start gap-3 border-t border-slate-900">
-                  <div className="p-2 bg-slate-900 rounded-xl border border-slate-850 shrink-0">
-                    <CheckCircle className="w-5 h-5 text-slate-600" />
+                <div className="p-8 bg-[var(--fd-surface2)]/20 flex items-start gap-3 border-t border-[var(--fd-border)]">
+                  <div className="p-2 bg-[var(--fd-surface2)] rounded-xl border border-[var(--fd-border)] shrink-0">
+                    <CheckCircle className="w-5 h-5 text-[var(--fd-text3)]" />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400">Taktik Yetki Kısıtlaması</span>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                    <span className="text-xs font-bold text-[var(--fd-text3)]">Taktik Yetki Kısıtlaması</span>
+                    <p className="text-[11px] text-[var(--fd-text3)] leading-relaxed">
                       Bakım onay işlemleri yalnızca Müdür veya Admin yetkileriyle gerçekleştirilebilir. Bu ekran şu anda salt okunur moddadır.
                     </p>
                   </div>
                 </div>
               ) : pendingApprovals.length === 0 ? (
-                <div className="text-center p-12 text-slate-500 bg-slate-950/20 flex flex-col items-center">
-                  <CheckCircle className="w-10 h-10 text-cyan-400/30 mb-3" />
-                  <p className="font-semibold text-slate-300">Tüm arıza/bakım kayıtları onaylanmış durumda</p>
-                  <p className="text-xs text-slate-500 mt-1">Bekleyen yetkilendirme isteği bulunmamaktadır.</p>
+                <div className="text-center p-12 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/20 flex flex-col items-center">
+                  <CheckCircle className="w-10 h-10 text-[var(--fd-accent)]/30 mb-3" />
+                  <p className="font-semibold text-[var(--fd-text2)]">Tüm arıza/bakım kayıtları onaylanmış durumda</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Bekleyen yetkilendirme isteği bulunmamaktadır.</p>
                 </div>
               ) : (
                 <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border rounded-b-xl scrollbar-thin scrollbar-thumb-slate-800">
                   <table className="w-full min-w-[800px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-slate-900 bg-slate-950/60 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                      <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/60 text-[var(--fd-text3)] font-bold text-xs uppercase tracking-wider">
                         <th className="p-4 text-left">Araç Plakası</th>
                         <th className="p-4 text-left">İşlem Kategori</th>
                         <th className="p-4 text-left">Tarih</th>
@@ -1226,35 +1243,35 @@ export default function AracBakimPage() {
                         <th className="p-4 text-right">Aksiyonlar</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900/50">
+                    <tbody className="divide-y divide-[var(--fd-border)]/50">
                       {pendingApprovals.map(m => (
-                        <tr key={m.id} className="hover:bg-slate-900/20 transition duration-150 bg-amber-500/[0.01]">
+                        <tr key={m.id} className="hover:bg-[var(--fd-surface2)]/40 transition duration-150 bg-amber-500/[0.01]">
                           <td className="p-4 align-middle">
-                            <span className="font-bold text-slate-200 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-md text-xs tracking-wider">
+                            <span className="font-bold text-[var(--fd-text)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2.5 py-1 rounded-[var(--fd-r-sm)] text-xs tracking-wider">
                               {m.plaka}
                             </span>
                           </td>
                           <td className="p-4 align-middle">
-                            <Badge className="bg-orange-950/40 border border-orange-500/20 text-orange-400 font-semibold px-2 py-0.5 rounded-md text-[11px]">
+                            <Badge className="bg-[rgba(245,158,11,0.08)] dark:bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.15)] dark:border-[rgba(245,158,11,0.25)] text-[var(--fd-amber)] font-semibold px-2 py-0.5 rounded-md text-[11px]">
                               {m.tip === 'tamir' ? 'TAMİR / ARIZA' : 'YAĞ BAKIMI'}
                             </Badge>
                           </td>
-                          <td className="p-4 align-middle text-slate-400 font-medium text-xs">
+                          <td className="p-4 align-middle text-[var(--fd-text3)] font-medium text-xs">
                             {new Date(m.tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </td>
-                          <td className="p-4 align-middle text-slate-300 text-xs max-w-xs truncate">{m.aciklama}</td>
-                          <td className="p-4 align-middle text-right font-mono font-bold text-red-400">
+                          <td className="p-4 align-middle text-[var(--fd-text2)] text-xs max-w-xs truncate">{m.aciklama}</td>
+                          <td className="p-4 align-middle text-right font-mono font-bold text-[var(--fd-danger)]">
                             {Number(m.maliyet) > 0 ? `₺${Number(m.maliyet).toLocaleString('tr-TR')}` : '—'}
                           </td>
                           <td className="p-4 align-middle text-right flex items-center justify-end gap-2">
                             <Button
                               onClick={() => jumpToVehicle(m.plaka)}
-                              className="bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 text-xs px-3 py-1.5 min-h-[44px] rounded-lg font-bold transition duration-150 active:scale-95 shrink-0"
+                              className="bg-[var(--fd-surface2)] hover:bg-slate-850 text-[var(--fd-text2)] border border-[var(--fd-border)] text-xs px-3 py-1.5 min-h-[44px] rounded-[var(--fd-r-sm)] font-bold transition duration-150 active:scale-95 shrink-0"
                             >
                               🔍 Detay
                             </Button>
                             <Button
-                              className="bg-emerald-600 hover:bg-emerald-700 text-slate-950 font-black text-xs px-3.5 py-1.5 min-h-[44px] rounded-lg flex items-center gap-1 shadow-md hover:scale-[1.02] transition"
+                              className="bg-[var(--fd-success)] hover:opacity-90 text-slate-950 font-black text-xs px-3.5 py-1.5 min-h-[44px] rounded-[var(--fd-r-sm)] flex items-center gap-1 shadow-md hover:scale-[1.02] transition"
                               onClick={() => handleApprove(m.id)}
                               disabled={updatingId === m.id}
                             >
@@ -1279,14 +1296,14 @@ export default function AracBakimPage() {
         {/* ═══ Sekme 5: Muayene Takip Sayaçları Grid İçeriği ═══ */}
         {activeTab === 'muayene' && (
           <div className="space-y-6">
-            <Card className="border-slate-900 bg-slate-950/40 backdrop-blur-xl shadow-2xl overflow-hidden">
-              <CardHeader className="border-b border-slate-900 bg-slate-900/10 pb-4">
+            <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] backdrop-blur-md shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+              <CardHeader className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 pb-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="text-base font-black tracking-wider uppercase text-slate-300 flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-cyan-400" /> TÜVTÜRK ARAÇ MUAYENE GEÇERLİLİK TAKİBİ
+                    <CardTitle className="text-base font-black tracking-wider uppercase text-[var(--fd-text2)] flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-[var(--fd-accent)]" /> TÜVTÜRK ARAÇ MUAYENE GEÇERLİLİK TAKİBİ
                     </CardTitle>
-                    <p className="text-xs text-slate-500 mt-1">İtfaiye filosundaki araçların TÜVTÜRK muayene geçerlilik süreleri ve kalan gün sayaçları</p>
+                    <p className="text-xs text-[var(--fd-text3)] mt-1">İtfaiye filosundaki araçların TÜVTÜRK muayene geçerlilik süreleri ve kalan gün sayaçları</p>
                   </div>
                 </div>
               </CardHeader>
@@ -1298,17 +1315,17 @@ export default function AracBakimPage() {
                     return (
                       <div 
                         key={v.plaka}
-                        className="bg-slate-950/75 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between hover:border-cyan-500/30 transition duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.4)]"
+                        className="bg-[var(--fd-surface2)]/75 backdrop-blur-md border border-[var(--fd-border)]/60 p-4 rounded-2xl flex flex-col justify-between hover:border-cyan-500/30 transition duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.4)]"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div>
-                            <h3 className="font-mono font-bold text-slate-200 tracking-tight">{v.plaka}</h3>
-                            <p className="text-[11px] text-slate-400 font-semibold">{v.marka} {v.model || ''} - {v.arac_tipi || v.aracTipi}</p>
+                            <h3 className="font-mono font-bold text-[var(--fd-text2)] tracking-tight">{v.plaka}</h3>
+                            <p className="text-[11px] text-[var(--fd-text3)] font-semibold">{v.marka} {v.model || ''} - {v.arac_tipi || v.aracTipi}</p>
                           </div>
                           <Button
                             onClick={() => jumpToVehicle(v.plaka)}
                             size="sm"
-                            className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 font-bold text-[10px] px-2 py-1 h-7 rounded-md transition duration-150 active:scale-95 animate-in fade-in"
+                            className="bg-cyan-500/10 hover:bg-cyan-500 text-[var(--fd-accent)] hover:text-slate-950 font-bold text-[10px] px-2 py-1 h-7 rounded-md transition duration-150 active:scale-95 animate-in fade-in"
                           >
                             Detay
                           </Button>
@@ -1316,35 +1333,35 @@ export default function AracBakimPage() {
                         
                         {/* Glasmorfik Muayene Takip Bileşeni */}
                         {isEditingThis ? (
-                          <div className="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-2 w-full">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Muayene Tarihi Güncelle</p>
+                          <div className="bg-[var(--fd-surface2)]/80 border border-[var(--fd-border)]/80 rounded-xl p-3 flex flex-col gap-2 w-full">
+                            <p className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider">Muayene Tarihi Güncelle</p>
                             <div className="flex items-center gap-2">
                               <input
                                 type="date"
                                 value={editingNewDate}
                                 onChange={(e) => setEditingNewDate(e.target.value)}
-                                className="bg-slate-950 border border-slate-850 rounded-lg px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500/50 flex-1 min-h-[32px]"
+                                className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-2 py-1 text-xs text-[var(--fd-text2)] font-mono focus:outline-none focus:border-cyan-500/50 flex-1 min-h-[32px]"
                               />
                               <Button
                                 onClick={() => handleUpdateInspectionDate(v.plaka)}
                                 disabled={isEditingUpdating}
-                                className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-2.5 py-1 h-8 rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition disabled:opacity-50 cursor-pointer"
+                                className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-2.5 py-1 h-8 rounded-[var(--fd-r-sm)] text-[10px] font-extrabold flex items-center gap-1 transition disabled:opacity-50 cursor-pointer"
                               >
                                 {isEditingUpdating ? '...' : '💾 Güncelle'}
                               </Button>
                               <button
                                 onClick={() => { setEditingPlaka(null); setEditingNewDate('') }}
-                                className="bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 p-1.5 rounded-lg text-xs transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center border border-white/5"
+                                className="bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text3)] hover:text-[var(--fd-text2)] p-1.5 rounded-[var(--fd-r-sm)] text-xs transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center border border-[var(--fd-border)]"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
                         ) : (
-                          <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex justify-between items-center relative group/inspection w-full">
+                          <div className="bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)]/80 rounded-xl p-3 flex justify-between items-center relative group/inspection w-full">
                             <div>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Muayene Geçerlilik</p>
-                              <p className="text-xs font-semibold text-slate-200 font-mono mt-0.5">
+                              <p className="text-[9px] font-bold text-[var(--fd-text3)] uppercase tracking-wider">Muayene Geçerlilik</p>
+                              <p className="text-xs font-semibold text-[var(--fd-text2)] font-mono mt-0.5">
                                 📅 Son Geçerlilik: {formatToTurkishDate(v.next_inspection_date)}
                               </p>
                             </div>
@@ -1358,7 +1375,7 @@ export default function AracBakimPage() {
                                     setEditingPlaka(v.plaka);
                                     setEditingNewDate(v.next_inspection_date || '');
                                   }}
-                                  className="p-1 rounded-lg bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-cyan-400 transition cursor-pointer flex items-center justify-center"
+                                  className="p-1 rounded-[var(--fd-r-sm)] bg-slate-800/60 hover:bg-cyan-500/10 border border-slate-700/50 hover:border-cyan-500/30 text-slate-350 hover:text-[var(--fd-accent)] transition cursor-pointer flex items-center justify-center"
                                   title="Muayene Tarihini Güncelle"
                                 >
                                   <span className="text-[11px] leading-none">✏️</span>
@@ -1378,18 +1395,18 @@ export default function AracBakimPage() {
 
         {/* ═══ Yeni Kayıt Ekleme Modalı ═══ */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-slate-950 border border-slate-900 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-8">
-              <CardHeader className="bg-slate-900/40 border-b border-slate-900 p-5 flex flex-row items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-[var(--fd-surface)] border border-[var(--fd-border-strong)] shadow-[var(--fd-shadow-lg)] overflow-hidden rounded-[var(--fd-r-lg)] animate-in zoom-in-95 duration-200 my-8">
+              <CardHeader className="bg-[var(--fd-surface2)] border-b border-[var(--fd-border)] p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-black text-cyan-400 tracking-wider">
-                    <Plus className="w-5 h-5 text-cyan-400" /> TAKTİK KAYIT PANELİ
+                  <CardTitle className="text-lg flex items-center gap-2 font-black text-[var(--fd-accent)] tracking-wider">
+                    <Plus className="w-5 h-5 text-[var(--fd-accent)]" /> TAKTİK KAYIT PANELİ
                   </CardTitle>
-                  <p className="text-xs text-slate-400 mt-1">Filoya yeni bakım/arıza veya yakıt alımı kaydı girin</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Filoya yeni bakım/arıza veya yakıt alımı kaydı girin</p>
                 </div>
                 <Button
                   variant="ghost"
-                  className="text-slate-400 hover:text-white min-h-[44px] min-w-[44px]"
+                  className="text-[var(--fd-text3)] hover:text-white min-h-[44px] min-w-[44px]"
                   onClick={() => { setIsCreateOpen(false); resetForms() }}
                 >
                   <X className="w-5 h-5" />
@@ -1401,15 +1418,15 @@ export default function AracBakimPage() {
 
                   {/* Kayıt Türü Seçimi */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Kayıt Türü <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-semibold text-[var(--fd-text3)] uppercase tracking-wider block">Kayıt Türü <span className="text-[var(--fd-danger)]">*</span></label>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => setKayitTuru('bakim')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl font-bold text-xs border transition-all duration-200 ${
                           kayitTuru === 'bakim'
-                            ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-600/10 font-bold'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-[var(--fd-accent-soft2)] border-[var(--fd-accent-soft)] text-[var(--fd-accent)] shadow-[var(--fd-shadow-sm)] font-bold'
+                            : 'bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text3)] hover:border-slate-700'
                         }`}
                       >
                         <Wrench className="w-4 h-4" /> Bakım / Arıza Kaydı
@@ -1419,8 +1436,8 @@ export default function AracBakimPage() {
                         onClick={() => setKayitTuru('yakit')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl font-bold text-xs border transition-all duration-200 ${
                           kayitTuru === 'yakit'
-                            ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-lg shadow-cyan-600/10 font-bold'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-[var(--fd-accent-soft2)] border-[var(--fd-accent-soft)] text-[var(--fd-accent)] shadow-[var(--fd-shadow-sm)] font-bold'
+                            : 'bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text3)] hover:border-slate-700'
                         }`}
                       >
                         <Fuel className="w-4 h-4" /> Yakıt Alımı Kaydı
@@ -1430,16 +1447,16 @@ export default function AracBakimPage() {
 
                   {/* ─── Bakım/Arıza Formu ─── */}
                   {kayitTuru === 'bakim' && (
-                    <div className="space-y-4 bg-slate-900/20 p-4 rounded-xl border border-slate-900">
-                      <h3 className="font-bold text-sm text-cyan-400 border-b border-slate-900 pb-1.5 flex items-center gap-1.5">
+                    <div className="space-y-4 bg-[var(--fd-surface2)]/50 p-4 rounded-[var(--fd-r)] border border-[var(--fd-border)]">
+                      <h3 className="font-bold text-sm text-[var(--fd-accent)] border-b border-[var(--fd-border)] pb-1.5 flex items-center gap-1.5">
                         <Wrench className="w-4 h-4" /> Bakım / Arıza Detayları
                       </h3>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Araç Plakası <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Araç Plakası <span className="text-[var(--fd-danger)]">*</span></label>
                           <select
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={bakimForm.plaka}
                             onChange={e => setBakimForm(prev => ({ ...prev, plaka: e.target.value }))}
                             required
@@ -1453,9 +1470,9 @@ export default function AracBakimPage() {
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">İşlem Türü <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">İşlem Türü <span className="text-[var(--fd-danger)]">*</span></label>
                           <select
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={bakimForm.islem_turu}
                             onChange={e => setBakimForm(prev => ({ ...prev, islem_turu: e.target.value }))}
                           >
@@ -1463,41 +1480,41 @@ export default function AracBakimPage() {
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Kilometre (KM)</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Kilometre (KM)</label>
                           <input
                             type="number"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Örn: 125000"
                             value={bakimForm.kilometre}
                             onChange={e => setBakimForm(prev => ({ ...prev, kilometre: e.target.value }))}
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Maliyet (₺)</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Maliyet (₺)</label>
                           <input
                             type="number"
                             step="0.01"
                             min="0"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Örn: 4500"
                             value={bakimForm.maliyet}
                             onChange={e => setBakimForm(prev => ({ ...prev, maliyet: e.target.value }))}
                           />
                         </div>
                         <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs font-bold text-slate-400 block">Yapılan İşlem Detayı / Sarfiyat Bildirimi</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Yapılan İşlem Detayı / Sarfiyat Bildirimi</label>
                           <textarea
                             rows={3}
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 transition font-medium resize-none"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium resize-none"
                             placeholder="Örn: 7 Litre motor yağı eklendi, yağ filtresi yenilendi..."
                             value={bakimForm.aciklama}
                             onChange={e => setBakimForm(prev => ({ ...prev, aciklama: e.target.value }))}
                           />
                         </div>
                         <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs font-bold text-slate-400 block">Kaydı Açan Personel</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Kaydı Açan Personel</label>
                           <select
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={bakimForm.kaydi_acan_sicil_no}
                             onChange={e => setBakimForm(prev => ({ ...prev, kaydi_acan_sicil_no: e.target.value }))}
                           >
@@ -1508,18 +1525,18 @@ export default function AracBakimPage() {
                       </div>
 
                       {/* Fotoğraf Yükleme */}
-                      <div className="p-3 border border-dashed border-slate-800 bg-slate-950/40 rounded-xl space-y-3">
+                      <div className="p-3 border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 rounded-[var(--fd-r)] space-y-3">
                         <div className="flex items-center gap-2 text-xs">
-                          <Camera className="w-4 h-4 text-cyan-400" />
+                          <Camera className="w-4 h-4 text-[var(--fd-accent)]" />
                           <span className="font-bold text-slate-350">Fotoğraflı Siber Kanıt (Opsiyonel)</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="relative group cursor-pointer border border-slate-850 hover:border-cyan-500/50 transition-colors rounded-xl bg-slate-900 w-32 h-20 flex items-center justify-center overflow-hidden">
+                          <div className="relative group cursor-pointer border border-[var(--fd-border)] hover:border-[var(--fd-accent)] transition-colors rounded-[var(--fd-r)] bg-[var(--fd-surface2)] w-32 h-20 flex items-center justify-center overflow-hidden">
                             {previewUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={previewUrl} alt="Önizleme" className="w-full h-full object-cover" />
                             ) : (
-                              <ImageIcon className="w-6 h-6 text-slate-650 group-hover:scale-110 transition-transform" />
+                              <ImageIcon className="w-6 h-6 text-[var(--fd-text3)] group-hover:scale-110 transition-transform" />
                             )}
                             <input
                               type="file"
@@ -1530,7 +1547,7 @@ export default function AracBakimPage() {
                             />
                           </div>
                           {previewUrl && (
-                            <Button type="button" variant="outline" className="border-slate-800 text-slate-400 text-xs rounded-lg min-h-[44px]" onClick={() => { setFile(null); setPreviewUrl(null) }}>
+                            <Button type="button" variant="outline" className="border-[var(--fd-border)] text-[var(--fd-text3)] text-xs rounded-[var(--fd-r-sm)] min-h-[44px]" onClick={() => { setFile(null); setPreviewUrl(null) }}>
                               Kaldır
                             </Button>
                           )}
@@ -1541,16 +1558,16 @@ export default function AracBakimPage() {
 
                   {/* ─── Yakıt Alımı Formu ─── */}
                   {kayitTuru === 'yakit' && (
-                    <div className="space-y-4 bg-slate-900/20 p-4 rounded-xl border border-slate-900">
-                      <h3 className="font-bold text-sm text-cyan-400 border-b border-slate-900 pb-1.5 flex items-center gap-1.5">
+                    <div className="space-y-4 bg-[var(--fd-surface2)]/50 p-4 rounded-[var(--fd-r)] border border-[var(--fd-border)]">
+                      <h3 className="font-bold text-sm text-[var(--fd-accent)] border-b border-[var(--fd-border)] pb-1.5 flex items-center gap-1.5">
                         <Fuel className="w-4 h-4" /> Yakıt Alım Detayları
                       </h3>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Araç Plakası <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Araç Plakası <span className="text-[var(--fd-danger)]">*</span></label>
                           <select
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={yakitForm.plaka}
                             onChange={e => setYakitForm(prev => ({ ...prev, plaka: e.target.value }))}
                             required
@@ -1564,12 +1581,12 @@ export default function AracBakimPage() {
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Alınan Litre <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Alınan Litre <span className="text-[var(--fd-danger)]">*</span></label>
                           <input
                             type="number"
                             step="0.01"
                             min="0"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Örn: 120"
                             value={yakitForm.litre}
                             onChange={e => setYakitForm(prev => ({ ...prev, litre: e.target.value }))}
@@ -1577,12 +1594,12 @@ export default function AracBakimPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Tutar (₺) <span className="text-red-500">*</span></label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Tutar (₺) <span className="text-[var(--fd-danger)]">*</span></label>
                           <input
                             type="number"
                             step="0.01"
                             min="0"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Örn: 5340"
                             value={yakitForm.tutar}
                             onChange={e => setYakitForm(prev => ({ ...prev, tutar: e.target.value }))}
@@ -1590,30 +1607,30 @@ export default function AracBakimPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">İkmal Kilometresi</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">İkmal Kilometresi</label>
                           <input
                             type="number"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Sayaç Kilometresi"
                             value={yakitForm.kmAt}
                             onChange={e => setYakitForm(prev => ({ ...prev, kmAt: e.target.value }))}
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Akaryakıt İstasyonu</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Akaryakıt İstasyonu</label>
                           <input
                             type="text"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Örn: Sivas Belediyesi Akaryakıt İstasyonu"
                             value={yakitForm.istasyon}
                             onChange={e => setYakitForm(prev => ({ ...prev, istasyon: e.target.value }))}
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-400 block">Kayıt Eden Personel</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Kayıt Eden Personel</label>
                           <input
                             type="text"
-                            className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-cyan-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r)] px-3 py-2 min-h-[44px] text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Personel Ad Soyad"
                             value={yakitForm.kayitEden}
                             onChange={e => setYakitForm(prev => ({ ...prev, kayitEden: e.target.value }))}
@@ -1624,18 +1641,18 @@ export default function AracBakimPage() {
                   )}
                 </CardContent>
 
-                <div className="bg-slate-900 border-t border-slate-850 p-5 flex items-center justify-end gap-3">
+                <div className="bg-[var(--fd-surface2)] border-t border-[var(--fd-border)] p-5 flex items-center justify-end gap-3">
                   <Button
                     type="button"
                     variant="outline"
-                    className="border-slate-800 text-slate-350 hover:text-white hover:bg-slate-800/60 font-semibold px-4 py-2 min-h-[44px] rounded-xl text-xs"
+                    className="border border-[var(--fd-border-strong)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] font-semibold px-4 py-2 min-h-[44px] rounded-[var(--fd-r-sm)] text-xs"
                     onClick={() => { setIsCreateOpen(false); resetForms() }}
                   >
                     Vazgeç
                   </Button>
                   <Button
                     type="submit"
-                    className="font-black text-xs px-4 py-3 min-h-[44px] rounded-xl flex items-center gap-1.5 shadow-md transition text-slate-950 bg-cyan-500 hover:bg-cyan-600"
+                    className="font-black text-xs px-4 py-3 min-h-[44px] rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] transition text-[#ffffff] bg-[var(--fd-accent)] hover:opacity-90"
                     disabled={isSaving || uploading}
                   >
                     {isSaving || uploading ? (

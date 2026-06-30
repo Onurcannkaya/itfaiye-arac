@@ -508,25 +508,25 @@ export default function UnifiedGorevlerPage() {
 
   return (
     <PageGuard pageId="gorevler">
-      <div className="flex flex-col h-full space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-300">
+      <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in duration-300">
         
         {/* ═══ Sayfa Başlığı ═══ */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--fd-border)] pb-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-[var(--fd-text)] flex items-center gap-2">
               📋 Görev & Devir-Teslim Yönetimi
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-[var(--fd-text2)] text-xs mt-1">
               Sivas İtfaiyesi araç devir-teslim formları, istasyon kontrol listeleri ve dinamik görev şablonları
             </p>
           </div>
           <div className="flex items-center gap-3">
             {isMudur ? (
-              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1 text-xs">
+              <Badge className="bg-[rgba(22,163,74,0.1)] border border-[rgba(22,163,74,0.2)] text-[var(--fd-success)] font-bold px-3 py-1 text-xs">
                 Müdür Yetki Modu
               </Badge>
             ) : (
-              <Badge className="bg-zinc-800 border border-zinc-700 text-zinc-400 font-bold px-3 py-1 text-xs">
+              <Badge className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] font-bold px-3 py-1 text-xs">
                 Personel Girişi
               </Badge>
             )}
@@ -534,13 +534,13 @@ export default function UnifiedGorevlerPage() {
         </div>
 
         {/* ═══ Glassmorphism Tabs Trigger ═══ */}
-        <div className="flex border-b border-white/5 bg-slate-900/30 backdrop-blur-md p-1 rounded-xl w-full sm:w-fit border border-white/5">
+        <div className="flex border border-[var(--fd-border)] bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] w-full sm:w-fit">
           <button
             onClick={() => setActiveTab('gorevler')}
             className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
               activeTab === 'gorevler'
-                ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[var(--fd-accent)]/15 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] shadow-sm'
+                : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
             }`}
           >
             <CheckSquare className="w-4 h-4" />
@@ -550,8 +550,8 @@ export default function UnifiedGorevlerPage() {
             onClick={() => setActiveTab('dis_gorevler')}
             className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
               activeTab === 'dis_gorevler'
-                ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[var(--fd-accent)]/15 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] shadow-sm'
+                : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
             }`}
           >
             <Milestone className="w-4 h-4" />
@@ -561,8 +561,8 @@ export default function UnifiedGorevlerPage() {
             onClick={() => setActiveTab('sablonlar')}
             className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
               activeTab === 'sablonlar'
-                ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[var(--fd-accent)]/15 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] shadow-sm'
+                : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
             }`}
           >
             <ListChecks className="w-4 h-4" />
@@ -580,7 +580,7 @@ export default function UnifiedGorevlerPage() {
                 <div className="flex justify-end">
                   <Button
                     onClick={() => setShowTaskForm(!showTaskForm)}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-600/10 hover:scale-[1.02] transition duration-150 shrink-0"
+                    className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
                   >
                     {showTaskForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     {showTaskForm ? "Görev Atamayı İptal Et" : "Yeni Görev Ata"}
@@ -588,21 +588,21 @@ export default function UnifiedGorevlerPage() {
                 </div>
 
                 {showTaskForm && (
-                  <Card className="border-cyan-500/20 bg-slate-900/30 backdrop-blur-md border border-white/5 p-4 rounded-xl animate-in slide-in-from-top duration-200">
+                  <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] border p-4 rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] animate-in slide-in-from-top duration-200">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-[var(--fd-accent)] flex items-center gap-2">
                         <ClipboardList className="w-4 h-4" /> İstasyon / Araç Görevi Atama Paneli
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <form onSubmit={handleCreateTask} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                         <div className="space-y-2">
-                          <label className="text-xs font-semibold text-zinc-400">Görev Şablonu</label>
+                          <label className="text-xs font-semibold text-[var(--fd-text2)]">Görev Şablonu</label>
                           <select
                             value={selectedTemplateId}
                             onChange={e => setSelectedTemplateId(e.target.value)}
                             required
-                            className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)]"
                           >
                             <option value="">Şablon Seçiniz</option>
                             {(templates || []).filter(t => t.aktif).map(t => (
@@ -611,12 +611,12 @@ export default function UnifiedGorevlerPage() {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-semibold text-zinc-400">Hedef İtfaiye Aracı</label>
+                          <label className="text-xs font-semibold text-[var(--fd-text2)]">Hedef İtfaiye Aracı</label>
                           <select
                             value={newPlaka}
                             onChange={e => setNewPlaka(e.target.value)}
                             required
-                            className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)]"
                           >
                             <option value="">Araç Plakası Seçin</option>
                             {(vehicles || []).map(v => (
@@ -627,12 +627,12 @@ export default function UnifiedGorevlerPage() {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-semibold text-zinc-400">Atanan Personel</label>
+                          <label className="text-xs font-semibold text-[var(--fd-text2)]">Atanan Personel</label>
                           <select
                             value={newAtanan}
                             onChange={e => setNewAtanan(e.target.value)}
                             required
-                            className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)]"
                           >
                             <option value="">Görevli Personel</option>
                             {(personnel || []).map(p => (
@@ -641,19 +641,19 @@ export default function UnifiedGorevlerPage() {
                           </select>
                         </div>
                         <div className="space-y-2 md:col-span-2 lg:col-span-1">
-                          <label className="text-xs font-semibold text-zinc-400">Ek Not / Açıklama</label>
+                          <label className="text-xs font-semibold text-[var(--fd-text2)]">Ek Not / Açıklama</label>
                           <Input
                             placeholder="Vardiya notu, eksik uyarısı vb..."
                             value={newNotlar}
                             onChange={e => setNewNotlar(e.target.value)}
-                            className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                            className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                           />
                         </div>
                         <div className="md:col-span-2 lg:col-span-4 flex justify-end pt-2">
                           <Button
                             type="submit"
                             disabled={formSaving}
-                            className="bg-cyan-600 hover:bg-cyan-700 h-10 px-6 font-bold text-sm shadow-md"
+                            className="bg-[var(--fd-accent)] hover:opacity-90 text-white h-10 px-6 font-bold text-sm shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r-sm)]"
                           >
                             {formSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                             Görevi Vardiyaya Gönder
@@ -668,8 +668,8 @@ export default function UnifiedGorevlerPage() {
 
             {/* Aktif Görevler */}
             <div className="space-y-3">
-              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <h2 className="text-lg font-bold text-[var(--fd-text)] flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--fd-amber)] animate-pulse"></span>
                 Aktif & Devam Eden Görevler ({pendingTasks.length})
               </h2>
               
@@ -677,65 +677,65 @@ export default function UnifiedGorevlerPage() {
                 {pendingTasks.map(task => {
                   const isOpen = expandedId === task.id
                   const isFilling = fillingTaskId === task.id
-                  const badgeInfo = DURUM_BADGE[task.durum] || { label: "Beklemede", bgClass: "bg-slate-900/40", borderClass: "border-white/5", textClass: "text-zinc-400" }
+                  const badgeInfo = DURUM_BADGE[task.durum] || { label: "Beklemede", bgClass: "bg-[var(--fd-surface2)]", borderClass: "border-[var(--fd-border)]", textClass: "text-[var(--fd-text3)]" }
 
                   return (
-                    <Card key={task.id} className="border-l-4 border-l-amber-500 bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-xl transition hover:border-white/10">
+                    <Card key={task.id} className="border-l-4 border-l-[var(--fd-amber)] bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] transition hover:border-[var(--fd-border)]/80">
                       <button
                         onClick={() => toggleTaskCollapse(task.id)}
                         className="w-full text-left focus:outline-none p-4 flex items-center justify-between"
                       >
                         <div>
-                          <p className="font-extrabold text-sm text-zinc-100">
-                            {task.tip} — <span className="text-cyan-400 font-mono">{task.plaka}</span>
+                          <p className="font-extrabold text-sm text-[var(--fd-text)]">
+                            {task.tip} — <span className="text-[var(--fd-accent)] font-[var(--fd-fontmono)]">{task.plaka}</span>
                           </p>
-                          <p className="text-xs text-zinc-400 mt-1">
-                            Atanan Sicil: <span className="font-mono text-zinc-300">{task.atanan}</span> · {new Date(task.tarih).toLocaleDateString("tr-TR")}
+                          <p className="text-xs text-[var(--fd-text2)] mt-1">
+                            Atanan Sicil: <span className="font-[var(--fd-fontmono)] text-[var(--fd-text)]">{task.atanan}</span> · {new Date(task.tarih).toLocaleDateString("tr-TR")}
                           </p>
                           {task.notlar && (
-                            <p className="text-xs text-amber-500/80 italic mt-1 font-medium">Not: {task.notlar}</p>
+                            <p className="text-xs text-[var(--fd-amber)] italic mt-1 font-medium">Not: {task.notlar}</p>
                           )}
                         </div>
                         <div className="flex items-center gap-3">
                           <Badge className={`${badgeInfo.bgClass} ${badgeInfo.borderClass} ${badgeInfo.textClass} border px-2 py-0.5 rounded-lg text-xs`}>
                             {badgeInfo.label}
                           </Badge>
-                          {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                          {isOpen ? <ChevronUp className="w-4 h-4 text-[var(--fd-text2)]" /> : <ChevronDown className="w-4 h-4 text-[var(--fd-text2)]" />}
                         </div>
                       </button>
 
                       {isOpen && (
-                        <CardContent className="pt-0 px-4 pb-4 border-t border-white/5 pt-4">
+                        <CardContent className="pt-0 px-4 pb-4 border-t border-[var(--fd-border)]/50 pt-4">
                           {!isFilling ? (
                             <div className="space-y-4">
-                              <div className="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2.5">
-                                <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Kontrol Edilecek Maddeler:</p>
+                              <div className="bg-[var(--fd-surface2)]/60 p-4 rounded-xl border border-[var(--fd-border)]/50 space-y-2.5">
+                                <p className="text-xs font-semibold text-[var(--fd-accent)] uppercase tracking-wider">Kontrol Edilecek Maddeler:</p>
                                 {(task.checklist || []).map((c, i) => (
-                                  <div key={i} className="flex items-center gap-2 text-sm text-zinc-300">
-                                    <span className="text-zinc-500 font-bold">•</span>
+                                  <div key={i} className="flex items-center gap-2 text-sm text-[var(--fd-text)]">
+                                    <span className="text-[var(--fd-text2)] font-bold">•</span>
                                     <span>{c.soru}</span>
-                                    <Badge variant="outline" className="scale-75 origin-left text-zinc-400 border-zinc-700">
+                                    <Badge variant="outline" className="scale-75 origin-left text-[var(--fd-text2)] border-[var(--fd-border)]">
                                       {c.tip === 'boolean' ? 'Checklist' : c.tip === 'numeric' ? 'Sayısal' : c.tip === 'text' ? 'Açıklama' : 'Fotoğraf'}
                                     </Badge>
-                                    {c.zorunlu && <span className="text-[10px] text-red-400 font-extrabold bg-red-950/30 px-1 border border-red-500/20 rounded">Zorunlu</span>}
+                                    {c.zorunlu && <span className="text-[10px] text-[var(--fd-danger)] font-extrabold bg-[rgba(220,38,38,0.1)] px-1 border border-[rgba(220,38,38,0.2)] rounded">Zorunlu</span>}
                                   </div>
                                 ))}
                               </div>
                               <Button
                                 onClick={() => startFilling(task)}
-                                className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-10 rounded-xl"
+                                className="w-full bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold h-10 rounded-[var(--fd-r-sm)]"
                               >
                                 Görevi Gerçekleştir / Formu Doldur
                               </Button>
                             </div>
                           ) : (
-                            <div className="space-y-5 bg-slate-950 p-5 rounded-xl border border-white/5 shadow-inner">
-                              <h3 className="font-bold text-sm text-cyan-400 border-b border-white/5 pb-3">Devir-Teslim / Kontrol Giriş Formu</h3>
+                            <div className="space-y-5 bg-[var(--fd-surface2)]/30 p-5 rounded-xl border border-[var(--fd-border)]/50">
+                              <h3 className="font-bold text-sm text-[var(--fd-accent)] border-b border-[var(--fd-border)]/50 pb-3">Devir-Teslim / Kontrol Giriş Formu</h3>
                               {(task.checklist || []).map(c => (
-                                <div key={c.id} className="space-y-2 border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                                  <p className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                                <div key={c.id} className="space-y-2 border-b border-[var(--fd-border)]/30 pb-4 last:border-0 last:pb-0">
+                                  <p className="text-xs font-bold text-[var(--fd-text)] flex items-center gap-1.5">
                                     {c.soru}
-                                    {c.zorunlu && <span className="text-[9px] font-bold bg-red-950/40 text-red-400 border border-red-500/30 rounded px-1.5 py-0.5">ZORUNLU</span>}
+                                    {c.zorunlu && <span className="text-[9px] font-bold bg-[rgba(220,38,38,0.1)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.2)] rounded px-1.5 py-0.5">ZORUNLU</span>}
                                   </p>
 
                                   {c.tip === 'boolean' && (
@@ -745,8 +745,8 @@ export default function UnifiedGorevlerPage() {
                                         onClick={() => setFilledValues({...filledValues, [c.id]: true})}
                                         className={`flex items-center justify-center gap-2 min-h-[44px] rounded-lg border font-bold text-xs transition-all active:scale-[0.97] ${
                                           filledValues[c.id] === true
-                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                            : 'border-white/5 bg-slate-900 text-zinc-400 hover:border-emerald-500/20'
+                                            ? 'bg-[rgba(22,163,74,0.1)] border-[rgba(22,163,74,0.3)] text-[var(--fd-success)]'
+                                            : 'border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:border-[var(--fd-success)]/20'
                                         }`}
                                       >
                                         <CheckCircle2 className="w-4 h-4" />
@@ -757,8 +757,8 @@ export default function UnifiedGorevlerPage() {
                                         onClick={() => setFilledValues({...filledValues, [c.id]: false})}
                                         className={`flex items-center justify-center gap-2 min-h-[44px] rounded-lg border font-bold text-xs transition-all active:scale-[0.97] ${
                                           filledValues[c.id] === false
-                                            ? 'bg-red-500/10 border-red-500/30 text-red-400'
-                                            : 'border-white/5 bg-slate-900 text-zinc-400 hover:border-red-500/20'
+                                            ? 'bg-[rgba(220,38,38,0.1)] border-[rgba(220,38,38,0.3)] text-[var(--fd-danger)]'
+                                            : 'border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:border-[var(--fd-danger)]/20'
                                         }`}
                                       >
                                         <XCircle className="w-4 h-4" />
@@ -774,7 +774,7 @@ export default function UnifiedGorevlerPage() {
                                       placeholder="Sayısal değer giriniz (Örn: Kilometre, Basınç)..."
                                       value={filledValues[c.id] || ''}
                                       onChange={e => setFilledValues({...filledValues, [c.id]: e.target.value})}
-                                      className="max-w-sm border-white/10 bg-slate-900 rounded-lg text-zinc-200 h-9"
+                                      className="max-w-sm border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)] text-[var(--fd-text)] h-9"
                                     />
                                   )}
 
@@ -784,7 +784,7 @@ export default function UnifiedGorevlerPage() {
                                       placeholder="Açıklama, tespit notu..."
                                       value={filledValues[c.id] || ''}
                                       onChange={e => setFilledValues({...filledValues, [c.id]: e.target.value})}
-                                      className="border-white/10 bg-slate-900 rounded-lg text-zinc-200 h-9"
+                                      className="border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)] text-[var(--fd-text)] h-9"
                                     />
                                   )}
 
@@ -805,17 +805,17 @@ export default function UnifiedGorevlerPage() {
                                 </div>
                               ))}
 
-                              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-white/5">
+                              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-[var(--fd-border)]/50">
                                 <Button
                                   variant="ghost"
                                   onClick={() => setFillingTaskId(null)}
-                                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                                  className="text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)]"
                                 >
                                   İptal Et
                                 </Button>
                                 <Button
                                   onClick={() => handleFillSubmit(task.id)}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-5 rounded-xl shadow-lg shadow-emerald-600/10"
+                                  className="bg-[var(--fd-success)] hover:opacity-90 text-white font-bold h-10 px-5 rounded-[var(--fd-r-sm)] shadow-[var(--fd-shadow-sm)]"
                                 >
                                   <Save className="w-4 h-4 mr-1.5" /> Kontrolü Tamamla ve Teslim Et
                                 </Button>
@@ -829,7 +829,7 @@ export default function UnifiedGorevlerPage() {
                 })}
 
                 {pendingTasks.length === 0 && (
-                  <p className="text-zinc-400 text-xs italic py-6 text-center border border-dashed border-white/5 rounded-xl bg-slate-900/10">
+                  <p className="text-[var(--fd-text2)] text-xs italic py-6 text-center border border-dashed border-[var(--fd-border)] rounded-[var(--fd-r)] bg-[var(--fd-surface2)]/20">
                     Şu anda aktif görev veya beklemede olan devir-teslim kaydı bulunmamaktadır.
                   </p>
                 )}
@@ -838,50 +838,50 @@ export default function UnifiedGorevlerPage() {
 
             {/* Tamamlanan Görevler */}
             <div className="space-y-3 pt-4">
-              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                <CheckSquare className="w-4.5 h-4.5 text-emerald-400" />
+              <h2 className="text-lg font-bold text-[var(--fd-text)] flex items-center gap-2">
+                <CheckSquare className="w-4.5 h-4.5 text-[var(--fd-success)]" />
                 Tamamlanan / Teslim Alınan Görevler ({completedTasks.length})
               </h2>
 
               <div className="grid grid-cols-1 gap-3">
                 {completedTasks.map(task => {
                   const isOpen = expandedId === task.id
-                  const badgeInfo = DURUM_BADGE[task.durum] || { label: "Tamamlandı", bgClass: "bg-emerald-950/40", borderClass: "border-emerald-500/30", textClass: "text-emerald-400" }
+                  const badgeInfo = DURUM_BADGE[task.durum] || { label: "Tamamlandı", bgClass: "bg-[rgba(22,163,74,0.1)]", borderClass: "border-[rgba(22,163,74,0.2)]", textClass: "text-[var(--fd-success)]" }
 
                   return (
-                    <Card key={task.id} className="opacity-80 hover:opacity-100 transition-opacity bg-slate-900/30 backdrop-blur-md border border-white/5 rounded-xl">
+                    <Card key={task.id} className="opacity-80 hover:opacity-100 transition-opacity bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)]">
                       <button
                         onClick={() => toggleTaskCollapse(task.id)}
                         className="w-full text-left p-4 flex items-center justify-between"
                       >
                         <div>
-                          <p className="font-extrabold text-sm text-zinc-100">
-                            {task.tip} — <span className="text-cyan-400 font-mono">{task.plaka}</span>
+                          <p className="font-extrabold text-sm text-[var(--fd-text)]">
+                            {task.tip} — <span className="text-[var(--fd-accent)] font-[var(--fd-fontmono)]">{task.plaka}</span>
                           </p>
-                          <p className="text-xs text-zinc-400 mt-1">
-                            Atanan Personel: <span className="font-mono text-zinc-300">{task.atanan}</span> · {new Date(task.tarih).toLocaleDateString("tr-TR")}
+                          <p className="text-xs text-[var(--fd-text2)] mt-1">
+                            Atanan Personel: <span className="font-[var(--fd-fontmono)] text-[var(--fd-text2)]">{task.atanan}</span> · {new Date(task.tarih).toLocaleDateString("tr-TR")}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
                           <Badge className={`${badgeInfo.bgClass} ${badgeInfo.borderClass} ${badgeInfo.textClass} border px-2 py-0.5 rounded-lg text-xs`}>
                             {badgeInfo.label}
                           </Badge>
-                          {isOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                          {isOpen ? <ChevronUp className="w-4 h-4 text-[var(--fd-text2)]" /> : <ChevronDown className="w-4 h-4 text-[var(--fd-text2)]" />}
                         </div>
                       </button>
 
                       {isOpen && (
-                        <CardContent className="pt-0 px-4 pb-4 border-t border-white/5 pt-4">
-                          <div className="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
+                        <CardContent className="pt-0 px-4 pb-4 border-t border-[var(--fd-border)]/50 pt-4">
+                          <div className="bg-[var(--fd-surface2)]/60 p-4 rounded-xl border border-[var(--fd-border)]/50 space-y-2">
                             {(task.checklist || []).map((c, idx) => (
-                              <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 last:border-0 pb-2 last:pb-0 gap-1.5">
-                                <span className="text-xs font-bold text-zinc-300">{c.soru}</span>
+                              <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--fd-border)]/30 last:border-0 pb-2 last:pb-0 gap-1.5">
+                                <span className="text-xs font-bold text-[var(--fd-text2)]">{c.soru}</span>
                                 <span>
                                   {c.tip === 'boolean' ? (
                                     c.deger === true ? (
-                                      <Badge className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-bold px-2 py-0.5 rounded">Evet</Badge>
+                                      <Badge variant="success" className="font-bold px-2 py-0.5 rounded">Evet</Badge>
                                     ) : (
-                                      <Badge className="bg-red-950/40 border border-red-500/30 text-red-400 font-bold px-2 py-0.5 rounded">Hayır</Badge>
+                                      <Badge variant="danger" className="font-bold px-2 py-0.5 rounded">Hayır</Badge>
                                     )
                                   ) : c.tip === 'image' ? (
                                     c.deger ? (
@@ -889,15 +889,15 @@ export default function UnifiedGorevlerPage() {
                                         href={c.deger}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="text-xs text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+                                        className="text-xs text-[var(--fd-accent)] hover:underline flex items-center gap-1 font-bold"
                                       >
                                         <ImageIcon className="w-3.5 h-3.5" /> Fotoğrafı Görüntüle
                                       </a>
                                     ) : (
-                                      <span className="text-xs text-zinc-500 font-medium">Fotoğraf Eklenmedi</span>
+                                      <span className="text-xs text-[var(--fd-text2)] font-medium">Fotoğraf Eklenmedi</span>
                                     )
                                   ) : (
-                                    <span className="font-mono bg-slate-900 border border-white/5 px-2 py-0.5 rounded text-xs text-zinc-200">
+                                    <span className="font-[var(--fd-fontmono)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2 py-0.5 rounded text-xs text-[var(--fd-text2)]">
                                       {c.deger || '—'}
                                     </span>
                                   )}
@@ -906,7 +906,7 @@ export default function UnifiedGorevlerPage() {
                             ))}
                           </div>
                           {task.tamamlanma_tarihi && (
-                            <p className="text-[10px] text-zinc-400 text-right mt-2 font-mono">
+                            <p className="text-[10px] text-[var(--fd-text2)] text-right mt-2 font-[var(--fd-fontmono)]">
                               Tamamlanma: {new Date(task.tamamlanma_tarihi).toLocaleString("tr-TR")}
                             </p>
                           )}
@@ -917,7 +917,7 @@ export default function UnifiedGorevlerPage() {
                 })}
 
                 {completedTasks.length === 0 && (
-                  <p className="text-zinc-400 text-xs italic py-6 text-center border border-dashed border-white/5 rounded-xl bg-slate-900/10">
+                  <p className="text-[var(--fd-text3)] text-xs italic py-6 text-center border border-dashed border-[var(--fd-border)] rounded-[var(--fd-r)] bg-[var(--fd-surface2)]/20">
                     Henüz tamamlanan bir devir-teslim işlemi bulunmamaktadır.
                   </p>
                 )}
@@ -937,7 +937,7 @@ export default function UnifiedGorevlerPage() {
                 <div className="flex justify-end gap-2">
                   <Button
                     onClick={() => setIsBuilding(!isBuilding)}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-600/10 hover:scale-[1.02] transition duration-150 shrink-0"
+                    className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
                   >
                     {isBuilding ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     {isBuilding ? "Şablon Oluşturucuyu Kapat" : "Yeni Görev Şablonu Oluştur"}
@@ -945,40 +945,40 @@ export default function UnifiedGorevlerPage() {
                 </div>
 
                 {isBuilding && (
-                  <Card className="border-cyan-500/20 bg-slate-900/30 backdrop-blur-md border border-white/5 p-4 rounded-xl animate-in slide-in-from-top duration-200">
-                    <CardHeader className="pb-4 border-b border-white/5">
-                      <CardTitle className="text-sm font-bold flex items-center gap-2 text-cyan-400">
+                  <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] border p-4 rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] animate-in slide-in-from-top duration-200">
+                    <CardHeader className="pb-4 border-b border-[var(--fd-border)]/50">
+                      <CardTitle className="text-sm font-bold flex items-center gap-2 text-[var(--fd-accent)]">
                         <ListChecks className="w-4 h-4" /> Yeni Görev / Kontrol Listesi Şablonu Oluşturucu
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-zinc-400">Şablon Başlığı</label>
+                          <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">Şablon Başlığı</label>
                           <Input
                             value={baslik}
                             onChange={e => setBaslik(e.target.value)}
                             placeholder="Örn: Arazöz Malzeme Kontrol Listesi"
-                            className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                            className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-zinc-400">Görev Tipi</label>
+                          <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">Görev Tipi</label>
                           <select
                             value={tplTip}
                             onChange={e => setTplTip(e.target.value)}
-                            className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)]"
                           >
                             <option value="devir_teslim">Devir Teslim Formu</option>
                             <option value="gunluk_kontrol">Periyodik Kontrol Formu</option>
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs font-semibold uppercase text-zinc-400">Raporlama Periyodu</label>
+                          <label className="text-xs font-semibold uppercase text-[var(--fd-text2)]">Raporlama Periyodu</label>
                           <select
                             value={periyot}
                             onChange={e => setPeriyot(e.target.value)}
-                            className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                            className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)]"
                           >
                             <option value="gunluk">Günlük Kontrol</option>
                             <option value="haftalik">Haftalık Kontrol</option>
@@ -988,13 +988,13 @@ export default function UnifiedGorevlerPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <h3 className="font-extrabold text-sm text-zinc-200 border-b border-white/5 pb-2">Kontrol Maddeleri (Sorular)</h3>
+                        <h3 className="font-extrabold text-sm text-[var(--fd-text)] border-b border-[var(--fd-border)]/50 pb-2">Kontrol Maddeleri (Sorular)</h3>
                         {sorular.map((s, idx) => (
-                          <div key={s.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 border border-white/5 rounded-lg bg-slate-950/60">
-                            <span className="font-mono text-zinc-500 font-bold w-6 text-sm">{idx + 1}.</span>
+                          <div key={s.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 border border-[var(--fd-border)]/50 rounded-lg bg-[var(--fd-surface2)]/40">
+                            <span className="font-[var(--fd-fontmono)] text-[var(--fd-text2)] font-bold w-6 text-sm">{idx + 1}.</span>
                             
                             <Input
-                              className="flex-1 h-9 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200 text-sm"
+                              className="flex-1 h-9 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)] text-sm"
                               placeholder="Örn: Su tankı vana kontrolleri yapıldı mı? Kılavuz feneri yerinde mi?"
                               value={s.soru}
                               onChange={e => handleSoruChange(s.id, 'soru', e.target.value)}
@@ -1004,7 +1004,7 @@ export default function UnifiedGorevlerPage() {
                               <select
                                 value={s.tip}
                                 onChange={e => handleSoruChange(s.id, 'tip', e.target.value)}
-                                className="h-9 rounded-lg border border-white/10 bg-slate-900 px-3 py-1 text-xs text-zinc-200 outline-none focus:border-cyan-500/50"
+                                className="h-9 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)]"
                               >
                                 <option value="boolean">Checkbox (Evet/Hayır)</option>
                                 <option value="numeric">Sayısal Veri (Örn: KM, Basınç)</option>
@@ -1012,12 +1012,12 @@ export default function UnifiedGorevlerPage() {
                                 <option value="image">Fotoğraf Kanıtı Yükleme</option>
                               </select>
 
-                              <label className="flex items-center gap-2 text-xs cursor-pointer border border-white/10 p-2 h-9 rounded-lg whitespace-nowrap bg-slate-900 text-zinc-400">
+                              <label className="flex items-center gap-2 text-xs cursor-pointer border border-[var(--fd-border)] p-2 h-9 rounded-lg whitespace-nowrap bg-[var(--fd-surface2)] text-[var(--fd-text2)]">
                                 <input
                                   type="checkbox"
                                   checked={s.zorunlu}
                                   onChange={e => handleSoruChange(s.id, 'zorunlu', e.target.checked)}
-                                  className="accent-cyan-500"
+                                  className="accent-[var(--fd-accent)] rounded"
                                 />
                                 Zorunlu
                               </label>
@@ -1027,7 +1027,7 @@ export default function UnifiedGorevlerPage() {
                                   variant="danger"
                                   size="icon"
                                   onClick={() => handleRemoveSoru(s.id)}
-                                  className="h-9 w-9 shrink-0 bg-red-650 hover:bg-red-750 text-white rounded-lg"
+                                  className="h-9 w-9 shrink-0 bg-[var(--fd-danger)] hover:opacity-90 text-white rounded-lg"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -1040,24 +1040,24 @@ export default function UnifiedGorevlerPage() {
                           type="button"
                           variant="outline"
                           onClick={handleAddSoru}
-                          className="border-dashed border-white/10 text-cyan-400 hover:text-cyan-300 hover:bg-white/5 w-full rounded-xl"
+                          className="border-dashed border-[var(--fd-border)] text-[var(--fd-accent)] hover:bg-[var(--fd-surface2)] w-full rounded-[var(--fd-r)]"
                         >
                           <Plus className="w-4 h-4 mr-1.5" /> Kontrol Maddesi Ekle
                         </Button>
                       </div>
 
-                      <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                      <div className="flex justify-end gap-3 pt-4 border-t border-[var(--fd-border)]/50">
                         <Button
                           variant="ghost"
                           onClick={() => setIsBuilding(false)}
-                          className="text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                          className="text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)]"
                         >
                           İptal
                         </Button>
                         <Button
                           onClick={handleSaveTemplate}
                           disabled={savingTemplate}
-                          className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-10 px-6 rounded-xl"
+                          className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold h-10 px-6 rounded-[var(--fd-r-sm)]"
                         >
                           {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ListChecks className="w-4 h-4 mr-2" />}
                           Şablonu Tamamla ve Yayınla
@@ -1068,8 +1068,8 @@ export default function UnifiedGorevlerPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-slate-900/20 border border-white/5 rounded-xl p-4 text-center">
-                <p className="text-zinc-400 text-xs italic">
+              <div className="bg-[var(--fd-surface2)]/20 border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 text-center">
+                <p className="text-[var(--fd-text2)] text-xs italic">
                   💡 Personel yetki modundasınız. Yeni şablon oluşturma adımları ve aktif/pasif kilitleri sadece <b>Müdür</b> yetkisinde olup, bu alanı salt-okunur modda inceliyorsunuz.
                 </p>
               </div>
@@ -1080,23 +1080,23 @@ export default function UnifiedGorevlerPage() {
               {(templates || []).map(t => (
                 <Card
                   key={t.id}
-                  className={`bg-slate-900/30 backdrop-blur-md border rounded-xl p-5 ${
+                  className={`bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-5 ${
                     t.aktif
-                      ? "border-l-4 border-l-emerald-500 border-white/5"
-                      : "opacity-75 border-l-4 border-l-zinc-700 border-white/5"
+                      ? "border-l-4 border-l-[var(--fd-success)]"
+                      : "opacity-75 border-l-4 border-l-[var(--fd-border-strong)]"
                   }`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-extrabold text-base text-zinc-100">{t.baslik}</h3>
+                      <h3 className="font-extrabold text-base text-[var(--fd-text)]">{t.baslik}</h3>
                       <div className="flex gap-2 mt-2">
-                        <Badge variant="outline" className="text-zinc-400 border-zinc-700 font-bold scale-90 origin-left">
+                        <Badge variant="outline" className="text-[var(--fd-text2)] border-[var(--fd-border)] font-bold scale-90 origin-left">
                           {t.tip === 'devir_teslim' ? 'Devir Teslim' : 'Periyodik Kontrol'}
                         </Badge>
-                        <Badge variant="outline" className="text-zinc-400 border-zinc-700 font-bold scale-90 origin-left">
+                        <Badge variant="outline" className="text-[var(--fd-text2)] border-[var(--fd-border)] font-bold scale-90 origin-left">
                           {t.periyot === 'gunluk' ? 'Günlük' : t.periyot === 'haftalik' ? 'Haftalık' : 'Aylık'}
                         </Badge>
-                        <Badge className={`${t.aktif ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/20' : 'bg-zinc-950/40 text-zinc-400 border-zinc-700'} border font-bold scale-90 origin-left`}>
+                        <Badge className={`${t.aktif ? 'bg-[rgba(22,163,74,0.1)] text-[var(--fd-success)] border-[rgba(22,163,74,0.2)]' : 'bg-[var(--fd-surface2)] text-[var(--fd-text2)] border-[var(--fd-border)]'} border font-bold scale-90 origin-left`}>
                           {t.aktif ? "Aktif" : "Pasif"}
                         </Badge>
                       </div>
@@ -1106,36 +1106,36 @@ export default function UnifiedGorevlerPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleTemplateActive(t.id, t.aktif)}
-                        className={`text-xs font-bold rounded-lg ${t.aktif ? 'text-red-400 hover:text-red-300 hover:bg-red-950/20' : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20'}`}
+                        className={`text-xs font-bold rounded-lg ${t.aktif ? 'text-[var(--fd-danger)] hover:bg-[rgba(220,38,38,0.1)]' : 'text-[var(--fd-success)] hover:bg-[rgba(22,163,74,0.1)]'}`}
                       >
                         {t.aktif ? "Devre Dışı Bırak" : "Aktifleştir"}
                       </Button>
                     )}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                    <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2.5">
+                  <div className="mt-4 pt-4 border-t border-[var(--fd-border)]/50 space-y-2">
+                    <p className="text-xs font-semibold text-[var(--fd-accent)] uppercase tracking-wider mb-2.5">
                       {t.sorular ? t.sorular.length : 0} Adet Madde Girişi:
                     </p>
                     {(t.sorular || []).slice(0, 4).map((s, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-zinc-300">
-                        <span className="text-zinc-500">•</span>
+                      <div key={idx} className="flex items-center gap-2 text-xs text-[var(--fd-text2)]">
+                        <span className="text-[var(--fd-text2)]">•</span>
                         <span className="truncate flex-1">{s.soru}</span>
-                        <Badge variant="outline" className="scale-75 origin-right border-zinc-700 text-zinc-500">
+                        <Badge variant="outline" className="scale-75 origin-right border-[var(--fd-border)] text-[var(--fd-text2)]">
                           {s.tip === 'boolean' ? 'Checkbox' : s.tip === 'numeric' ? 'Sayısal' : s.tip === 'text' ? 'Metin' : 'Fotoğraf'}
                         </Badge>
-                        {s.zorunlu && <span className="text-[9px] text-red-400 font-extrabold border border-red-500/20 bg-red-950/20 px-1 rounded">Zorunlu</span>}
+                        {s.zorunlu && <span className="text-[9px] text-[var(--fd-danger)] font-extrabold border border-[var(--fd-danger)]/20 bg-[rgba(220,38,38,0.1)] px-1 rounded">Zorunlu</span>}
                       </div>
                     ))}
                     {t.sorular && t.sorular.length > 4 && (
-                      <p className="text-[10px] text-zinc-500 italic mt-2.5">+ {t.sorular.length - 4} kontrol maddesi daha mevcuttur.</p>
+                      <p className="text-[10px] text-[var(--fd-text2)] italic mt-2.5">+ {t.sorular.length - 4} kontrol maddesi daha mevcuttur.</p>
                     )}
                   </div>
                 </Card>
               ))}
 
               {templates.length === 0 && (
-                <div className="col-span-full py-12 text-center border border-dashed border-white/5 rounded-xl bg-slate-900/10 text-zinc-400 text-sm">
+                <div className="col-span-full py-12 text-center border border-dashed border-[var(--fd-border)] rounded-[var(--fd-r)] bg-[var(--fd-surface2)]/20 text-[var(--fd-text2)] text-sm">
                   Kayıtlı aktif bir görev kontrol şablonu bulunmamaktadır.
                 </div>
               )}
@@ -1153,7 +1153,7 @@ export default function UnifiedGorevlerPage() {
                 <div className="flex justify-end">
                   <Button
                     onClick={() => setShowAddMissionForm(!showAddMissionForm)}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-600/10 hover:scale-[1.02] transition duration-150 shrink-0"
+                    className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
                   >
                     {showAddMissionForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     {showAddMissionForm ? "Görevi İptal Et" : "Yeni Dış Görev Ata"}
@@ -1161,9 +1161,9 @@ export default function UnifiedGorevlerPage() {
                 </div>
 
                 {showAddMissionForm && (
-                  <Card className="border-cyan-500/20 bg-slate-900/30 backdrop-blur-md border border-white/5 p-4 rounded-xl animate-in slide-in-from-top duration-200">
+                  <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] border p-4 rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] animate-in slide-in-from-top duration-200">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-[var(--fd-accent)] flex items-center gap-2">
                         <ClipboardList className="w-4 h-4" /> Yeni Dış Görev Atama Paneli
                       </CardTitle>
                     </CardHeader>
@@ -1171,12 +1171,12 @@ export default function UnifiedGorevlerPage() {
                       <form onSubmit={handleCreateExternalMission} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-zinc-400">Görev Türü</label>
+                            <label className="text-xs font-semibold text-[var(--fd-text3)]">Görev Türü</label>
                             <select
-                              value={addMissionForm.gorev_turu}
-                              onChange={e => setAddMissionForm({...addMissionForm, gorev_turu: e.target.value})}
-                              required
-                              className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                               value={addMissionForm.gorev_turu}
+                               onChange={e => setAddMissionForm({...addMissionForm, gorev_turu: e.target.value})}
+                               required
+                               className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text2)] outline-none focus:border-[var(--fd-accent)]"
                             >
                               <option value="Sosyal Görev">Sosyal Görev</option>
                               <option value="Lojistik Sevk">Lojistik Sevk</option>
@@ -1188,21 +1188,21 @@ export default function UnifiedGorevlerPage() {
                             </select>
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-zinc-400">Görev Başlığı</label>
+                            <label className="text-xs font-semibold text-[var(--fd-text3)]">Görev Başlığı</label>
                             <Input
                               placeholder="Örn: Kent Meydanı Sosyal Çadır Refakatı"
                               value={addMissionForm.baslik}
                               onChange={e => setAddMissionForm({...addMissionForm, baslik: e.target.value})}
                               required
-                              className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                              className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-zinc-400">Görevli Araç (Plaka)</label>
+                            <label className="text-xs font-semibold text-[var(--fd-text3)]">Görevli Araç (Plaka)</label>
                             <select
-                              value={addMissionForm.plaka}
-                              onChange={e => setAddMissionForm({...addMissionForm, plaka: e.target.value})}
-                              className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                               value={addMissionForm.plaka}
+                               onChange={e => setAddMissionForm({...addMissionForm, plaka: e.target.value})}
+                               className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text2)] outline-none focus:border-[var(--fd-accent)]"
                             >
                               <option value="">Araç Seçiniz (Opsiyonel)</option>
                               {(vehicles || []).map(v => (
@@ -1216,42 +1216,42 @@ export default function UnifiedGorevlerPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-zinc-400">Mahalle</label>
+                            <label className="text-xs font-semibold text-[var(--fd-text3)]">Mahalle</label>
                             <Input
                               placeholder="Örn: Yenişehir"
                               value={addMissionForm.mahalle}
                               onChange={e => setAddMissionForm({...addMissionForm, mahalle: e.target.value})}
-                              className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                              className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                             />
                           </div>
                           <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-xs font-semibold text-zinc-400">Tam Adres</label>
+                            <label className="text-xs font-semibold text-[var(--fd-text3)]">Tam Adres</label>
                             <Input
                               placeholder="Örn: Kent Meydanı Etkinlik Alanı No: 5"
                               value={addMissionForm.adres}
                               onChange={e => setAddMissionForm({...addMissionForm, adres: e.target.value})}
-                              className="h-10 border-white/10 bg-slate-950 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                              className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                             />
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-zinc-400">Görev Detayı / Açıklama</label>
+                          <label className="text-xs font-semibold text-[var(--fd-text3)]">Görev Detayı / Açıklama</label>
                           <textarea
                             placeholder="Görevin amacı, personelin yapacağı çalışmalar vb..."
                             value={addMissionForm.detay}
                             onChange={e => setAddMissionForm({...addMissionForm, detay: e.target.value})}
-                            className="flex min-h-[80px] w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 resize-y"
+                            className="flex min-h-[80px] w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)] resize-y"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-zinc-400 block mb-1">Görevlendirilecek Personeller</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[160px] overflow-y-auto p-3 bg-slate-950 border border-white/10 rounded-lg">
+                          <label className="text-xs font-semibold text-[var(--fd-text3)] block mb-1">Görevlendirilecek Personeller</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[160px] overflow-y-auto p-3 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r)]">
                             {(personnel || []).map(p => {
                               const isChecked = addMissionForm.sicil_nos.includes(p.sicil_no)
                               return (
-                                <label key={p.sicil_no} className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-300 py-1 hover:text-white">
+                                <label key={p.sicil_no} className="flex items-center gap-2 cursor-pointer select-none text-xs text-[var(--fd-text2)] py-1 hover:text-[var(--fd-text)]">
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
@@ -1261,7 +1261,7 @@ export default function UnifiedGorevlerPage() {
                                         : [...addMissionForm.sicil_nos, p.sicil_no]
                                       setAddMissionForm({...addMissionForm, sicil_nos: newStaff})
                                     }}
-                                    className="rounded border-white/10 bg-slate-900 text-cyan-600 focus:ring-cyan-500"
+                                    className="rounded border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-accent)] focus:ring-[var(--fd-accent)]"
                                   />
                                   <span>{p.ad} {p.soyad}</span>
                                 </label>
@@ -1274,7 +1274,7 @@ export default function UnifiedGorevlerPage() {
                           <Button
                             type="submit"
                             disabled={addMissionSaving}
-                            className="bg-cyan-600 hover:bg-cyan-700 h-10 px-6 font-bold text-sm shadow-md"
+                            className="bg-[var(--fd-accent)] hover:opacity-90 text-white h-10 px-6 font-bold text-sm shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r-sm)]"
                           >
                             {addMissionSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                             Dış Görevi Başlat
@@ -1289,8 +1289,8 @@ export default function UnifiedGorevlerPage() {
 
             {/* List of Active External Missions */}
             <div className="space-y-3">
-              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse"></span>
+              <h2 className="text-lg font-bold text-[var(--fd-text)] flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--fd-accent)] animate-pulse"></span>
                 Aktif Dış Görevler ({activeMissions.length})
               </h2>
 
@@ -1304,31 +1304,31 @@ export default function UnifiedGorevlerPage() {
                     .join(', ')
 
                   return (
-                    <Card key={m.id} className="border-l-4 border-l-cyan-500 bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <Card key={m.id} className="border-l-4 border-l-[var(--fd-accent)] bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-extrabold text-base text-zinc-100">{m.baslik}</h3>
-                          <Badge className="bg-cyan-950/40 text-cyan-400 border border-cyan-500/20 font-bold text-xs py-0.5">
+                          <h3 className="font-extrabold text-base text-[var(--fd-text)]">{m.baslik}</h3>
+                          <Badge className="bg-[var(--fd-accent)]/10 text-[var(--fd-accent)] border border-[var(--fd-accent)]/20 font-bold text-xs py-0.5">
                             {m.gorev_turu}
                           </Badge>
                           {m.plaka && (
-                            <Badge className="bg-slate-950 text-slate-300 border border-white/5 font-bold text-xs py-0.5">
+                            <Badge className="bg-[var(--fd-surface2)] text-[var(--fd-text2)] border border-[var(--fd-border)] font-bold text-xs py-0.5">
                               🚒 Araç: {m.plaka}
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-zinc-400 font-medium line-clamp-2">{m.detay || "Detay girilmemiş."}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1 gap-x-4 text-[11px] text-zinc-400 font-semibold mt-2 pt-2 border-t border-white/5">
-                          <div>📍 Mahalle/Adres: <span className="text-zinc-200 font-bold">{m.mahalle || '-'}{m.adres ? `, ${m.adres}` : ''}</span></div>
-                          <div>🧑🚒 Personel: <span className="text-zinc-200 font-bold">{names || '-'}</span></div>
-                          <div>🕒 Çıkış: <span className="text-zinc-200 font-bold">{m.cikis_tarihi ? new Date(m.cikis_tarihi).toLocaleString('tr-TR') : '-'}</span></div>
+                        <p className="text-xs text-[var(--fd-text2)] font-medium line-clamp-2">{m.detay || "Detay girilmemiş."}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1 gap-x-4 text-[11px] text-[var(--fd-text2)] font-semibold mt-2 pt-2 border-t border-[var(--fd-border)]/50">
+                          <div>📍 Mahalle/Adres: <span className="text-[var(--fd-text)] font-bold">{m.mahalle || '-'}{m.adres ? `, ${m.adres}` : ''}</span></div>
+                          <div>🧑🚒 Personel: <span className="text-[var(--fd-text)] font-bold">{names || '-'}</span></div>
+                          <div>🕒 Çıkış: <span className="text-[var(--fd-text)] font-bold">{m.cikis_tarihi ? new Date(m.cikis_tarihi).toLocaleString('tr-TR') : '-'}</span></div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
                         <Button
                           onClick={() => handleCompleteExternalMission(m.id)}
-                          className="bg-emerald-600/90 hover:bg-emerald-600 text-white font-bold text-xs h-9 px-3 rounded-lg shadow-md"
+                          className="bg-[var(--fd-success)] hover:opacity-90 text-white font-bold text-xs h-9 px-3 rounded-[var(--fd-r-sm)] shadow-[var(--fd-shadow-sm)]"
                         >
                           <CheckCircle2 className="w-4 h-4 mr-1" /> Görevi Sonlandır
                         </Button>
@@ -1336,14 +1336,14 @@ export default function UnifiedGorevlerPage() {
                           <>
                             <Button
                               onClick={() => handleStartEditMission(m)}
-                              className="bg-slate-800 hover:bg-slate-700 text-zinc-200 font-bold text-xs h-9 px-3 rounded-lg border border-white/5"
+                              className="bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] font-bold text-xs h-9 px-3 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)]"
                             >
                               Düzenle
                             </Button>
                             <Button
                               variant="danger"
                               onClick={() => handleDeleteExternalMission(m.id)}
-                              className="font-bold text-xs h-9 px-3 rounded-lg"
+                              className="font-bold text-xs h-9 px-3 rounded-[var(--fd-r-sm)]"
                             >
                               Sil
                             </Button>
@@ -1355,7 +1355,7 @@ export default function UnifiedGorevlerPage() {
                 })}
 
                 {activeMissions.length === 0 && (
-                  <p className="text-zinc-400 text-xs italic py-6 text-center border border-dashed border-white/5 rounded-xl bg-slate-900/10">
+                  <p className="text-[var(--fd-text2)] text-xs italic py-6 text-center border border-dashed border-[var(--fd-border)] rounded-[var(--fd-r)] bg-[var(--fd-surface2)]/20">
                     Şu anda aktif devam eden bir dış görev bulunmamaktadır.
                   </p>
                 )}
@@ -1364,8 +1364,8 @@ export default function UnifiedGorevlerPage() {
 
             {/* List of Completed External Missions */}
             <div className="space-y-3 pt-4">
-              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <h2 className="text-lg font-bold text-[var(--fd-text)] flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--fd-success)]"></span>
                 Tamamlanan Dış Görevler ({completedMissions.length})
               </h2>
 
@@ -1379,23 +1379,23 @@ export default function UnifiedGorevlerPage() {
                     .join(', ')
 
                   return (
-                    <Card key={m.id} className="border-l-4 border-l-emerald-500 bg-slate-900/20 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 opacity-80">
+                    <Card key={m.id} className="border-l-4 border-l-[var(--fd-success)] bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 opacity-80">
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-extrabold text-sm text-zinc-200 line-through decoration-zinc-600">{m.baslik}</h3>
-                          <Badge className="bg-emerald-950/20 text-emerald-400 border border-emerald-500/10 font-bold text-[10px] py-0.5">
+                          <h3 className="font-extrabold text-sm text-[var(--fd-text2)] line-through decoration-[var(--fd-border)]">{m.baslik}</h3>
+                          <Badge className="bg-[var(--fd-success)]/10 text-[var(--fd-success)] border border-[var(--fd-success)]/20 font-bold text-[10px] py-0.5">
                             {m.gorev_turu}
                           </Badge>
                           {m.plaka && (
-                            <Badge className="bg-slate-950 text-slate-400 border border-white/5 font-bold text-[10px] py-0.5">
+                            <Badge className="bg-[var(--fd-surface2)] text-[var(--fd-text2)] border border-[var(--fd-border)] font-bold text-[10px] py-0.5">
                               🚒 Araç: {m.plaka}
                             </Badge>
                           )}
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1 gap-x-4 text-[10px] text-zinc-400 font-semibold mt-1">
-                          <div>📍 Adres: <span className="text-zinc-300 font-bold">{m.mahalle || '-'}{m.adres ? `, ${m.adres}` : ''}</span></div>
-                          <div>🧑🚒 Personel: <span className="text-zinc-300 font-bold">{names || '-'}</span></div>
-                          <div>🕒 Çıkış: <span className="text-zinc-300 font-bold">{m.cikis_tarihi ? new Date(m.cikis_tarihi).toLocaleString('tr-TR') : '-'}</span></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1 gap-x-4 text-[10px] text-[var(--fd-text2)] font-semibold mt-1">
+                          <div>📍 Adres: <span className="text-[var(--fd-text2)] font-bold">{m.mahalle || '-'}{m.adres ? `, ${m.adres}` : ''}</span></div>
+                          <div>🧑🚒 Personel: <span className="text-[var(--fd-text2)] font-bold">{names || '-'}</span></div>
+                          <div>🕒 Çıkış: <span className="text-[var(--fd-text2)] font-bold">{m.cikis_tarihi ? new Date(m.cikis_tarihi).toLocaleString('tr-TR') : '-'}</span></div>
                         </div>
                       </div>
                       {isMudur && (
@@ -1414,7 +1414,7 @@ export default function UnifiedGorevlerPage() {
                 })}
 
                 {completedMissions.length === 0 && (
-                  <p className="text-zinc-500 text-xs italic py-4 text-center">
+                  <p className="text-[var(--fd-text2)] text-xs italic py-4 text-center">
                     Henüz tamamlanmış bir dış görev kaydı bulunmamaktadır.
                   </p>
                 )}
@@ -1425,22 +1425,27 @@ export default function UnifiedGorevlerPage() {
 
       </div>
 
-      {/* ═══ DIŞ GÖREV DÜZENLEME MODAL (Dialog) ═══ */}
+      {/* ═══ DIŞ GÖREV DÜZENLEME MODAL ═══ */}
       {editMissionModalOpen && editingMission && (
-        <Dialog open={editMissionModalOpen} onOpenChange={(open) => { if(!open) handleCloseEditMissionModal() }}>
-          <DialogContent className="border-slate-800 bg-slate-950/95 backdrop-blur-xl max-w-xl text-slate-100 rounded-2xl shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-cyan-400">Dış Görevi Düzenle</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <Card className="w-full max-w-xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+            <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-4 flex flex-row items-center justify-between">
+              <CardTitle className="text-base font-bold text-[var(--fd-text)] flex items-center gap-2">
+                ✏️ Dış Görevi Düzenle
+              </CardTitle>
+              <Button variant="ghost" size="icon" className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]" onClick={handleCloseEditMissionModal}>
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-400">Görev Türü</label>
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Görev Türü</label>
                   <select
                     value={editMissionForm.gorev_turu}
                     onChange={e => setEditMissionForm({...editMissionForm, gorev_turu: e.target.value})}
                     required
-                    className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                    className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text2)] outline-none focus:border-[var(--fd-accent)]"
                   >
                     <option value="Sosyal Görev">Sosyal Görev</option>
                     <option value="Lojistik Sevk">Lojistik Sevk</option>
@@ -1452,24 +1457,24 @@ export default function UnifiedGorevlerPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-400">Görev Başlığı</label>
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Görev Başlığı</label>
                   <Input
                     placeholder="Örn: Sosyal Çadır Görevi"
                     value={editMissionForm.baslik}
                     onChange={e => setEditMissionForm({...editMissionForm, baslik: e.target.value})}
                     required
-                    className="h-10 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                    className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-400">Görevli Araç (Plaka)</label>
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Görevli Araç (Plaka)</label>
                   <select
                     value={editMissionForm.plaka}
                     onChange={e => setEditMissionForm({...editMissionForm, plaka: e.target.value})}
-                    className="flex h-10 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50"
+                    className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text2)] outline-none focus:border-[var(--fd-accent)]"
                   >
                     <option value="">Araç Seçiniz (Opsiyonel)</option>
                     {(vehicles || []).map(v => (
@@ -1480,43 +1485,43 @@ export default function UnifiedGorevlerPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-400">Mahalle</label>
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Mahalle</label>
                   <Input
                     placeholder="Örn: Yenişehir"
                     value={editMissionForm.mahalle}
                     onChange={e => setEditMissionForm({...editMissionForm, mahalle: e.target.value})}
-                    className="h-10 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                    className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400">Tam Adres</label>
+                <label className="text-xs font-semibold text-[var(--fd-text3)]">Tam Adres</label>
                 <Input
                   placeholder="Örn: Kent Meydanı No: 5"
                   value={editMissionForm.adres}
                   onChange={e => setEditMissionForm({...editMissionForm, adres: e.target.value})}
-                  className="h-10 border-white/10 bg-slate-900 focus:border-cyan-500/50 rounded-lg text-zinc-200"
+                  className="h-10 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400">Görev Detayı</label>
+                <label className="text-xs font-semibold text-[var(--fd-text3)]">Görev Detayı</label>
                 <textarea
                   placeholder="Açıklama..."
                   value={editMissionForm.detay}
                   onChange={e => setEditMissionForm({...editMissionForm, detay: e.target.value})}
-                  className="flex min-h-[80px] w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 resize-y"
+                  className="flex min-h-[80px] w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] outline-none focus:border-[var(--fd-accent)] resize-y"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400 block mb-1">Görevli Personeller</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[140px] overflow-y-auto p-3 bg-slate-900 border border-white/10 rounded-lg">
+                <label className="text-xs font-semibold text-[var(--fd-text3)] block mb-1">Görevli Personeller</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[140px] overflow-y-auto p-3 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r)]">
                   {(personnel || []).map(p => {
                     const isChecked = editMissionForm.sicil_nos.includes(p.sicil_no)
                     return (
-                      <label key={p.sicil_no} className="flex items-center gap-2 cursor-pointer select-none text-xs text-zinc-300 py-0.5 hover:text-white">
+                      <label key={p.sicil_no} className="flex items-center gap-2 cursor-pointer select-none text-xs text-[var(--fd-text2)] py-0.5 hover:text-[var(--fd-text)]">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -1526,7 +1531,7 @@ export default function UnifiedGorevlerPage() {
                               : [...editMissionForm.sicil_nos, p.sicil_no]
                             setEditMissionForm({...editMissionForm, sicil_nos: newStaff})
                           }}
-                          className="rounded border-white/10 bg-slate-950 text-cyan-600 focus:ring-cyan-500"
+                          className="rounded border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-accent)] focus:ring-[var(--fd-accent)]"
                         />
                         <span>{p.ad} {p.soyad}</span>
                       </label>
@@ -1534,18 +1539,18 @@ export default function UnifiedGorevlerPage() {
                   })}
                 </div>
               </div>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="ghost" onClick={handleCloseEditMissionModal} className="text-zinc-400 hover:text-white hover:bg-white/5">
+            </CardContent>
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={handleCloseEditMissionModal} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]">
                 Vazgeç
               </Button>
-              <Button onClick={handleSaveMissionEdit} disabled={editMissionSaving} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold">
+              <Button onClick={handleSaveMissionEdit} disabled={editMissionSaving} className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold h-9 px-4 rounded-[var(--fd-r-sm)]">
                 {editMissionSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
                 Değişiklikleri Kaydet
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </div>
+          </Card>
+        </div>
       )}
     </PageGuard>
   )

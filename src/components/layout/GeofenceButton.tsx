@@ -138,7 +138,7 @@ export function GeofenceButton({ isMobile = false }: GeofenceButtonProps) {
     };
 
     const handleError = (error: GeolocationPositionError) => {
-      console.error('[GeofenceButton] Konum alma hatası:', error);
+      console.error('[GeofenceButton] Konum alma hatası:', error?.message || `Hata Kodu: ${error?.code}` || error);
       setStatus("error");
       if (error.code === error.PERMISSION_DENIED) {
         setMessage("Konum izni verilmedi.");

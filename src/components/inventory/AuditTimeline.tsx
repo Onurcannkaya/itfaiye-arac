@@ -78,7 +78,7 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
   if (loading) {
     return (
       <div className="p-4 text-center text-muted-foreground text-sm">
-        <Loader2 className="w-5 h-5 mx-auto mb-2 animate-spin text-primary" />
+        <Loader2 className="w-5 h-5 mx-auto mb-2 animate-spin text-[var(--fd-accent)]" />
         Kontrol geçmişi yükleniyor...
       </div>
     )
@@ -86,7 +86,7 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
 
   if (logs.length === 0) {
     return (
-      <div className="p-4 text-center text-muted-foreground text-sm border border-dashed border-border/50 rounded-xl bg-muted/5">
+      <div className="p-4 text-center text-muted-foreground text-sm border border-dashed border-border/50 rounded-xl bg-[var(--fd-surface3)]/50">
         <Clock className="w-5 h-5 mx-auto mb-2 text-muted-foreground/50" />
         Bu bölme için henüz kontrol kaydı bulunmuyor.
       </div>
@@ -97,15 +97,15 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
     <div className="relative">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_2px_rgba(34,211,238,0.4)]" />
+        <div className="w-1.5 h-1.5 rounded-full bg-[var(--fd-accent)] animate-pulse shadow-[var(--fd-shadow-sm)]" />
         <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Kontrol Geçmişi
         </h4>
-        <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full font-mono">{logs.length} kayıt</span>
+        <span className="text-[10px] bg-[var(--fd-surface3)] px-2 py-0.5 rounded-full font-mono text-[var(--fd-text2)]">{logs.length} kayıt</span>
       </div>
 
       {/* Timeline line */}
-      <div className="absolute left-[11px] top-[52px] bottom-4 w-px bg-gradient-to-b from-cyan-500/40 via-border/30 to-transparent" />
+      <div className="absolute left-[11px] top-[52px] bottom-4 w-px bg-gradient-to-b from-[var(--fd-accent-soft2)] via-[var(--fd-border)] to-transparent" />
 
       {/* Entries */}
       <div className="space-y-3 pl-1">
@@ -121,8 +121,8 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                 <div
                   className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-all ${
                     isLatest
-                      ? "border-cyan-400 bg-cyan-400/20 shadow-[0_0_8px_2px_rgba(34,211,238,0.3)]"
-                      : "border-border bg-surface"
+                      ? "border-[var(--fd-accent)] bg-[var(--fd-accent-soft)] shadow-[var(--fd-shadow-sm)]"
+                      : "border-[var(--fd-border)] bg-[var(--fd-surface)]"
                   }`}
                 >
                   <div className={`w-2 h-2 rounded-full ${isLatest ? "bg-cyan-400" : "bg-muted-foreground/40"}`} />
@@ -133,8 +133,8 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
               <div
                 className={`flex-1 rounded-xl border transition-all overflow-hidden ${
                   isLatest
-                    ? "border-cyan-500/20 bg-cyan-500/[0.03] shadow-sm"
-                    : "border-border/30 bg-surface/50 hover:bg-surface/80"
+                    ? "border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 shadow-sm"
+                    : "border-[var(--fd-border)] bg-[var(--fd-surface2)]/30 hover:bg-[var(--fd-surface2)]/60"
                 }`}
               >
                 <button
@@ -147,7 +147,7 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                         <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                         <span className="text-sm font-semibold truncate">{log.checked_by_name}</span>
                         {isLatest && (
-                          <span className="text-[9px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                          <span className="text-[9px] bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                             Son
                           </span>
                         )}
@@ -161,12 +161,12 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {issues.length > 0 ? (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-danger bg-[rgba(220,38,38,0.11)] px-2 py-0.5 rounded-full">
                           <AlertCircle className="w-3 h-3" />
                           {issues.length} sorun
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-success bg-[rgba(22,163,74,0.11)] px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="w-3 h-3" />
                           Tam
                         </span>

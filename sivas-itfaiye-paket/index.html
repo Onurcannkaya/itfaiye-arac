@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sivas İtfaiye Yönetim Sistemi</title>
+<script src="/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--fd-border-strong,#cbd2da);border-radius:8px;border:2px solid transparent;background-clip:content-box}
+  ::-webkit-scrollbar-track{background:transparent}
+  .leaflet-container{font-family:var(--fd-font),sans-serif;background:var(--fd-surface2)}
+  @keyframes fd-pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}70%{box-shadow:0 0 0 8px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+  @keyframes fd-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes fd-slide{from{transform:translateX(100%)}to{transform:none}}
+</style>
+</helmet>
+<div style="{{ rootStyle }}">
+
+  <header style="height:60px;flex-shrink:0;display:flex;align-items:center;gap:calc(var(--fd-sp)*1.5);padding:0 calc(var(--fd-sp)*2);background:var(--fd-surface,#fff);border-bottom:1px solid var(--fd-border,#e3e7ec);box-shadow:var(--fd-shadow-sm);z-index:30">
+    <button onClick="{{ toggleSidebar }}" title="Menü" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer" style-hover="{{ ghostHover }}">{{ icMenu }}</button>
+    <div style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25)">
+      <div style="width:38px;height:38px;border-radius:var(--fd-r-sm);background:var(--fd-accent);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px var(--fd-accent-soft2)">{{ icFlame }}</div>
+      <div style="display:flex;flex-direction:column;line-height:1.15">
+        <span style="font-weight:700;font-size:calc(var(--fd-fs)*1.02);letter-spacing:-.01em;color:var(--fd-text)">Sivas İtfaiyesi</span>
+        <span style="font-size:calc(var(--fd-fs)*0.72);color:var(--fd-text3);font-weight:500;letter-spacing:.02em">YÖNETİM BİLGİ SİSTEMİ</span>
+      </div>
+    </div>
+    <div style="flex:1;max-width:420px;margin:0 auto;position:relative;display:flex;align-items:center">
+      <span style="position:absolute;left:12px;color:var(--fd-text3);display:flex">{{ icSearch }}</span>
+      <input placeholder="Vaka, araç, personel veya adres ara…" style="width:100%;height:38px;padding:0 14px 0 38px;border:1px solid var(--fd-border);background:var(--fd-surface2);color:var(--fd-text);border-radius:var(--fd-r-sm);font-family:inherit;font-size:calc(var(--fd-fs)*0.9);outline:none" style-focus="{{ inputFocus }}"></input>
+    </div>
+    <div style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25)">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--fd-accent-soft);border:1px solid var(--fd-accent-soft2)">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--fd-accent);animation:fd-pulse 1.8s infinite"></span>
+        <span style="font-size:calc(var(--fd-fs)*0.8);font-weight:600;color:var(--fd-accent)">4 AKTİF VAKA</span>
+      </div>
+      <div style="display:none;align-items:center;gap:calc(var(--fd-sp)*1.25)" style-hover="{{ noop }}"></div>
+      <button onClick="{{ toggleMode }}" title="Tema modu" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--fd-border);background:var(--fd-surface2);color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer" style-hover="{{ ghostHover }}">{{ icMode }}</button>
+      <button title="Bildirimler" style="position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--fd-border);background:var(--fd-surface2);color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer" style-hover="{{ ghostHover }}">{{ icBell }}<span style="position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--fd-amber);border:1.5px solid var(--fd-surface2)"></span></button>
+      <button onClick="{{ openDrawer }}" title="Görünümü özelleştir" style="display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:1px solid var(--fd-border);background:var(--fd-surface2);color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer;font-family:inherit;font-size:calc(var(--fd-fs)*0.85);font-weight:600" style-hover="{{ ghostHover }}">{{ icSliders }}<span>Tema</span></button>
+      <div style="display:flex;align-items:center;gap:10px;padding-left:calc(var(--fd-sp)*1.25);border-left:1px solid var(--fd-border)">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--fd-side-bg2);color:var(--fd-side-text);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(var(--fd-fs)*0.82)">MK</div>
+        <div style="display:flex;flex-direction:column;line-height:1.2">
+          <span style="font-size:calc(var(--fd-fs)*0.85);font-weight:600;color:var(--fd-text)">M. Kaya</span>
+          <span style="font-size:calc(var(--fd-fs)*0.72);color:var(--fd-text3)">İl Müdürü</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <aside style="{{ sidebarStyle }}">
+      <nav style="flex:1;overflow-y:auto;overflow-x:hidden;padding:calc(var(--fd-sp)*1.5) calc(var(--fd-sp)*1.25);display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ navRows }}" as="r" hint-placeholder-count="13">
+          <sc-if value="{{ r.isModule }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:calc(var(--fd-sp)*1.5) calc(var(--fd-sp)*1.25) calc(var(--fd-sp)*0.5);font-size:calc(var(--fd-fs)*0.68);font-weight:700;letter-spacing:.09em;color:var(--fd-side-dim)">{{ r.label }}</div>
+          </sc-if>
+          <sc-if value="{{ r.isSingle }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ r.onSelect }}" style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25);width:100%;border:none;cursor:pointer;text-align:left;font-family:inherit;font-size:calc(var(--fd-fs)*0.9);padding:calc(var(--fd-sp)*1.05) calc(var(--fd-sp)*1.25);border-radius:var(--fd-r-sm);line-height:1.2;background:var(--fd-accent);color:#fff;font-weight:600">
+                <span style="display:flex;flex-shrink:0">{{ r.icon }}</span>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">{{ r.label }}</span></sc-if>
+              </button>
+            </sc-if>
+            <sc-if value="{{ r.notActive }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ r.onSelect }}" style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25);width:100%;border:none;cursor:pointer;text-align:left;font-family:inherit;font-size:calc(var(--fd-fs)*0.9);padding:calc(var(--fd-sp)*1.05) calc(var(--fd-sp)*1.25);border-radius:var(--fd-r-sm);line-height:1.2;background:transparent;color:var(--fd-side-text);font-weight:500" style-hover="{{ navHover }}">
+                <span style="display:flex;flex-shrink:0">{{ r.icon }}</span>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="flex:1">{{ r.label }}</span></sc-if>
+              </button>
+            </sc-if>
+          </sc-if>
+          <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ r.onToggle }}" style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25);width:100%;border:none;cursor:pointer;text-align:left;font-family:inherit;font-size:calc(var(--fd-fs)*0.9);padding:calc(var(--fd-sp)*1.05) calc(var(--fd-sp)*1.25);border-radius:var(--fd-r-sm);line-height:1.2;background:transparent;color:var(--fd-side-text);font-weight:500;justify-content:space-between" style-hover="{{ navHover }}">
+              <span style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25)"><span style="display:flex;flex-shrink:0">{{ r.icon }}</span><sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span>{{ r.label }}</span></sc-if></span>
+              <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="{{ r.chevron }}">{{ icChevron }}</span></sc-if>
+            </button>
+          </sc-if>
+          <sc-if value="{{ r.isLeaf }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ r.active }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ r.onSelect }}" style="display:flex;align-items:center;width:100%;border:none;cursor:pointer;text-align:left;font-family:inherit;font-size:calc(var(--fd-fs)*0.86);padding:calc(var(--fd-sp)*1.05) calc(var(--fd-sp)*1.25);padding-left:calc(var(--fd-sp)*4.4);border-radius:var(--fd-r-sm);line-height:1.2;background:var(--fd-accent-soft2);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--fd-accent)">{{ r.label }}</button>
+            </sc-if>
+            <sc-if value="{{ r.notActive }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ r.onSelect }}" style="display:flex;align-items:center;width:100%;border:none;cursor:pointer;text-align:left;font-family:inherit;font-size:calc(var(--fd-fs)*0.86);padding:calc(var(--fd-sp)*1.05) calc(var(--fd-sp)*1.25);padding-left:calc(var(--fd-sp)*4.4);border-radius:var(--fd-r-sm);line-height:1.2;background:transparent;color:var(--fd-side-text);font-weight:450" style-hover="{{ navHover }}">{{ r.label }}</button>
+            </sc-if>
+          </sc-if>
+        </sc-for>
+      </nav>
+      <div style="flex-shrink:0;padding:calc(var(--fd-sp)*1.25);border-top:1px solid var(--fd-side-border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;line-height:1.3">
+            <span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-side-text);font-weight:600">v2.4 · Operasyon</span>
+            <span style="font-size:calc(var(--fd-fs)*0.7);color:var(--fd-side-dim)">Merkez İstasyon · çevrimiçi</span>
+          </div>
+        </sc-if>
+        <button onClick="{{ toggleSidebar }}" title="Menüyü daralt" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;background:var(--fd-side-bg2);color:var(--fd-side-text);border-radius:var(--fd-r-sm);cursor:pointer;flex-shrink:0">{{ icCollapse }}</button>
+      </div>
+    </aside>
+
+    <main style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--fd-bg,#eceff3)">
+      <div style="flex-shrink:0;padding:calc(var(--fd-sp)*2) calc(var(--fd-sp)*3) calc(var(--fd-sp)*1.5);display:flex;align-items:flex-end;justify-content:space-between;gap:calc(var(--fd-sp)*2)">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text3);font-weight:500">
+            <span>{{ crumbRoot }}</span><span style="opacity:.5">/</span><span style="color:var(--fd-text2)">{{ pageTitle }}</span>
+          </div>
+          <h1 style="margin:0;font-size:calc(var(--fd-fs)*1.7);font-weight:700;letter-spacing:-.02em;color:var(--fd-text)">{{ pageTitle }}</h1>
+          <p style="margin:0;font-size:calc(var(--fd-fs)*0.9);color:var(--fd-text2);max-width:640px">{{ pageDesc }}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <button style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:1px solid var(--fd-border);background:var(--fd-surface);color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer;font-family:inherit;font-size:calc(var(--fd-fs)*0.86);font-weight:600;box-shadow:var(--fd-shadow-sm)" style-hover="{{ ghostHover }}">{{ icExport }}<span>Dışa Aktar</span></button>
+          <button style="display:flex;align-items:center;gap:8px;height:38px;padding:0 18px;border:none;background:var(--fd-accent);color:#fff;border-radius:var(--fd-r-sm);cursor:pointer;font-family:inherit;font-size:calc(var(--fd-fs)*0.86);font-weight:600;box-shadow:0 2px 10px var(--fd-accent-soft2)" style-hover="{{ primaryHover }}">{{ icPlus }}<span>{{ primaryLabel }}</span></button>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:0 calc(var(--fd-sp)*3) calc(var(--fd-sp)*3)">
+
+        <!-- ===================== DASHBOARD ===================== -->
+        <sc-if value="{{ pageIs.dashboard }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*2)">
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:calc(var(--fd-sp)*1.75)">
+              <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5">
+                <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*1.75);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25)">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2);font-weight:600">{{ s.label }}</span>
+                    <span style="{{ s.chip }}">{{ s.icon }}</span>
+                  </div>
+                  <div style="display:flex;align-items:baseline;gap:6px">
+                    <span style="font-size:calc(var(--fd-fs)*2);font-weight:700;font-family:var(--fd-font);letter-spacing:-.02em;color:var(--fd-text)">{{ s.value }}</span>
+                    <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text3);font-weight:500">{{ s.unit }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:calc(var(--fd-fs)*0.78);font-weight:600">
+                    <span style="{{ s.deltaStyle }}">{{ s.delta }}</span>
+                    <span style="color:var(--fd-text3);font-weight:500">{{ s.sub }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:calc(var(--fd-sp)*1.75)">
+              <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*2);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*2)">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:calc(var(--fd-fs)*1.02);font-weight:700;color:var(--fd-text)">Aylık Vaka Trendi</span>
+                    <span style="font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text3)">Son 12 ay · toplam müdahale sayısı</span>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <span style="font-size:calc(var(--fd-fs)*0.76);font-weight:600;color:var(--fd-text2);background:var(--fd-surface3);padding:5px 10px;border-radius:999px">2025–26</span>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:flex-end;gap:calc(var(--fd-sp)*1);height:180px">
+                  <sc-for list="{{ trend }}" as="t" hint-placeholder-count="12">
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end">
+                      <span style="font-size:calc(var(--fd-fs)*0.7);color:var(--fd-text3);font-weight:600;font-family:var(--fd-fontmono)">{{ t.val }}</span>
+                      <div style="{{ t.barStyle }}"></div>
+                      <span style="font-size:calc(var(--fd-fs)*0.72);color:var(--fd-text3);font-weight:500">{{ t.month }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*2);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.5)">
+                <span style="font-size:calc(var(--fd-fs)*1.02);font-weight:700;color:var(--fd-text)">Vaka Türü Dağılımı</span>
+                <div style="display:flex;align-items:center;gap:calc(var(--fd-sp)*2)">
+                  <div style="position:relative;width:130px;height:130px;flex-shrink:0">
+                    <div style="{{ donutStyle }}"></div>
+                    <div style="position:absolute;inset:26px;border-radius:50%;background:var(--fd-surface);display:flex;flex-direction:column;align-items:center;justify-content:center">
+                      <span style="font-size:calc(var(--fd-fs)*1.5);font-weight:700;color:var(--fd-text);font-family:var(--fd-fontmono)">312</span>
+                      <span style="font-size:calc(var(--fd-fs)*0.68);color:var(--fd-text3);font-weight:600">TOPLAM</span>
+                    </div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                    <sc-for list="{{ donutCats }}" as="c" hint-placeholder-count="6">
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span style="width:9px;height:9px;border-radius:2px;flex-shrink:0;background:{{ c.color }}"></span>
+                        <span style="flex:1;font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text2);font-weight:500">{{ c.label }}</span>
+                        <span style="font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text);font-weight:700;font-family:var(--fd-fontmono)">{{ c.pct }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:calc(var(--fd-sp)*1.75)">
+              <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);box-shadow:var(--fd-shadow-sm);overflow:hidden">
+                <div style="padding:calc(var(--fd-sp)*1.75) calc(var(--fd-sp)*2);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--fd-border)">
+                  <span style="font-size:calc(var(--fd-fs)*1.02);font-weight:700;color:var(--fd-text)">Son Vakalar</span>
+                  <button onClick="{{ goIncidents }}" style="font-size:calc(var(--fd-fs)*0.8);font-weight:600;color:var(--fd-accent);background:none;border:none;cursor:pointer;font-family:inherit">Tümünü Gör →</button>
+                </div>
+                <div>
+                  <sc-for list="{{ recentIncidents }}" as="i" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.5);padding:calc(var(--fd-sp)*1.4) calc(var(--fd-sp)*2);border-bottom:1px solid var(--fd-border)">
+                      <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:{{ i.dot }}"></span>
+                      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                        <span style="font-size:calc(var(--fd-fs)*0.9);font-weight:600;color:var(--fd-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.type }}</span>
+                        <span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text3)">{{ i.location }}</span>
+                      </div>
+                      <span style="{{ i.statusBadge }}">{{ i.status }}</span>
+                      <span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text3);font-family:var(--fd-fontmono);width:48px;text-align:right">{{ i.time }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.75)">
+                <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*2);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.5)">
+                  <span style="font-size:calc(var(--fd-fs)*1.02);font-weight:700;color:var(--fd-text)">Araç Durumu</span>
+                  <div style="display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--fd-surface3)">
+                    <span style="width:55%;background:var(--fd-success)"></span>
+                    <span style="width:28%;background:var(--fd-amber)"></span>
+                    <span style="width:11%;background:var(--fd-info)"></span>
+                    <span style="width:6%;background:var(--fd-text3)"></span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <sc-for list="{{ vehStatus }}" as="v" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span style="width:9px;height:9px;border-radius:2px;background:{{ v.color }}"></span>
+                        <span style="font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text2);flex:1">{{ v.label }}</span>
+                        <span style="font-size:calc(var(--fd-fs)*0.82);font-weight:700;color:var(--fd-text);font-family:var(--fd-fontmono)">{{ v.count }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*2);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.5)">
+                  <span style="font-size:calc(var(--fd-fs)*1.02);font-weight:700;color:var(--fd-text)">İstasyon Doluluk</span>
+                  <sc-for list="{{ stations }}" as="st" hint-placeholder-count="3">
+                    <div style="display:flex;flex-direction:column;gap:6px">
+                      <div style="display:flex;align-items:center;justify-content:space-between">
+                        <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2);font-weight:500">{{ st.name }}</span>
+                        <span style="font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text);font-weight:700;font-family:var(--fd-fontmono)">{{ st.label }}</span>
+                      </div>
+                      <div style="height:8px;border-radius:999px;background:var(--fd-surface3);overflow:hidden">
+                        <span style="{{ st.barStyle }}"></span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===================== VAKA RAPORLARI ===================== -->
+        <sc-if value="{{ pageIs.incidents }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.75)">
+            <div style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.25);flex-wrap:wrap">
+              <div style="display:flex;gap:6px;padding:4px;background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r-sm)">
+                <sc-for list="{{ incFilters }}" as="f" hint-placeholder-count="5">
+                  <button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}<span style="opacity:.6;font-family:var(--fd-fontmono);margin-left:6px">{{ f.count }}</span></button>
+                </sc-for>
+              </div>
+              <div style="flex:1"></div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text3)">{{ icFilter }}<span>{{ incShownLabel }}</span></div>
+            </div>
+            <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);box-shadow:var(--fd-shadow-sm);overflow:hidden">
+              <div style="display:grid;grid-template-columns:130px 1.4fr 1.6fr 100px 150px 1fr 90px;gap:0;padding:calc(var(--fd-sp)*1.25) calc(var(--fd-sp)*2);background:var(--fd-surface2);border-bottom:1px solid var(--fd-border);font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.04em;color:var(--fd-text3);text-transform:uppercase">
+                <span>Kod</span><span>Tür</span><span>Konum</span><span>Önem</span><span>Durum</span><span>Ekip</span><span style="text-align:right">Süre</span>
+              </div>
+              <sc-for list="{{ incidentRows }}" as="i" hint-placeholder-count="8">
+                <div style="display:grid;grid-template-columns:130px 1.4fr 1.6fr 100px 150px 1fr 90px;gap:0;padding:calc(var(--fd-sp)*1.4) calc(var(--fd-sp)*2);border-bottom:1px solid var(--fd-border);align-items:center" style-hover="{{ rowHover }}">
+                  <span style="font-family:var(--fd-fontmono);font-size:calc(var(--fd-fs)*0.8);color:var(--fd-accent);font-weight:600">{{ i.code }}</span>
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                    <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{{ i.dot }}"></span>
+                    <span style="font-size:calc(var(--fd-fs)*0.88);font-weight:600;color:var(--fd-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.type }}</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                    <span style="font-size:calc(var(--fd-fs)*0.85);color:var(--fd-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.address }}</span>
+                    <span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3)">{{ i.district }}</span>
+                  </div>
+                  <span style="{{ i.sevBadge }}">{{ i.severity }}</span>
+                  <span style="{{ i.statusBadge }}">{{ i.status }}</span>
+                  <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2)">{{ i.crew }}</span>
+                  <span style="text-align:right;font-family:var(--fd-fontmono);font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2)">{{ i.duration }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===================== CANLI KONUM ===================== -->
+        <sc-if value="{{ pageIs.liveMap }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:calc(var(--fd-sp)*1.75);height:calc(100vh - 230px);min-height:480px">
+            <div style="position:relative;border:1px solid var(--fd-border);border-radius:var(--fd-r);overflow:hidden;box-shadow:var(--fd-shadow-sm)">
+              <div ref="{{ mapRef }}" style="position:absolute;inset:0"></div>
+              <div style="position:absolute;top:14px;left:14px;z-index:500;display:flex;gap:8px">
+                <span style="display:flex;align-items:center;gap:8px;background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r-sm);padding:7px 12px;font-size:calc(var(--fd-fs)*0.8);font-weight:600;color:var(--fd-text);box-shadow:var(--fd-shadow)"><span style="width:8px;height:8px;border-radius:50%;background:var(--fd-success);animation:fd-pulse 2s infinite"></span>Canlı Takip · {{ liveClock }}</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.5);overflow-y:auto">
+              <div style="background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*1.75);box-shadow:var(--fd-shadow-sm)">
+                <span style="font-size:calc(var(--fd-fs)*0.96);font-weight:700;color:var(--fd-text)">Saha Araçları</span>
+                <div style="display:flex;flex-direction:column;gap:2px;margin-top:calc(var(--fd-sp)*1.25)">
+                  <sc-for list="{{ liveVehicles }}" as="v" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:12px;padding:calc(var(--fd-sp)*1) 0;border-bottom:1px solid var(--fd-border)">
+                      <span style="width:34px;height:34px;border-radius:var(--fd-r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:{{ v.tintBg }};color:{{ v.tint }}">{{ v.icon }}</span>
+                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                        <span style="font-size:calc(var(--fd-fs)*0.86);font-weight:600;color:var(--fd-text);font-family:var(--fd-fontmono)">{{ v.plate }}</span>
+                        <span style="font-size:calc(var(--fd-fs)*0.76);color:var(--fd-text3)">{{ v.task }}</span>
+                      </div>
+                      <span style="{{ v.badge }}">{{ v.status }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===================== YANGIN & VAKA HARITASI ===================== -->
+        <sc-if value="{{ pageIs.incidentMap }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:calc(var(--fd-sp)*1.75);height:calc(100vh - 230px);min-height:480px">
+            <div style="position:relative;border:1px solid var(--fd-border);border-radius:var(--fd-r);overflow:hidden;box-shadow:var(--fd-shadow-sm)">
+              <div ref="{{ mapRef }}" style="position:absolute;inset:0"></div>
+              <div style="position:absolute;bottom:14px;left:14px;z-index:500;background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r-sm);padding:12px 14px;box-shadow:var(--fd-shadow)">
+                <div style="font-size:calc(var(--fd-fs)*0.72);font-weight:700;color:var(--fd-text3);letter-spacing:.05em;margin-bottom:8px">ÖNEM DERECESİ</div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="display:flex;align-items:center;gap:8px;font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text2)"><span style="width:11px;height:11px;border-radius:50%;background:#dc2626"></span>Kritik</span>
+                  <span style="display:flex;align-items:center;gap:8px;font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text2)"><span style="width:11px;height:11px;border-radius:50%;background:#f59e0b"></span>Yüksek</span>
+                  <span style="display:flex;align-items:center;gap:8px;font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text2)"><span style="width:11px;height:11px;border-radius:50%;background:#2563eb"></span>Orta / Düşük</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.5);overflow-y:auto">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--fd-sp)*1.25)">
+                <div style="background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*1.5);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:4px"><span style="font-size:calc(var(--fd-fs)*1.8);font-weight:700;color:var(--fd-accent);font-family:var(--fd-fontmono)">7</span><span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text3)">Bugün haritada</span></div>
+                <div style="background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*1.5);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:4px"><span style="font-size:calc(var(--fd-fs)*1.8);font-weight:700;color:var(--fd-amber);font-family:var(--fd-fontmono)">2</span><span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text3)">Kritik nokta</span></div>
+              </div>
+              <div style="background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*1.75);box-shadow:var(--fd-shadow-sm)">
+                <span style="font-size:calc(var(--fd-fs)*0.96);font-weight:700;color:var(--fd-text)">Mahalle Yoğunluğu</span>
+                <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25);margin-top:calc(var(--fd-sp)*1.25)">
+                  <sc-for list="{{ districtHeat }}" as="d" hint-placeholder-count="5">
+                    <div style="display:flex;flex-direction:column;gap:5px">
+                      <div style="display:flex;justify-content:space-between"><span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2)">{{ d.name }}</span><span style="font-size:calc(var(--fd-fs)*0.8);font-weight:700;color:var(--fd-text);font-family:var(--fd-fontmono)">{{ d.count }}</span></div>
+                      <div style="height:7px;border-radius:999px;background:var(--fd-surface3);overflow:hidden"><span style="{{ d.barStyle }}"></span></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===================== ARAÇ TAKİBİ ===================== -->
+        <sc-if value="{{ pageIs.vehicles }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);box-shadow:var(--fd-shadow-sm);overflow:hidden">
+            <div style="display:grid;grid-template-columns:120px 1.1fr 1.4fr 1.2fr 130px 150px 120px;gap:0;padding:calc(var(--fd-sp)*1.25) calc(var(--fd-sp)*2);background:var(--fd-surface2);border-bottom:1px solid var(--fd-border);font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.04em;color:var(--fd-text3);text-transform:uppercase">
+              <span>Plaka</span><span>Tür</span><span>Marka / Model</span><span>İstasyon</span><span>Durum</span><span>Yakıt</span><span style="text-align:right">Sonraki Bakım</span>
+            </div>
+            <sc-for list="{{ vehicleRows }}" as="v" hint-placeholder-count="9">
+              <div style="display:grid;grid-template-columns:120px 1.1fr 1.4fr 1.2fr 130px 150px 120px;gap:0;padding:calc(var(--fd-sp)*1.4) calc(var(--fd-sp)*2);border-bottom:1px solid var(--fd-border);align-items:center" style-hover="{{ rowHover }}">
+                <span style="font-family:var(--fd-fontmono);font-size:calc(var(--fd-fs)*0.84);color:var(--fd-text);font-weight:600">{{ v.plate }}</span>
+                <div style="display:flex;align-items:center;gap:9px;color:var(--fd-text2)">{{ v.typeIcon }}<span style="font-size:calc(var(--fd-fs)*0.85)">{{ v.type }}</span></div>
+                <span style="font-size:calc(var(--fd-fs)*0.85);color:var(--fd-text)">{{ v.model }}</span>
+                <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2)">{{ v.station }}</span>
+                <span style="{{ v.statusBadge }}">{{ v.status }}</span>
+                <div style="display:flex;align-items:center;gap:8px"><div style="flex:1;max-width:70px;height:7px;border-radius:999px;background:var(--fd-surface3);overflow:hidden"><span style="{{ v.fuelBarStyle }}"></span></div><span style="font-size:calc(var(--fd-fs)*0.76);font-family:var(--fd-fontmono);color:var(--fd-text3)">{{ v.fuel }}%</span></div>
+                <span style="text-align:right;font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2);font-family:var(--fd-fontmono)">{{ v.service }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- ===================== BAKIM & ONARIM ===================== -->
+        <sc-if value="{{ pageIs.maintenance }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);box-shadow:var(--fd-shadow-sm);overflow:hidden">
+            <div style="display:grid;grid-template-columns:120px 1.8fr 1.3fr 150px 130px 120px;gap:0;padding:calc(var(--fd-sp)*1.25) calc(var(--fd-sp)*2);background:var(--fd-surface2);border-bottom:1px solid var(--fd-border);font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.04em;color:var(--fd-text3);text-transform:uppercase">
+              <span>Araç</span><span>İş Tanımı</span><span>Atölye</span><span>Durum</span><span>Planlanan</span><span style="text-align:right">Maliyet</span>
+            </div>
+            <sc-for list="{{ maintRows }}" as="m" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:120px 1.8fr 1.3fr 150px 130px 120px;gap:0;padding:calc(var(--fd-sp)*1.4) calc(var(--fd-sp)*2);border-bottom:1px solid var(--fd-border);align-items:center" style-hover="{{ rowHover }}">
+                <span style="font-family:var(--fd-fontmono);font-size:calc(var(--fd-fs)*0.84);color:var(--fd-text);font-weight:600">{{ m.plate }}</span>
+                <div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{{ m.dot }}"></span><span style="font-size:calc(var(--fd-fs)*0.86);color:var(--fd-text);font-weight:500">{{ m.job }}</span></div>
+                <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2)">{{ m.workshop }}</span>
+                <span style="{{ m.statusBadge }}">{{ m.status }}</span>
+                <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2);font-family:var(--fd-fontmono)">{{ m.date }}</span>
+                <span style="text-align:right;font-size:calc(var(--fd-fs)*0.84);color:var(--fd-text);font-weight:600;font-family:var(--fd-fontmono)">{{ m.cost }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- ===================== PERSONEL TAKİBİ ===================== -->
+        <sc-if value="{{ pageIs.personnel }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);box-shadow:var(--fd-shadow-sm);overflow:hidden">
+            <div style="display:grid;grid-template-columns:1.6fr 1.1fr 1.3fr 90px 130px 1fr;gap:0;padding:calc(var(--fd-sp)*1.25) calc(var(--fd-sp)*2);background:var(--fd-surface2);border-bottom:1px solid var(--fd-border);font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.04em;color:var(--fd-text3);text-transform:uppercase">
+              <span>Personel</span><span>Rütbe</span><span>İstasyon</span><span>Vardiya</span><span>Durum</span><span style="text-align:right">İletişim</span>
+            </div>
+            <sc-for list="{{ personnelRows }}" as="p" hint-placeholder-count="10">
+              <div style="display:grid;grid-template-columns:1.6fr 1.1fr 1.3fr 90px 130px 1fr;gap:0;padding:calc(var(--fd-sp)*1.25) calc(var(--fd-sp)*2);border-bottom:1px solid var(--fd-border);align-items:center" style-hover="{{ rowHover }}">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                  <span style="width:36px;height:36px;border-radius:50%;background:var(--fd-side-bg2);color:var(--fd-side-text);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(var(--fd-fs)*0.78);flex-shrink:0">{{ p.initials }}</span>
+                  <div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:calc(var(--fd-fs)*0.88);font-weight:600;color:var(--fd-text)">{{ p.name }}</span><span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3);font-family:var(--fd-fontmono)">{{ p.sicil }}</span></div>
+                </div>
+                <span style="font-size:calc(var(--fd-fs)*0.84);color:var(--fd-text2)">{{ p.rank }}</span>
+                <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text2)">{{ p.station }}</span>
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:var(--fd-r-sm);background:var(--fd-surface3);font-size:calc(var(--fd-fs)*0.78);font-weight:700;color:var(--fd-text2)">{{ p.shift }}</span>
+                <span style="{{ p.statusBadge }}">{{ p.status }}</span>
+                <span style="text-align:right;font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text3);font-family:var(--fd-fontmono)">{{ p.phone }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- ===================== VARDİYA TAKİBİ ===================== -->
+        <sc-if value="{{ pageIs.shifts }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.75)">
+            <div style="display:flex;align-items:center;gap:calc(var(--fd-sp)*1.5);flex-wrap:wrap;padding:calc(var(--fd-sp)*1.5) calc(var(--fd-sp)*2);background:var(--fd-surface);border:1px solid var(--fd-border);border-radius:var(--fd-r);box-shadow:var(--fd-shadow-sm)">
+              <span style="font-size:calc(var(--fd-fs)*0.86);font-weight:700;color:var(--fd-text)">24/48 Vardiya Sistemi</span>
+              <span style="width:1px;height:18px;background:var(--fd-border)"></span>
+              <span style="display:flex;align-items:center;gap:7px;font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text2)"><span style="width:11px;height:11px;border-radius:3px;background:var(--fd-danger)"></span>A Vardiyası</span>
+              <span style="display:flex;align-items:center;gap:7px;font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text2)"><span style="width:11px;height:11px;border-radius:3px;background:var(--fd-info)"></span>B Vardiyası</span>
+              <span style="display:flex;align-items:center;gap:7px;font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text2)"><span style="width:11px;height:11px;border-radius:3px;background:var(--fd-success)"></span>C Vardiyası</span>
+              <div style="flex:1"></div>
+              <span style="font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text3)">23 – 29 Haziran 2026</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:calc(var(--fd-sp)*1.25)">
+              <sc-for list="{{ shiftWeek }}" as="d" hint-placeholder-count="7">
+                <div style="{{ d.cardStyle }}">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="{{ d.dayStyle }}">{{ d.day }}</span>
+                    <span style="font-size:calc(var(--fd-fs)*0.72);color:var(--fd-text3)">{{ d.date }}</span>
+                  </div>
+                  <span style="{{ d.vardiyaBadge }}">{{ d.vardiya }}</span>
+                  <div style="display:flex;flex-direction:column;gap:7px;padding-top:calc(var(--fd-sp)*0.75);border-top:1px solid var(--fd-border)">
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3)">Nöbetçi Amir</span><span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text);font-weight:600">{{ d.amir }}</span></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3)">Personel</span><span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text);font-weight:700;font-family:var(--fd-fontmono)">{{ d.staff }}</span></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3)">Araç</span><span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text);font-weight:700;font-family:var(--fd-fontmono)">{{ d.veh }}</span></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===================== GÖREV TAKİBİ ===================== -->
+        <sc-if value="{{ pageIs.tasks }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--fd-sp)*1.75);align-items:start">
+            <sc-for list="{{ taskCols }}" as="col" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25)">
+                <div style="display:flex;align-items:center;gap:10px;padding:0 calc(var(--fd-sp)*0.5)">
+                  <span style="{{ col.headBadge }}">{{ col.title }}</span>
+                  <span style="font-size:calc(var(--fd-fs)*0.82);color:var(--fd-text3);font-weight:700;font-family:var(--fd-fontmono)">{{ col.count }}</span>
+                </div>
+                <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="2">
+                  <div style="background:var(--fd-surface,#fff);border:1px solid var(--fd-border);border-radius:var(--fd-r);padding:calc(var(--fd-sp)*1.75);box-shadow:var(--fd-shadow-sm);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25)" style-hover="{{ rowHover }}">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                      <span style="font-size:calc(var(--fd-fs)*0.9);font-weight:600;color:var(--fd-text);line-height:1.35">{{ c.title }}</span>
+                      <span style="{{ c.prBadge }}">{{ c.pr }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3);background:var(--fd-surface3);padding:3px 9px;border-radius:999px;font-weight:600">{{ c.type }}</span>
+                      <span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text2)">{{ c.crew }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px">
+                      <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:calc(var(--fd-fs)*0.74);color:var(--fd-text3)">İlerleme</span><span style="font-size:calc(var(--fd-fs)*0.76);color:var(--fd-text2);font-weight:600;font-family:var(--fd-fontmono)">{{ c.progPct }}</span></div>
+                      <div style="height:7px;border-radius:999px;background:var(--fd-surface3);overflow:hidden"><span style="{{ c.progStyle }}"></span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;color:var(--fd-text3);font-size:calc(var(--fd-fs)*0.76);padding-top:calc(var(--fd-sp)*0.75);border-top:1px solid var(--fd-border)">{{ icCalendarSm }}<span>Termin: {{ c.due }}</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- PAGES_END --></div>
+    </main>
+  </div>
+
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(8,10,14,.45);z-index:90;animation:fd-fade .2s ease"></div>
+    <div style="position:fixed;top:0;right:0;bottom:0;width:360px;z-index:100;background:var(--fd-surface);border-left:1px solid var(--fd-border);box-shadow:var(--fd-shadow-lg);display:flex;flex-direction:column;animation:fd-slide .22s ease">
+      <div style="flex-shrink:0;padding:calc(var(--fd-sp)*2);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--fd-border)">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:calc(var(--fd-fs)*1.05);font-weight:700;color:var(--fd-text)">Görünümü Özelleştir</span>
+          <span style="font-size:calc(var(--fd-fs)*0.78);color:var(--fd-text3)">Tüm arayüz token'ları canlı güncellenir</span>
+        </div>
+        <button onClick="{{ closeDrawer }}" style="width:32px;height:32px;border:none;background:var(--fd-surface3);color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer;display:flex;align-items:center;justify-content:center">{{ icClose }}</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:calc(var(--fd-sp)*2);display:flex;flex-direction:column;gap:calc(var(--fd-sp)*2.5)">
+
+        <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25)">
+          <span style="font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.06em;color:var(--fd-text3)">GÖRÜNÜM MODU</span>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ setLight }}" style="{{ lightBtn }}">{{ icSun }}<span>Açık</span></button>
+            <button onClick="{{ setDark }}" style="{{ darkBtn }}">{{ icMoon }}<span>Koyu</span></button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25)">
+          <span style="font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.06em;color:var(--fd-text3)">VURGU RENGİ</span>
+          <div style="display:flex;gap:10px">
+            <sc-for list="{{ accentSwatches }}" as="a" hint-placeholder-count="5">
+              <button onClick="{{ a.onClick }}" title="{{ a.name }}" style="{{ a.style }}"></button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.5)">
+          <span style="font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.06em;color:var(--fd-text3)">ÖLÇÜ & BİÇİM</span>
+          <sc-for list="{{ sliders }}" as="sl" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:calc(var(--fd-fs)*0.85);color:var(--fd-text2);font-weight:500">{{ sl.label }}</span>
+                <span style="font-size:calc(var(--fd-fs)*0.8);color:var(--fd-text);font-weight:700;font-family:var(--fd-fontmono)">{{ sl.display }}</span>
+              </div>
+              <input type="range" min="{{ sl.min }}" max="{{ sl.max }}" step="{{ sl.step }}" value="{{ sl.value }}" onInput="{{ sl.onInput }}" style="{{ rangeStyle }}"></input>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:calc(var(--fd-sp)*1.25)">
+          <span style="font-size:calc(var(--fd-fs)*0.74);font-weight:700;letter-spacing:.06em;color:var(--fd-text3)">YAZI TİPİ</span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ fontOptions }}" as="f" hint-placeholder-count="4">
+              <button onClick="{{ f.onClick }}" style="{{ f.style }}"><span style="font-family:{{ f.stack }}">{{ f.label }}</span><sc-if value="{{ f.active }}" hint-placeholder-val="{{ false }}"><span style="color:var(--fd-accent)">{{ icCheck }}</span></sc-if></button>
+            </sc-for>
+          </div>
+        </div>
+
+        <button onClick="{{ resetTheme }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:42px;border:1px solid var(--fd-border);background:var(--fd-surface2);color:var(--fd-text2);border-radius:var(--fd-r-sm);cursor:pointer;font-family:inherit;font-size:calc(var(--fd-fs)*0.86);font-weight:600">{{ icReset }}<span>Varsayılana Sıfırla</span></button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;incidents&quot;,&quot;live-map&quot;,&quot;incident-map&quot;,&quot;vehicles&quot;,&quot;maintenance&quot;,&quot;personnel&quot;,&quot;shifts&quot;,&quot;tasks&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Başlangıç&quot;},&quot;defaultMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tema&quot;},&quot;defaultAccent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#dc2626&quot;,&quot;options&quot;:[&quot;#dc2626&quot;,&quot;#ea580c&quot;,&quot;#2563eb&quot;,&quot;#0891b2&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tema&quot;}}">
+class Component extends DCLogic {
+  state = {
+    page: 'dashboard',
+    sidebarCollapsed: false,
+    drawerOpen: false,
+    expanded: { g_harita: true, g_arac: true, g_pers: true },
+    incFilter: 'Tümü',
+    clock: '',
+    theme: { mode: 'light', accent: '#dc2626', radius: 10, shadow: 0.6, spacing: 1, fontScale: 14, font: "'IBM Plex Sans'" },
+  };
+
+  mapRef = React.createRef();
+
+  // ---------- lifecycle ----------
+  componentDidMount() {
+    this._tick();
+    this._clockTimer = setInterval(() => this._tick(), 1000);
+    const p = this.props || {};
+    const patch = {};
+    if (p.startPage) patch.page = p.startPage;
+    const tp = {};
+    if (p.defaultMode) tp.mode = p.defaultMode;
+    if (p.defaultAccent) tp.accent = p.defaultAccent;
+    if (Object.keys(tp).length) patch.theme = { ...this.state.theme, ...tp };
+    if (Object.keys(patch).length) this.setState(patch);
+    this._ensureMap();
+  }
+  componentDidUpdate() { this._ensureMap(); }
+  componentWillUnmount() {
+    clearInterval(this._clockTimer);
+    if (this._moveTimer) clearInterval(this._moveTimer);
+    if (this._map) { this._map.remove(); this._map = null; }
+  }
+  _tick() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    this.setState({ clock: p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) });
+  }
+
+  // ---------- helpers ----------
+  hexA(hex, a) {
+    const h = hex.replace('#', '');
+    const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    const n = parseInt(f, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+  go(id) { this.setState({ page: id }); }
+  toggleSidebar() { this.setState(s => ({ sidebarCollapsed: !s.sidebarCollapsed })); }
+  toggleMode() { this.setState(s => ({ theme: { ...s.theme, mode: s.theme.mode === 'dark' ? 'light' : 'dark' } })); }
+  setTheme(patch) { this.setState(s => ({ theme: { ...s.theme, ...patch } })); }
+
+  // ---------- tokens ----------
+  buildTokens(t) {
+    const dark = t.mode === 'dark';
+    const acc = t.accent, sh = t.shadow;
+    const shc = dark ? '0,0,0' : '15,23,42';
+    const pal = dark
+      ? { bg:'#0d1014', surface:'#161b22', surface2:'#1b212a', surface3:'#222a35', border:'#262d37', borderStrong:'#39424f', text:'#e7ebef', text2:'#9aa4af', text3:'#6b7682' }
+      : { bg:'#eceff3', surface:'#ffffff', surface2:'#f6f8fa', surface3:'#eef1f5', border:'#e3e7ec', borderStrong:'#cfd6de', text:'#151a20', text2:'#566069', text3:'#8a94a0' };
+    const side = dark
+      ? { bg:'#08090c', bg2:'#11151c', text:'#c7cfda', dim:'#69727f', border:'#1a1f27' }
+      : { bg:'#11151c', bg2:'#1c232d', text:'#c3cbd6', dim:'#737d8b', border:'#232b35' };
+    return {
+      '--fd-font': t.font, '--fd-fontmono': "'IBM Plex Mono'", '--fd-fs': t.fontScale + 'px',
+      '--fd-r': t.radius + 'px', '--fd-r-sm': (t.radius * 0.55).toFixed(1) + 'px', '--fd-r-lg': (t.radius * 1.5).toFixed(1) + 'px',
+      '--fd-sp': (8 * t.spacing).toFixed(2) + 'px',
+      '--fd-side-w': t.font && this.state.sidebarCollapsed ? '74px' : '266px',
+      '--fd-accent': acc, '--fd-accent-soft': this.hexA(acc, dark ? 0.22 : 0.12), '--fd-accent-soft2': this.hexA(acc, dark ? 0.34 : 0.2),
+      '--fd-amber':'#f59e0b', '--fd-success':'#16a34a', '--fd-info':'#2563eb', '--fd-danger':'#dc2626',
+      '--fd-bg':pal.bg, '--fd-surface':pal.surface, '--fd-surface2':pal.surface2, '--fd-surface3':pal.surface3,
+      '--fd-border':pal.border, '--fd-border-strong':pal.borderStrong, '--fd-text':pal.text, '--fd-text2':pal.text2, '--fd-text3':pal.text3,
+      '--fd-side-bg':side.bg, '--fd-side-bg2':side.bg2, '--fd-side-text':side.text, '--fd-side-dim':side.dim, '--fd-side-border':side.border,
+      '--fd-shadow-sm':`0 1px 2px rgba(${shc},${(0.06*sh+0.015).toFixed(3)})`,
+      '--fd-shadow':`0 1px 2px rgba(${shc},${(0.05*sh+0.01).toFixed(3)}), 0 6px 18px rgba(${shc},${(0.10*sh).toFixed(3)})`,
+      '--fd-shadow-lg':`0 16px 44px rgba(${shc},${(0.18*sh+0.02).toFixed(3)})`,
+    };
+  }
+
+  // ---------- icons ----------
+  icon(name, sz) {
+    const s = sz || 18;
+    const I = (ch) => React.createElement('svg', { width:s, height:s, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.8, strokeLinecap:'round', strokeLinejoin:'round' }, ch);
+    const P = (d) => React.createElement('path', { d, key:d });
+    const C = (cx,cy,r,k) => React.createElement('circle', { cx, cy, r, key:'c'+(k||cx) });
+    const M = {
+      grid:[P('M4 4h7v7H4z'),P('M13 4h7v7h-7z'),P('M4 13h7v7H4z'),P('M13 13h7v7h-7z')],
+      file:[P('M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z'),P('M14 3v6h6'),P('M8 13h8'),P('M8 17h6')],
+      map:[P('M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z'),P('M9 4v14'),P('M15 6v14')],
+      nav:[P('M3 11 22 2l-9 19-2-8-8-2z')],
+      flame:[P('M12 2c1.5 3 4 4.5 4 8a4 4 0 0 1-8 0c0-1.5.8-2.6 1.6-3.4C9 9 11 7.5 12 2z')],
+      truck:[P('M3 7h11v9H3z'),P('M14 10h4l3 3v3h-7z'),C(7.5,17.5,1.8,'a'),C(17.5,17.5,1.8,'b')],
+      wrench:[P('M21 4a4 4 0 0 1-5.2 5.2L5 20l-1-1L14.8 8.2A4 4 0 0 1 20 3l-2.3 2.3 1 1L21 4z')],
+      users:[P('M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'),C(9,7,4),P('M22 21v-2a4 4 0 0 0-3-3.9'),P('M16 3.1a4 4 0 0 1 0 7.8')],
+      calendar:[P('M4 5h16v15H4z'),P('M4 9h16'),P('M8 3v4'),P('M16 3v4')],
+      clipboard:[P('M9 4h6v3H9z'),P('M9 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3')],
+      alert:[P('M12 3 2 20h20L12 3z'),P('M12 9v5'),P('M12 17h.01')],
+      box:[P('M21 8 12 3 3 8l9 5 9-5z'),P('M3 8v8l9 5 9-5V8'),P('M12 13v8')],
+      menu:[P('M3 6h18'),P('M3 12h18'),P('M3 18h18')],
+      search:[C(11,11,7),P('M21 21l-4.2-4.2')],
+      bell:[P('M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9'),P('M13.7 21a2 2 0 0 1-3.4 0')],
+      sliders:[P('M4 21v-7'),P('M4 10V3'),P('M12 21v-9'),P('M12 8V3'),P('M20 21v-5'),P('M20 12V3'),P('M1 14h6'),P('M9 8h6'),P('M17 16h6')],
+      sun:[C(12,12,4),P('M12 2v2'),P('M12 20v2'),P('M4.9 4.9l1.4 1.4'),P('M17.7 17.7l1.4 1.4'),P('M2 12h2'),P('M20 12h2'),P('M4.9 19.1l1.4-1.4'),P('M17.7 6.3l1.4-1.4')],
+      moon:[P('M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z')],
+      chevron:[P('M6 9l6 6 6-6')],
+      collapse:[P('M15 6l-6 6 6 6')],
+      plus:[P('M12 5v14'),P('M5 12h14')],
+      export:[P('M12 3v12'),P('M8 7l4-4 4 4'),P('M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2')],
+      filter:[P('M3 5h18l-7 8v6l-4-2v-4z')],
+      close:[P('M6 6l12 12'),P('M18 6 6 18')],
+      check:[P('M5 12l5 5L20 7')],
+      reset:[P('M3 12a9 9 0 1 0 3-6.7'),P('M3 4v5h5')],
+    };
+    return I(M[name] || M.grid);
+  }
+
+  // ---------- badges ----------
+  toneStyle(tone) {
+    const d = this.state.theme.mode === 'dark';
+    const M = { danger:['#b91c1c','#f87171','220,38,38'], amber:['#b45309','#fbbf24','245,158,11'], info:['#1d4ed8','#60a5fa','37,99,235'], success:['#15803d','#4ade80','22,163,74'], muted:['#475569','#94a3b8','100,116,139'], accent:['','', ''] };
+    const m = M[tone] || M.muted;
+    return { color: d ? m[1] : m[0], background: `rgba(${m[2]},${d ? 0.2 : 0.11})` };
+  }
+  badge(tone, label) {
+    return { ...this.toneStyle(tone), display:'inline-flex', alignItems:'center', gap:'6px', padding:'4px 10px', borderRadius:'999px', fontSize:'calc(var(--fd-fs)*0.74)', fontWeight:700, whiteSpace:'nowrap', width:'fit-content', letterSpacing:'.01em' };
+  }
+  toneColor(tone) { return ({ danger:'#dc2626', amber:'#f59e0b', info:'#2563eb', success:'#16a34a', muted:'#94a3b8' })[tone] || '#94a3b8'; }
+
+  // ---------- raw data ----------
+  get itemBase() {
+    return { display:'flex', alignItems:'center', gap:'calc(var(--fd-sp)*1.25)', width:'100%', border:'none', cursor:'pointer', textAlign:'left', fontFamily:'inherit', fontSize:'calc(var(--fd-fs)*0.9)', padding:'calc(var(--fd-sp)*1.05) calc(var(--fd-sp)*1.25)', borderRadius:'var(--fd-r-sm)', transition:'background .12s,color .12s', position:'relative', color:'var(--fd-side-text)', background:'transparent', lineHeight:1.2 };
+  }
+  singleStyle(active) { return { ...this.itemBase, color: active ? '#fff' : 'var(--fd-side-text)', background: active ? 'var(--fd-accent)' : 'transparent', fontWeight: active ? 600 : 500 }; }
+  groupStyle() { return { ...this.itemBase, fontWeight: 500, justifyContent:'space-between' }; }
+  leafStyle(active) { return { ...this.itemBase, paddingLeft:'calc(var(--fd-sp)*4.4)', fontSize:'calc(var(--fd-fs)*0.86)', color: active ? '#fff' : 'var(--fd-side-text)', background: active ? 'var(--fd-accent-soft2)' : 'transparent', fontWeight: active ? 600 : 450, boxShadow: active ? 'inset 3px 0 0 var(--fd-accent)' : 'none' }; }
+
+  buildNav() {
+    // Flat row list — avoids nested sc-for reconciliation lag.
+    const p = this.state.page, collapsed = this.state.sidebarCollapsed;
+    const rows = [];
+    const def = [
+      { label:'GENEL', groups:[ { single:'dashboard', label:'Genel Bakış', icon:'grid' } ] },
+      { label:'OPERASYON', groups:[
+        { single:'incidents', label:'Vaka Raporları', icon:'file' },
+        { key:'g_harita', icon:'map', label:'Harita', pages:[ ['live-map','Canlı Konum Takibi'], ['incident-map','Yangın & Vaka Haritası'] ] },
+      ] },
+      { label:'KAYNAKLAR', groups:[
+        { key:'g_arac', icon:'truck', label:'Araçlar', pages:[ ['vehicles','Araç Takibi'], ['maintenance','Bakım & Onarım'] ] },
+        { key:'g_pers', icon:'users', label:'Personel', pages:[ ['personnel','Personel Takibi'], ['shifts','Vardiya Takibi'] ] },
+      ] },
+      { label:'PLANLAMA', groups:[ { single:'tasks', label:'Görev Takibi', icon:'clipboard' } ] },
+    ];
+    def.forEach(mod => {
+      if (!collapsed) rows.push({ isModule:true, label:mod.label });
+      mod.groups.forEach(g => {
+        if (g.single) {
+          const a = p===g.single;
+          rows.push({ isSingle:true, label:g.label, icon:this.icon(g.icon), onSelect:()=>this.go(g.single), active:a, notActive:!a });
+        } else {
+          const open = !!this.state.expanded[g.key];
+          rows.push({ isGroup:true, label:g.label, icon:this.icon(g.icon), open,
+            chevron:{ display:'flex', transition:'transform .18s', transform: open?'rotate(0deg)':'rotate(-90deg)', color:'var(--fd-side-dim)' },
+            onToggle:()=>{ if(this.state.sidebarCollapsed){ this.setState({sidebarCollapsed:false}); return; } this.setState(s=>({ expanded:{...s.expanded, [g.key]:!s.expanded[g.key]} })); } });
+          if (open && !collapsed) g.pages.forEach(([id,label]) => { const a = p===id; rows.push({ isLeaf:true, label, onSelect:()=>this.go(id), active:a, notActive:!a }); });
+        }
+      });
+    });
+    return rows;
+  }
+
+  pageMeta() {
+    const M = {
+      dashboard:['Genel Bakış','Operasyon merkezinin canlı durumu, vaka istatistikleri ve kaynak doluluğu.','Genel','Vardiya Raporu','Yeni Vaka'],
+      incidents:['Vaka Raporları','Tüm müdahale kayıtları, durum ve önem derecesine göre filtrelenebilir liste.','Operasyon','Rapor İndir','Yeni Vaka'],
+      'live-map':['Canlı Konum Takibi','Saha araçlarının gerçek zamanlı GPS konumu ve görev durumu — Sivas merkez.','Operasyon · Harita','Görünüm','Araç Yönlendir'],
+      'incident-map':['Yangın & Vaka Haritası','Aktif ve geçmiş vakaların coğrafi dağılımı, mahalle bazlı yoğunluk.','Operasyon · Harita','Katmanlar','Yeni Vaka'],
+      vehicles:['Araç Takibi','Tüm itfaiye araçlarının envanteri, durumu, yakıt ve bakım takvimi.','Kaynaklar · Araçlar','Rapor','Araç Ekle'],
+      maintenance:['Bakım & Onarım','Periyodik bakım, arıza ve onarım iş emirleri takibi.','Kaynaklar · Araçlar','Geçmiş','İş Emri Aç'],
+      personnel:['Personel Takibi','İtfaiye personeli kadrosu, rütbe, istasyon ve görev durumu.','Kaynaklar · Personel','Rapor','Personel Ekle'],
+      shifts:['Vardiya Takibi','24/48 vardiya planı, istasyon bazlı haftalık çizelge ve nöbet listesi.','Kaynaklar · Personel','Yazdır','Vardiya Planla'],
+      tasks:['Görev Takibi','Denetim, tatbikat, eğitim ve bakım görevlerinin atama ve ilerleme takibi.','Planlama','Takvim','Görev Oluştur'],
+    };
+    return M[this.state.page] || M.dashboard;
+  }
+
+  // ---------- map ----------
+  _ensureMap() {
+    const isMap = this.state.page === 'live-map' || this.state.page === 'incident-map';
+    if (!isMap) { if (this._map) { this._map.remove(); this._map = null; this._mapKey = null; } if (this._moveTimer) { clearInterval(this._moveTimer); this._moveTimer = null; } return; }
+    if (!window.L) { setTimeout(() => this._ensureMap(), 200); return; }
+    const el = this.mapRef.current; if (!el) return;
+    const key = this.state.page + '|' + this.state.theme.mode;
+    if (this._map && this._mapKey === key) return;
+    if (this._map) { this._map.remove(); this._map = null; }
+    if (this._moveTimer) { clearInterval(this._moveTimer); this._moveTimer = null; }
+    this._mapKey = key;
+    const dark = this.state.theme.mode === 'dark';
+    const map = L.map(el, { zoomControl: true, attributionControl: false }).setView([39.7477, 37.0179], 13);
+    L.tileLayer(dark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains:'abcd' }).addTo(map);
+    if (this.state.page === 'incident-map') {
+      this.mapIncidents().forEach(i => {
+        L.circleMarker([i.lat, i.lng], { radius: i.r, color:'#fff', weight:1.5, fillColor:i.color, fillOpacity:0.85 })
+          .addTo(map).bindPopup(`<b>${i.type}</b><br>${i.district}<br><span style="color:${i.color};font-weight:600">${i.severity}</span>`);
+      });
+    } else {
+      const vs = this.mapVehicles();
+      this._markers = vs.map(v => {
+        const ic = L.divIcon({ className:'', html:`<div style="width:30px;height:30px;border-radius:50%;background:${v.color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;font-family:monospace">${v.tag}</div>`, iconSize:[30,30], iconAnchor:[15,15] });
+        const m = L.marker([v.lat, v.lng], { icon: ic }).addTo(map).bindPopup(`<b>${v.plate}</b><br>${v.task}`);
+        return { m, base:[v.lat, v.lng] };
+      });
+      this._moveTimer = setInterval(() => {
+        if (!this._markers) return;
+        this._markers.forEach(o => {
+          const ll = o.m.getLatLng();
+          o.m.setLatLng([ll.lat + (Math.random() - 0.5) * 0.0016, ll.lng + (Math.random() - 0.5) * 0.0016]);
+        });
+      }, 1400);
+    }
+    setTimeout(() => map.invalidateSize(), 120);
+    this._map = map;
+  }
+  mapIncidents() {
+    return [
+      { type:'Konut Yangını', district:'Akdeğirmen', severity:'Kritik', lat:39.7565, lng:37.0118, color:'#dc2626', r:12 },
+      { type:'Trafik Kazası', district:'Yeşilyurt', severity:'Yüksek', lat:39.7388, lng:37.0312, color:'#f59e0b', r:10 },
+      { type:'Doğalgaz Kaçağı', district:'Mevlana', severity:'Yüksek', lat:39.7521, lng:37.0265, color:'#f59e0b', r:10 },
+      { type:'Su Baskını', district:'Çayboyu', severity:'Orta', lat:39.7442, lng:36.9998, color:'#2563eb', r:9 },
+      { type:'İş Yeri Yangını', district:'Esentepe', severity:'Kritik', lat:39.7619, lng:37.0402, color:'#dc2626', r:12 },
+      { type:'Asansörde Mahsur', district:'Kümbet', severity:'Düşük', lat:39.7472, lng:37.0455, color:'#2563eb', r:8 },
+      { type:'Araç Yangını', district:'Kardeşler', severity:'Orta', lat:39.7335, lng:37.0151, color:'#2563eb', r:9 },
+    ];
+  }
+  mapVehicles() {
+    return [
+      { plate:'58 İTF 01', tag:'01', task:'Akdeğirmen — konut yangını', lat:39.7558, lng:37.0132, color:'#dc2626' },
+      { plate:'58 İTF 07', tag:'07', task:'Devriye — Atatürk Cd.', lat:39.7461, lng:37.0205, color:'#16a34a' },
+      { plate:'58 İTF 12', tag:'12', task:'Esentepe — iş yeri yangını', lat:39.7602, lng:37.0388, color:'#dc2626' },
+      { plate:'58 İTF 04', tag:'04', task:'Dönüş — Merkez İstasyon', lat:39.7405, lng:37.0098, color:'#f59e0b' },
+      { plate:'58 İTF 09', tag:'09', task:'Müsait — 2. İstasyon', lat:39.7512, lng:37.0461, color:'#16a34a' },
+    ];
+  }
+
+  // ---------- render ----------
+  renderVals() {
+    const t = this.state.theme;
+    const tokens = this.buildTokens(t);
+    const rootStyle = { ...tokens, fontFamily: 'var(--fd-font), system-ui, sans-serif', fontSize: 'var(--fd-fs)', color: 'var(--fd-text)', background: 'var(--fd-bg)', height: '100vh', display:'flex', flexDirection:'column', overflow:'hidden' };
+    const meta = this.pageMeta();
+    const collapsed = this.state.sidebarCollapsed;
+
+    const sidebarStyle = { width: collapsed ? '74px' : '266px', flexShrink:0, background:'var(--fd-side-bg)', borderRight:'1px solid var(--fd-side-border)', display:'flex', flexDirection:'column', transition:'width .2s ease', zIndex:20 };
+
+    const pages = ['dashboard','incidents','live-map','incident-map','vehicles','maintenance','personnel','shifts','tasks'];
+    const pageIs = {}; pages.forEach(p => pageIs[p.replace('-map','Map').replace('live','live').replace('liveMap','liveMap')] = false);
+    const pageIsMap = { dashboard:this.state.page==='dashboard', incidents:this.state.page==='incidents', liveMap:this.state.page==='live-map', incidentMap:this.state.page==='incident-map', vehicles:this.state.page==='vehicles', maintenance:this.state.page==='maintenance', personnel:this.state.page==='personnel', shifts:this.state.page==='shifts', tasks:this.state.page==='tasks' };
+
+    // dashboard data
+    const chip = (tone) => ({ width:'34px', height:'34px', borderRadius:'var(--fd-r-sm)', display:'flex', alignItems:'center', justifyContent:'center', ...this.toneStyle(tone) });
+    const stats = [
+      { label:'Aktif Vaka', value:'4', unit:'', sub:'son 1 saat', delta:'+2', deltaStyle:{color:'#dc2626'}, icon:this.icon('flame',16), chip:chip('danger') },
+      { label:'Bugünkü Çağrı', value:'23', unit:'', sub:'dün 19', delta:'+21%', deltaStyle:{color:'#16a34a'}, icon:this.icon('bell',16), chip:chip('amber') },
+      { label:'Müsait Araç', value:'12', unit:'/ 18', sub:'4 görevde', delta:'67%', deltaStyle:{color:'#16a34a'}, icon:this.icon('truck',16), chip:chip('success') },
+      { label:'Görevdeki Personel', value:'47', unit:'', sub:'A vardiyası', delta:'tam', deltaStyle:{color:'#16a34a'}, icon:this.icon('users',16), chip:chip('info') },
+      { label:'Ort. Varış Süresi', value:'6.4', unit:'dk', sub:'hedef 8 dk', delta:'-0.7', deltaStyle:{color:'#16a34a'}, icon:this.icon('nav',16), chip:chip('info') },
+    ];
+    const trendVals = [186,172,205,228,241,268,312,298,275,243,221,234];
+    const months = ['Tem','Ağu','Eyl','Eki','Kas','Ara','Oca','Şub','Mar','Nis','May','Haz'];
+    const maxT = Math.max(...trendVals);
+    const trend = trendVals.map((v, i) => ({ val:v, month:months[i], barStyle:{ width:'100%', height:(v/maxT*100)+'%', minHeight:'4px', borderRadius:'var(--fd-r-sm) var(--fd-r-sm) 3px 3px', background: i===6 ? 'var(--fd-accent)' : 'var(--fd-accent-soft2)', transition:'height .3s' } }));
+    const donutCats = [
+      { label:'Konut Yangını', pct:'34%', color:'#dc2626', v:34 },
+      { label:'Trafik Kazası', pct:'22%', color:'#f59e0b', v:22 },
+      { label:'Araç Yangını', pct:'18%', color:'#ea580c', v:18 },
+      { label:'Kurtarma', pct:'11%', color:'#2563eb', v:11 },
+      { label:'Su Baskını', pct:'8%', color:'#0891b2', v:8 },
+      { label:'Diğer', pct:'7%', color:'#94a3b8', v:7 },
+    ];
+    let acc = 0; const segs = donutCats.map(c => { const a = acc; acc += c.v; return `${c.color} ${a}% ${acc}%`; });
+    const donutStyle = { position:'absolute', inset:0, borderRadius:'50%', background:`conic-gradient(${segs.join(',')})` };
+    const vehStatus = [ { label:'Müsait', count:10, color:'#16a34a' }, { label:'Görevde', count:5, color:'#f59e0b' }, { label:'Bakımda', count:2, color:'#2563eb' }, { label:'Arızalı', count:1, color:'#94a3b8' } ];
+    const stations = [
+      { name:'Merkez İstasyon', label:'24 / 30', pct:80 },
+      { name:'2. İstasyon · Kümbet', label:'14 / 18', pct:78 },
+      { name:'3. İstasyon · OSB', label:'9 / 16', pct:56 },
+    ].map(s => ({ ...s, barStyle:{ display:'block', height:'100%', width:s.pct+'%', borderRadius:'999px', background: s.pct>75 ? 'var(--fd-accent)' : 'var(--fd-info)' } }));
+
+    // incidents
+    const rawInc = [
+      { code:'VK-26-0412', type:'Konut Yangını', address:'Atatürk Cd. No:114', district:'Akdeğirmen Mah.', severity:'Kritik', sev:'danger', status:'Müdahale Ediliyor', st:'amber', crew:'Ekip-1 · 58 İTF 01', duration:'00:38', time:'14:22' },
+      { code:'VK-26-0411', type:'İş Yeri Yangını', address:'Sanayi Sitesi 4. Blok', district:'Esentepe Mah.', severity:'Kritik', sev:'danger', status:'Aktif', st:'danger', crew:'Ekip-2 · 58 İTF 12', duration:'00:12', time:'15:04' },
+      { code:'VK-26-0410', type:'Trafik Kazası', address:'Sivas Çevre Yolu 12. km', district:'Yeşilyurt Mah.', severity:'Yüksek', sev:'amber', status:'Kontrol Altında', st:'info', crew:'Ekip-3 · 58 İTF 07', duration:'01:12', time:'13:48' },
+      { code:'VK-26-0409', type:'Doğalgaz Kaçağı', address:'Mevlana Cd. No:23', district:'Mevlana Mah.', severity:'Yüksek', sev:'amber', status:'Müdahale Ediliyor', st:'amber', crew:'Ekip-1 · 58 İTF 04', duration:'00:26', time:'14:55' },
+      { code:'VK-26-0408', type:'Su Baskını', address:'Kızılırmak Sk. No:8', district:'Çayboyu Mah.', severity:'Orta', sev:'info', status:'Tamamlandı', st:'success', crew:'Ekip-4 · 58 İTF 09', duration:'02:05', time:'11:20' },
+      { code:'VK-26-0407', type:'Asansörde Mahsur', address:'Belediye Konutları C2', district:'Kümbet Mah.', severity:'Düşük', sev:'muted', status:'Tamamlandı', st:'success', crew:'Ekip-2', duration:'00:18', time:'10:42' },
+      { code:'VK-26-0406', type:'Araç Yangını', address:'İnönü Bulvarı', district:'Kardeşler Mah.', severity:'Orta', sev:'info', status:'Tamamlandı', st:'success', crew:'Ekip-3 · 58 İTF 07', duration:'00:34', time:'09:15' },
+      { code:'VK-26-0405', type:'Kurtarma — Yükseklik', address:'Eğri Köprü mevkii', district:'Eğri Köprü', severity:'Yüksek', sev:'amber', status:'Tamamlandı', st:'success', crew:'Ekip-5 · 58 İTF 02', duration:'01:48', time:'08:30' },
+      { code:'VK-26-0404', type:'Ot/Anız Yangını', address:'Pulur yolu üzeri', district:'Gökçebostan', severity:'Düşük', sev:'muted', status:'Tamamlandı', st:'success', crew:'Ekip-4', duration:'00:52', time:'07:10' },
+      { code:'VK-26-0403', type:'Konut Yangını', address:'Fevzi Çakmak Sk. No:5', district:'Fevzi Çakmak Mah.', severity:'Kritik', sev:'danger', status:'Tamamlandı', st:'success', crew:'Ekip-1 · 58 İTF 01', duration:'01:25', time:'06:02' },
+    ];
+    const enrich = (i) => ({ ...i, dot:this.toneColor(i.sev), sevBadge:this.badge(i.sev), statusBadge:this.badge(i.st), location:i.district });
+    const allInc = rawInc.map(enrich);
+    const filterMap = { 'Tümü': () => true, 'Aktif': i => i.st==='danger', 'Müdahale': i => i.st==='amber', 'Kontrol': i => i.st==='info', 'Tamamlandı': i => i.st==='success' };
+    const incidentRows = allInc.filter(filterMap[this.state.incFilter] || (()=>true));
+    const fcount = (k) => allInc.filter(filterMap[k]).length;
+    const filterDefs = [ ['Tümü','Tümü'], ['Aktif','Aktif'], ['Müdahale','Müdahale'], ['Kontrol','Kontrol Altında'], ['Tamamlandı','Tamamlandı'] ];
+    const incFilters = filterDefs.map(([k, label]) => {
+      const active = this.state.incFilter === k;
+      return { label, count: fcount(k), onClick: () => this.setState({ incFilter: k }),
+        style: { display:'inline-flex', alignItems:'center', border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:'calc(var(--fd-fs)*0.82)', fontWeight:600, padding:'7px 14px', borderRadius:'calc(var(--fd-r-sm) - 1px)', background: active ? 'var(--fd-accent)' : 'transparent', color: active ? '#fff' : 'var(--fd-text2)' } };
+    });
+    const recentIncidents = allInc.slice(0,5);
+
+    // live + incident map side data
+    const vIcon = (n) => this.icon('truck',16);
+    const liveVehicles = [
+      { plate:'58 İTF 01', task:'Konut yangını — Akdeğirmen', status:'Görevde', st:'danger' },
+      { plate:'58 İTF 12', task:'İş yeri yangını — Esentepe', status:'Görevde', st:'danger' },
+      { plate:'58 İTF 07', task:'Devriye — Atatürk Cd.', status:'Yolda', st:'amber' },
+      { plate:'58 İTF 04', task:'İstasyona dönüş', status:'Dönüyor', st:'amber' },
+      { plate:'58 İTF 09', task:'2. İstasyon — bekleme', status:'Müsait', st:'success' },
+    ].map(v => ({ ...v, icon:vIcon(), tint:this.toneColor(v.st), tintBg:this.hexA(this.toneColor(v.st), this.state.theme.mode==='dark'?0.22:0.12), badge:this.badge(v.st) }));
+    const districtHeat = [
+      { name:'Akdeğirmen', count:18, pct:100 }, { name:'Yeşilyurt', count:14, pct:78 },
+      { name:'Esentepe', count:11, pct:61 }, { name:'Mevlana', count:8, pct:44 }, { name:'Kümbet', count:6, pct:33 },
+    ].map(d => ({ ...d, barStyle:{ display:'block', height:'100%', width:d.pct+'%', borderRadius:'999px', background: d.pct>70 ? 'var(--fd-accent)' : 'var(--fd-amber)' } }));
+
+    // vehicles
+    const fuelBar = (p) => ({ display:'block', height:'100%', width:p+'%', borderRadius:'999px', background: p<25?'var(--fd-danger)':(p<50?'var(--fd-amber)':'var(--fd-success)') });
+    const vehicleRows = [
+      { plate:'58 İTF 01', type:'Su Tankeri', model:'Mercedes Atego 1730', station:'Merkez', status:'Görevde', st:'amber', fuel:58, service:'12.07.2026', km:'84.250' },
+      { plate:'58 İTF 02', type:'Merdivenli (30m)', model:'Iveco Magirus M32L', station:'Merkez', status:'Müsait', st:'success', fuel:91, service:'04.08.2026', km:'52.180' },
+      { plate:'58 İTF 04', type:'İlk Müdahale', model:'Ford Ranger 4x4', station:'Merkez', status:'Görevde', st:'amber', fuel:44, service:'19.07.2026', km:'118.640' },
+      { plate:'58 İTF 05', type:'Arazöz', model:'BMC Pro 628', station:'2. İstasyon', status:'Bakımda', st:'info', fuel:30, service:'—', km:'96.720' },
+      { plate:'58 İTF 07', type:'Su Tankeri', model:'MAN TGM 18.290', station:'Merkez', status:'Görevde', st:'amber', fuel:67, service:'28.07.2026', km:'73.910' },
+      { plate:'58 İTF 09', type:'Kurtarma Aracı', model:'Mercedes Sprinter 519', station:'2. İstasyon', status:'Müsait', st:'success', fuel:88, service:'02.09.2026', km:'41.305' },
+      { plate:'58 İTF 11', type:'Komuta Aracı', model:'VW Transporter', station:'Merkez', status:'Müsait', st:'success', fuel:74, service:'15.08.2026', km:'63.470' },
+      { plate:'58 İTF 12', type:'Su Tankeri', model:'Mercedes Atego 1730', station:'3. İstasyon · OSB', status:'Görevde', st:'amber', fuel:21, service:'08.07.2026', km:'101.220' },
+      { plate:'58 İTF 14', type:'Arazöz', model:'BMC Pro 628', station:'3. İstasyon · OSB', status:'Arızalı', st:'danger', fuel:12, service:'gecikti', km:'134.880' },
+    ].map(v => ({ ...v, statusBadge:this.badge(v.st), fuelBarStyle:fuelBar(v.fuel), typeIcon:this.icon('truck',16) }));
+
+    // maintenance
+    const maintRows = [
+      { plate:'58 İTF 05', job:'Periyodik Bakım (40.000 km)', workshop:'Merkez Atölye', status:'Devam Ediyor', st:'amber', date:'29.06.2026', cost:'₺ 8.400' },
+      { plate:'58 İTF 14', job:'Motor Onarımı — turbo', workshop:'Yetkili Servis', status:'Bekliyor', st:'muted', date:'01.07.2026', cost:'₺ 24.500' },
+      { plate:'58 İTF 12', job:'Fren Sistemi Kontrolü', workshop:'Merkez Atölye', status:'Planlandı', st:'info', date:'08.07.2026', cost:'₺ 3.200' },
+      { plate:'58 İTF 02', job:'Merdiven Hidrolik Testi', workshop:'Iveco Servis', status:'Planlandı', st:'info', date:'04.08.2026', cost:'₺ 6.750' },
+      { plate:'58 İTF 04', job:'Lastik Değişimi (4 adet)', workshop:'Merkez Atölye', status:'Tamamlandı', st:'success', date:'18.06.2026', cost:'₺ 11.900' },
+      { plate:'58 İTF 07', job:'Pompa Basınç Testi', workshop:'Merkez Atölye', status:'Tamamlandı', st:'success', date:'14.06.2026', cost:'₺ 2.100' },
+      { plate:'58 İTF 01', job:'Yağ & Filtre Değişimi', workshop:'Merkez Atölye', status:'Tamamlandı', st:'success', date:'10.06.2026', cost:'₺ 4.300' },
+      { plate:'58 İTF 09', job:'Elektrik Arıza Tespiti', workshop:'Yetkili Servis', status:'Devam Ediyor', st:'amber', date:'27.06.2026', cost:'₺ 1.850' },
+    ].map(m => ({ ...m, statusBadge:this.badge(m.st), dot:this.toneColor(m.st) }));
+
+    // personnel
+    const personnelRows = [
+      { sicil:'58-1042', name:'Ahmet Yılmaz', rank:'İtfaiye Amiri', station:'Merkez', shift:'A', status:'Görevde', st:'amber', phone:'0532 *** 14 02' },
+      { sicil:'58-1108', name:'Mehmet Demir', rank:'Başçavuş', station:'Merkez', shift:'A', status:'Görevde', st:'amber', phone:'0535 *** 88 17' },
+      { sicil:'58-1175', name:'Hasan Çelik', rank:'Çavuş', station:'2. İstasyon', shift:'B', status:'Nöbette', st:'danger', phone:'0541 *** 30 56' },
+      { sicil:'58-1203', name:'Ali Kaya', rank:'İtfaiye Eri', station:'Merkez', shift:'A', status:'Görevde', st:'amber', phone:'0533 *** 71 09' },
+      { sicil:'58-1247', name:'Mustafa Şahin', rank:'Şoför', station:'3. İstasyon · OSB', shift:'C', status:'Müsait', st:'success', phone:'0538 *** 45 23' },
+      { sicil:'58-1291', name:'İbrahim Aydın', rank:'İtfaiye Eri', station:'2. İstasyon', shift:'B', status:'Nöbette', st:'danger', phone:'0542 *** 62 88' },
+      { sicil:'58-1318', name:'Osman Yıldız', rank:'Çavuş', station:'Merkez', shift:'A', status:'Görevde', st:'amber', phone:'0536 *** 19 74' },
+      { sicil:'58-1356', name:'Hüseyin Arslan', rank:'İtfaiye Eri', station:'3. İstasyon · OSB', shift:'C', status:'İzinli', st:'muted', phone:'0539 *** 27 41' },
+      { sicil:'58-1402', name:'Murat Doğan', rank:'Şoför', station:'Merkez', shift:'A', status:'Görevde', st:'amber', phone:'0537 *** 53 60' },
+      { sicil:'58-1448', name:'Emre Koç', rank:'İtfaiye Eri', station:'2. İstasyon', shift:'B', status:'Müsait', st:'success', phone:'0543 *** 90 12' },
+    ].map(p => ({ ...p, statusBadge:this.badge(p.st), initials:p.name.split(' ').map(x => x[0]).join('').slice(0,2) }));
+
+    // shifts
+    const shiftDefs = [
+      { day:'Pzt', date:'23 Haz', vardiya:'A Vardiyası', tone:'danger', amir:'A. Yılmaz', staff:24, veh:8 },
+      { day:'Sal', date:'24 Haz', vardiya:'B Vardiyası', tone:'info', amir:'H. Çelik', staff:22, veh:8 },
+      { day:'Çar', date:'25 Haz', vardiya:'C Vardiyası', tone:'success', amir:'M. Şahin', staff:21, veh:7 },
+      { day:'Per', date:'26 Haz', vardiya:'A Vardiyası', tone:'danger', amir:'A. Yılmaz', staff:24, veh:8 },
+      { day:'Cum', date:'27 Haz', vardiya:'B Vardiyası', tone:'info', amir:'H. Çelik', staff:23, veh:8 },
+      { day:'Cmt', date:'28 Haz', vardiya:'C Vardiyası', tone:'success', amir:'M. Şahin', staff:20, veh:7 },
+      { day:'Paz', date:'29 Haz', vardiya:'A Vardiyası', tone:'danger', amir:'A. Yılmaz', staff:24, veh:8 },
+    ];
+    const todayIdx = 6;
+    const shiftWeek = shiftDefs.map((d, i) => ({ ...d, vardiyaBadge:this.badge(d.tone), isToday:i===todayIdx,
+      cardStyle:{ display:'flex', flexDirection:'column', gap:'calc(var(--fd-sp)*1.25)', padding:'calc(var(--fd-sp)*1.5)', borderRadius:'var(--fd-r)', background: i===todayIdx?'var(--fd-accent-soft)':'var(--fd-surface)', border:'1px solid '+(i===todayIdx?'var(--fd-accent)':'var(--fd-border)'), boxShadow:'var(--fd-shadow-sm)' },
+      dayStyle:{ fontSize:'calc(var(--fd-fs)*0.9)', fontWeight:700, color: i===todayIdx?'var(--fd-accent)':'var(--fd-text)' } }));
+
+    // tasks (kanban)
+    const prog = (p, tone) => ({ display:'block', height:'100%', width:p+'%', borderRadius:'999px', background:'var(--fd-'+(tone==='success'?'success':tone==='amber'?'amber':'accent')+')' });
+    const taskCols = [
+      { title:'Planlandı', tone:'info', cards:[
+        { title:'Hidrant Kontrolü — Akdeğirmen', type:'Bakım', crew:'Ekip-2', due:'02 Tem', pr:'Orta', prt:'info', progress:0 },
+        { title:'AVM Yangın Denetimi', type:'Denetim', crew:'Önleme Birimi', due:'05 Tem', pr:'Yüksek', prt:'amber', progress:0 },
+      ] },
+      { title:'Devam Ediyor', tone:'amber', cards:[
+        { title:'Okul Tahliye Tatbikatı', type:'Tatbikat', crew:'Eğitim Birimi', due:'30 Haz', pr:'Yüksek', prt:'amber', progress:60 },
+        { title:'Cumhuriyet Mah. Saha Eğitimi', type:'Eğitim', crew:'Ekip-3', due:'01 Tem', pr:'Orta', prt:'info', progress:35 },
+        { title:'Sanayi Sitesi Risk Analizi', type:'Denetim', crew:'Önleme Birimi', due:'03 Tem', pr:'Kritik', prt:'danger', progress:80 },
+      ] },
+      { title:'Tamamlandı', tone:'success', cards:[
+        { title:'Hastane Yangın Sistemi Denetimi', type:'Denetim', crew:'Önleme Birimi', due:'24 Haz', pr:'Yüksek', prt:'amber', progress:100 },
+        { title:'Yeni Personel Oryantasyonu', type:'Eğitim', crew:'Eğitim Birimi', due:'20 Haz', pr:'Orta', prt:'info', progress:100 },
+      ] },
+    ].map(col => ({ ...col, headBadge:this.badge(col.tone), count:col.cards.length,
+      cards: col.cards.map(c => ({ ...c, typeBadge:this.badge('muted'), prBadge:this.badge(c.prt), progStyle:prog(c.progress, col.tone), progPct:c.progress+'%' })) }));
+
+    // theme drawer
+    const segBtn = (active) => ({ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', height:'42px', border:'1px solid '+(active?'var(--fd-accent)':'var(--fd-border)'), background: active?'var(--fd-accent-soft)':'var(--fd-surface2)', color: active?'var(--fd-accent)':'var(--fd-text2)', borderRadius:'var(--fd-r-sm)', cursor:'pointer', fontFamily:'inherit', fontSize:'calc(var(--fd-fs)*0.86)', fontWeight:600 });
+    const accentList = [ ['#dc2626','İtfaiye Kırmızısı'], ['#ea580c','Alev Turuncusu'], ['#b91c1c','Koyu Kırmızı'], ['#2563eb','Operasyon Mavisi'], ['#0891b2','Teal'] ];
+    const accentSwatches = accentList.map(([hex, name]) => ({ name, onClick: () => this.setTheme({ accent: hex }),
+      style: { width:'40px', height:'40px', borderRadius:'50%', border: t.accent===hex ? '3px solid var(--fd-text)' : '3px solid transparent', boxShadow:'0 0 0 1px var(--fd-border), inset 0 0 0 2px '+(t.accent===hex?'var(--fd-surface)':'transparent'), background:hex, cursor:'pointer', transition:'transform .12s' } }));
+    const sliders = [
+      { label:'Köşe Ovalliği', min:0, max:20, step:1, value:t.radius, display:t.radius+'px', onInput:(e)=>this.setTheme({ radius:+e.target.value }) },
+      { label:'Gölge Yoğunluğu', min:0, max:1, step:0.1, value:t.shadow, display:Math.round(t.shadow*100)+'%', onInput:(e)=>this.setTheme({ shadow:+e.target.value }) },
+      { label:'Boşluk / Aralık', min:0.8, max:1.4, step:0.05, value:t.spacing, display:Math.round(t.spacing*100)+'%', onInput:(e)=>this.setTheme({ spacing:+e.target.value }) },
+      { label:'Yazı Boyutu', min:12, max:17, step:0.5, value:t.fontScale, display:t.fontScale+'px', onInput:(e)=>this.setTheme({ fontScale:+e.target.value }) },
+    ];
+    const rangeStyle = { width:'100%', accentColor:'var(--fd-accent)', height:'4px', cursor:'pointer' };
+    const fontList = [ ["'IBM Plex Sans'",'IBM Plex Sans'], ["'Source Sans 3'",'Source Sans 3'], ['system-ui','Sistem Yazı Tipi'], ["'IBM Plex Mono'",'IBM Plex Mono'] ];
+    const fontOptions = fontList.map(([stack, label]) => ({ stack, label, active: t.font===stack, onClick: () => this.setTheme({ font: stack }),
+      style: { display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', height:'42px', padding:'0 14px', border:'1px solid '+(t.font===stack?'var(--fd-accent)':'var(--fd-border)'), background: t.font===stack?'var(--fd-accent-soft)':'var(--fd-surface2)', color:'var(--fd-text)', borderRadius:'var(--fd-r-sm)', cursor:'pointer', fontFamily:'inherit', fontSize:'calc(var(--fd-fs)*0.9)', fontWeight:500 } }));
+
+    return {
+      rootStyle, sidebarStyle, navRows: this.buildNav(),
+      showLabels: !collapsed,
+      pageIs: pageIsMap,
+      pageTitle: meta[0], pageDesc: meta[1], crumbRoot: meta[2], primaryLabel: meta[4],
+      toggleSidebar: () => this.toggleSidebar(), toggleMode: () => this.toggleMode(),
+      openDrawer: () => this.setState({ drawerOpen:true }), closeDrawer: () => this.setState({ drawerOpen:false }), drawerOpen: this.state.drawerOpen,
+      goIncidents: () => this.go('incidents'),
+      // icons
+      icMenu:this.icon('menu'), icFlame:this.icon('flame',20), icSearch:this.icon('search',16), icBell:this.icon('bell'), icSliders:this.icon('sliders',16), icChevron:this.icon('chevron',16), icCollapse:this.icon('collapse',16), icMode: t.mode==='dark'?this.icon('sun'):this.icon('moon'), icExport:this.icon('export',16), icPlus:this.icon('plus',16), icFilter:this.icon('filter',15), icClose:this.icon('close',18), icSun:this.icon('sun',16), icMoon:this.icon('moon',16), icCheck:this.icon('check',16), icReset:this.icon('reset',16), icCalendarSm:this.icon('calendar',14),
+      // hovers
+      ghostHover:{ background:'var(--fd-surface3)', color:'var(--fd-text)' }, navHover:{ background:'var(--fd-side-bg2)', color:'#fff' }, rowHover:{ background:'var(--fd-surface2)' }, primaryHover:{ filter:'brightness(1.08)' }, inputFocus:{ borderColor:'var(--fd-accent)', background:'var(--fd-surface)' }, noop:{},
+      // dashboard
+      stats, trend, donutCats, donutStyle, vehStatus, stations, recentIncidents,
+      // incidents
+      incidentRows, incFilters, incShownLabel: incidentRows.length + ' kayıt gösteriliyor',
+      // maps
+      mapRef:this.mapRef, liveClock:this.state.clock, liveVehicles, districtHeat,
+      // resource pages
+      vehicleRows, maintRows, personnelRows, shiftWeek, taskCols,
+      // drawer
+      setLight: () => this.setTheme({ mode:'light' }), setDark: () => this.setTheme({ mode:'dark' }),
+      lightBtn: segBtn(t.mode==='light'), darkBtn: segBtn(t.mode==='dark'),
+      accentSwatches, sliders, rangeStyle, fontOptions,
+      resetTheme: () => this.setTheme({ mode:'light', accent:'#dc2626', radius:10, shadow:0.6, spacing:1, fontScale:14, font:"'IBM Plex Sans'" }),
+    };
+  }
+}
+</script>
+</body>
+</html>

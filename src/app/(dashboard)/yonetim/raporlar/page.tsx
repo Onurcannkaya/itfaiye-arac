@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo } from "react"
 import PageGuard from "@/components/PageGuard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -124,10 +123,10 @@ function isGroupedLog(item: UnifiedLog | GroupedLog): item is GroupedLog {
 function InfoTooltip({ content }: { content: string }) {
   return (
     <div className="relative group inline-block ml-1.5 align-middle">
-      <HelpCircle className="w-4 h-4 text-slate-400 hover:text-cyan-400 cursor-help transition-colors" />
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block bg-slate-950/95 backdrop-blur-md text-slate-200 text-xs rounded-xl p-2.5 w-64 border border-slate-800 shadow-2xl z-50 transition-all text-center leading-normal font-sans font-medium whitespace-normal">
+      <HelpCircle className="w-4 h-4 text-[var(--fd-text3)] hover:text-[var(--fd-accent)] cursor-help transition-colors" />
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus:block bg-[var(--fd-surface)] text-[var(--fd-text2)] text-xs rounded-[var(--fd-r-sm)] p-2.5 w-64 border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] z-50 transition-all text-center leading-normal font-sans font-medium whitespace-normal">
         {content}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-950" />
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-[var(--fd-surface)]" />
       </div>
     </div>
   )
@@ -1009,93 +1008,93 @@ export default function LogsReportsPage() {
 
   return (
     <PageGuard pageId="raporlar">
-      <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6">
-      <div className="border-b border-border/50 pb-4">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Sistem Logları ve Raporlar</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Tüm araç kontrolleri ve envanter sayımlarının birleştirilmiş görünümü.</p>
+      <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in duration-300">
+      <div className="border-b border-[var(--fd-border)] pb-4">
+        <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-[var(--fd-text)]">Sistem Logları ve Raporlar</h1>
+        <p className="text-[var(--fd-text3)] mt-1 text-xs">Tüm araç kontrolleri ve envanter sayımlarının birleştirilmiş görünümü.</p>
       </div>
 
       {/* Dynamic Stats Cards */}
       {statsLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-slate-900/40 border border-slate-800/50 rounded-2xl animate-pulse"></div>
+            <div key={i} className="h-28 bg-[var(--fd-surface2)]/40 border border-[var(--fd-border)] rounded-[var(--fd-r)] animate-pulse"></div>
           ))}
         </div>
       ) : statsData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Toplam Eğitim */}
-          <div className="bg-slate-950/70 backdrop-blur-md border border-cyan-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(6,182,212,0.05)] flex flex-col justify-between hover:border-cyan-500/40 transition-all duration-300">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 shadow-[var(--fd-shadow-sm)] flex flex-col justify-between hover:border-[var(--fd-info)]/30 transition-all duration-300">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--fd-info)] uppercase tracking-[.04em] flex items-center gap-1.5">
                 <GraduationCap className="w-4 h-4" />
                 Toplam Eğitim
               </span>
-              <span className="text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Faaliyet</span>
+              <span className="text-[var(--fd-info)] bg-[var(--fd-info)]/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Faaliyet</span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-cyan-300 font-mono">{statsData.total_trainings}</span>
-              <span className="text-slate-400 text-xs ml-1.5 font-medium">Kayıt</span>
+              <span className="text-2xl sm:text-3xl font-black text-[var(--fd-info)] font-[var(--fd-fontmono)]">{statsData.total_trainings}</span>
+              <span className="text-[var(--fd-text3)] text-xs ml-1.5 font-medium">Kayıt</span>
             </div>
-            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+            <p className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1">
               {statsData.total_training_hours} Saat Eğitim / {statsData.total_people_reached} Kişi
             </p>
           </div>
 
           {/* Card 2: Toplam Yangın */}
-          <div className="bg-slate-950/70 backdrop-blur-md border border-red-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(239,68,68,0.05)] flex flex-col justify-between hover:border-red-500/40 transition-all duration-300">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 shadow-[var(--fd-shadow-sm)] flex flex-col justify-between hover:border-[var(--fd-danger)]/30 transition-all duration-300">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--fd-danger)] uppercase tracking-[.04em] flex items-center gap-1.5">
                 <Flame className="w-4 h-4" />
                 Toplam Yangın
               </span>
-              <span className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Yangın</span>
+              <span className="text-[var(--fd-danger)] bg-[var(--fd-danger)]/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Yangın</span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-red-300 font-mono">{statsData.fires_count}</span>
-              <span className="text-slate-400 text-xs ml-1.5 font-medium">Müdahale</span>
+              <span className="text-2xl sm:text-3xl font-black text-[var(--fd-danger)] font-[var(--fd-fontmono)]">{statsData.fires_count}</span>
+              <span className="text-[var(--fd-text3)] text-xs ml-1.5 font-medium">Müdahale</span>
             </div>
-            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+            <p className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1">
               Bina, Arazi, Konut ve Yapı Yangınları
             </p>
           </div>
 
           {/* Card 3: Kurtarma Operasyonları */}
-          <div className="bg-slate-950/70 backdrop-blur-md border border-emerald-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(16,185,129,0.05)] flex flex-col justify-between hover:border-emerald-500/40 transition-all duration-300">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 shadow-[var(--fd-shadow-sm)] flex flex-col justify-between hover:border-[var(--fd-success)]/30 transition-all duration-300">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--fd-success)] uppercase tracking-[.04em] flex items-center gap-1.5">
                 <ShieldAlert className="w-4 h-4" />
                 Kurtarma Operasyonları
               </span>
-              <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Kurtarma</span>
+              <span className="text-[var(--fd-success)] bg-[var(--fd-success)]/10 px-2 py-0.5 rounded-full text-[10px] font-bold">Kurtarma</span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono">{statsData.rescue_operations_count}</span>
-              <span className="text-slate-400 text-xs ml-1.5 font-medium">Vaka</span>
+              <span className="text-2xl sm:text-3xl font-black text-[var(--fd-success)] font-[var(--fd-fontmono)]">{statsData.rescue_operations_count}</span>
+              <span className="text-[var(--fd-text3)] text-xs ml-1.5 font-medium">Vaka</span>
             </div>
-            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+            <p className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1">
               Trafik Kazası ve Afet Müdahale
             </p>
           </div>
 
           {/* Card 4: Ortalama Müdahale Süresi */}
-          <div className="bg-slate-950/70 backdrop-blur-md border border-amber-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(245,158,11,0.05)] flex flex-col justify-between hover:border-amber-500/40 transition-all duration-300">
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 shadow-[var(--fd-shadow-sm)] flex flex-col justify-between hover:border-[var(--fd-amber)]/30 transition-all duration-300">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--fd-amber)] uppercase tracking-[.04em] flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
                 Ortalama Müdahale
               </span>
-              <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">
+              <span className="text-[var(--fd-amber)] bg-[var(--fd-amber)]/10 px-2 py-0.5 rounded-full text-[10px] font-bold">
                 {statsData.active_personnel_count} Nöbetçi
               </span>
             </div>
             <div className="mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
+              <span className="text-2xl sm:text-3xl font-black text-[var(--fd-amber)] font-[var(--fd-fontmono)]">
                 {statsData.avg_response_time > 0 ? `${statsData.avg_response_time.toFixed(1)} dk` : "7.4 dk"}
               </span>
-              <span className="text-slate-400 text-xs ml-1.5 font-medium">Ort. Süre</span>
+              <span className="text-[var(--fd-text3)] text-xs ml-1.5 font-medium">Ort. Süre</span>
             </div>
-            <p className="text-[10px] text-slate-500 font-semibold mt-1">
+            <p className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1">
               Çıkış Saati - Varılan Süre Farkı
             </p>
           </div>
@@ -1104,14 +1103,14 @@ export default function LogsReportsPage() {
 
       {/* --- MÜFREZ GÜN SONU KONTROLÜ (Z RAPORU) WİDGET --- */}
       {isAuthorizedForZReport && (
-        <div className="bg-slate-950/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_30px_rgba(6,182,212,0.08)] relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+        <div className="bg-[var(--fd-surface)] border border-[var(--fd-accent)]/20 rounded-[var(--fd-r)] p-5 shadow-[var(--fd-shadow-sm)] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--fd-accent)]/5 via-transparent to-[var(--fd-accent)]/5 pointer-events-none" />
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-bold text-cyan-400 flex items-center gap-2 tracking-tight">
+              <h3 className="text-base font-bold text-[var(--fd-accent)] flex items-center gap-2 tracking-tight">
                 <span className="text-lg">📋</span> Müfrez Gün Sonu Kontrolü (Z Raporu)
               </h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+              <p className="text-xs text-[var(--fd-text3)] mt-1 max-w-xl leading-relaxed">
                 24 saatlik nöbet devir-teslim raporunu oluşturun. Seçilen tarihe ait yangın, kurtarma, arızalı araç ve zimmet verileri otomatik hesaplanır.
               </p>
             </div>
@@ -1120,7 +1119,7 @@ export default function LogsReportsPage() {
                 handleZDateChange(selectedZDate)
                 setZReportModalOpen(true)
               }}
-              className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.25)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all duration-300 whitespace-nowrap"
+              className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-sm px-5 py-2.5 rounded-[var(--fd-r-sm)] shadow-[var(--fd-shadow-sm)] transition-all duration-300 whitespace-nowrap"
             >
               🏁 24 Saatlik Z Raporu Oluştur
             </Button>
@@ -1132,43 +1131,43 @@ export default function LogsReportsPage() {
       {statsLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
           {[1, 2].map((i) => (
-            <div key={i} className="h-80 bg-slate-900/40 border border-slate-800/50 rounded-2xl"></div>
+            <div key={i} className="h-80 bg-[var(--fd-surface2)]/40 border border-[var(--fd-border)] rounded-[var(--fd-r)]"></div>
           ))}
         </div>
       ) : chartsData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chart 1: Line Chart */}
-          <Card className="bg-slate-950/70 backdrop-blur-md border border-slate-800/60 p-4 shadow-xl">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)]">
             <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-bold text-slate-200">Son 6 Ay Vaka Trendleri</CardTitle>
-                <CardDescription className="text-[10px]">Yangın ve Kurtarma Vakalarının Aylık Dağılımı</CardDescription>
+                <CardTitle className="text-sm font-bold text-[var(--fd-text)]">Son 6 Ay Vaka Trendleri</CardTitle>
+                <CardDescription className="text-[10px] text-[var(--fd-text3)]">Yangın ve Kurtarma Vakalarının Aylık Dağılımı</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="p-0 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartsData.lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="name" stroke="var(--fd-text3)" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--fd-text3)" fontSize={10} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}
-                    labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '11px' }}
+                    contentStyle={{ backgroundColor: 'var(--fd-surface2)', border: '1px solid var(--fd-border)', borderRadius: 'var(--fd-r-sm)' }}
+                    labelStyle={{ color: 'var(--fd-text)', fontWeight: 'bold', fontSize: '11px' }}
                     itemStyle={{ fontSize: '11px' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  <Line type="monotone" dataKey="Yangın" stroke="#ef4444" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="Kurtarma" stroke="#10b981" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="Yangın" stroke="var(--fd-danger)" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="Kurtarma" stroke="var(--fd-success)" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           {/* Chart 2: Mahalle Leaderboard */}
-          <Card className="bg-slate-950/70 backdrop-blur-md border border-slate-800/60 p-4 shadow-xl flex flex-col justify-between">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] flex flex-col justify-between">
             <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-bold text-slate-200">Mahalle Bazlı Olay Dağılımı</CardTitle>
-                <CardDescription className="text-[10px]">En Çok Olay ve Yangın Görülen Bölgeler</CardDescription>
+                <CardTitle className="text-sm font-bold text-[var(--fd-text)]">Mahalle Bazlı Olay Dağılımı</CardTitle>
+                <CardDescription className="text-[10px] text-[var(--fd-text3)]">En Çok Olay ve Yangın Görülen Bölgeler</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="p-0 h-72 overflow-y-auto pr-1 space-y-4 pt-1 font-sans">
@@ -1178,14 +1177,14 @@ export default function LogsReportsPage() {
                 return (
                   <div key={index} className="space-y-1.5">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-slate-300">{item.name}</span>
-                      <span className="font-mono font-bold text-slate-400">
-                        {item.value} Vaka <span className="text-slate-600 font-sans font-normal">({item.yangin} Yangın, {item.kurtarma} Kurtarma)</span>
+                      <span className="font-bold text-[var(--fd-text2)]">{item.name}</span>
+                      <span className="font-[var(--fd-fontmono)] font-bold text-[var(--fd-text3)]">
+                        {item.value} Vaka <span className="text-[var(--fd-text3)]/60 font-sans font-normal">({item.yangin} Yangın, {item.kurtarma} Kurtarma)</span>
                       </span>
                     </div>
-                    <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-[var(--fd-surface2)] rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-red-500 to-amber-500 rounded-full transition-all duration-500" 
+                        className="h-full bg-gradient-to-r from-[var(--fd-danger)] to-[var(--fd-amber)] rounded-full transition-all duration-500" 
                         style={{ width: `${pct}%` }} 
                       />
                     </div>
@@ -1198,33 +1197,33 @@ export default function LogsReportsPage() {
       )}
 
       {/* FILTERS */}
-      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+      <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)]">
         <CardContent className="p-4 sm:p-6 space-y-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Araç Plakası</label>
+              <label className="text-xs font-semibold text-[var(--fd-text3)] uppercase tracking-wider">Araç Plakası</label>
               <Input 
                 placeholder="Örn: 58 ACT 367" 
                 value={plakaFilter}
                 onChange={e => setPlakaFilter(e.target.value)}
-                className="bg-background"
+                className="bg-[var(--fd-surface2)] text-[var(--fd-text)] border-[var(--fd-border)] focus:border-[var(--fd-accent)]"
               />
             </div>
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personel (Ad veya Sicil)</label>
+              <label className="text-xs font-semibold text-[var(--fd-text3)] uppercase tracking-wider">Personel (Ad veya Sicil)</label>
               <Input 
                 placeholder="Örn: Onurcan veya SB5801" 
                 value={personnelFilter}
                 onChange={e => setPersonnelFilter(e.target.value)}
-                className="bg-background"
+                className="bg-[var(--fd-surface2)] text-[var(--fd-text)] border-[var(--fd-border)] focus:border-[var(--fd-accent)]"
               />
             </div>
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tarih Aralığı</label>
+              <label className="text-xs font-semibold text-[var(--fd-text3)] uppercase tracking-wider">Tarih Aralığı</label>
               <select 
                 value={dateFilter}
                 onChange={e => setDateFilter(e.target.value as any)}
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] placeholder:text-[var(--fd-text3)] focus:outline-none focus:ring-2 focus:ring-[var(--fd-accent)]/50 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="today">Bugün</option>
                 <option value="7days">Son 7 Gün</option>
@@ -1232,11 +1231,11 @@ export default function LogsReportsPage() {
               </select>
             </div>
             <div className="flex items-end gap-2 pt-2 sm:pt-0">
-              <Button type="submit" disabled={loading} className="w-full sm:w-auto min-w-[100px]">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto min-w-[100px] bg-[var(--fd-accent)] hover:opacity-90 text-white rounded-[var(--fd-r-sm)] font-bold text-xs h-10">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Search className="w-4 h-4 mr-2" /> Ara</>}
               </Button>
               {(plakaFilter || personnelFilter || dateFilter !== "7days" || statusFilter !== "all") && (
-                <Button type="button" variant="outline" onClick={clearFilters} title="Filtreleri Temizle" className="px-3">
+                <Button type="button" variant="outline" onClick={clearFilters} title="Filtreleri Temizle" className="px-3 border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)] h-10">
                   <X className="w-4 h-4" />
                 </Button>
               )}
@@ -1244,14 +1243,14 @@ export default function LogsReportsPage() {
           </form>
 
           {/* Quick Status Filter Toggles */}
-          <div className="pt-4 border-t border-border/50 flex flex-wrap gap-3">
+          <div className="pt-4 border-t border-[var(--fd-border)]/50 flex flex-wrap gap-3">
             <button
               onClick={() => setStatusFilter("all")}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border",
                 statusFilter === "all"
-                  ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30 shadow-md shadow-cyan-500/10"
-                  : "bg-surface text-muted-foreground border-border hover:bg-muted"
+                  ? "bg-[var(--fd-accent)]/15 text-[var(--fd-accent)] border-[var(--fd-accent)]/30 shadow-sm"
+                  : "bg-[var(--fd-surface2)] text-[var(--fd-text3)] border-[var(--fd-border)] hover:bg-[var(--fd-surface3)]"
               )}
             >
               <ListChecks className="w-4 h-4" />
@@ -1262,8 +1261,8 @@ export default function LogsReportsPage() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border",
                 statusFilter === "kusursuz"
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-md shadow-emerald-500/10"
-                  : "bg-surface text-muted-foreground border-border hover:bg-muted"
+                  ? "bg-[rgba(22,163,74,0.15)] text-[var(--fd-success)] border-[var(--fd-success)]/30 shadow-sm"
+                  : "bg-[var(--fd-surface2)] text-[var(--fd-text3)] border-[var(--fd-border)] hover:bg-[var(--fd-surface3)]"
               )}
             >
               <CheckCircle2 className="w-4 h-4" />
@@ -1274,8 +1273,8 @@ export default function LogsReportsPage() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border",
                 statusFilter === "sorunlu"
-                  ? "bg-red-500/20 text-red-400 border-red-500/30 shadow-md shadow-red-500/10"
-                  : "bg-surface text-muted-foreground border-border hover:bg-muted"
+                  ? "bg-[rgba(220,38,38,0.15)] text-[var(--fd-danger)] border-[var(--fd-danger)]/30 shadow-sm"
+                  : "bg-[var(--fd-surface2)] text-[var(--fd-text3)] border-[var(--fd-border)] hover:bg-[var(--fd-surface3)]"
               )}
             >
               <AlertTriangle className="w-4 h-4" />
@@ -1286,36 +1285,36 @@ export default function LogsReportsPage() {
       </Card>
 
       {/* DATA GRID */}
-      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
-        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-border/50 flex flex-row items-center justify-between">
+      <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-[var(--fd-border)]/50 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <History className="w-5 h-5 text-primary" />
+            <CardTitle className="text-lg flex items-center gap-2 text-[var(--fd-text)]">
+              <History className="w-5 h-5 text-[var(--fd-accent)]" />
               Kontrol Geçmişi
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription className="mt-1 text-[var(--fd-text3)]">
               {displayItems.length} kayıt gösteriliyor (gruplandırılmış)
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {error ? (
-            <div className="p-8 text-center text-danger">
+            <div className="p-8 text-center text-[var(--fd-danger)]">
               <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-50" />
               <p>{error}</p>
             </div>
           ) : loading ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-primary/50" />
+            <div className="p-12 text-center text-[var(--fd-text3)]">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-[var(--fd-accent)]/50" />
               <p>Veriler yükleniyor...</p>
             </div>
           ) : displayItems.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
+            <div className="p-12 text-center text-[var(--fd-text3)]">
               <Filter className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p>Bu filtrelere uygun kayıt bulunamadı.</p>
             </div>
           ) : (
-            <div className="divide-y divide-border/30">
+            <div className="divide-y divide-[var(--fd-border)]/30">
               {displayItems.map((item, idx) => {
                 if (isGroupedLog(item)) {
                   // Grouped inventory accordion row
@@ -1324,33 +1323,33 @@ export default function LogsReportsPage() {
                     <div key={item.key} className="group">
                       <button
                         onClick={() => toggleExpand(item.key)}
-                        className="w-full text-left px-4 sm:px-6 py-3.5 flex items-center gap-4 hover:bg-muted/20 transition-colors"
+                        className="w-full text-left px-4 sm:px-6 py-3.5 flex items-center gap-4 hover:bg-[var(--fd-surface2)]/40 transition-colors"
                       >
                         {/* Date */}
                         <div className="shrink-0 w-[90px]">
-                          <div className="font-medium text-sm">{new Date(item.tarih).toLocaleDateString("tr-TR")}</div>
-                          <div className="text-xs text-muted-foreground">{new Date(item.tarih).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="font-medium text-sm text-[var(--fd-text)]">{new Date(item.tarih).toLocaleDateString("tr-TR")}</div>
+                          <div className="text-xs text-[var(--fd-text3)]">{new Date(item.tarih).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
 
                         {/* Plaka */}
-                        <div className="shrink-0 w-[100px] font-bold text-primary text-sm">
+                        <div className="shrink-0 w-[100px] font-bold text-[var(--fd-accent)] text-sm">
                           {item.plaka}
                         </div>
 
                         {/* Personnel Name (NOT sicil) */}
                         <div className="shrink-0 w-[130px]">
-                          <div className="font-semibold text-sm text-slate-200 truncate">{item.ad_soyad}</div>
+                          <div className="font-semibold text-sm text-[var(--fd-text)] truncate">{item.ad_soyad}</div>
                         </div>
 
                         {/* Summary */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 text-sm">
-                            <Package className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                            <span className="text-slate-300 font-medium truncate">
+                            <Package className="w-3.5 h-3.5 text-[var(--fd-accent)] shrink-0" />
+                            <span className="text-[var(--fd-text2)] font-medium truncate">
                               {item.bolme}
                             </span>
-                            <span className="text-muted-foreground">—</span>
-                            <span className="text-slate-400 text-xs">
+                            <span className="text-[var(--fd-text3)]">—</span>
+                            <span className="text-[var(--fd-text3)]/80 text-xs">
                               Toplam {item.items.length} Kalem Malzeme Sayımı
                             </span>
                           </div>
@@ -1359,18 +1358,18 @@ export default function LogsReportsPage() {
                         {/* Status */}
                         <div className="shrink-0">
                           {item.durum === "Sorunlu" ? (
-                            <Badge className="gap-1 px-2 py-0.5 bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)]">
+                            <Badge variant="danger" className="gap-1 px-2 py-0.5">
                               <AlertTriangle className="w-3 h-3" /> Sorunlu
                             </Badge>
                           ) : (
-                            <Badge className="gap-1 px-2 py-0.5 bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)]">
+                            <Badge variant="success" className="gap-1 px-2 py-0.5">
                               <CheckCircle2 className="w-3 h-3" /> Kusursuz
                             </Badge>
                           )}
                         </div>
 
                         {/* Chevron */}
-                        <div className="shrink-0 text-muted-foreground">
+                        <div className="shrink-0 text-[var(--fd-text3)]">
                           {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </div>
                       </button>
@@ -1378,8 +1377,8 @@ export default function LogsReportsPage() {
                       {/* Accordion Detail Panel */}
                       {isOpen && (
                         <div className="px-6 sm:px-10 pb-4 animate-in slide-in-from-top-1 duration-150">
-                          <div className="bg-slate-900/60 border border-white/5 rounded-xl p-4 space-y-1.5">
-                            <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-2.5">
+                          <div className="bg-[var(--fd-surface2)]/60 border border-[var(--fd-border)] rounded-xl p-4 space-y-1.5">
+                            <p className="text-[10px] font-bold text-[var(--fd-accent)] uppercase tracking-[.04em] mb-2.5">
                               Sayılan Malzemeler — {item.bolme}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
@@ -1389,8 +1388,8 @@ export default function LogsReportsPage() {
                                   className={cn(
                                     "flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg border",
                                     it.yeni_durum === 'Eksik' || it.yeni_durum === 'Arızalı'
-                                      ? "bg-red-950/20 border-red-500/20 text-red-400"
-                                      : "bg-slate-950/40 border-white/5 text-slate-300"
+                                      ? "bg-[rgba(220,38,38,0.08)] border-[rgba(220,38,38,0.15)] text-[var(--fd-danger)]"
+                                      : "bg-[var(--fd-surface2)]/40 border-[var(--fd-border)] text-[var(--fd-text2)]"
                                   )}
                                 >
                                   <span className="font-semibold truncate flex-1">{it.malzeme}</span>
@@ -1398,10 +1397,10 @@ export default function LogsReportsPage() {
                                     variant="outline" 
                                     className={cn(
                                       "text-[9px] px-1.5 py-0 shrink-0 font-bold",
-                                      it.yeni_durum === 'Tam' ? "text-emerald-400 border-emerald-500/25" :
-                                      it.yeni_durum === 'Eksik' ? "text-red-400 border-red-500/25" :
-                                      it.yeni_durum === 'Arızalı' ? "text-amber-400 border-amber-500/25" :
-                                      "text-slate-400 border-slate-500/25"
+                                      it.yeni_durum === 'Tam' ? "text-[var(--fd-success)] border-[var(--fd-success)]/25" :
+                                      it.yeni_durum === 'Eksik' ? "text-[var(--fd-danger)] border-[var(--fd-danger)]/25" :
+                                      it.yeni_durum === 'Arızalı' ? "text-[var(--fd-amber)] border-[var(--fd-amber)]/25" :
+                                      "text-[var(--fd-text3)] border-[var(--fd-border)]"
                                     )}
                                   >
                                     {it.yeni_durum}
@@ -1410,9 +1409,9 @@ export default function LogsReportsPage() {
                               ))}
                             </div>
                             {item.items.some(it => it.not) && (
-                              <div className="mt-2 pt-2 border-t border-white/5">
+                              <div className="mt-2 pt-2 border-t border-[var(--fd-border)]/50">
                                 {item.items.filter(it => it.not).map((it, i) => (
-                                  <p key={i} className="text-[10px] text-amber-400/80 italic">
+                                  <p key={i} className="text-[10px] text-[var(--fd-amber)]/80 italic">
                                     {it.malzeme}: {it.not}
                                   </p>
                                 ))}
@@ -1427,39 +1426,39 @@ export default function LogsReportsPage() {
 
                 // Regular non-grouped log row
                 return (
-                  <div key={item.id || idx} className="px-4 sm:px-6 py-3.5 flex items-center gap-4 hover:bg-muted/20 transition-colors">
+                  <div key={item.id || idx} className="px-4 sm:px-6 py-3.5 flex items-center gap-4 hover:bg-[var(--fd-surface2)]/40 transition-colors">
                     {/* Date */}
                     <div className="shrink-0 w-[90px]">
-                      <div className="font-medium text-sm">{new Date(item.tarih).toLocaleDateString("tr-TR")}</div>
-                      <div className="text-xs text-muted-foreground">{new Date(item.tarih).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })}</div>
+                      <div className="font-medium text-sm text-[var(--fd-text)]">{new Date(item.tarih).toLocaleDateString("tr-TR")}</div>
+                      <div className="text-xs text-[var(--fd-text3)]">{new Date(item.tarih).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })}</div>
                     </div>
 
                     {/* Plaka */}
-                    <div className="shrink-0 w-[100px] font-bold text-primary text-sm">
+                    <div className="shrink-0 w-[100px] font-bold text-[var(--fd-accent)] text-sm">
                       {item.plaka}
                     </div>
 
                     {/* Personnel Name */}
                     <div className="shrink-0 w-[130px]">
-                      <div className="font-semibold text-sm text-slate-200 truncate">{item.ad_soyad}</div>
+                      <div className="font-semibold text-sm text-[var(--fd-text)] truncate">{item.ad_soyad}</div>
                     </div>
 
                     {/* Details */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-muted-foreground truncate">
-                        <span className="text-slate-400 font-medium">{item.islem_tipi}</span>
-                        {item.detaylar && <span className="ml-2 text-slate-500">— {item.detaylar}</span>}
+                      <div className="text-sm text-[var(--fd-text3)] truncate">
+                        <span className="text-[var(--fd-text2)] font-medium">{item.islem_tipi}</span>
+                        {item.detaylar && <span className="ml-2 text-[var(--fd-text3)]/60">— {item.detaylar}</span>}
                       </div>
                     </div>
 
                     {/* Status */}
                     <div className="shrink-0">
                       {item.durum === "Sorunlu" ? (
-                        <Badge className="gap-1 px-2 py-0.5 bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)]">
+                        <Badge variant="danger" className="gap-1 px-2 py-0.5">
                           <AlertTriangle className="w-3 h-3" /> Sorunlu
                         </Badge>
                       ) : (
-                        <Badge className="gap-1 px-2 py-0.5 bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)]">
+                        <Badge variant="success" className="gap-1 px-2 py-0.5">
                           <CheckCircle2 className="w-3 h-3" /> Kusursuz
                         </Badge>
                       )}
@@ -1473,14 +1472,14 @@ export default function LogsReportsPage() {
       </Card>
 
       {/* PDKS SHIFT LOGS TABLE */}
-      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
-        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-border/50 flex flex-row items-center justify-between">
+      <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-[var(--fd-border)]/50 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <History className="w-5 h-5 text-emerald-400" />
+            <CardTitle className="text-lg flex items-center gap-2 text-[var(--fd-text)]">
+              <History className="w-5 h-5 text-[var(--fd-success)]" />
               Personel Görev Başlangıç ve Devir-Teslim Çizelgesi
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription className="mt-1 text-[var(--fd-text3)]">
               Personel mesai giriş-çıkış logları ve aktif çalışma süreleri.
             </CardDescription>
           </div>
@@ -1490,7 +1489,7 @@ export default function LogsReportsPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleExportPDF} 
-                className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-semibold gap-1.5"
+                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] hover:bg-[var(--fd-surface3)] text-xs font-semibold gap-1.5 text-[var(--fd-text)] rounded-[var(--fd-r-sm)]"
               >
                 <span>📄</span> PDF İndir
               </Button>
@@ -1501,7 +1500,7 @@ export default function LogsReportsPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleExportExcel} 
-                className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-semibold gap-1.5"
+                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] hover:bg-[var(--fd-surface3)] text-xs font-semibold gap-1.5 text-[var(--fd-text)] rounded-[var(--fd-r-sm)]"
               >
                 <span>📊</span> Excel İndir
               </Button>
@@ -1511,19 +1510,19 @@ export default function LogsReportsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {shiftLoading ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-emerald-500/50" />
+            <div className="p-12 text-center text-[var(--fd-text3)]">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-[var(--fd-success)]/50" />
               <p>Devam çizelgesi yükleniyor...</p>
             </div>
           ) : shiftLogs.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
+            <div className="p-12 text-center text-[var(--fd-text3)]">
               <Filter className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p>Görev kaydı bulunamadı.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm text-slate-300">
-                <thead className="bg-slate-900/60 border-b border-border/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <table className="w-full border-collapse text-left text-sm text-[var(--fd-text2)]">
+                <thead className="bg-[var(--fd-surface2)]/60 border-b border-[var(--fd-border)]/40 text-[10px] font-bold uppercase tracking-[.04em] text-[var(--fd-text3)]">
                   <tr>
                     <th className="px-6 py-4">Tarih</th>
                     <th className="px-6 py-4">Personel Adı Soyadı</th>
@@ -1534,7 +1533,7 @@ export default function LogsReportsPage() {
                     <th className="px-6 py-4">Durum</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/30">
+                <tbody className="divide-y divide-[var(--fd-border)]/30">
                   {shiftLogs.map((log) => {
                     const dateStr = new Date(log.giris_tarihi).toLocaleDateString("tr-TR")
                     const startStr = new Date(log.giris_tarihi).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
@@ -1544,27 +1543,27 @@ export default function LogsReportsPage() {
                     
                     const duration = log.durum === 'GÖREVDE' 
                       ? (
-                        <span className="text-emerald-400 font-bold animate-pulse drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+                        <span className="text-[var(--fd-success)] font-bold animate-pulse">
                           Aktif Çalışıyor
                         </span>
                       )
                       : formatDuration(log.giris_tarihi, log.cikis_tarihi) || "-"
 
                     return (
-                      <tr key={log.id} className="hover:bg-muted/10 transition-colors">
+                      <tr key={log.id} className="hover:bg-[var(--fd-surface2)]/40 transition-colors">
                         <td className="px-6 py-4 font-medium">{dateStr}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-200">{log.personel_ad_soyad}</td>
-                        <td className="px-6 py-4 text-slate-400">{log.istasyon} / {log.posta}</td>
-                        <td className="px-6 py-4 text-slate-300 font-mono">{startStr}</td>
-                        <td className="px-6 py-4 text-slate-300 font-mono">{endStr}</td>
+                        <td className="px-6 py-4 font-semibold text-[var(--fd-text)]">{log.personel_ad_soyad}</td>
+                        <td className="px-6 py-4 text-[var(--fd-text3)]">{log.istasyon} / {log.posta}</td>
+                        <td className="px-6 py-4 text-[var(--fd-text2)] font-[var(--fd-fontmono)]">{startStr}</td>
+                        <td className="px-6 py-4 text-[var(--fd-text2)] font-[var(--fd-fontmono)]">{endStr}</td>
                         <td className="px-6 py-4">{duration}</td>
                         <td className="px-6 py-4">
                           {log.durum === 'GÖREVDE' ? (
-                            <Badge className="px-2 py-0.5 bg-emerald-950/40 text-emerald-400 border border-emerald-500/30">
+                            <Badge variant="success" className="px-2 py-0.5">
                               Görevde
                             </Badge>
                           ) : (
-                            <Badge className="px-2 py-0.5 bg-slate-900 text-slate-400 border border-slate-800">
+                            <Badge variant="muted" className="px-2 py-0.5">
                               Tamamlandı
                             </Badge>
                           )}
@@ -1580,30 +1579,30 @@ export default function LogsReportsPage() {
       </Card>
 
       
-      {/* --- GÜN SONU Z RAPORLARI ARŞİVİ --- */}
-      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
-        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-border/50">
-          <CardTitle className="text-lg flex items-center gap-2 text-slate-200">
+      {/* --- GÜN SONU Z RAPORU LİSTESİ / ARŞİVİ --- */}
+      <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+        <CardHeader className="p-4 sm:p-6 pb-2 border-b border-[var(--fd-border)]/50">
+          <CardTitle className="text-lg flex items-center gap-2 text-[var(--fd-text)]">
             <span>📚</span> Müfrez Z Raporu Arşivi
           </CardTitle>
-          <CardDescription className="mt-1">
+          <CardDescription className="mt-1 text-[var(--fd-text3)]">
             Mühürlenmiş 24 saatlik nöbet ve vukuat devir-teslim belgeleri.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {dailyReportsLoading ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-cyan-500/50" />
+            <div className="p-12 text-center text-[var(--fd-text3)]">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-[var(--fd-accent)]/50" />
               <p>Z Raporları yükleniyor...</p>
             </div>
           ) : dailyReports.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground font-mono text-xs">
+            <div className="p-12 text-center text-[var(--fd-text3)] font-[var(--fd-fontmono)] text-xs">
               Mühürlü Z raporu bulunmamaktadır.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm text-slate-300">
-                <thead className="bg-slate-900/60 border-b border-border/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground font-mono">
+              <table className="w-full border-collapse text-left text-sm text-[var(--fd-text2)]">
+                <thead className="bg-[var(--fd-surface2)]/60 border-b border-[var(--fd-border)]/40 text-[10px] font-bold uppercase tracking-[.04em] text-[var(--fd-text3)] font-[var(--fd-fontmono)]">
                   <tr>
                     <th className="px-6 py-4">Tarih</th>
                     <th className="px-6 py-4">Devreden Amir</th>
@@ -1615,36 +1614,36 @@ export default function LogsReportsPage() {
                     <th className="px-6 py-4 text-center">İşlemler</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/30 font-medium">
+                <tbody className="divide-y divide-[var(--fd-border)]/30 font-medium">
                   {dailyReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-slate-200">
+                    <tr key={report.id} className="hover:bg-[var(--fd-surface2)]/40 transition-colors">
+                      <td className="px-6 py-4 font-[var(--fd-fontmono)] font-bold text-[var(--fd-text)]">
                         {new Date(report.rapor_tarihi).toLocaleDateString("tr-TR")}
                       </td>
-                      <td className="px-6 py-4 text-slate-300">
+                      <td className="px-6 py-4 text-[var(--fd-text2)]">
                         {personnelMap[report.devreden_amir_id] || "Bilinmeyen Amir"}
                       </td>
-                      <td className="px-6 py-4 text-center text-red-400 font-mono font-bold">
+                      <td className="px-6 py-4 text-center text-[var(--fd-danger)] font-[var(--fd-fontmono)] font-bold">
                         {report.yangin_sayisi?.total || 0}
                       </td>
-                      <td className="px-6 py-4 text-center text-emerald-400 font-mono font-bold">
+                      <td className="px-6 py-4 text-center text-[var(--fd-success)] font-[var(--fd-fontmono)] font-bold">
                         {report.kurtarma_sayisi?.total || 0}
                       </td>
-                      <td className="px-6 py-4 text-center text-cyan-400 font-mono font-bold">
+                      <td className="px-6 py-4 text-center text-[var(--fd-accent)] font-[var(--fd-fontmono)] font-bold">
                         {report.dis_gorev_sayisi || 0}
                       </td>
-                      <td className="px-6 py-4 text-slate-400 text-xs">
+                      <td className="px-6 py-4 text-[var(--fd-text3)] text-xs">
                         {report.arizali_araclar && report.arizali_araclar.length > 0
                           ? report.arizali_araclar.join(', ')
                           : "Yok"}
                       </td>
                       <td className="px-6 py-4 text-center align-middle">
                         {report.devir_durumu === 'Serhli' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 font-mono">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[rgba(245,158,11,0.1)] text-[var(--fd-amber)] border border-[var(--fd-amber)]/20 font-[var(--fd-fontmono)]">
                             ⚠️ ŞERHLİ
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[rgba(22,163,74,0.1)] text-[var(--fd-success)] border border-[var(--fd-success)]/20 font-[var(--fd-fontmono)]">
                             ✅ TEMİZ
                           </span>
                         )}
@@ -1654,7 +1653,7 @@ export default function LogsReportsPage() {
                           onClick={() => handleExportZReportPDF(report)}
                           variant="outline"
                           size="sm"
-                          className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-xs font-bold gap-1 text-cyan-400"
+                          className="bg-[var(--fd-surface2)] border-[var(--fd-border)] hover:bg-[var(--fd-surface3)] text-xs font-bold gap-1 text-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                         >
                           📄 PDF Döküm
                         </Button>
@@ -1669,175 +1668,189 @@ export default function LogsReportsPage() {
       </Card>
 
       {/* --- Z RAPORU CREATION MODAL --- */}
-      <Dialog open={zReportModalOpen} onOpenChange={setZReportModalOpen}>
-        <DialogContent className="max-w-2xl bg-slate-950 border border-cyan-500/20 shadow-[0_0_30px_rgba(6,182,212,0.15)] text-slate-100 p-6 rounded-2xl overflow-y-auto max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
-              <span>🏁 24 Saatlik Müfrez Z Raporu</span>
-            </DialogTitle>
-            <CardDescription className="text-xs text-slate-400 mt-1">
-              İlgili tarihin tüm yangın, kurtarma, arızalı araç ve görev bilgilerini otomatik süzüp resmi nöbet defterine mühürleyin.
-            </CardDescription>
-          </DialogHeader>
-
-          {overrideData ? (
-            <div className="space-y-4 my-4 font-sans text-sm">
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
-                <span className="text-amber-500 font-bold text-base flex items-center gap-1.5">
-                  ⚠️ LOJİSTİK AÇIK VE ŞERH BİLDİRİMİ
-                </span>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Aşağıda listelenen lojistik süreçler veya Makine İkmal sevk logları henüz kapatılmamıştır.
-                  Nöbeti şerhli mühürlemek için sorumluluk devrini onaylamanız gerekmektedir.
-                </p>
+      {zReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+          <Card className="w-full max-w-2xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+            <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-4 sm:p-5 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold flex items-center gap-2 text-[var(--fd-accent)]">
+                  <span>🏁 24 Saatlik Müfrez Z Raporu</span>
+                </CardTitle>
+                <CardDescription className="text-xs text-[var(--fd-text3)] mt-1">
+                  İlgili tarihin tüm yangın, kurtarma, arızalı araç ve görev bilgilerini otomatik süzüp resmi nöbet defterine mühürleyin.
+                </CardDescription>
               </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 rounded-[var(--fd-r-sm)]"
+                onClick={() => setZReportModalOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </CardHeader>
 
-              {overrideData.assignments.length > 0 && (
-                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
-                  <span className="text-xs font-bold text-slate-400 block font-mono">AÇIKTA KALAN GEÇİCİ ZİMMET KAYITLARI</span>
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-2">
-                    {overrideData.assignments.map((a: any, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-300 flex justify-between bg-slate-950/50 p-2 rounded-lg border border-white/5">
-                        <span>{a.malzeme_adi}</span>
-                        <span className="text-slate-400 font-mono font-bold">({a.birim_adi} - {a.teslim_edilen_tip})</span>
+            <CardContent className="p-5 sm:p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              {overrideData ? (
+                <div className="space-y-4 font-sans text-sm">
+                  <div className="p-4 bg-[rgba(245,158,11,0.08)] border border-[var(--fd-amber)]/20 rounded-xl space-y-2">
+                    <span className="text-[var(--fd-amber)] font-bold text-base flex items-center gap-1.5">
+                      ⚠️ LOJİSTİK AÇIK VE ŞERH BİLDİRİMİ
+                    </span>
+                    <p className="text-xs text-[var(--fd-text2)] leading-relaxed">
+                      Aşağıda listelenen lojistik süreçler veya Makine İkmal sevk logları henüz kapatılmamıştır.
+                      Nöbeti şerhli mühürlemek için sorumluluk devrini onaylamanız gerekmektedir.
+                    </p>
+                  </div>
+
+                  {overrideData.assignments.length > 0 && (
+                    <div className="p-4 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-xl space-y-2">
+                      <span className="text-xs font-bold text-[var(--fd-text3)] block font-[var(--fd-fontmono)]">AÇIKTA KALAN GEÇİCİ ZİMMET KAYITLARI</span>
+                      <div className="max-h-36 overflow-y-auto space-y-1.5 pr-2">
+                        {overrideData.assignments.map((a: any, idx: number) => (
+                          <div key={idx} className="text-xs text-[var(--fd-text2)] flex justify-between bg-[var(--fd-surface2)]/40 p-2 rounded-lg border border-[var(--fd-border)]">
+                            <span>{a.malzeme_adi}</span>
+                            <span className="text-[var(--fd-text3)] font-[var(--fd-fontmono)] font-bold">({a.birim_adi} - {a.teslim_edilen_tip})</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  )}
+
+                  {overrideData.maintenance.length > 0 && (
+                    <div className="p-4 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-xl space-y-2">
+                      <span className="text-xs font-bold text-[var(--fd-text3)] block font-[var(--fd-fontmono)]">AÇIK MAKİNE İKMAL SEVK KAYITLARI (BAKIMDA)</span>
+                      <div className="max-h-36 overflow-y-auto space-y-1.5 pr-2">
+                        {overrideData.maintenance.map((m: any, idx: number) => (
+                          <div key={idx} className="text-xs text-[var(--fd-text2)] flex justify-between bg-[var(--fd-surface2)]/40 p-2 rounded-lg border border-[var(--fd-border)]">
+                            <span>{m.plaka} - Araç Bakımda</span>
+                            <span className="text-[var(--fd-amber)] font-bold">{m.ariza_seviyesi}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-2.5 p-3.5 bg-[var(--fd-surface2)]/40 border border-[var(--fd-border)] rounded-xl">
+                    <input
+                      type="checkbox"
+                      id="override-approved"
+                      checked={isOverrideApproved}
+                      onChange={(e) => setIsOverrideApproved(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-accent)] focus:ring-[var(--fd-accent)]/50 cursor-pointer"
+                    />
+                    <label htmlFor="override-approved" className="text-xs text-[var(--fd-text2)] leading-normal select-none cursor-pointer">
+                      Açıkta kalan lojistik süreçlerin sorumluluğunu yeni postaya devrettiğimi ve raporu şerhli mühürlemek istediğimi onaylıyorum.
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 font-sans text-sm">
+                  <div>
+                    <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-widest mb-1.5 font-[var(--fd-fontmono)]">RAPOR TARİHİ</label>
+                    <Input
+                      type="date"
+                      value={selectedZDate}
+                      onChange={(e) => handleZDateChange(e.target.value)}
+                      className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] h-11 font-[var(--fd-fontmono)]"
+                    />
+                  </div>
+
+                  {/* Aggregated Preview Block */}
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-xl">
+                    <div>
+                      <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase block font-[var(--fd-fontmono)]">🚒 YANGIN DETAYI</span>
+                      <p className="font-bold text-[var(--fd-danger)] text-lg mt-0.5">{zFires.total} Yangın</p>
+                      <span className="text-[10px] text-[var(--fd-text3)] block mt-0.5 leading-normal">
+                        Ev: {zFires.ev} | İşyeri: {zFires.isyeri} | Arazi: {zFires.arazi} | Diğer: {zFires.diger}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase block font-[var(--fd-fontmono)]">🚨 KURTARMA DETAYI</span>
+                      <p className="font-bold text-[var(--fd-success)] text-lg mt-0.5">{zRescues.total} Kurtarma</p>
+                      <span className="text-[10px] text-[var(--fd-text3)] block mt-0.5 leading-normal">
+                        Kaza: {zRescues.trafik_kazasi} | Su: {zRescues.su_baskini} | Hayvan: {zRescues.hayvan_kurtarma} | Diğer: {zRescues.diger}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)] rounded-xl">
+                    <div>
+                      <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase block font-[var(--fd-fontmono)]">🔄 GARAJ & ZİMMET SAYISI</span>
+                      <p className="font-bold text-[var(--fd-accent)] text-lg mt-0.5">{zAssignmentsCount} Devir</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase block font-[var(--fd-fontmono)]">🛠️ ARIZALI/BAKIMDAKİ ARAÇLAR</span>
+                      <p className="font-bold text-[var(--fd-amber)] text-sm mt-1 truncate">
+                        {zBrokenVehicles.length > 0 ? zBrokenVehicles.join(', ') : "Yok"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-widest mb-1.5 font-[var(--fd-fontmono)]">DIŞ GÖREV PERSONEL SAYISI (MANUEL AYARLA)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={zDisGorevCount}
+                      onChange={(e) => setZDisGorevCount(Number(e.target.value))}
+                      className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] text-sm focus:border-[var(--fd-accent)] h-11 font-[var(--fd-fontmono)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-widest mb-1.5 font-[var(--fd-fontmono)]">BAŞÇAVUŞ NÖBET DEVİR NOTU</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Nöbet teslimi sırasında meydana gelen önemli hususları, telsiz notlarını ve devir şartlarını yazınız..."
+                      value={zBascavusNotu}
+                      onChange={(e) => setZBascavusNotu(e.target.value)}
+                      className="flex w-full rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--fd-accent)]/50"
+                    />
                   </div>
                 </div>
               )}
+            </CardContent>
 
-              {overrideData.maintenance.length > 0 && (
-                <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
-                  <span className="text-xs font-bold text-slate-400 block font-mono">AÇIK MAKİNE İKMAL SEVK KAYITLARI (BAKIMDA)</span>
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-2">
-                    {overrideData.maintenance.map((m: any, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-300 flex justify-between bg-slate-950/50 p-2 rounded-lg border border-white/5">
-                        <span>{m.plaka} - Araç Bakımda</span>
-                        <span className="text-amber-500 font-bold">{m.ariza_seviyesi}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 sm:p-5 flex items-center justify-end gap-3">
+              {overrideData ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setOverrideData(null);
+                      setIsOverrideApproved(false);
+                    }}
+                    className="w-full sm:w-auto border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)]"
+                  >
+                    Geri Dön
+                  </Button>
+                  <Button
+                    onClick={() => handleSubmitZReport(true)}
+                    disabled={zSubmitting || !isOverrideApproved}
+                    className="w-full sm:w-auto bg-[var(--fd-amber)] hover:opacity-90 disabled:opacity-50 text-white font-bold shadow-[var(--fd-shadow-sm)]"
+                  >
+                    {zSubmitting ? "Mühürleniyor..." : "🔏 Raporu Şerhli Mühürle ve Nöbeti Kapat"}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setZReportModalOpen(false)} className="w-full sm:w-auto border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)]">
+                    İptal
+                  </Button>
+                  <Button
+                    onClick={() => handleSubmitZReport(false)}
+                    disabled={zSubmitting}
+                    className="w-full sm:w-auto bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold shadow-[var(--fd-shadow-sm)]"
+                  >
+                    {zSubmitting ? "Mühürleniyor..." : "🏁 Raporu Mühürle & Devret"}
+                  </Button>
+                </>
               )}
-
-              <div className="flex items-start gap-2.5 p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-xl">
-                <input
-                  type="checkbox"
-                  id="override-approved"
-                  checked={isOverrideApproved}
-                  onChange={(e) => setIsOverrideApproved(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-white/10 bg-slate-950 text-cyan-600 focus:ring-cyan-500/50 cursor-pointer"
-                />
-                <label htmlFor="override-approved" className="text-xs text-slate-300 leading-normal select-none cursor-pointer">
-                  Açıkta kalan lojistik süreçlerin sorumluluğunu yeni postaya devrettiğimi ve raporu şerhli mühürlemek istediğimi onaylıyorum.
-                </label>
-              </div>
             </div>
-          ) : (
-            <div className="space-y-4 my-4 font-sans text-sm">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">RAPOR TARİHİ</label>
-                <Input
-                  type="date"
-                  value={selectedZDate}
-                  onChange={(e) => handleZDateChange(e.target.value)}
-                  className="bg-slate-900 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
-                />
-              </div>
-
-              {/* Aggregated Preview Block */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚒 YANGIN DETAYI</span>
-                  <p className="font-bold text-red-400 text-lg mt-0.5">{zFires.total} Yangın</p>
-                  <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
-                    Ev: {zFires.ev} | İşyeri: {zFires.isyeri} | Arazi: {zFires.arazi} | Diğer: {zFires.diger}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🚨 KURTARMA DETAYI</span>
-                  <p className="font-bold text-emerald-400 text-lg mt-0.5">{zRescues.total} Kurtarma</p>
-                  <span className="text-[10px] text-slate-400 block mt-0.5 leading-normal">
-                    Kaza: {zRescues.trafik_kazasi} | Su: {zRescues.su_baskini} | Hayvan: {zRescues.hayvan_kurtarma} | Diğer: {zRescues.diger}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-900/35 border border-slate-800 rounded-xl">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🔄 GARAJ & ZİMMET SAYISI</span>
-                  <p className="font-bold text-cyan-400 text-lg mt-0.5">{zAssignmentsCount} Devir</p>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block font-mono">🛠️ ARIZALI/BAKIMDAKİ ARAÇLAR</span>
-                  <p className="font-bold text-amber-500 text-sm mt-1 truncate">
-                    {zBrokenVehicles.length > 0 ? zBrokenVehicles.join(', ') : "Yok"}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">DIŞ GÖREV PERSONEL SAYISI (MANUEL AYARLA)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={zDisGorevCount}
-                  onChange={(e) => setZDisGorevCount(Number(e.target.value))}
-                  className="bg-slate-950 border-white/10 text-slate-100 text-sm focus:border-cyan-500/50 h-11 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">BAŞÇAVUŞ NÖBET DEVİR NOTU</label>
-                <textarea
-                  rows={3}
-                  placeholder="Nöbet teslimi sırasında meydana gelen önemli hususları, telsiz notlarını ve devir şartlarını yazınız..."
-                  value={zBascavusNotu}
-                  onChange={(e) => setZBascavusNotu(e.target.value)}
-                  className="flex w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            {overrideData ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setOverrideData(null);
-                    setIsOverrideApproved(false);
-                  }}
-                  className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200"
-                >
-                  Geri Dön
-                </Button>
-                <Button
-                  onClick={() => handleSubmitZReport(true)}
-                  disabled={zSubmitting || !isOverrideApproved}
-                  className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800/50 disabled:text-slate-500 text-white font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                >
-                  {zSubmitting ? "Mühürleniyor..." : "🔏 Raporu Şerhli Mühürle ve Nöbeti Kapat"}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setZReportModalOpen(false)} className="w-full sm:w-auto border-white/10 bg-slate-900 text-slate-200">
-                  İptal
-                </Button>
-                <Button
-                  onClick={() => handleSubmitZReport(false)}
-                  disabled={zSubmitting}
-                  className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]"
-                >
-                  {zSubmitting ? "Mühürleniyor..." : "🏁 Raporu Mühürle & Devret"}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </Card>
+        </div>
+      )}
 
 
       {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}

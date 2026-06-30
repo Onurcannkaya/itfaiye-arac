@@ -5,6 +5,8 @@ import { api } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
+import { DataTable } from "@/components/ui/DataTable"
+import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/authStore"
 import PageGuard from "@/components/PageGuard"
 import { 
@@ -77,6 +79,113 @@ interface CitizenRequest {
 
 export default function HizmetlerPage() {
   const { user } = useAuthStore()
+  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
+
+  const hizmetlerColumns = [
+    {
+      header: "Başvuran / Kurum Adı",
+      cell: (req: any) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/80 border border-[var(--fd-border)] flex items-center justify-center text-[var(--fd-text3)] shrink-0">
+            <User className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <span className="font-bold text-[var(--fd-text)] block text-sm">{req.basvuran_ad_soyad}</span>
+            <span className="text-[10px] text-[var(--fd-text3)] font-mono block">TC: {req.basvuran_tc || 'Girilmemiş'}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: "Hizmet Türü",
+      cell: (req: any) => (
+        <div className="flex items-center gap-2">
+          <div className={`p-1.5 rounded-[var(--fd-r-sm)] ${req.talep_turu.includes('Baca') ? 'text-[var(--fd-info)] bg-[rgba(37,99,235,0.1)]' : 'text-[var(--fd-amber)] bg-[rgba(245,158,11,0.1)]'}`}>
+            {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+          </div>
+          <span className="font-semibold text-[var(--fd-text2)]">{req.talep_turu}</span>
+        </div>
+      )
+    },
+    {
+      header: "Başvuru Tarihi",
+      cell: (req: any) => (
+        <div className="flex items-center gap-1.5 text-xs text-[var(--fd-text3)]">
+          <Calendar className="w-3.5 h-3.5 text-[var(--fd-text3)]/60" />
+          {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </div>
+      )
+    },
+    {
+      header: "Görevli Ekip",
+      cell: (req: any) => (
+        <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-[var(--fd-text3)] font-normal italic' : 'text-[var(--fd-text2)] font-bold'}>
+          {getGorevliEkip(req)}
+        </span>
+      )
+    },
+    {
+      header: "Harç Durumu",
+      cell: (req: any) => {
+        const feeObj = getHarcDurumu(req);
+        let badgeVariant = "outline";
+        const d = req.durum ? req.durum.toUpperCase() : 'BEKLEMEDE';
+        if (d === 'ONAYLANDI') badgeVariant = "success";
+        else if (d === 'REDDEDİLDİ') badgeVariant = "danger";
+        else if (d === 'EKİP ATANDI' || d === 'EKİP_ATANDI') badgeVariant = "info";
+        return (
+          <Badge variant={badgeVariant as any}>
+            {feeObj.text}
+          </Badge>
+        );
+      }
+    },
+    {
+      header: "İşlem Durumu",
+      cell: (req: any) => {
+        const d = req.durum ? req.durum.toUpperCase() : 'BEKLEMEDE';
+        switch (d) {
+          case 'ONAYLANDI':
+            return <Badge variant="success">Onaylandı</Badge>;
+          case 'EKİP ATANDI':
+          case 'EKİP_ATANDI':
+            return <Badge variant="info">Ekip Atandı</Badge>;
+          case 'REDDEDİLDİ':
+            return <Badge variant="danger">Reddedildi</Badge>;
+          case 'BEKLIYOR':
+          case 'BEKLEMEDE':
+          default:
+            return <Badge variant="warning">Bekliyor</Badge>;
+        }
+      }
+    },
+    {
+      header: "İşlemler",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (req: any) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-[11px] font-bold text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft)] hover:text-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
+            onClick={() => setSelectedRequest(req)}
+          >
+            Detay & Karar
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-[11px] font-semibold text-[var(--fd-text3)] hover:text-[var(--fd-text)] rounded-[var(--fd-r-sm)]"
+            onClick={() => generateDilekce(req)}
+          >
+            Dilekçe PDF
+          </Button>
+        </div>
+      )
+    }
+  ];
+
   const [requests, setRequests] = useState<CitizenRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -133,7 +242,6 @@ export default function HizmetlerPage() {
 
 
   // Detect Müdür / Admin / Amir role
-  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
 
   // Reset tactical menu when selectedRequest changes
   useEffect(() => {
@@ -337,18 +445,18 @@ export default function HizmetlerPage() {
 
     const d = req.durum ? req.durum.toUpperCase() : 'BEKLEMEDE';
     if (d === 'BEKLEMEDE' || d === 'BEKLIYOR') {
-      return { text: `Hesaplanmadı (₺${fee})`, color: 'text-slate-400 bg-slate-900/40 border-white/5' }
+      return { text: `Hesaplanmadı (₺${fee})`, variant: 'muted' as const }
     }
     if (d === 'EKİP ATANDI' || d === 'EKİP_ATANDI') {
-      return { text: `Hesaplandı (₺${fee})`, color: 'text-blue-400 bg-blue-950/40 border-blue-500/30' }
+      return { text: `Hesaplandı (₺${fee})`, variant: 'info' as const }
     }
     if (d === 'ONAYLANDI') {
-      return { text: `Ödendi (₺${fee})`, color: 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' }
+      return { text: `Ödendi (₺${fee})`, variant: 'success' as const }
     }
     if (d === 'REDDEDİLDİ') {
-      return { text: `Red/İptal`, color: 'text-red-400 bg-red-950/40 border-red-500/30' }
+      return { text: `Red/İptal`, variant: 'danger' as const }
     }
-    return { text: `Muaf`, color: 'text-slate-400 bg-slate-900/40' }
+    return { text: `Muaf`, variant: 'muted' as const }
   }
 
   // Tactical badge render mapping
@@ -356,16 +464,16 @@ export default function HizmetlerPage() {
     const d = durum ? durum.toUpperCase() : 'BEKLEMEDE';
     switch (d) {
       case 'ONAYLANDI': 
-        return <Badge className="bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] font-bold px-2.5 py-1 rounded-lg">Onaylandı</Badge>
+        return <Badge variant="success">Onaylandı</Badge>
       case 'EKİP ATANDI': 
       case 'EKİP_ATANDI':
-        return <Badge className="bg-blue-950/40 border border-blue-500/30 text-blue-400 font-bold px-2.5 py-1 rounded-lg">Ekip Atandı</Badge>
+        return <Badge variant="info">Ekip Atandı</Badge>
       case 'REDDEDİLDİ':
-        return <Badge className="bg-red-950/30 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] font-bold px-2.5 py-1 rounded-lg">Reddedildi</Badge>
+        return <Badge variant="danger">Reddedildi</Badge>
       case 'BEKLIYOR':
       case 'BEKLEMEDE':
       default: 
-        return <Badge className="bg-amber-950/30 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.05)] font-bold px-2.5 py-1 rounded-lg">Bekliyor</Badge>
+        return <Badge variant="warning">Bekliyor</Badge>
     }
   }
 
@@ -526,35 +634,35 @@ export default function HizmetlerPage() {
   if (loading) {
     return (
       <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2 min-h-[50vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" /> 
-        <span className="text-muted-foreground font-semibold">Vatandaş Hizmetleri Yükleniyor...</span>
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--fd-accent)]" /> 
+        <span className="text-[var(--fd-text3)] font-semibold">Vatandaş Hizmetleri Yükleniyor...</span>
       </div>
     )
   }
 
   return (
     <PageGuard pageId="hizmet_basvurulari">
-      <div className="flex flex-col min-h-screen space-y-6 max-w-7xl mx-auto pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8 animate-in fade-in duration-300">
+      <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in zoom-in-95 duration-300">
         
         {/* Sayfa Başlığı */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--fd-border)] pb-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Vatandaş Hizmetleri ve Başvuru Yönetimi</h1>
-            <p className="text-muted-foreground text-sm mt-1">Sivas İtfaiyesi Baca Temizliği ve İtfaiye Uygunluk Raporu Resmi İş Akışı</p>
+            <p className="text-[var(--fd-text3)] text-sm mt-1">Sivas İtfaiyesi Baca Temizliği ve İtfaiye Uygunluk Raporu Resmi İş Akışı</p>
           </div>
           <div className="flex items-center gap-3">
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 hover:scale-[1.02] transition duration-150 shrink-0"
+              className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
               onClick={() => setIsCreateOpen(true)}
             >
               <FilePlus className="w-4 h-4" /> Yeni Başvuru Ekle
             </Button>
             {isMudur ? (
-              <Badge className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1 text-xs">
+              <Badge variant="success" className="px-3 py-1 text-[10px]">
                 Müdür Yetki Modu
               </Badge>
             ) : (
-              <Badge className="bg-zinc-800 border border-zinc-700 text-zinc-400 font-bold px-3 py-1 text-xs">
+              <Badge variant="muted" className="px-3 py-1 text-[10px]">
                 Salt Okunur (Read-Only)
               </Badge>
             )}
@@ -564,51 +672,51 @@ export default function HizmetlerPage() {
         {/* 1. Üst Özet KPI Kartları (Glassmorphic) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Baca Temizliği */}
-          <Card className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-blue-500/20 transition-all duration-200 ease-out">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-blue-500 group-hover:scale-110 transition duration-500">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] p-4 rounded-[var(--fd-r)] relative overflow-hidden group hover:border-[var(--fd-info)]/30 transition-all duration-200 ease-out">
+            <div className="absolute -right-4 -bottom-4 opacity-[0.04] text-[var(--fd-info)] group-hover:scale-110 transition duration-500">
               <Brush className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Baca Temizliği</span>
-                <h3 className="text-2xl font-bold text-blue-400">{bacaCount} Başvuru</h3>
-                <p className="text-[10px] text-zinc-500">Sivas geneli konut/ticari baca talepleri</p>
+                <span className="text-[10px] text-[var(--fd-text3)] font-bold tracking-[.04em] uppercase">Baca Temizliği</span>
+                <h3 className="text-2xl font-bold text-[var(--fd-info)] font-[var(--fd-fontmono)]">{bacaCount} Başvuru</h3>
+                <p className="text-[10px] text-[var(--fd-text3)]">Sivas geneli konut/ticari baca talepleri</p>
               </div>
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+              <div className="p-3 bg-[rgba(37,99,235,0.1)] border border-[rgba(37,99,235,0.15)] text-[var(--fd-info)] rounded-[var(--fd-r-sm)]">
                 <Brush className="w-6 h-6" />
               </div>
             </CardContent>
           </Card>
 
           {/* Yangın Önlem / Ruhsat */}
-          <Card className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-yellow-500/20 transition-all duration-200 ease-out">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-yellow-500 group-hover:scale-110 transition duration-500">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] p-4 rounded-[var(--fd-r)] relative overflow-hidden group hover:border-[var(--fd-amber)]/30 transition-all duration-200 ease-out">
+            <div className="absolute -right-4 -bottom-4 opacity-[0.04] text-[var(--fd-amber)] group-hover:scale-110 transition duration-500">
               <ShieldCheck className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Yangın Önlem / Ruhsat</span>
-                <h3 className="text-2xl font-bold text-yellow-400">{yanginCount} Rapor</h3>
-                <p className="text-[10px] text-zinc-500">İtfaiye uygunluk ve ruhsat onay süreci</p>
+                <span className="text-[10px] text-[var(--fd-text3)] font-bold tracking-[.04em] uppercase">Yangın Önlem / Ruhsat</span>
+                <h3 className="text-2xl font-bold text-[var(--fd-amber)] font-[var(--fd-fontmono)]">{yanginCount} Rapor</h3>
+                <p className="text-[10px] text-[var(--fd-text3)]">İtfaiye uygunluk ve ruhsat onay süreci</p>
               </div>
-              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
+              <div className="p-3 bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.15)] text-[var(--fd-amber)] rounded-[var(--fd-r-sm)]">
                 <ShieldCheck className="w-6 h-6" />
               </div>
             </CardContent>
           </Card>
 
           {/* Vezne / Tahsilat */}
-          <Card className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-200 ease-out">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:scale-110 transition duration-500">
+          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] p-4 rounded-[var(--fd-r)] relative overflow-hidden group hover:border-[var(--fd-success)]/30 transition-all duration-200 ease-out">
+            <div className="absolute -right-4 -bottom-4 opacity-[0.04] text-[var(--fd-success)] group-hover:scale-110 transition duration-500">
               <CreditCard className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase">Vezne / Tahsilat</span>
-                <h3 className="text-2xl font-bold text-emerald-400">₺{revenue.toLocaleString('tr-TR')}</h3>
-                <p className="text-[10px] text-zinc-500">Onaylanan başvurulardan tahsil edilen harç</p>
+                <span className="text-[10px] text-[var(--fd-text3)] font-bold tracking-[.04em] uppercase">Vezne / Tahsilat</span>
+                <h3 className="text-2xl font-bold text-[var(--fd-success)] font-[var(--fd-fontmono)]">₺{revenue.toLocaleString('tr-TR')}</h3>
+                <p className="text-[10px] text-[var(--fd-text3)]">Onaylanan başvurulardan tahsil edilen harç</p>
               </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+              <div className="p-3 bg-[rgba(22,163,74,0.1)] border border-[rgba(22,163,74,0.15)] text-[var(--fd-success)] rounded-[var(--fd-r-sm)]">
                 <CreditCard className="w-6 h-6" />
               </div>
             </CardContent>
@@ -616,11 +724,11 @@ export default function HizmetlerPage() {
         </div>
 
         {/* Arama Barı */}
-        <div className="flex items-center bg-slate-950/75 border border-slate-800/60 rounded-xl px-3.5 py-2">
-          <Search className="w-4 h-4 text-zinc-400 mr-2" />
+        <div className="flex items-center bg-[var(--fd-surface)] border border-[var(--fd-border)]/80 rounded-[var(--fd-r-sm)] px-3.5 py-2">
+          <Search className="w-4 h-4 text-[var(--fd-text3)] mr-2" />
           <input
             type="text"
-            className="bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-sm w-full"
+            className="bg-transparent border-none outline-none text-[var(--fd-text)] placeholder:text-[var(--fd-text3)] text-sm w-full"
             placeholder="Başvuran adı, TC no, adres veya hizmet türüne göre arayın..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -628,23 +736,23 @@ export default function HizmetlerPage() {
         </div>
 
         {/* 3. Başvurular Veri Gridi */}
-        <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
-          <CardHeader className="border-b border-zinc-800 bg-zinc-900/10 pb-4">
+        <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] overflow-hidden rounded-[var(--fd-r)]">
+          <CardHeader className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 pb-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-base font-bold tracking-wider uppercase text-zinc-300 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-indigo-400" /> AKTİF BAŞVURULAR VERİ GRİDİ
+                <CardTitle className="text-base font-bold tracking-wider uppercase text-[var(--fd-text2)] flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[var(--fd-accent)]" /> AKTİF BAŞVURULAR VERİ GRİDİ
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Veritabanından anlık çekilen resmi vatandaş hizmet kayıtları</p>
+                <p className="text-xs text-[var(--fd-text3)] mt-1">Veritabanından anlık çekilen resmi vatandaş hizmet kayıtları</p>
               </div>
-              <span className="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-500 px-2.5 py-1 rounded-md">
+              <span className="text-[10px] font-mono bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text3)] px-2.5 py-1 rounded-md">
                 FİLTRELENMİŞ KAYIT: {filteredRequests.length}
               </span>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             {filteredRequests.length === 0 ? (
-              <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
+              <div className="text-center p-12 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/20">
                 Sistemde uygun bir hizmet başvurusu bulunmamaktadır.
               </div>
             ) : (
@@ -653,7 +761,7 @@ export default function HizmetlerPage() {
                 <div className="hidden md:block overflow-x-auto scrollbar-thin">
                   <table className="w-full min-w-[1000px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-zinc-900 bg-zinc-950/60 text-zinc-400 font-bold text-xs uppercase tracking-wider">
+                      <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/40 text-[var(--fd-text3)] font-bold text-[10px] uppercase tracking-[.04em]">
                         <th className="p-4 text-left">Başvuran / Kurum Adı</th>
                         <th className="p-4 text-left">Hizmet Türü</th>
                         <th className="p-4 text-left">Başvuru Tarihi</th>
@@ -663,45 +771,45 @@ export default function HizmetlerPage() {
                         <th className="p-4 text-right">İşlemler</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-900">
+                    <tbody className="divide-y divide-[var(--fd-border)]/50">
                       {filteredRequests.map(req => {
                         const feeObj = getHarcDurumu(req)
                         return (
-                          <tr key={req.id} className="hover:bg-zinc-900/30 transition duration-150 group">
+                          <tr key={req.id} className="hover:bg-[var(--fd-surface2)]/30 transition duration-150 group">
                             <td className="p-4 align-middle whitespace-nowrap">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:scale-105 transition shrink-0">
+                                <div className="w-9 h-9 rounded-lg bg-[var(--fd-surface2)]/80 border border-[var(--fd-border)] flex items-center justify-center text-[var(--fd-text3)] group-hover:scale-105 transition shrink-0">
                                   <User className="w-4 h-4" />
                                 </div>
                                 <div className="space-y-0.5">
-                                  <span className="font-bold text-zinc-200 block text-sm line-clamp-1">{req.basvuran_ad_soyad}</span>
-                                  <span className="text-[10px] text-zinc-500 font-mono block">TC: {req.basvuran_tc || 'Girilmemiş'}</span>
+                                  <span className="font-bold text-[var(--fd-text)] block text-sm line-clamp-1">{req.basvuran_ad_soyad}</span>
+                                  <span className="text-[10px] text-[var(--fd-text3)] font-mono block">TC: {req.basvuran_tc || 'Girilmemiş'}</span>
                                 </div>
                               </div>
                             </td>
                             <td className="p-4 align-middle whitespace-nowrap">
                               <div className="flex items-center gap-2">
-                                <div className={`p-1.5 rounded-md ${req.talep_turu.includes('Baca') ? 'text-blue-400 bg-blue-500/10' : 'text-yellow-400 bg-yellow-500/10'}`}>
+                                <div className={`p-1.5 rounded-[var(--fd-r-sm)] ${req.talep_turu.includes('Baca') ? 'text-[var(--fd-info)] bg-[rgba(37,99,235,0.1)]' : 'text-[var(--fd-amber)] bg-[rgba(245,158,11,0.1)]'}`}>
                                   {req.talep_turu.includes('Baca') ? <Brush className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
                                 </div>
-                                <span className="font-semibold text-zinc-300">{req.talep_turu}</span>
+                                <span className="font-semibold text-[var(--fd-text2)]">{req.talep_turu}</span>
                               </div>
                             </td>
-                            <td className="p-4 align-middle text-zinc-400 font-medium whitespace-nowrap">
+                            <td className="p-4 align-middle text-[var(--fd-text3)] font-medium whitespace-nowrap">
                               <div className="flex items-center gap-1.5 text-xs">
-                                <Calendar className="w-3.5 h-3.5 text-zinc-600" />
+                                <Calendar className="w-3.5 h-3.5 text-[var(--fd-text3)]" />
                                 {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </div>
                             </td>
-                            <td className="p-4 align-middle font-bold text-xs text-zinc-400 whitespace-nowrap">
-                              <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-zinc-600 font-normal italic' : 'text-zinc-300'}>
+                            <td className="p-4 align-middle font-bold text-xs text-[var(--fd-text3)] whitespace-nowrap">
+                              <span className={(!req.atanan_ekip && (req.durum === 'BEKLEMEDE' || req.durum === 'Bekliyor')) ? 'text-[var(--fd-text3)] font-normal italic' : 'text-[var(--fd-text2)]'}>
                                 {getGorevliEkip(req)}
                               </span>
                             </td>
                             <td className="p-4 align-middle whitespace-nowrap">
-                              <span className={`px-2.5 py-1 text-[11px] font-bold rounded-md border ${feeObj.color}`}>
+                              <Badge variant={feeObj.variant}>
                                 {feeObj.text}
-                              </span>
+                              </Badge>
                             </td>
                             <td className="p-4 align-middle whitespace-nowrap">
                               {getStatusBadge(req.durum)}
@@ -711,7 +819,7 @@ export default function HizmetlerPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 text-[11px] font-bold text-indigo-400 hover:text-white hover:bg-indigo-600/15"
+                                  className="h-8 text-[11px] font-bold text-[var(--fd-accent)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-accent)]/15"
                                   onClick={() => setSelectedRequest(req)}
                                 >
                                   Detay & Karar
@@ -719,7 +827,7 @@ export default function HizmetlerPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 text-[11px] font-semibold text-zinc-400 hover:text-white"
+                                  className="h-8 text-[11px] font-semibold text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
                                   onClick={() => generateDilekce(req)}
                                 >
                                   Dilekçe PDF
@@ -734,15 +842,15 @@ export default function HizmetlerPage() {
                 </div>
 
                 {/* Mobile Kart Görünümü */}
-                <div className="block md:hidden divide-y divide-zinc-900">
+                <div className="block md:hidden divide-y divide-[var(--fd-border)]/50">
                   {filteredRequests.map(req => {
                     const feeObj = getHarcDurumu(req)
                     return (
-                      <div key={req.id} className="p-4 space-y-3 hover:bg-zinc-900/10">
+                      <div key={req.id} className="p-4 space-y-3 hover:bg-[var(--fd-surface2)]/40">
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-0.5">
-                            <span className="font-bold text-zinc-200 text-sm block">{req.basvuran_ad_soyad}</span>
-                            <span className="text-[10px] text-zinc-500 font-mono block">TC: {req.basvuran_tc || 'Girilmemiş'}</span>
+                            <span className="font-bold text-[var(--fd-text)] text-sm block">{req.basvuran_ad_soyad}</span>
+                            <span className="text-[10px] text-[var(--fd-text3)] font-mono block">TC: {req.basvuran_tc || 'Girilmemiş'}</span>
                           </div>
                           <div className="text-right">
                             {getStatusBadge(req.durum)}
@@ -750,35 +858,35 @@ export default function HizmetlerPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <div className="flex items-center gap-1 text-zinc-400 bg-zinc-900 px-2 py-1 rounded">
-                            {req.talep_turu.includes('Baca') ? <Brush className="w-3 h-3 text-blue-400" /> : <ShieldCheck className="w-3 h-3 text-yellow-400" />}
+                          <div className="flex items-center gap-1 text-[var(--fd-text3)] bg-[var(--fd-surface2)] px-2 py-1 rounded">
+                            {req.talep_turu.includes('Baca') ? <Brush className="w-3 h-3 text-[var(--fd-info)]" /> : <ShieldCheck className="w-3 h-3 text-[var(--fd-amber)]" />}
                             <span>{req.talep_turu}</span>
                           </div>
-                          <div className="text-zinc-500 font-mono bg-zinc-900 px-2 py-1 rounded">
+                          <div className="text-[var(--fd-text3)] font-mono bg-[var(--fd-surface2)] px-2 py-1 rounded">
                             {new Date(req.basvuru_tarihi).toLocaleDateString('tr-TR')}
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-zinc-900/60 pt-2 text-xs">
-                          <div className="text-zinc-500 font-semibold">
-                            Ekip: <span className="text-zinc-300">{getGorevliEkip(req)}</span>
+                        <div className="flex items-center justify-between border-t border-[var(--fd-border)]/50 pt-2 text-xs">
+                          <div className="text-[var(--fd-text3)] font-semibold">
+                            Ekip: <span className="text-[var(--fd-text2)]">{getGorevliEkip(req)}</span>
                           </div>
                           <div>
-                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${feeObj.color}`}>
+                            <Badge variant={feeObj.variant} className="text-[10px] px-1.5 py-0">
                               {feeObj.text}
-                            </span>
+                            </Badge>
                           </div>
                         </div>
 
                         <div className="flex gap-2 pt-1.5">
                           <Button
-                            className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold py-2 h-9 text-xs rounded-xl"
+                            className="flex-1 bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] font-bold py-2 h-9 text-xs rounded-[var(--fd-r-sm)]"
                             onClick={() => setSelectedRequest(req)}
                           >
                             İncele / Karar
                           </Button>
                           <Button
-                            className="bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 font-bold px-3 py-2 h-9 text-xs rounded-xl"
+                            className="bg-[var(--fd-accent)]/10 hover:bg-[var(--fd-accent)]/20 text-[var(--fd-accent)] font-bold px-3 py-2 h-9 text-xs rounded-[var(--fd-r-sm)]"
                             onClick={() => generateDilekce(req)}
                           >
                             Dilekçe
@@ -795,20 +903,20 @@ export default function HizmetlerPage() {
 
         {/* Detay & Karar Yönetim Modalı */}
         {selectedRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
-              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-[var(--fd-surface)] backdrop-blur-lg border border-[var(--fd-border)]/80 shadow-2xl overflow-hidden rounded-[var(--fd-r)] animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)]/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
-                    {selectedRequest.talep_turu.includes('Baca') ? <Brush className="w-5 h-5 text-blue-400" /> : <ShieldCheck className="w-5 h-5 text-yellow-400" />}
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-[var(--fd-text)]">
+                    {selectedRequest.talep_turu.includes('Baca') ? <Brush className="w-5 h-5 text-[var(--fd-info)]" /> : <ShieldCheck className="w-5 h-5 text-[var(--fd-amber)]" />}
                     BAŞVURU YÖNETİM & TEKNİK DETAY DETAYI
                   </CardTitle>
-                  <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Resmi Karar Değerlendirme Arayüzü</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Resmi Karar Değerlendirme Arayüzü</p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-white"
+                  className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
                   onClick={() => setSelectedRequest(null)}
                 >
                   <X className="w-5 h-5" />
@@ -818,51 +926,51 @@ export default function HizmetlerPage() {
               <CardContent className="p-6 space-y-6 max-h-[60vh] overflow-y-auto scrollbar-thin">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">Başvuran Vatandaş / Kurum</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.basvuran_ad_soyad}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase tracking-wider block">Başvuran Vatandaş / Kurum</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.basvuran_ad_soyad}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">T.C. Kimlik / Vergi No</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.basvuran_tc || 'Girilmemiş'}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase tracking-wider block">T.C. Kimlik / Vergi No</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.basvuran_tc || 'Girilmemiş'}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">İrtibat Numarası</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.irtibat_tel}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase tracking-wider block">İrtibat Numarası</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.irtibat_tel}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">Başvuru Tarihi</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase tracking-wider block">Başvuru Tarihi</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">
                       {new Date(selectedRequest.basvuru_tarihi).toLocaleString('tr-TR')}
                     </span>
                   </div>
                   <div className="space-y-1 sm:col-span-2">
-                    <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">Hizmet Adresi</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.adres}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase tracking-wider block">Hizmet Adresi</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.adres}</span>
                   </div>
                 </div>
 
                 {/* Baca Detayları */}
                 {selectedRequest.talep_turu.includes('Baca') && selectedRequest.baca_detaylari && (
-                  <div className="bg-blue-500/5 border border-blue-500/10 p-4 rounded-xl space-y-2">
-                    <h4 className="text-xs font-semibold text-blue-400 uppercase tracking-wider border-b border-blue-500/10 pb-1 flex items-center gap-1.5">
+                  <div className="bg-[rgba(37,99,235,0.05)] border border-[rgba(37,99,235,0.1)] p-4 rounded-[var(--fd-r-sm)] space-y-2">
+                    <h4 className="text-xs font-semibold text-[var(--fd-info)] uppercase tracking-[.04em] border-b border-[rgba(37,99,235,0.1)] pb-1 flex items-center gap-1.5">
                       <Brush className="w-3.5 h-3.5" /> Teknik Baca Parametreleri
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-zinc-500 block">Bina Kat Sayısı:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.baca_detaylari.kat_sayisi || 1} Kat</span>
+                        <span className="text-[var(--fd-text3)] block">Bina Kat Sayısı:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.baca_detaylari.kat_sayisi || 1} Kat</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Bağımsız Bölüm (Daire) Sayısı:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.baca_detaylari.daire_sayisi || 1} Daire</span>
+                        <span className="text-[var(--fd-text3)] block">Bağımsız Bölüm (Daire) Sayısı:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.baca_detaylari.daire_sayisi || 1} Daire</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Yakıt Tipi:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.baca_detaylari.yakit_tipi || 'Doğalgaz'}</span>
+                        <span className="text-[var(--fd-text3)] block">Yakıt Tipi:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.baca_detaylari.yakit_tipi || 'Doğalgaz'}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Baca Konstrüksiyon Tipi:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.baca_detaylari.baca_tipi || 'Konut Bacası'}</span>
+                        <span className="text-[var(--fd-text3)] block">Baca Konstrüksiyon Tipi:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.baca_detaylari.baca_tipi || 'Konut Bacası'}</span>
                       </div>
                     </div>
                   </div>
@@ -870,26 +978,26 @@ export default function HizmetlerPage() {
 
                 {/* İşyeri Uygunluk Raporu Detayları */}
                 {!selectedRequest.talep_turu.includes('Baca') && selectedRequest.isyeri_detaylari && (
-                  <div className="bg-yellow-500/5 border border-yellow-500/10 p-4 rounded-xl space-y-2">
-                    <h4 className="text-xs font-semibold text-yellow-400 uppercase tracking-wider border-b border-yellow-500/10 pb-1 flex items-center gap-1.5">
+                  <div className="bg-[rgba(245,158,11,0.05)] border border-[rgba(245,158,11,0.1)] p-4 rounded-[var(--fd-r-sm)] space-y-2">
+                    <h4 className="text-xs font-semibold text-[var(--fd-amber)] uppercase tracking-[.04em] border-b border-[rgba(245,158,11,0.1)] pb-1 flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" /> İşyeri Yangın Güvenlik Detayları
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-zinc-500 block">Faaliyet Konusu:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.faaliyet_konusu || 'Belirtilmemiş'}</span>
+                        <span className="text-[var(--fd-text3)] block">Faaliyet Konusu:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.faaliyet_konusu || 'Belirtilmemiş'}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Kapalı Alan (m²):</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.alan_m2 || 100} m²</span>
+                        <span className="text-[var(--fd-text3)] block">Kapalı Alan (m²):</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.alan_m2 || 100} m²</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Yangın Dolabı Durumu:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.yangin_dolabi || 'Mevcut'}</span>
+                        <span className="text-[var(--fd-text3)] block">Yangın Dolabı Durumu:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.yangin_dolabi || 'Mevcut'}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Acil Çıkış İmkanları:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.acil_cikis || '1 Adet'}</span>
+                        <span className="text-[var(--fd-text3)] block">Acil Çıkış İmkanları:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.acil_cikis || '1 Adet'}</span>
                       </div>
                     </div>
                   </div>
@@ -897,17 +1005,17 @@ export default function HizmetlerPage() {
 
                 {/* Amir İşlem Geçmişi (Karar Trail) */}
                 {selectedRequest.islem_yapan_amir && (
-                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-zinc-500 font-semibold">
+                  <div className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r-sm)] space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-[var(--fd-text3)] font-semibold">
                       <span>İŞLEM YAPAN AMİR</span>
                       <span>{selectedRequest.islem_tarihi ? new Date(selectedRequest.islem_tarihi).toLocaleString('tr-TR') : ''}</span>
                     </div>
-                    <div className="text-zinc-300 font-bold">
+                    <div className="text-[var(--fd-text2)] font-bold">
                       {selectedRequest.islem_yapan_amir}
                     </div>
                     {selectedRequest.red_gerekcesi && (
-                      <div className="bg-red-950/20 border border-red-500/10 p-2.5 rounded-lg text-red-400 mt-2 font-mono">
-                        <span className="font-bold block text-[10px] uppercase text-red-500 mb-0.5">RED GEREKÇESİ:</span>
+                      <div className="bg-[rgba(220,38,38,0.08)] border border-[rgba(220,38,38,0.12)] p-2.5 rounded-[var(--fd-r-sm)] text-[var(--fd-danger)] mt-2 font-[var(--fd-fontmono)]">
+                        <span className="font-bold block text-[10px] uppercase text-[var(--fd-danger)] mb-0.5">RED GEREKÇESİ:</span>
                         {selectedRequest.red_gerekcesi}
                       </div>
                     )}
@@ -916,10 +1024,10 @@ export default function HizmetlerPage() {
 
                 {/* Tactical Actions Panels */}
                 {tacticalMode === 'RED' && (
-                  <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl space-y-3">
-                    <label className="text-xs font-bold text-red-400 block">LÜTFEN RESMİ RED GEREKÇESİNİ YAZIN <span className="text-red-500">*</span></label>
+                  <div className="bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.15)] p-4 rounded-[var(--fd-r-sm)] space-y-3">
+                    <label className="text-xs font-bold text-[var(--fd-danger)] block">LÜTFEN RESMİ RED GEREKÇESİNİ YAZIN <span className="text-[var(--fd-danger)]">*</span></label>
                     <textarea
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 font-semibold"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] p-3 text-sm text-[var(--fd-text)] placeholder:text-[var(--fd-text3)] focus:outline-none focus:border-[var(--fd-danger)] font-semibold"
                       rows={3}
                       placeholder="Tesisat eksiklikleri, harç ödemesi yapılmaması vb. idari/teknik gerekçeler..."
                       value={rejectionReason}
@@ -928,13 +1036,13 @@ export default function HizmetlerPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
-                        className="border-zinc-800 text-zinc-400 text-xs px-3 py-1.5 h-8 font-semibold"
+                        className="border-[var(--fd-border)] text-[var(--fd-text3)] text-xs px-3 py-1.5 h-8 font-semibold"
                         onClick={() => setTacticalMode('NONE')}
                       >
                         İptal
                       </Button>
                       <Button
-                        className="bg-red-600 hover:bg-red-700 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
+                        className="bg-[var(--fd-danger)] hover:opacity-90 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1 rounded-[var(--fd-r-sm)]"
                         onClick={() => handleTacticalAction(selectedRequest.id, 'REDDEDİLDİ', { reason: rejectionReason })}
                       >
                         Reddi Tamamla
@@ -944,10 +1052,10 @@ export default function HizmetlerPage() {
                 )}
 
                 {tacticalMode === 'EKIP' && (
-                  <div className="bg-blue-950/20 border border-blue-500/30 p-4 rounded-xl space-y-3">
-                    <label className="text-xs font-bold text-blue-400 block">GÖREVLENDİRİLECEK SAHA EKİBİNİ SEÇİN <span className="text-red-500">*</span></label>
+                  <div className="bg-[rgba(37,99,235,0.06)] border border-[rgba(37,99,235,0.15)] p-4 rounded-[var(--fd-r-sm)] space-y-3">
+                    <label className="text-xs font-bold text-[var(--fd-info)] block">GÖREVLENDİRİLECEK SAHA EKİBİNİ SEÇİN <span className="text-[var(--fd-danger)]">*</span></label>
                     <select
-                      className="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] font-semibold"
                       value={selectedCrew}
                       onChange={(e) => setSelectedCrew(e.target.value)}
                     >
@@ -967,13 +1075,13 @@ export default function HizmetlerPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
-                        className="border-zinc-800 text-zinc-400 text-xs px-3 py-1.5 h-8 font-semibold"
+                        className="border-[var(--fd-border)] text-[var(--fd-text3)] text-xs px-3 py-1.5 h-8 font-semibold"
                         onClick={() => setTacticalMode('NONE')}
                       >
                         İptal
                       </Button>
                       <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
+                        className="bg-[var(--fd-info)] hover:opacity-90 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1 rounded-[var(--fd-r-sm)]"
                         onClick={() => handleTacticalAction(selectedRequest.id, 'EKİP_ATANDI', { crew: selectedCrew })}
                       >
                         Ekibi Ata
@@ -983,12 +1091,12 @@ export default function HizmetlerPage() {
                 )}
               </CardContent>
 
-              <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)]/80 p-5 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   {isMudur && (
                     <Button
                       variant="ghost"
-                      className="text-red-500 hover:text-white hover:bg-red-600/10 text-xs font-bold px-3 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                      className="text-[var(--fd-danger)] hover:text-[var(--fd-text)] hover:bg-[rgba(220,38,38,0.1)] text-xs font-bold px-3 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
                       disabled={updating !== null}
                       onClick={() => handleDeleteRequest(selectedRequest.id)}
                     >
@@ -1000,7 +1108,7 @@ export default function HizmetlerPage() {
                 <div className="flex items-center gap-2">
                   <Button 
                     variant="outline" 
-                    className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 h-9 rounded-xl text-xs"
+                    className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 font-semibold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] text-xs"
                     onClick={() => setSelectedRequest(null)}
                   >
                     Kapat
@@ -1009,21 +1117,21 @@ export default function HizmetlerPage() {
                   {isMudur && selectedRequest.durum !== 'ONAYLANDI' && selectedRequest.durum !== 'REDDEDİLDİ' && (
                     <>
                       <Button
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                        className="bg-[var(--fd-danger)] hover:opacity-90 text-white font-bold text-xs px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1"
                         disabled={updating !== null || tacticalMode === 'RED'}
                         onClick={() => setTacticalMode('RED')}
                       >
                         Reddet
                       </Button>
                       <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                        className="bg-[var(--fd-info)] hover:opacity-90 text-white font-bold text-xs px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1"
                         disabled={updating !== null || tacticalMode === 'EKIP'}
                         onClick={() => setTacticalMode('EKIP')}
                       >
                         Ekip Görevlendir
                       </Button>
                       <Button
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 h-9 rounded-xl flex items-center gap-1 shadow-md shadow-emerald-600/10"
+                        className="bg-[var(--fd-success)] hover:opacity-90 text-white font-bold text-xs px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1 shadow-[var(--fd-shadow-sm)]"
                         disabled={updating !== null}
                         onClick={() => handleTacticalAction(selectedRequest.id, 'ONAYLANDI')}
                       >
@@ -1039,19 +1147,19 @@ export default function HizmetlerPage() {
 
         {/* Yeni Başvuru Ekle Modalı */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
-              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-[var(--fd-surface)] backdrop-blur-lg border border-[var(--fd-border)]/80 shadow-2xl overflow-hidden rounded-[var(--fd-r)] animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)]/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
-                    <FilePlus className="w-5 h-5 text-indigo-400" /> YENİ VATANDAŞ BAŞVURUSU KAYDI
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-[var(--fd-text)]">
+                    <FilePlus className="w-5 h-5 text-[var(--fd-accent)]" /> YENİ VATANDAŞ BAŞVURUSU KAYDI
                   </CardTitle>
-                  <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Hizmet Kaydı</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Hizmet Kaydı</p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-white"
+                  className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
                   onClick={() => setIsCreateOpen(false)}
                 >
                   <X className="w-5 h-5" />
@@ -1064,9 +1172,9 @@ export default function HizmetlerPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Hizmet Türü */}
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-bold text-zinc-400 block">Talep Edilen Hizmet Türü <span className="text-red-500">*</span></label>
+                      <label className="text-xs font-bold text-[var(--fd-text3)] block">Talep Edilen Hizmet Türü <span className="text-[var(--fd-danger)]">*</span></label>
                       <select
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] font-semibold"
                         value={newRequestForm.talep_turu}
                         onChange={(e) => setNewRequestForm(prev => ({ ...prev, talep_turu: e.target.value }))}
                       >
@@ -1077,11 +1185,11 @@ export default function HizmetlerPage() {
 
                     {/* Başvuran Ad Soyad */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-400 block">Başvuran Adı Soyadı <span className="text-red-500">*</span></label>
+                      <label className="text-xs font-bold text-[var(--fd-text3)] block">Başvuran Adı Soyadı <span className="text-[var(--fd-danger)]">*</span></label>
                       <input
                         type="text"
                         required
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                         placeholder="Örn: Ahmet Yılmaz"
                         value={newRequestForm.basvuran_ad_soyad}
                         onChange={(e) => setNewRequestForm(prev => ({ ...prev, basvuran_ad_soyad: e.target.value }))}
@@ -1090,11 +1198,11 @@ export default function HizmetlerPage() {
 
                     {/* T.C. Kimlik / Vergi No */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-400 block">T.C. Kimlik No / Vergi No</label>
+                      <label className="text-xs font-bold text-[var(--fd-text3)] block">T.C. Kimlik No / Vergi No</label>
                       <input
                         type="text"
                         maxLength={11}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                         placeholder="11 haneli T.C. veya Vergi No"
                         value={newRequestForm.basvuran_tc}
                         onChange={(e) => setNewRequestForm(prev => ({ ...prev, basvuran_tc: e.target.value }))}
@@ -1103,11 +1211,11 @@ export default function HizmetlerPage() {
 
                     {/* İrtibat Tel */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-400 block">İrtibat Telefon Numarası <span className="text-red-500">*</span></label>
+                      <label className="text-xs font-bold text-[var(--fd-text3)] block">İrtibat Telefon Numarası <span className="text-[var(--fd-danger)]">*</span></label>
                       <input
                         type="tel"
                         required
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                         placeholder="05xx xxx xx xx"
                         value={newRequestForm.irtibat_tel}
                         onChange={(e) => setNewRequestForm(prev => ({ ...prev, irtibat_tel: e.target.value }))}
@@ -1116,11 +1224,11 @@ export default function HizmetlerPage() {
 
                     {/* Adres */}
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-bold text-zinc-400 block">Hizmet Adresi <span className="text-red-500">*</span></label>
+                      <label className="text-xs font-bold text-[var(--fd-text3)] block">Hizmet Adresi <span className="text-[var(--fd-danger)]">*</span></label>
                       <input
                         type="text"
                         required
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                         placeholder="Örn: Esentepe Mah. Şehitler Cad. No:12/4 Merkez/Sivas"
                         value={newRequestForm.adres}
                         onChange={(e) => setNewRequestForm(prev => ({ ...prev, adres: e.target.value }))}
@@ -1130,38 +1238,38 @@ export default function HizmetlerPage() {
 
                   {/* Baca Detayları Form Katmanı */}
                   {newRequestForm.talep_turu === 'Baca Temizliği' && (
-                    <div className="space-y-4 bg-blue-500/5 p-4 rounded-xl border border-blue-500/10">
-                      <h3 className="font-bold text-sm text-blue-400 border-b border-blue-500/20 pb-1.5 flex items-center gap-1.5">
+                    <div className="space-y-4 bg-[rgba(37,99,235,0.05)] p-4 rounded-[var(--fd-r-sm)] border border-[rgba(37,99,235,0.1)]">
+                      <h3 className="font-bold text-sm text-[var(--fd-info)] border-b border-[rgba(37,99,235,0.15)] pb-1.5 flex items-center gap-1.5">
                         <Brush className="w-4 h-4" /> Teknik Baca Detayları
                       </h3>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Bina Kat Sayısı</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Bina Kat Sayısı</label>
                           <input
                             type="number"
                             min={1}
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             value={newRequestForm.baca_kat_sayisi}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_kat_sayisi: e.target.value }))}
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Daire Sayısı</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Daire Sayısı</label>
                           <input
                             type="number"
                             min={1}
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             value={newRequestForm.baca_daire_sayisi}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_daire_sayisi: e.target.value }))}
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Kullanılan Yakıt Tipi</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Kullanılan Yakıt Tipi</label>
                           <select
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={newRequestForm.baca_yakit_tipi}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_yakit_tipi: e.target.value }))}
                           >
@@ -1173,9 +1281,9 @@ export default function HizmetlerPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Baca Konstrüksiyon Tipi</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Baca Konstrüksiyon Tipi</label>
                           <select
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={newRequestForm.baca_tipi}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, baca_tipi: e.target.value }))}
                           >
@@ -1191,17 +1299,17 @@ export default function HizmetlerPage() {
 
                   {/* İşyeri Detayları Form Katmanı */}
                   {newRequestForm.talep_turu === 'İtfaiye Uygunluk Raporu' && (
-                    <div className="space-y-4 bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/10">
-                      <h3 className="font-bold text-sm text-yellow-400 border-b border-yellow-500/20 pb-1.5 flex items-center gap-1.5">
+                    <div className="space-y-4 bg-[rgba(245,158,11,0.05)] p-4 rounded-[var(--fd-r-sm)] border border-[rgba(245,158,11,0.1)]">
+                      <h3 className="font-bold text-sm text-[var(--fd-amber)] border-b border-[rgba(245,158,11,0.15)] pb-1.5 flex items-center gap-1.5">
                         <ShieldCheck className="w-4 h-4" /> İşyeri Yangın Güvenlik Detayları
                       </h3>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Faaliyet Konusu</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Faaliyet Konusu</label>
                           <input
                             type="text"
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             placeholder="Fırın, İmalathane, Kafe vb."
                             value={newRequestForm.isyeri_faaliyet_konusu}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_faaliyet_konusu: e.target.value }))}
@@ -1209,20 +1317,20 @@ export default function HizmetlerPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Kapalı Alan (m²)</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Kapalı Alan (m²)</label>
                           <input
                             type="number"
                             min={1}
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             value={newRequestForm.isyeri_alan_m2}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_alan_m2: e.target.value }))}
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Yangın Dolabı Durumu</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Yangın Dolabı Durumu</label>
                           <select
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-semibold"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-semibold"
                             value={newRequestForm.isyeri_yangin_dolabi}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_yangin_dolabi: e.target.value }))}
                           >
@@ -1232,10 +1340,10 @@ export default function HizmetlerPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-400 block">Acil Çıkış Kapısı Sayısı</label>
+                          <label className="text-xs font-bold text-[var(--fd-text3)] block">Acil Çıkış Kapısı Sayısı</label>
                           <input
                             type="text"
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 transition font-medium"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] transition font-medium"
                             placeholder="Örn: 2 Adet Yangın Kapısı"
                             value={newRequestForm.isyeri_acil_cikis}
                             onChange={(e) => setNewRequestForm(prev => ({ ...prev, isyeri_acil_cikis: e.target.value }))}
@@ -1246,11 +1354,11 @@ export default function HizmetlerPage() {
                   )}
                 </CardContent>
 
-                <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex items-center justify-end gap-3">
+                <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)]/80 p-5 flex items-center justify-end gap-3">
                   <Button 
                     type="button"
                     variant="outline" 
-                    className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 rounded-xl text-xs"
+                    className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 font-semibold px-4 py-2 rounded-[var(--fd-r-sm)] text-xs"
                     onClick={() => {
                       setIsCreateOpen(false)
                       resetForm()
@@ -1260,7 +1368,7 @@ export default function HizmetlerPage() {
                   </Button>
                   <Button 
                     type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition"
+                    className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-4 py-2 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-md transition"
                     disabled={isSaving}
                   >
                     {isSaving ? (

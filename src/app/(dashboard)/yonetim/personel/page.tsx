@@ -14,6 +14,40 @@ import { useAuthStore } from "@/lib/authStore"
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 
+interface SwitchProps {
+  checked: boolean
+  onChange: () => void
+  label: string
+  activeColor?: string
+}
+
+function Switch({ checked, onChange, label, activeColor = "bg-[var(--fd-accent)]" }: SwitchProps) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className="flex items-center gap-2 cursor-pointer group whitespace-nowrap px-2 py-1 rounded-[var(--fd-r-sm)] hover:bg-[var(--fd-surface2)] transition-colors focus:outline-none"
+    >
+      <div
+        className={cn(
+          "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-inner",
+          checked ? activeColor : "bg-[var(--fd-border-strong)]"
+        )}
+      >
+        <span
+          className={cn(
+            "pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-[var(--fd-shadow-sm)] ring-0 transition duration-200 ease-in-out",
+            checked ? "translate-x-4.5" : "translate-x-0.5"
+          )}
+        />
+      </div>
+      <span className="text-[11px] font-semibold text-[var(--fd-text3)] group-hover:text-[var(--fd-text2)] transition-colors select-none">
+        {label}
+      </span>
+    </button>
+  )
+}
+
 const normalizeTextForSearch = (str: string): string => {
   if (!str) return "";
   return str
@@ -67,7 +101,58 @@ export default function PersonelYonetimPage() {
   const [resettingPassword, setResettingPassword] = useState(false)
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState<string | null>(null)
 
+  // Analysis Modal States
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [analysisStats, setAnalysisStats] = useState<any[]>([])
+  const [selectedAnalysisPerson, setSelectedAnalysisPerson] = useState<any | null>(null)
+  const [selectedPersonDetails, setSelectedPersonDetails] = useState<any | null>(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+
   const currentUserCanPrint = currentUser ? (permissions[currentUser.sicilNo]?.can_print ?? (currentUser.rol === 'Admin' || currentUser.rol === 'Editor')) : false
+
+  const handleSelectAnalysisPerson = async (person: any) => {
+    setSelectedAnalysisPerson(person)
+    setDetailsLoading(true)
+    try {
+      const res = await fetch(`/api/personnel/stats?personnel_id=${person.sicil_no}`)
+      const data = await res.json()
+      if (data.success) {
+        setSelectedPersonDetails(data)
+      } else {
+        setSelectedPersonDetails(null)
+      }
+    } catch (err) {
+      console.error('Fetch detailed stats error:', err)
+      setSelectedPersonDetails(null)
+    } finally {
+      setDetailsLoading(false)
+    }
+  }
+
+  const fetchAnalysisStats = async () => {
+    setAnalysisLoading(true)
+    try {
+      const res = await fetch('/api/personnel/stats')
+      const data = await res.json()
+      if (data.success && data.stats) {
+        setAnalysisStats(data.stats)
+        if (data.stats.length > 0) {
+          handleSelectAnalysisPerson(data.stats[0])
+        }
+      }
+    } catch (err) {
+      console.error('Fetch analysis stats error:', err)
+    } finally {
+      setAnalysisLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isAnalysisOpen) {
+      fetchAnalysisStats()
+    }
+  }, [isAnalysisOpen])
 
   // Fetch personnel from Supabase
   const fetchPersonnel = useCallback(async () => {
@@ -634,7 +719,7 @@ export default function PersonelYonetimPage() {
   const getCertStatus = useCallback((personSicil: string, certType: string) => {
     const cert = certifications.find(c => c.sicil_no === personSicil && c.tip === certType)
     if (!cert || !cert.gecerlilik_tarihi) {
-      return { status: 'missing', label: 'Eksik', color: 'bg-slate-500/10 text-slate-400 border-slate-500/20' }
+      return { status: 'missing', label: 'Eksik', color: 'bg-[var(--fd-surface3)] text-[var(--fd-text3)] border-[var(--fd-border)]' }
     }
     
     const today = new Date('2026-05-20')
@@ -734,7 +819,7 @@ export default function PersonelYonetimPage() {
 
   return (
     <PageGuard pageId="personel_yonetimi">
-      <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+      <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in zoom-in-95 duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Personel Yönetimi</h1>
@@ -744,24 +829,32 @@ export default function PersonelYonetimPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button 
+            onClick={() => setIsAnalysisOpen(true)} 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border"
+          >
+            <Activity className="w-3.5 h-3.5 text-rose-500" /> Görev Analizi
+          </Button>
+          <Button 
             onClick={() => setIsLicenseDashboardOpen(true)} 
             variant="outline" 
             size="sm" 
-            className="gap-1.5 border-slate-800 bg-slate-900/50 text-slate-300 hover:text-white"
+            className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border"
           >
             <Truck className="w-3.5 h-3.5 text-cyan-400" /> Ehliyet Durumları
           </Button>
           {currentUser?.rol === 'Admin' && (
             <Link href="/yonetim/personel/gecici-sifreler">
-              <Button variant="outline" size="sm" className="gap-1.5 border-slate-800 bg-slate-900/50 text-slate-300 hover:text-white">
+              <Button variant="outline" size="sm" className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border">
                 <Key className="w-3.5 h-3.5 text-amber-500" /> Geçici Şifreler
               </Button>
             </Link>
           )}
-          <Button onClick={fetchPersonnel} variant="secondary" size="sm" className="gap-1.5">
+          <Button onClick={fetchPersonnel} variant="secondary" size="sm" className="gap-1.5 h-9 text-xs rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)]">
             <RefreshCcw className="w-3.5 h-3.5" /> Yenile
           </Button>
-          <Button onClick={() => setIsAdding(!isAdding)} className="shrink-0 gap-2">
+          <Button onClick={() => setIsAdding(!isAdding)} className="shrink-0 gap-1.5 h-9 text-xs rounded-[var(--fd-r-sm)]">
             {isAdding ? <Settings2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             {isAdding ? "İptal" : "Yeni Personel Ekle"}
           </Button>
@@ -769,7 +862,7 @@ export default function PersonelYonetimPage() {
       </div>
 
       {/* Kritik Belge Takip ve Planlama Radarı */}
-      <Card className="border-slate-800 bg-slate-950/40 backdrop-blur-md shadow-xl overflow-hidden relative">
+      <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] overflow-hidden relative rounded-[var(--fd-r)]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-amber-500/5 rounded-full blur-2xl pointer-events-none" />
         <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
           <div className="flex items-center gap-3">
@@ -777,14 +870,14 @@ export default function PersonelYonetimPage() {
               <ShieldAlert className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <CardTitle className="text-base font-bold text-slate-100">Kritik Belge Takip ve Planlama Radarı</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--fd-text)]">Kritik Belge Takip ve Planlama Radarı</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Geçerlilik süresi dolan veya son 30 güne giren personel ehliyet, ilk yardım ve SCBA sertifikaları.
               </p>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-4 sm:p-6">
+        <CardContent className="p-3 sm:p-4">
           {criticalPersonnel.length === 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
               <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-full shrink-0">
@@ -802,15 +895,15 @@ export default function PersonelYonetimPage() {
               {criticalPersonnel.map(({ person, issues }) => (
                 <div 
                   key={person.sicil_no} 
-                  className="border border-slate-800 rounded-xl p-4 bg-slate-900/10 hover:bg-slate-900/30 transition-all flex flex-col justify-between"
+                  className="border border-[var(--fd-border)] rounded-[var(--fd-r)] p-3 bg-[var(--fd-surface2)]/50 hover:bg-[var(--fd-surface2)] transition-all flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h4 className="font-bold text-slate-200 text-sm">{person.ad} {person.soyad}</h4>
+                        <h4 className="font-bold text-[var(--fd-text)] text-sm">{person.ad} {person.soyad}</h4>
                         <p className="text-[10px] font-mono text-muted-foreground">{person.sicil_no} • {person.unvan} • Posta {person.posta_no || 1}</p>
                       </div>
-                      <Badge variant="outline" className="text-[9px] bg-slate-900 border-slate-800 text-slate-400">
+                      <Badge variant="outline" className="text-[9px] bg-[var(--fd-surface3)] border-[var(--fd-border)] text-[var(--fd-text3)]">
                         Posta {person.posta_no || 1}
                       </Badge>
                     </div>
@@ -819,7 +912,7 @@ export default function PersonelYonetimPage() {
                       {issues.map((issue, idx) => (
                         <div key={idx} className="flex flex-col gap-1">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-400 flex items-center gap-1.5 font-medium">
+                            <span className="text-[var(--fd-text3)] flex items-center gap-1.5 font-medium">
                               {issue.type === 'Ehliyet' ? <Truck className="w-3.5 h-3.5 text-cyan-500" /> :
                                issue.type === 'İlkyardım' ? <HeartPulse className="w-3.5 h-3.5 text-rose-500" /> :
                                <Wind className="w-3.5 h-3.5 text-teal-500" />}
@@ -850,7 +943,7 @@ export default function PersonelYonetimPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full mt-4 text-[11px] h-8 bg-slate-950/40 hover:bg-slate-900 border-slate-800 text-slate-300 hover:text-white"
+                    className="w-full mt-3 text-[11px] h-7 bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] rounded-[var(--fd-r-sm)] font-semibold transition"
                     onClick={() => openEditModal(person)}
                   >
                     <Settings2 className="w-3 h-3 mr-1.5" /> Sertifikayı Güncelle
@@ -872,9 +965,9 @@ export default function PersonelYonetimPage() {
       )}
 
       {isAdding && (
-        <Card className="border-cyan-500/20 bg-cyan-500/[0.02] shadow-cyan-500/5">
+        <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] p-4">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-cyan-500">
+            <CardTitle className="text-xs font-bold flex items-center gap-1.5 text-[var(--fd-accent)] uppercase">
               <UserPlus className="w-4 h-4" /> 
               Hızlı Personel Kayıt Formu
             </CardTitle>
@@ -883,7 +976,7 @@ export default function PersonelYonetimPage() {
             <form onSubmit={handleAddPersonel} className="flex flex-wrap gap-4 items-end">
               <div className="space-y-2 flex-col w-full sm:w-[110px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Sicil No</label>
-                <Input value={nextSicil} disabled className="font-mono bg-muted/50 border-input h-11" />
+                <Input value={nextSicil} disabled className="font-mono bg-[var(--fd-surface2)] border-[var(--fd-border)] h-9 text-xs rounded-[var(--fd-r-sm)]" />
               </div>
               <div className="space-y-2 flex-col w-full sm:flex-1 min-w-[200px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Ad Soyad</label>
@@ -893,13 +986,13 @@ export default function PersonelYonetimPage() {
                   onChange={e => setNewAdSoyad(e.target.value)}
                   autoFocus
                   required
-                  className="h-11"
+                  className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
                 />
               </div>
               <div className="space-y-2 flex-col w-full sm:w-[220px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Sistem Rolü</label>
                 <select 
-                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fd-accent)]"
                   value={newRole}
                   onChange={e => setNewRole(e.target.value)}
                 >
@@ -912,7 +1005,7 @@ export default function PersonelYonetimPage() {
               <div className="space-y-2 flex-col w-full sm:w-[110px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Posta</label>
                 <select 
-                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
                   value={newPostaNo}
                   onChange={e => setNewPostaNo(e.target.value)}
                 >
@@ -924,7 +1017,7 @@ export default function PersonelYonetimPage() {
               <div className="space-y-2 flex-col w-full sm:w-[110px]">
                 <label className="text-xs font-semibold uppercase text-muted-foreground">Durum</label>
                 <select 
-                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
                   value={newDurum}
                   onChange={e => setNewDurum(e.target.value)}
                 >
@@ -942,10 +1035,10 @@ export default function PersonelYonetimPage() {
                   onChange={e => setNewPassword(e.target.value)}
                   required
                   minLength={4}
-                  className="h-11"
+                  className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
                 />
               </div>
-              <Button type="submit" disabled={saving} className="w-full sm:w-auto h-11 px-8 gap-2 bg-cyan-600 hover:bg-cyan-700 text-white font-medium">
+              <Button type="submit" disabled={saving} className="w-full sm:w-auto h-9 px-6 gap-1.5 bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-semibold text-xs rounded-[var(--fd-r-sm)]">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {saving ? "Kaydediliyor..." : "Ekle"}
               </Button>
@@ -956,8 +1049,8 @@ export default function PersonelYonetimPage() {
 
       {/* Arama ve Liste */}
       <Card>
-        <CardHeader className="pb-3 border-b border-border/50 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="text-base flex items-center space-x-2">
+        <CardHeader className="pb-2 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3">
+          <CardTitle className="text-xs font-bold flex items-center space-x-1.5 uppercase text-[var(--fd-text)]">
             <UsersIcon className="w-5 h-5 text-muted-foreground" />
             <span>Kayıtlı Personel ({filteredPersonnel.length})</span>
           </CardTitle>
@@ -965,7 +1058,7 @@ export default function PersonelYonetimPage() {
             {/* Ehliyet Filtresi */}
             <div className="relative">
               <select
-                className="flex h-9 w-full sm:w-[190px] rounded-md border border-input bg-background px-3 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-8 w-full sm:w-[190px] rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface)] px-2 py-0.5 text-xs text-[var(--fd-text2)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fd-accent)]"
                 value={licenseFilter}
                 onChange={e => setLicenseFilter(e.target.value)}
               >
@@ -991,14 +1084,14 @@ export default function PersonelYonetimPage() {
         </CardHeader>
 
         {/* Siber-Mat Sınıflandırma ve Şube Filtre Çubuğu */}
-        <div className="border-b border-border/50 bg-muted/5 p-2 flex flex-wrap gap-1.5">
+        <div className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] p-1.5 flex flex-wrap gap-1">
           <button
             onClick={() => setSelectedClass('all')}
             className={cn(
-              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'all'
-                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/35 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border-[var(--fd-accent-soft)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>🗂️</span>
@@ -1007,10 +1100,10 @@ export default function PersonelYonetimPage() {
           <button
             onClick={() => setSelectedClass('komuta')}
             className={cn(
-              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'komuta'
-                ? "bg-amber-500/10 text-amber-500 border-amber-500/30 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[rgba(245,158,11,0.08)] text-[var(--fd-amber)] border-[rgba(245,158,11,0.18)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>👑</span>
@@ -1019,10 +1112,10 @@ export default function PersonelYonetimPage() {
           <button
             onClick={() => setSelectedClass('driver')}
             className={cn(
-              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'driver'
-                ? "bg-blue-500/10 text-blue-500 border-blue-500/30 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[rgba(37,99,235,0.08)] text-[var(--fd-info)] border-[rgba(37,99,235,0.18)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>🚚</span>
@@ -1031,10 +1124,10 @@ export default function PersonelYonetimPage() {
           <button
             onClick={() => setSelectedClass('saha')}
             className={cn(
-              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'saha'
-                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[rgba(22,163,74,0.08)] text-[var(--fd-success)] border-[rgba(22,163,74,0.18)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>🧑🚒</span>
@@ -1043,10 +1136,10 @@ export default function PersonelYonetimPage() {
           <button
             onClick={() => setSelectedClass('destek')}
             className={cn(
-              "flex-1 min-w-[100px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'destek'
-                ? "bg-purple-500/10 text-purple-500 border-purple-500/30 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[var(--fd-surface3)] text-[var(--fd-text)] border-[var(--fd-border-strong)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>📞</span>
@@ -1055,10 +1148,10 @@ export default function PersonelYonetimPage() {
           <button
             onClick={() => setSelectedClass('esentepe')}
             className={cn(
-              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'esentepe'
-                ? "bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[rgba(220,38,38,0.08)] text-[var(--fd-danger)] border-[rgba(220,38,38,0.18)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>🏢</span>
@@ -1067,10 +1160,10 @@ export default function PersonelYonetimPage() {
           <button
             onClick={() => setSelectedClass('organize')}
             className={cn(
-              "flex-1 min-w-[120px] px-4 py-2 text-xs font-semibold rounded-md border transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+              "px-3 py-1.5 text-xs font-semibold rounded-[var(--fd-r-sm)] border transition-all flex items-center justify-center gap-1 cursor-pointer",
               selectedClass === 'organize'
-                ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/30 shadow-sm font-bold"
-                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                ? "bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border-[var(--fd-accent-soft)] shadow-[var(--fd-shadow-sm)] font-bold"
+                : "bg-transparent text-[var(--fd-text3)] border-transparent hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text2)]"
             )}
           >
             <span>🏢</span>
@@ -1079,7 +1172,7 @@ export default function PersonelYonetimPage() {
         </div>
 
         <CardContent className="p-0">
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-[var(--fd-border)]">
             {filteredPersonnel.map(person => {
               const isAdmin = person.rol === "Admin" || person.rol === "Editor"
               const isLeader = person.unvan.includes("Çavuş") || person.unvan.includes("Amir") || person.unvan.includes("Müdür")
@@ -1089,7 +1182,7 @@ export default function PersonelYonetimPage() {
                 can_print: person.can_print ?? false
               }
               return (
-                <div key={person.sicil_no} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                <div key={person.sicil_no} className="p-2 px-3 hover:bg-[var(--fd-surface2)]/40 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
                   
                   {/* Info Section - Clickable Link to Profile */}
                   <Link 
@@ -1106,31 +1199,31 @@ export default function PersonelYonetimPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold truncate">{person.ad} {person.soyad}</span>
+                        <span className="font-bold text-xs text-[var(--fd-text)] truncate">{person.ad} {person.soyad}</span>
                         {(() => {
                           const assignedVehicle = vehicles.find(v => v.sorumlu_sofor_id === person.id || v.sorumlu_er_id === person.id);
                           if (!assignedVehicle) return null;
                           return (
-                            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/35 text-[9px] px-1.5 py-0 font-bold font-mono flex items-center gap-1 shadow-sm shrink-0">
+                            <Badge variant="outline" className="bg-[var(--fd-accent-soft)] text-[var(--fd-accent)] border-[var(--fd-accent-soft2)] text-[9px] px-1.5 py-0 font-bold font-mono flex items-center gap-1 shadow-[var(--fd-shadow-sm)] shrink-0">
                               <Truck className="w-2.5 h-2.5" />
                               {assignedVehicle.plaka}
                             </Badge>
                           );
                         })()}
                         {isLeader && (
-                          <Badge variant="warning" className="text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
+                          <Badge className="bg-[rgba(245,158,11,0.08)] text-[var(--fd-amber)] border border-[rgba(245,158,11,0.2)] text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
                             <Star className="w-2.5 h-2.5 fill-warning" />
                             {person.unvan}
                           </Badge>
                         )}
                         {isAdmin && !isLeader && (
-                          <Badge variant="danger" className="text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
+                          <Badge className="bg-[rgba(220,38,38,0.08)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.2)] text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
                             <Shield className="w-2.5 h-2.5" />
                             {person.unvan}
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 font-mono">
+                      <div className="flex items-center gap-2 text-[10px] text-[var(--fd-text3)] mt-0.5 font-mono">
                         <Key className="w-3 h-3" />
                         {person.sicil_no}
                         <span className="opacity-50">|</span>
@@ -1159,7 +1252,7 @@ export default function PersonelYonetimPage() {
                         {(() => {
                           const cert = getCertStatus(person.sicil_no, 'Ehliyet')
                           return (
-                            <span className={cn("text-[10px] px-2 py-0.5 rounded border font-medium flex items-center gap-1", cert.color)}>
+                            <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
                               <Truck className="w-2.5 h-2.5" />
                               <span>Ağır Vasıta: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
                             </span>
@@ -1169,7 +1262,7 @@ export default function PersonelYonetimPage() {
                         {(() => {
                           const cert = getCertStatus(person.sicil_no, 'İlkyardım')
                           return (
-                            <span className={cn("text-[10px] px-2 py-0.5 rounded border font-medium flex items-center gap-1", cert.color)}>
+                            <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
                               <HeartPulse className="w-2.5 h-2.5" />
                               <span>İlk Yardım: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
                             </span>
@@ -1179,7 +1272,7 @@ export default function PersonelYonetimPage() {
                         {(() => {
                           const cert = getCertStatus(person.sicil_no, 'SCBA')
                           return (
-                            <span className={cn("text-[10px] px-2 py-0.5 rounded border font-medium flex items-center gap-1", cert.color)}>
+                            <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
                               <Wind className="w-2.5 h-2.5" />
                               <span>SCBA: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
                             </span>
@@ -1193,56 +1286,31 @@ export default function PersonelYonetimPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ml-12 xl:ml-0 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
                     <button 
                       onClick={() => openEditModal(person)} 
-                      className="flex items-center justify-center gap-2 cursor-pointer bg-primary/10 text-primary p-2 px-3 rounded-xl hover:bg-primary/20 transition-colors min-h-[44px]"
+                      className="flex items-center justify-center gap-1 cursor-pointer bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-accent-soft2)] px-2 py-1 rounded-[var(--fd-r-sm)] text-[11px] font-bold transition-colors"
                     >
                       <Settings2 className="w-4 h-4" />
                       <span className="text-sm font-medium">Düzenle</span>
                     </button>
-                    <button onClick={() => togglePermission(person.sicil_no, 'view_only')} className="flex items-center gap-3 cursor-pointer group whitespace-nowrap p-2 rounded-xl hover:bg-muted/50 transition-colors min-h-[44px]">
-                      <div className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full bg-border transition-colors">
-                         {perms.view_only ? (
-                           <div className="absolute left-0 top-0 h-7 w-7 rounded-full bg-success translate-x-5 transition-transform shadow-sm flex items-center justify-center">
-                             <CheckCircle2 className="w-4 h-4 text-white" />
-                           </div>
-                         ) : (
-                           <div className="absolute left-0 top-0 h-7 w-7 rounded-full bg-surface translate-x-0 border transition-transform shadow-sm border-border" />
-                         )}
-                         {perms.view_only && <div className="absolute inset-0 bg-success/30 rounded-full" />}
-                      </div>
-                      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors select-none">
-                        Sadece Görüntüler
-                      </span>
-                    </button>
+                    <Switch
+                      checked={perms.view_only}
+                      onChange={() => togglePermission(person.sicil_no, 'view_only')}
+                      label="Sadece Görüntüler"
+                      activeColor="bg-[var(--fd-success)]"
+                    />
 
-                    <button onClick={() => togglePermission(person.sicil_no, 'can_approve')} className="flex items-center gap-3 cursor-pointer group whitespace-nowrap p-2 rounded-xl hover:bg-muted/50 transition-colors min-h-[44px]">
-                      <div className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full bg-border transition-colors">
-                         {perms.can_approve ? (
-                           <div className="absolute left-0 top-0 h-7 w-7 rounded-full bg-cyan-500 translate-x-5 transition-transform shadow-sm flex items-center justify-center">
-                             <ShieldAlert className="w-4 h-4 text-white" />
-                           </div>
-                         ) : (
-                           <div className="absolute left-0 top-0 h-7 w-7 rounded-full bg-surface translate-x-0 border transition-transform shadow-sm border-border" />
-                         )}
-                         {perms.can_approve && <div className="absolute inset-0 bg-cyan-500/30 rounded-full border border-cyan-500/20" />}
-                      </div>
-                      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors select-none">
-                        Envanter Onaylar
-                      </span>
-                    </button>
+                    <Switch
+                      checked={perms.can_approve}
+                      onChange={() => togglePermission(person.sicil_no, 'can_approve')}
+                      label="Envanter Onaylar"
+                      activeColor="bg-[var(--fd-accent)]"
+                    />
 
-                    <button onClick={() => togglePermission(person.sicil_no, 'can_print')} className="flex items-center gap-3 cursor-pointer group whitespace-nowrap p-2 rounded-xl hover:bg-muted/50 transition-colors min-h-[44px]">
-                      <div className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full bg-border transition-colors">
-                         {perms.can_print ? (
-                           <div className="absolute left-0 top-0 h-7 w-7 rounded-full bg-primary translate-x-5 transition-transform shadow-sm" />
-                         ) : (
-                           <div className="absolute left-0 top-0 h-7 w-7 rounded-full bg-surface translate-x-0 border transition-transform shadow-sm border-border" />
-                         )}
-                         {perms.can_print && <div className="absolute inset-0 bg-primary/30 rounded-full" />}
-                      </div>
-                      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors select-none">
-                        Barkod Basabilir
-                      </span>
-                    </button>
+                    <Switch
+                      checked={perms.can_print}
+                      onChange={() => togglePermission(person.sicil_no, 'can_print')}
+                      label="Barkod Basabilir"
+                      activeColor="bg-[var(--fd-info)]"
+                    />
                   </div>
                 </div>
               )
@@ -1267,9 +1335,9 @@ export default function PersonelYonetimPage() {
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
-          <DialogHeader className="p-5 border-b border-slate-900 bg-slate-900/20 shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-lg text-slate-100">
+        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-[var(--fd-border-strong)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-lg)] backdrop-blur-sm rounded-[var(--fd-r-lg)]">
+          <DialogHeader className="p-4 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] shrink-0">
+            <DialogTitle className="flex items-center gap-1.5 text-base font-bold text-[var(--fd-text)] uppercase">
               <Settings2 className="w-5 h-5 text-primary" />
               Personel Düzenle
             </DialogTitle>
@@ -1277,7 +1345,7 @@ export default function PersonelYonetimPage() {
           
           {selectedPerson && (
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
-              <div className="bg-muted/50 p-4 rounded-xl border border-border/50 flex flex-col items-center justify-center text-center">
+              <div className="bg-[var(--fd-surface2)] p-3 rounded-[var(--fd-r)] border border-[var(--fd-border)] flex flex-col items-center justify-center text-center">
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary border-2 border-primary/20 flex items-center justify-center font-bold text-lg mb-2">
                   {selectedPerson.ad.charAt(0)}{selectedPerson.soyad.charAt(0)}
                 </div>
@@ -1289,7 +1357,7 @@ export default function PersonelYonetimPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase text-muted-foreground">Görev / Rol</label>
                   <select 
-                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
                   >
@@ -1303,7 +1371,7 @@ export default function PersonelYonetimPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase text-muted-foreground">Posta Numarası</label>
                   <select 
-                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
                     value={editPostaNo}
                     onChange={(e) => setEditPostaNo(e.target.value)}
                   >
@@ -1323,7 +1391,7 @@ export default function PersonelYonetimPage() {
                     <label className="text-xs font-semibold uppercase text-muted-foreground">Ehliyet Geçerlilik Tarihi</label>
                     <Input 
                       type="date" 
-                      className="h-11"
+                      className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
                       value={ehliyetDate}
                       onChange={(e) => setEhliyetDate(e.target.value)}
                     />
@@ -1333,7 +1401,7 @@ export default function PersonelYonetimPage() {
                     <label className="text-xs font-semibold uppercase text-muted-foreground">İlkyardım Sertifikası Geçerlilik Tarihi</label>
                     <Input 
                       type="date" 
-                      className="h-11"
+                      className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
                       value={ilkyardimDate}
                       onChange={(e) => setIlkyardimDate(e.target.value)}
                     />
@@ -1343,7 +1411,7 @@ export default function PersonelYonetimPage() {
                     <label className="text-xs font-semibold uppercase text-muted-foreground">SCBA Solunum Cihazı Sertifika Tarihi</label>
                     <Input 
                       type="date" 
-                      className="h-11"
+                      className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
                       value={scbaDate}
                       onChange={(e) => setScbaDate(e.target.value)}
                     />
@@ -1360,44 +1428,44 @@ export default function PersonelYonetimPage() {
                   
                   return (
                     <div className="pt-4 border-t border-border space-y-4">
-                      <h4 className="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                      <h4 className="text-sm font-semibold flex items-center gap-2 text-[var(--fd-text)]">
                         <Activity className="w-4 h-4 text-cyan-500" />
                         EK-16 Performans & Operasyonel Skor Kartı
                       </h4>
                       
-                      <div className="bg-slate-950/60 border border-slate-900 rounded-xl p-3 space-y-3">
+                      <div className="bg-[var(--fd-surface2)]/80 border border-[var(--fd-border)] rounded-[var(--fd-r)] p-3 space-y-2.5">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-400">Toplam Operasyon Katılımı:</span>
-                          <span className="font-bold text-slate-200 px-2 py-0.5 bg-slate-900 rounded border border-slate-800">{totalCases} Olay</span>
+                          <span className="text-[var(--fd-text3)]">Toplam Operasyon Katılımı:</span>
+                          <span className="font-bold text-[var(--fd-text)] px-2 py-0.5 bg-[var(--fd-surface3)] rounded border border-[var(--fd-border)]">{totalCases} Olay</span>
                         </div>
                         
                         <div className="space-y-2 text-xs">
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Yangın Söndürme / İtfaiye:</span>
+                              <span className="text-[var(--fd-text3)]">Yangın Söndürme / İtfaiye:</span>
                               <span className="font-semibold text-red-400">{yanginPct}%</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-[var(--fd-surface3)] rounded-full h-1.5 overflow-hidden">
                               <div className="bg-gradient-to-r from-red-600 to-red-500 h-1.5 rounded-full" style={{ width: `${yanginPct}%` }} />
                             </div>
                           </div>
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Arama Kurtarma / Kaza:</span>
+                              <span className="text-[var(--fd-text3)]">Arama Kurtarma / Kaza:</span>
                               <span className="font-semibold text-blue-400">{kurtarmaPct}%</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-[var(--fd-surface3)] rounded-full h-1.5 overflow-hidden">
                               <div className="bg-gradient-to-r from-blue-600 to-blue-500 h-1.5 rounded-full" style={{ width: `${kurtarmaPct}%` }} />
                             </div>
                           </div>
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Tehlikeli Madde (HAZMAT) / Kimyasal:</span>
+                              <span className="text-[var(--fd-text3)]">Tehlikeli Madde (HAZMAT) / Kimyasal:</span>
                               <span className="font-semibold text-amber-500">{hazmatPct}%</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-[var(--fd-surface3)] rounded-full h-1.5 overflow-hidden">
                               <div className="bg-gradient-to-r from-amber-600 to-amber-500 h-1.5 rounded-full" style={{ width: `${hazmatPct}%` }} />
                             </div>
                           </div>
@@ -1414,15 +1482,15 @@ export default function PersonelYonetimPage() {
                 {/* Şifre Sıfırlama Bölümü */}
                 {currentUser?.rol === 'Admin' && (
                   <div className="pt-4 border-t border-border space-y-3">
-                    <h4 className="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-[var(--fd-text)]">
                       <Key className="w-4 h-4 text-amber-500" />
                       Parola Yönetimi
                     </h4>
-                    <div className="bg-slate-950/60 border border-slate-900 rounded-xl p-3 space-y-3 flex flex-col items-center">
+                    <div className="bg-[var(--fd-surface2)]/80 border border-[var(--fd-border)] rounded-[var(--fd-r)] p-3 space-y-2.5 flex flex-col items-center">
                       {resetPasswordSuccess ? (
                         <div className="w-full text-center space-y-2">
                           <p className="text-xs text-emerald-400 font-bold">Yeni Geçici Şifre:</p>
-                          <div className="flex items-center justify-center gap-2 bg-slate-900 px-3 py-1.5 rounded border border-slate-800">
+                          <div className="flex items-center justify-center gap-2 bg-[var(--fd-surface3)] px-3 py-1 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)]">
                             <span className="font-mono font-bold text-emerald-300 text-lg tracking-wider">{resetPasswordSuccess}</span>
                             <button
                               onClick={() => {
@@ -1431,7 +1499,7 @@ export default function PersonelYonetimPage() {
                                   alert('Şifre kopyalandı.');
                                 }
                               }}
-                              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded transition-colors cursor-pointer"
+                              className="p-1.5 hover:bg-[var(--fd-surface2)] text-[var(--fd-text3)] hover:text-emerald-400 rounded transition-colors cursor-pointer"
                               type="button"
                             >
                               <Copy className="w-3.5 h-3.5" />
@@ -1439,7 +1507,7 @@ export default function PersonelYonetimPage() {
                             {currentUserCanPrint && (
                               <button
                                 onClick={() => handlePrintSinglePassword(selectedPerson, resetPasswordSuccess)}
-                                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded transition-colors cursor-pointer"
+                                className="p-1.5 hover:bg-[var(--fd-surface2)] text-[var(--fd-text3)] hover:text-amber-400 rounded transition-colors cursor-pointer"
                                 type="button"
                                 title="Yazdır / İndir"
                               >
@@ -1451,14 +1519,14 @@ export default function PersonelYonetimPage() {
                         </div>
                       ) : (
                         <div className="w-full flex items-center justify-between gap-3">
-                          <span className="text-xs text-slate-400 font-semibold">Geçici şifre oluştur:</span>
+                          <span className="text-xs text-[var(--fd-text3)] font-semibold">Geçici şifre oluştur:</span>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             disabled={resettingPassword}
                             onClick={() => handleResetPassword(selectedPerson.sicil_no)}
-                            className="h-8 text-xs border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-amber-500 hover:text-amber-400 gap-1.5"
+                            className="h-7 text-xs border-[var(--fd-border)] bg-[rgba(245,158,11,0.08)] hover:bg-[var(--fd-amber)] text-[var(--fd-amber)] hover:text-[#ffffff] gap-1.5 rounded-[var(--fd-r-sm)] transition"
                           >
                             {resettingPassword ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCcw className="w-3 h-3" />}
                             Şifreyi Sıfırla
@@ -1472,20 +1540,20 @@ export default function PersonelYonetimPage() {
             </div>
           )}
           
-          <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
+          <DialogFooter className="p-3 sm:p-4 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4 space-x-2">
             <Button 
               type="button"
               variant="danger" 
               onClick={() => selectedPerson && handleDeactivatePersonnel(selectedPerson.sicil_no)} 
               disabled={isSavingEdit || !selectedPerson} 
-              className="mr-auto bg-red-950/40 border border-red-500/30 hover:bg-red-900/40 text-red-400 text-xs font-semibold h-10"
+              className="mr-auto bg-[var(--fd-danger-soft)] hover:bg-[var(--fd-danger)] text-[var(--fd-danger)] hover:text-[#ffffff] border border-[var(--fd-danger-soft2)] text-xs font-semibold h-9 rounded-[var(--fd-r-sm)] px-3"
             >
               İlişiğini Kes (Sistemden Kaldır)
             </Button>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingEdit} className="w-full sm:w-auto h-10">
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSavingEdit} className="w-full sm:w-auto h-9 text-xs border border-[var(--fd-border-strong)] rounded-[var(--fd-r-sm)]">
               İptal
             </Button>
-            <Button onClick={handleSaveEdit} disabled={isSavingEdit} className="w-full sm:w-auto min-w-[140px] h-10">
+            <Button onClick={handleSaveEdit} disabled={isSavingEdit} className="w-full sm:w-auto min-w-[140px] h-9 text-xs bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-semibold rounded-[var(--fd-r-sm)]">
               {isSavingEdit ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1501,10 +1569,10 @@ export default function PersonelYonetimPage() {
 
       {/* Driver License Dashboard Modal */}
       <Dialog open={isLicenseDashboardOpen} onOpenChange={setIsLicenseDashboardOpen}>
-        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[650px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-md">
-          <DialogHeader className="p-5 border-b border-slate-900 bg-slate-900/20 shrink-0">
+        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[650px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-[var(--fd-border-strong)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-lg)] backdrop-blur-sm rounded-[var(--fd-r-lg)]">
+          <DialogHeader className="p-4 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] shrink-0">
             <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-2 text-lg text-slate-100">
+              <DialogTitle className="flex items-center gap-1.5 text-base font-bold text-[var(--fd-text)] uppercase">
                 <Truck className="w-5 h-5 text-cyan-400" />
                 Şoför Ehliyet Durumları & Planlama Radarı
               </DialogTitle>
@@ -1512,32 +1580,32 @@ export default function PersonelYonetimPage() {
           </DialogHeader>
 
           {/* Quick Stats Grid */}
-          <div className="p-4 bg-slate-900/30 border-b border-slate-900 shrink-0 grid grid-cols-4 gap-2 text-center">
-            <div className="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800/60">
+          <div className="p-3 bg-[var(--fd-surface2)] border-b border-[var(--fd-border)] shrink-0 grid grid-cols-4 gap-2 text-center">
+            <div className="bg-[var(--fd-surface3)] p-2 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)]">
               <p className="text-[10px] text-muted-foreground uppercase font-bold">Toplam Şoför</p>
-              <p className="text-base font-bold text-slate-200 mt-0.5">{licenseStats.total}</p>
+              <p className="text-base font-bold text-[var(--fd-text)] mt-0.5">{licenseStats.total}</p>
             </div>
-            <div className="bg-emerald-500/5 p-2.5 rounded-lg border border-emerald-500/10">
+            <div className="bg-[rgba(22,163,74,0.06)] dark:bg-[rgba(22,163,74,0.12)] p-2 rounded-[var(--fd-r-sm)] border border-[rgba(22,163,74,0.15)] dark:border-[rgba(22,163,74,0.25)]">
               <p className="text-[10px] text-emerald-400 uppercase font-semibold">Aktif</p>
               <p className="text-base font-bold text-emerald-400 mt-0.5">{licenseStats.active}</p>
             </div>
-            <div className="bg-amber-500/5 p-2.5 rounded-lg border border-amber-500/10">
+            <div className="bg-[rgba(245,158,11,0.06)] dark:bg-[rgba(245,158,11,0.12)] p-2 rounded-[var(--fd-r-sm)] border border-[rgba(245,158,11,0.15)] dark:border-[rgba(245,158,11,0.25)]">
               <p className="text-[10px] text-amber-500 uppercase font-semibold">Kritik (≤30g)</p>
               <p className="text-base font-bold text-amber-500 mt-0.5">{licenseStats.critical}</p>
             </div>
-            <div className="bg-red-500/5 p-2.5 rounded-lg border border-red-500/10">
+            <div className="bg-[rgba(220,38,38,0.06)] dark:bg-[rgba(220,38,38,0.12)] p-2 rounded-[var(--fd-r-sm)] border border-[rgba(220,38,38,0.15)] dark:border-[rgba(220,38,38,0.25)]">
               <p className="text-[10px] text-rose-500 uppercase font-semibold">Eksik/Geçik</p>
               <p className="text-base font-bold text-rose-500 mt-0.5">{licenseStats.expired + licenseStats.missing}</p>
             </div>
           </div>
 
           {/* Search bar inside Modal */}
-          <div className="p-4 border-b border-slate-900 shrink-0">
+          <div className="p-3 border-b border-[var(--fd-border)] shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Şoför ismi veya sicil no ile ara..."
-                className="pl-9 h-9 text-xs bg-slate-900/50 border-slate-800 text-slate-200"
+                className="pl-9 h-8 text-xs bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)]"
                 value={licenseSearchQuery}
                 onChange={e => setLicenseSearchQuery(e.target.value)}
               />
@@ -1560,7 +1628,7 @@ export default function PersonelYonetimPage() {
                       status === 'missing' ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" :
                       status === 'expired' ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" :
                       status === 'critical' ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10" :
-                      "bg-slate-900/20 border-slate-800/80 hover:bg-slate-900/40"
+                      "bg-[var(--fd-surface3)]/20 border-[var(--fd-border)]/80 hover:bg-[var(--fd-surface3)]/40"
                     )}
                   >
                     {/* Driver info */}
@@ -1569,12 +1637,12 @@ export default function PersonelYonetimPage() {
                         "w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 border",
                         status === 'missing' || status === 'expired' ? "bg-red-500/10 text-red-500 border-red-500/20" :
                         status === 'critical' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                        "bg-slate-800 text-slate-300 border-slate-700"
+                        "bg-[var(--fd-surface2)] text-[var(--fd-text2)] border-[var(--fd-border)]"
                       )}>
                         {person.ad.charAt(0)}{person.soyad.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-200">{person.ad} {person.soyad}</p>
+                        <p className="text-xs font-bold text-[var(--fd-text)]">{person.ad} {person.soyad}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
                           {person.sicil_no} • {person.unvan} • Posta {person.posta_no || 1}
                         </p>
@@ -1582,7 +1650,7 @@ export default function PersonelYonetimPage() {
                     </div>
 
                     {/* Expiry / Days indicator */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-900">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--fd-border)]">
                       <div className="text-right">
                         {status === 'missing' ? (
                           <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
@@ -1591,7 +1659,7 @@ export default function PersonelYonetimPage() {
                         ) : (
                           <>
                             <p className="text-[10px] text-muted-foreground">Geçerlilik Tarihi</p>
-                            <p className="text-xs font-semibold text-slate-300 mt-0.5 font-mono">
+                            <p className="text-xs font-semibold text-[var(--fd-text2)] mt-0.5 font-mono">
                               {new Date(expiryDate).toLocaleDateString('tr-TR')}
                             </p>
                           </>
@@ -1600,19 +1668,19 @@ export default function PersonelYonetimPage() {
 
                       <div className="shrink-0">
                         {status === 'missing' ? (
-                          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[9px] font-bold">
+                          <Badge className="bg-[rgba(220,38,38,0.08)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.18)] text-[9px] font-bold px-1.5 py-0.5 rounded-[var(--fd-r-sm)]">
                             KAYIT EKSİK
                           </Badge>
                         ) : status === 'expired' ? (
-                          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[9px] font-bold animate-pulse">
+                          <Badge className="bg-[rgba(220,38,38,0.08)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.18)] text-[9px] font-bold animate-pulse px-1.5 py-0.5 rounded-[var(--fd-r-sm)]">
                             SÜRESİ GEÇTİ
                           </Badge>
                         ) : status === 'critical' ? (
-                          <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[9px] font-bold">
+                          <Badge className="bg-[rgba(245,158,11,0.08)] text-[var(--fd-amber)] border border-[rgba(245,158,11,0.18)] text-[9px] font-bold px-1.5 py-0.5 rounded-[var(--fd-r-sm)]">
                             {days} GÜN KALDI
                           </Badge>
                         ) : (
-                          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] font-medium">
+                          <Badge className="bg-[rgba(22,163,74,0.08)] text-[var(--fd-success)] border border-[rgba(22,163,74,0.18)] text-[9px] font-bold px-1.5 py-0.5 rounded-[var(--fd-r-sm)]">
                             AKTİF ({days}g)
                           </Badge>
                         )}
@@ -1624,8 +1692,207 @@ export default function PersonelYonetimPage() {
             )}
           </div>
 
-          <DialogFooter className="p-4 sm:p-5 border-t border-slate-900 bg-slate-900/30 flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5 space-x-2">
-            <Button variant="outline" onClick={() => setIsLicenseDashboardOpen(false)} className="w-full sm:w-auto h-10">
+          <DialogFooter className="p-3 sm:p-4 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4 space-x-2">
+            <Button variant="outline" onClick={() => setIsLicenseDashboardOpen(false)} className="w-full sm:w-auto h-9 text-xs border border-[var(--fd-border-strong)] rounded-[var(--fd-r-sm)]">
+              Kapat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
+        <DialogContent className="w-[94vw] sm:w-full sm:max-w-[800px] max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 border-[var(--fd-border-strong)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-lg)] backdrop-blur-sm rounded-[var(--fd-r-lg)]">
+          <DialogHeader className="p-4 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] shrink-0">
+            <div className="flex items-center justify-between w-full">
+              <DialogTitle className="flex items-center gap-1.5 text-base font-bold text-[var(--fd-text)] uppercase">
+                📊 Görev & Yangın Analiz Paneli
+              </DialogTitle>
+            </div>
+            <p className="text-[11px] text-[var(--fd-text3)] mt-0.5 font-sans">Müfrezeler arası görev dağılım dengesi ve en az göreve çıkan personel listesi (son 30 gün)</p>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
+            {/* Left Section: Rank list */}
+            <div className="w-full md:w-1/2 border-r border-[var(--fd-border)] flex flex-col min-h-0 bg-[var(--fd-surface2)]/10">
+              <div className="p-3 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-xs font-bold text-[var(--fd-text3)] uppercase tracking-wider flex items-center justify-between font-sans">
+                <span>Personel (Azdan Çoka)</span>
+                <span className="text-[10px] lowercase text-[var(--fd-text3)]">30 günlük görev</span>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+                {analysisLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                    <Loader2 className="w-6 h-6 text-[var(--fd-accent)] animate-spin" />
+                    <span className="text-xs text-[var(--fd-text3)] font-mono">Veriler analiz ediliyor...</span>
+                  </div>
+                ) : analysisStats.length === 0 ? (
+                  <div className="text-center py-12 text-xs text-[var(--fd-text3)] italic font-mono">Aktif saha personeli bulunamadı.</div>
+                ) : (
+                  analysisStats.map((p, idx) => {
+                    const isSelected = selectedAnalysisPerson?.sicil_no === p.sicil_no
+                    const isPriority = idx < 3
+                    
+                    return (
+                      <button
+                        type="button"
+                        key={p.sicil_no}
+                        onClick={() => handleSelectAnalysisPerson(p)}
+                        className={cn(
+                          "w-full text-left p-2.5 rounded-lg border transition-all duration-200 flex items-center justify-between cursor-pointer font-sans",
+                          isSelected
+                            ? "bg-[var(--fd-accent-soft2)] border-[var(--fd-accent-soft)] text-[var(--fd-accent)] shadow-[var(--fd-shadow-sm)]"
+                            : "bg-[var(--fd-surface)] border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text)]"
+                        )}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold">
+                              {p.ad} {p.soyad}
+                            </span>
+                            <Badge variant="muted" className="text-[9px] font-mono px-1 py-0 bg-[var(--fd-surface2)] text-[var(--fd-text2)] border border-[var(--fd-border)]">
+                              {p.unvan}
+                            </Badge>
+                          </div>
+                          <span className="text-[10px] text-[var(--fd-text3)] font-medium">
+                            {p.istasyon} • Sicil: {p.sicil_no}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isPriority && (
+                            <span className="text-[9px] font-bold text-[var(--fd-danger)] bg-[rgba(220,38,38,0.1)] border border-[rgba(220,38,38,0.25)] px-1.5 py-0.5 rounded">
+                              Öncelikli Sevk
+                            </span>
+                          )}
+                          <span className={cn(
+                            "text-xs font-mono font-bold px-2 py-0.5 rounded-md",
+                            p.last30DaysMissions === 0
+                              ? "bg-[var(--fd-surface3)] text-[var(--fd-text3)] border border-[var(--fd-border)]"
+                              : "bg-[var(--fd-accent)]/10 text-[var(--fd-accent)] border border-[var(--fd-accent)]/20"
+                          )}>
+                            {p.last30DaysMissions}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+            
+            {/* Right Section: Details & Breakdown */}
+            <div className="w-full md:w-1/2 p-4 flex flex-col space-y-4 overflow-y-auto">
+              {selectedAnalysisPerson ? (
+                <>
+                  <div className="p-3 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-xl relative overflow-hidden font-sans">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[var(--fd-accent)]/10 to-transparent rounded-full pointer-events-none" />
+                    <h3 className="text-sm font-black text-[var(--fd-text)] tracking-wider">
+                      👤 {selectedAnalysisPerson.ad} {selectedAnalysisPerson.soyad}
+                    </h3>
+                    <p className="text-xs text-[var(--fd-text3)] mt-0.5 font-medium">
+                      {selectedAnalysisPerson.unvan} • {selectedAnalysisPerson.istasyon} Müfrezesi
+                    </p>
+                    <div className="mt-2.5 flex items-center gap-1.5">
+                      <span className="text-[10px] text-[var(--fd-text3)] uppercase">Vardiya Durumu:</span>
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase",
+                        selectedAnalysisPerson.durum === 'Görevde'
+                          ? "bg-[rgba(22,163,74,0.1)] text-[var(--fd-success)]"
+                          : "bg-[var(--fd-surface3)] text-[var(--fd-text3)] border border-[var(--fd-border)]"
+                      )}>
+                        {selectedAnalysisPerson.durum || 'Görevde'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 font-sans">
+                    <h4 className="text-[10px] font-black text-[var(--fd-text3)] uppercase tracking-wider">
+                      📊 Kategori Bazlı Detaylı Analiz (Toplam Görev)
+                    </h4>
+                    
+                    {detailsLoading ? (
+                      <div className="flex flex-col items-center justify-center py-10 space-y-2">
+                        <Loader2 className="w-5 h-5 text-[var(--fd-accent)] animate-spin" />
+                        <span className="text-[10px] text-[var(--fd-text3)] font-mono">Yükleniyor...</span>
+                      </div>
+                    ) : selectedPersonDetails ? (
+                      <div className="space-y-2">
+                        {/* Yangın Müdahale */}
+                        <div className="p-2.5 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🔥</span>
+                            <div>
+                              <div className="text-xs font-bold text-[var(--fd-text)]">Yangın Müdahale</div>
+                              <div className="text-[10px] text-[var(--fd-text3)]">Söndürme & kurtarma operasyonları</div>
+                            </div>
+                          </div>
+                          <span className="text-sm font-mono font-black text-[var(--fd-danger)] bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.15)] px-2.5 py-0.5 rounded-md">
+                            {selectedPersonDetails.stats?.find((s: any) => s.subject === 'Yangın Müdahale')?.value || 0}
+                          </span>
+                        </div>
+                        
+                        {/* Kurtarma Operasyonu */}
+                        <div className="p-2.5 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🩹</span>
+                            <div>
+                              <div className="text-xs font-bold text-[var(--fd-text)]">Kurtarma Operasyonu</div>
+                              <div className="text-[10px] text-[var(--fd-text3)]">Trafik kazası, asansör, sıkışma</div>
+                            </div>
+                          </div>
+                          <span className="text-sm font-mono font-black text-[var(--fd-success)] bg-[rgba(22,163,74,0.06)] border border-[rgba(22,163,74,0.15)] px-2.5 py-0.5 rounded-md">
+                            {selectedPersonDetails.stats?.find((s: any) => s.subject === 'Kurtarma Operasyonu')?.value || 0}
+                          </span>
+                        </div>
+                        
+                        {/* Dış Görev */}
+                        <div className="p-2.5 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🚚</span>
+                            <div>
+                              <div className="text-xs font-bold text-[var(--fd-text)]">Dış Görev / Sevk</div>
+                              <div className="text-[10px] text-[var(--fd-text3)]">İtfaiye sevk, su tahliye, baca temizlik</div>
+                            </div>
+                          </div>
+                          <span className="text-sm font-mono font-black text-[var(--fd-amber)] bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.15)] px-2.5 py-0.5 rounded-md">
+                            {selectedPersonDetails.stats?.find((s: any) => s.subject === 'Dış Görev')?.value || 0}
+                          </span>
+                        </div>
+
+                        {/* Toplam */}
+                        <div className="p-3 bg-[var(--fd-accent-soft2)] border border-[var(--fd-accent-soft)] rounded-lg flex items-center justify-between mt-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">📈</span>
+                            <div>
+                              <div className="text-xs font-bold text-[var(--fd-accent)]">Ömür Boyu Toplam Görev</div>
+                              <div className="text-[10px] text-[var(--fd-accent)]/80">Kayıtlı tüm tarihsel veriler</div>
+                            </div>
+                          </div>
+                          <span className="text-base font-mono font-black text-[var(--fd-accent)] px-3 py-1 bg-[var(--fd-accent)]/10 border border-[var(--fd-accent)]/20 rounded-md">
+                            {selectedPersonDetails.total || 0}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-xs text-[var(--fd-text3)] italic">Detaylar yüklenemedi.</div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 space-y-2 text-[var(--fd-text3)] font-sans">
+                  <SlidersHorizontal className="w-8 h-8 opacity-40" />
+                  <span className="text-xs italic">Analiz detaylarını görüntülemek için soldan bir personel seçin.</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter className="p-3 sm:p-4 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] flex items-center justify-end shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">
+            <Button
+              variant="outline"
+              className="border-[var(--fd-border-strong)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)]"
+              onClick={() => setIsAnalysisOpen(false)}
+            >
               Kapat
             </Button>
           </DialogFooter>

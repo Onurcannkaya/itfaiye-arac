@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo } from "react"
 import jsPDF from "jspdf"
 import { api } from "@/lib/api"
+import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { DataTable } from "@/components/ui/DataTable"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { useAuthStore } from "@/lib/authStore"
@@ -215,11 +217,68 @@ const GUNLUK_FAALIYET = [
 const POSTA_RENK: Record<string, { bg: string; text: string; border: string }> = {
   'A': { bg: 'bg-cyan-950/30', text: 'text-cyan-400', border: 'border-cyan-500/30' },
   'B': { bg: 'bg-amber-950/30', text: 'text-amber-400', border: 'border-amber-500/30' },
-  'C': { bg: 'bg-emerald-950/30', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  'C': { bg: 'bg-emerald-950/30', text: 'text-emerald-500', border: 'border-emerald-500/30' },
 }
 
 export default function EgitimlerPage() {
   const { user } = useAuthStore()
+  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
+
+  const mufredatColumns = [
+    {
+      header: "Tarih",
+      cell: (row: any) => {
+        const d = new Date(row.tarih);
+        return <span className="font-semibold text-[var(--fd-text)]">{`${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${getDayName(d)}`}</span>;
+      }
+    },
+    {
+      header: "Posta",
+      cell: (row: any) => (
+        <Badge variant={row.posta === 'A' ? 'info' : row.posta === 'B' ? 'warning' : 'success'}>
+          {row.posta} Postası
+        </Badge>
+      )
+    },
+    {
+      header: "Eğitim Konusu",
+      accessorKey: "egitim_konusu",
+      className: "text-[var(--fd-text)] font-semibold"
+    },
+    ...(isMudur ? [{
+      header: "İşlemler",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (row: any) => (
+        <div className="flex justify-end gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-[var(--fd-accent)] hover:text-[var(--fd-text)] h-7 w-7 p-0 rounded-[var(--fd-r-sm)]"
+            onClick={() => {
+              setMufredatEditRow(row);
+              setMufredatForm({
+                tarih: row.tarih.split('T')[0],
+                posta: row.posta,
+                egitim_konusu: row.egitim_konusu
+              });
+            }}
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-400 hover:text-red-300 h-7 w-7 p-0 rounded-[var(--fd-r-sm)] hover:bg-red-950/20"
+            onClick={() => handleDeleteMufredat(row.id)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )
+    }] : [])
+  ];
+
   const [activeTab, setActiveTab] = useState<'requests' | 'calendar' | 'blacklist' | 'analytics' | 'temel'>('requests')
   const [temelSubTab, setTemelSubTab] = useState<'cizelge' | 'mufredat' | 'sertifika'>('cizelge')
 
@@ -308,7 +367,99 @@ export default function EgitimlerPage() {
 
 
   // Role Checker
-  const isMudur = user?.rol === 'Admin' || user?.unvan === 'Müdür' || user?.unvan === 'Amir' || user?.rol?.toLowerCase() === 'admin' || user?.unvan?.toLowerCase() === 'müdür' || user?.unvan?.toLowerCase() === 'amir'
+
+
+  // DataTable Column Definitions
+  const cizelgeColumns = [
+    {
+      header: "Sicil No",
+      accessorKey: "sicil_no",
+      className: "font-mono font-bold text-[var(--fd-text3)]"
+    },
+    {
+      header: "Ad Soyad",
+      accessorFn: (p: any) => `${p.ad} ${p.soyad}`,
+      className: "font-semibold text-[var(--fd-text)]"
+    },
+    {
+      header: "Grup / Posta",
+      cell: (p: any) => (
+        <Badge variant={p.posta === 'A' ? 'info' : p.posta === 'B' ? 'warning' : 'success'}>
+          {p.posta} Grubu
+        </Badge>
+      )
+    },
+    {
+      header: "Unvan",
+      accessorFn: (p: any) => p.unvan || 'İtfaiye Eri',
+      className: "text-[var(--fd-text3)]"
+    },
+    {
+      header: "Toplam Eğitim Saati",
+      cell: (p: any) => <span className="font-mono font-bold text-[var(--fd-accent)]">{p.temel_egitim_saati || 0} Saat</span>
+    },
+    {
+      header: "Durum",
+      cell: (p: any) => {
+        const hours = p.temel_egitim_saati || 0;
+        const isEligible = hours >= basariSiniri;
+        return isEligible ? (
+          <Badge variant="success" className="gap-1.5 font-bold">
+            <CheckCircle className="w-3.5 h-3.5" /> Sertifika Hak Kazandı
+          </Badge>
+        ) : (
+          <Badge variant="warning" className="gap-1.5 font-bold">
+            <Clock className="w-3.5 h-3.5" /> Devam Ediyor ({hours}/{basariSiniri})
+          </Badge>
+        );
+      }
+    },
+    {
+      header: "İşlemler",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (p: any) => {
+        const hours = p.temel_egitim_saati || 0;
+        const isEligible = hours >= basariSiniri;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {isMudur && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-[var(--fd-accent)] hover:opacity-90 font-bold text-[11px] h-8 rounded-[var(--fd-r-sm)] hover:bg-[var(--fd-accent-soft)]"
+                onClick={() => {
+                  setEditingPersonel(p);
+                  setNewTrainingHours(hours);
+                }}
+              >
+                <Edit3 className="w-3.5 h-3.5 mr-1" /> Saat Güncelle
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!isEligible}
+              className={`font-bold text-[11px] h-8 rounded-[var(--fd-r-sm)] ${
+                isEligible 
+                  ? 'text-emerald-500 hover:text-emerald-600 hover:opacity-90/10' 
+                  : 'text-[var(--fd-text3)] opacity-50 cursor-not-allowed'
+              }`}
+              onClick={() => {
+                setSertifikaPersonelId(p.id);
+                setSertifikaSaat(String(hours));
+                setTemelSubTab('sertifika');
+              }}
+            >
+              <Award className="w-3.5 h-3.5 mr-1" /> Sertifika
+            </Button>
+          </div>
+        );
+      }
+    }
+  ];
+
+
 
   // Fetch all databases
   const fetchAll = async () => {
@@ -1196,7 +1347,7 @@ export default function EgitimlerPage() {
   if (loading) {
     return (
       <div className="p-8 text-center animate-pulse flex items-center justify-center gap-2 min-h-[50vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--fd-accent)]" />
         <span className="text-muted-foreground font-semibold">Eğitim Yönetim Sistemi Yükleniyor...</span>
       </div>
     )
@@ -1204,7 +1355,7 @@ export default function EgitimlerPage() {
 
   return (
     <PageGuard pageId="egitimler">
-      <div className="flex flex-col min-h-screen space-y-6 max-w-7xl mx-auto pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8 animate-in fade-in duration-300">
+      <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in zoom-in-95 duration-300">
         
         {/* Sayfa Üst Bilgi */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
@@ -1214,7 +1365,7 @@ export default function EgitimlerPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg"
+              className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-lg"
               onClick={() => {
                 setEduForm({
                   id: '',
@@ -1242,62 +1393,84 @@ export default function EgitimlerPage() {
         </div>
 
         {/* Sekme Butonları */}
-        <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
-          <Button
-            variant={activeTab === 'requests' ? 'default' : 'ghost'}
-            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'requests' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
-            onClick={() => setActiveTab('requests')}
-          >
-            📋 Kurumsal Eğitim Talepleri ({trainingRequests.length})
-          </Button>
-          <Button
-            variant={activeTab === 'calendar' ? 'default' : 'ghost'}
-            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'calendar' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
-            onClick={() => setActiveTab('calendar')}
-          >
-            📅 Saatli Teşkilat Programı
-          </Button>
-          <Button
-            variant={activeTab === 'blacklist' ? 'default' : 'ghost'}
-            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'blacklist' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
-            onClick={() => setActiveTab('blacklist')}
-          >
-            🚫 Kara Liste ve Kurum Sorgu
-          </Button>
-          <Button
-            variant={activeTab === 'analytics' ? 'default' : 'ghost'}
-            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
-            onClick={() => setActiveTab('analytics')}
-          >
-            📊 Başkanlık Analiz Paneli
-          </Button>
-          <Button
-            variant={activeTab === 'temel' ? 'default' : 'ghost'}
-            className={`font-bold text-xs h-9 rounded-xl ${activeTab === 'temel' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
-            onClick={() => setActiveTab('temel')}
-          >
-            🎓 Personel Temel Eğitimi
-          </Button>
+        <div className="flex overflow-x-auto hide-scrollbar gap-1 border-b border-[var(--fd-border)] pb-2 pt-1">
+          <div className="flex bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] border border-[var(--fd-border)] gap-1">
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                activeTab === 'requests'
+                  ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                  : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
+              )}
+            >
+              📋 Kurumsal Talepler ({trainingRequests.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                activeTab === 'calendar'
+                  ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                  : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
+              )}
+            >
+              📅 Teşkilat Programı
+            </button>
+            <button
+              onClick={() => setActiveTab('blacklist')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                activeTab === 'blacklist'
+                  ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                  : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
+              )}
+            >
+              🚫 Kara Liste & Sorgu
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                activeTab === 'analytics'
+                  ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                  : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
+              )}
+            >
+              📊 Analiz Paneli
+            </button>
+            <button
+              onClick={() => setActiveTab('temel')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                activeTab === 'temel'
+                  ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                  : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
+              )}
+            >
+              🎓 Personel Temel Eğitimi
+            </button>
+          </div>
         </div>
 
         {/* --- TAB 1: Kurumsal Eğitim Talepleri --- */}
         {activeTab === 'requests' && (
           <div className="space-y-4">
-            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2">
-              <Search className="w-4 h-4 text-zinc-400 mr-2" />
+            <div className="flex items-center bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-3.5 py-2">
+              <Search className="w-4 h-4 text-[var(--fd-text3)] mr-2" />
               <input
                 type="text"
-                className="bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-sm w-full"
+                className="bg-transparent border-none outline-none text-[var(--fd-text)] placeholder-zinc-500 text-sm w-full"
                 placeholder="Vatandaş adı, TC no, veya adresine göre egitim talebi arayın..."
                 value={requestSearch}
                 onChange={(e) => setRequestSearch(e.target.value)}
               />
             </div>
 
-            <Card className="bg-slate-950 border border-slate-800 overflow-hidden rounded-2xl">
+            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] overflow-hidden rounded-[var(--fd-r)]">
               <CardContent className="p-0">
                 {trainingRequests.length === 0 ? (
-                  <div className="text-center p-12 text-muted-foreground bg-zinc-950/20">
+                  <div className="text-center p-12 text-muted-foreground bg-[var(--fd-surface2)]/20">
                     Sistemde bekleyen veya işlenmiş bir kurumsal eğitim talebi bulunmamaktadır.
                   </div>
                 ) : (
@@ -1305,7 +1478,7 @@ export default function EgitimlerPage() {
                     <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-sm text-left">
                         <thead>
-                          <tr className="border-b border-zinc-800 bg-zinc-900/30 text-zinc-400 font-bold text-xs uppercase">
+                          <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/30 text-[var(--fd-text3)] font-bold text-xs uppercase">
                             <th className="p-4">Talep Sahibi / Kurum</th>
                             <th className="p-4">Eğitim Türü</th>
                             <th className="p-4">Katılımcı / Tarih</th>
@@ -1314,26 +1487,26 @@ export default function EgitimlerPage() {
                             <th className="p-4 text-right">Aksiyonlar</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-900">
+                        <tbody className="divide-y divide-[var(--fd-border)]">
                           {trainingRequests.map(req => (
-                            <tr key={req.id} className="hover:bg-zinc-900/30 transition">
+                            <tr key={req.id} className="hover:bg-[var(--fd-surface2)]/30 transition">
                               <td className="p-4">
-                                <div className="font-bold text-zinc-200">{req.basvuran_ad_soyad}</div>
-                                <div className="text-[10px] text-zinc-500 font-mono">TC: {req.basvuran_tc || 'Girilmemiş'}</div>
+                                <div className="font-bold text-[var(--fd-text)]">{req.basvuran_ad_soyad}</div>
+                                <div className="text-[10px] text-[var(--fd-text3)] font-mono">TC: {req.basvuran_tc || 'Girilmemiş'}</div>
                               </td>
-                              <td className="p-4 font-semibold text-zinc-300">
+                              <td className="p-4 font-semibold text-[var(--fd-text2)]">
                                 {req.isyeri_detaylari?.egitim_turu || req.talep_turu}
                               </td>
-                              <td className="p-4 text-xs text-zinc-400">
+                              <td className="p-4 text-xs text-[var(--fd-text3)]">
                                 <div className="font-bold">{req.isyeri_detaylari?.kisi_sayisi || 30} Kişi</div>
                                 <div>Tarih: {req.isyeri_detaylari?.egitim_tarihi || 'Belirtilmemiş'}</div>
                               </td>
-                              <td className="p-4 text-zinc-400 font-medium text-xs">
+                              <td className="p-4 text-[var(--fd-text3)] font-medium text-xs">
                                 {req.atanan_ekip || 'Atanmadı'}
                               </td>
                               <td className="p-4">
                                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                  req.durum === 'ONAYLANDI' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
+                                  req.durum === 'ONAYLANDI' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' :
                                   req.durum === 'REDDEDİLDİ' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
                                   req.durum === 'EKİP_ATANDI' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' :
                                   'bg-amber-500/10 border border-amber-500/20 text-amber-400'
@@ -1345,7 +1518,7 @@ export default function EgitimlerPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-indigo-400 hover:text-white"
+                                  className="text-[var(--fd-accent)] hover:text-[var(--fd-text)]"
                                   onClick={() => setSelectedRequest(req)}
                                 >
                                   Detay / Karar
@@ -1358,16 +1531,16 @@ export default function EgitimlerPage() {
                     </div>
 
                     {/* Mobil list view */}
-                    <div className="block md:hidden divide-y divide-zinc-900">
+                    <div className="block md:hidden divide-y divide-[var(--fd-border)]">
                       {trainingRequests.map(req => (
-                        <div key={req.id} className="p-4 space-y-3 hover:bg-zinc-900/10">
+                        <div key={req.id} className="p-4 space-y-3 hover:bg-[var(--fd-surface2)]/10">
                           <div className="flex items-start justify-between">
                             <div>
-                              <span className="font-bold text-zinc-200 text-sm block">{req.basvuran_ad_soyad}</span>
-                              <span className="text-[10px] text-zinc-500 block">TC: {req.basvuran_tc}</span>
+                              <span className="font-bold text-[var(--fd-text)] text-sm block">{req.basvuran_ad_soyad}</span>
+                              <span className="text-[10px] text-[var(--fd-text3)] block">TC: {req.basvuran_tc}</span>
                             </div>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              req.durum === 'ONAYLANDI' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
+                              req.durum === 'ONAYLANDI' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' :
                               req.durum === 'REDDEDİLDİ' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
                               req.durum === 'EKİP_ATANDI' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' :
                               'bg-amber-500/10 border border-amber-500/20 text-amber-400'
@@ -1375,15 +1548,15 @@ export default function EgitimlerPage() {
                               {req.durum}
                             </span>
                           </div>
-                          <div className="text-xs text-zinc-400">
+                          <div className="text-xs text-[var(--fd-text3)]">
                             <strong>Eğitim:</strong> {req.isyeri_detaylari?.egitim_turu || req.talep_turu}
                           </div>
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500">Kişi: {req.isyeri_detaylari?.kisi_sayisi || 30} | {req.isyeri_detaylari?.egitim_tarihi}</span>
+                            <span className="text-[var(--fd-text3)]">Kişi: {req.isyeri_detaylari?.kisi_sayisi || 30} | {req.isyeri_detaylari?.egitim_tarihi}</span>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-8 border-zinc-800 text-zinc-300"
+                              className="h-8 border-[var(--fd-border)] text-[var(--fd-text2)]"
                               onClick={() => setSelectedRequest(req)}
                             >
                               İncele
@@ -1402,12 +1575,12 @@ export default function EgitimlerPage() {
         {/* --- TAB 2: Saatli Teşkilat Programı --- */}
         {activeTab === 'calendar' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950 border border-slate-800 p-4 rounded-2xl shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r)] shadow-lg">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-800 text-zinc-300 hover:text-white"
+                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
                   onClick={handlePrevWeek}
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Önceki Hafta
@@ -1415,7 +1588,7 @@ export default function EgitimlerPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-800 text-zinc-300 hover:text-white font-bold"
+                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] font-bold"
                   onClick={handleTodayWeek}
                 >
                   Bu Hafta
@@ -1423,18 +1596,18 @@ export default function EgitimlerPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-800 text-zinc-300 hover:text-white"
+                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
                   onClick={handleNextWeek}
                 >
                   Sonraki Hafta <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
-              <div className="text-zinc-200 font-extrabold text-sm sm:text-base">
+              <div className="text-[var(--fd-text)] font-extrabold text-sm sm:text-base">
                 📅 {formatDateLabel(daysOfWeek[0])} - {formatDateLabel(daysOfWeek[6])} {daysOfWeek[0].getFullYear()}
               </div>
               <div>
                 <Button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-lg"
+                  className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-lg"
                   onClick={() => {
                     setEduForm({
                       id: '',
@@ -1462,16 +1635,16 @@ export default function EgitimlerPage() {
             </div>
 
             {/* Matrix Table */}
-            <Card className="bg-slate-950 border border-slate-800 overflow-hidden rounded-2xl">
+            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] overflow-hidden rounded-[var(--fd-r)]">
               <div className="overflow-x-auto scrollbar-thin">
                 <table className="w-full min-w-[1200px] border-collapse table-fixed">
                   <thead>
-                    <tr className="border-b border-zinc-900 bg-zinc-900/30 text-zinc-400 font-bold text-xs uppercase h-14">
+                    <tr className="border-b border-zinc-900 bg-[var(--fd-surface2)]/30 text-[var(--fd-text3)] font-bold text-xs uppercase h-14">
                       <th className="p-3 text-center border-r border-zinc-900/60 w-36">Saat Dilimi</th>
                       {daysOfWeek.map((day, idx) => {
                         const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
                         return (
-                          <th key={idx} className={`p-3 text-center border-r border-zinc-900/60 ${isToday ? 'bg-indigo-950/20 text-indigo-400 font-bold' : ''}`}>
+                          <th key={idx} className={`p-3 text-center border-r border-zinc-900/60 ${isToday ? 'bg-indigo-950/20 text-[var(--fd-accent)] font-bold' : ''}`}>
                             <div className="text-[11px] font-bold opacity-75">{getDayName(day)}</div>
                             <div className="text-sm font-bold mt-0.5">{formatDateLabel(day)}</div>
                           </th>
@@ -1479,10 +1652,10 @@ export default function EgitimlerPage() {
                       })}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-900 text-xs">
+                  <tbody className="divide-y divide-[var(--fd-border)] text-xs">
                     {CALENDAR_SLOTS.map((slot) => (
-                      <tr key={slot} className="border-b border-zinc-900/80 min-h-[70px] hover:bg-zinc-900/5 transition">
-                        <td className="p-3 font-mono font-bold text-zinc-500 border-r border-zinc-900/60 text-center bg-zinc-900/10">
+                      <tr key={slot} className="border-b border-zinc-900/80 min-h-[70px] hover:bg-[var(--fd-surface2)]/5 transition">
+                        <td className="p-3 font-mono font-bold text-[var(--fd-text3)] border-r border-zinc-900/60 text-center bg-[var(--fd-surface2)]/10">
                           {slot}
                         </td>
                         {daysOfWeek.map((day, dIdx) => {
@@ -1521,16 +1694,16 @@ export default function EgitimlerPage() {
                                         setBlacklistAcknowledged(false)
                                         setIsProgramModalOpen(true)
                                       }}
-                                      className={`p-2 rounded-xl border cursor-pointer hover:scale-[1.02] hover:shadow-md transition text-left space-y-1 ${
+                                      className={`p-2 rounded-[var(--fd-r-sm)] border cursor-pointer hover:scale-[1.02] hover:shadow-md transition text-left space-y-1 ${
                                         isBlacklisted ? 'bg-red-950/45 border-red-500/40 text-red-200' :
-                                        edu.durum === 'Tamamlandı' ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' :
+                                        edu.durum === 'Tamamlandı' ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-500' :
                                         edu.durum === 'Onaylandı' ? 'bg-blue-950/30 border-blue-500/25 text-blue-400' :
                                         'bg-amber-950/20 border-amber-500/20 text-amber-400'
                                       }`}
                                     >
                                       <div className="font-bold flex items-center justify-between gap-1">
                                         <span className="line-clamp-1">{edu.kurum_adi}</span>
-                                        {isBlacklisted && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-semibold shrink-0">KARA LİSTE</span>}
+                                        {isBlacklisted && <span className="text-[9px] bg-red-600 dark:bg-red-500 text-white px-1 rounded font-semibold shrink-0">KARA LİSTE</span>}
                                       </div>
                                       <div className="text-[10px] opacity-75 line-clamp-1">{edu.egitim_turu}</div>
                                       <div className="flex items-center justify-between text-[9px] opacity-80 pt-0.5">
@@ -1563,7 +1736,7 @@ export default function EgitimlerPage() {
                                       setBlacklistAcknowledged(false)
                                       setIsProgramModalOpen(true)
                                     }}
-                                    className="w-full h-8 rounded-lg border border-dashed border-zinc-800 hover:border-indigo-500/50 hover:bg-indigo-950/10 flex items-center justify-center text-zinc-600 hover:text-indigo-400 transition"
+                                    className="w-full h-8 rounded-[var(--fd-r-sm)] border border-dashed border-[var(--fd-border)] hover:border-indigo-500/50 hover:bg-indigo-950/10 flex items-center justify-center text-[var(--fd-text3)] opacity-50 hover:text-[var(--fd-accent)] transition"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
                                   </button>
@@ -1586,20 +1759,20 @@ export default function EgitimlerPage() {
           <div className="space-y-6">
             
             {/* Kurum Sorgulama Paneli */}
-            <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <CardTitle className="text-base font-bold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-2">
-                <Search className="w-5 h-5 text-indigo-400" /> KURUMSAL RİSK / ENGEL SORGULAMA MOTORU
+            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-6 shadow-xl">
+              <CardTitle className="text-base font-bold uppercase text-[var(--fd-text2)] border-b border-[var(--fd-border)] pb-3 flex items-center gap-2">
+                <Search className="w-5 h-5 text-[var(--fd-accent)]" /> KURUMSAL RİSK / ENGEL SORGULAMA MOTORU
               </CardTitle>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
-                  className="bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 flex-1 font-semibold"
+                  className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-4 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] flex-1 font-semibold"
                   placeholder="Sorgulamak istediğiniz kurumun T.C. veya Vergi Numarasını girin..."
                   value={queryTcTax}
                   onChange={(e) => setQueryTcTax(e.target.value)}
                 />
                 <Button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-10 px-5 rounded-xl flex items-center gap-1.5"
+                  className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs h-10 px-5 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
                   onClick={handleQueryBlacklist}
                 >
                   Riski Sorgula
@@ -1610,7 +1783,7 @@ export default function EgitimlerPage() {
                 <div className="mt-5 animate-in fade-in duration-200">
                   {queryResult ? (
                     queryResult.aktif_durum ? (
-                      <div className="border border-red-500 bg-red-950/20 text-red-200 p-4 rounded-xl flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                      <div className="border border-red-500 bg-red-950/20 text-red-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
                         <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="font-bold text-sm text-red-400">⚠️ DİKKAT: KURUM KIRMIZI BÜLTEN KATEGORİSİNDEDİR!</h4>
@@ -1624,7 +1797,7 @@ export default function EgitimlerPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="border border-amber-500 bg-amber-950/20 text-amber-200 p-4 rounded-xl flex items-start gap-3">
+                      <div className="border border-amber-500 bg-amber-950/20 text-amber-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3">
                         <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="font-bold text-sm text-amber-400">Uyarılı Kurum (Aktif Engel Yok)</h4>
@@ -1635,10 +1808,10 @@ export default function EgitimlerPage() {
                       </div>
                     )
                   ) : (
-                    <div className="border border-emerald-500 bg-emerald-950/20 text-emerald-200 p-4 rounded-xl flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="border border-emerald-500 bg-emerald-950/20 text-emerald-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-bold text-sm text-emerald-400">Temiz Sicil (Herhangi Bir Engel Yok)</h4>
+                        <h4 className="font-bold text-sm text-emerald-500">Temiz Sicil (Herhangi Bir Engel Yok)</h4>
                         <p className="text-xs mt-1">
                           Verilen T.C./Vergi numarası ile eşleşen aktif bir idari engel bulunamamıştır. Eğitim faaliyet planı oluşturulabilir.
                         </p>
@@ -1652,35 +1825,35 @@ export default function EgitimlerPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Kara Liste Oluşturma (Müdür) */}
               {isMudur && (
-                <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 h-fit">
-                  <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-2 flex items-center gap-1.5">
+                <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-5 shadow-xl space-y-4 h-fit">
+                  <CardTitle className="text-sm font-semibold uppercase text-[var(--fd-text2)] border-b border-[var(--fd-border)] pb-2 flex items-center gap-1.5">
                     <Ban className="w-4.5 h-4.5 text-red-400" /> YENİ ENGEL EKLEME PANELİ
                   </CardTitle>
                   <form onSubmit={handleAddBlacklist} className="space-y-4 text-xs">
                     <div className="space-y-1">
-                      <label className="text-zinc-400 font-bold block">Kurum Adı <span className="text-red-500">*</span></label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Kurum Adı <span className="text-red-500">*</span></label>
                       <input
                         type="text"
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-xs focus:outline-none focus:border-[var(--fd-accent)] font-semibold"
                         placeholder="Örn: X Fabrikası Sanayi Ltd."
                         value={blacklistForm.kurum_adi}
                         onChange={(e) => setBlacklistForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-zinc-400 font-bold block">Vergi No / T.C. Kimlik <span className="text-red-500">*</span></label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Vergi No / T.C. Kimlik <span className="text-red-500">*</span></label>
                       <input
                         type="text"
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-xs focus:outline-none focus:border-[var(--fd-accent)] font-medium"
                         placeholder="10 veya 11 haneli numara"
                         value={blacklistForm.vergi_no_or_tc}
                         onChange={(e) => setBlacklistForm(prev => ({ ...prev, vergi_no_or_tc: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-zinc-400 font-bold block">Kısıtlama / Engel İdari Gerekçesi</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Kısıtlama / Engel İdari Gerekçesi</label>
                       <textarea
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] p-3 text-xs focus:outline-none focus:border-[var(--fd-accent)] font-semibold"
                         rows={3}
                         placeholder="Eğitim saatinde personeli bekletme, haber vermeden son dakika iptali vb."
                         value={blacklistForm.gerekce}
@@ -1690,7 +1863,7 @@ export default function EgitimlerPage() {
                     <Button
                       type="submit"
                       disabled={isSavingBlacklist}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl flex items-center justify-center gap-1 shadow-lg shadow-red-600/10"
+                      className="w-full bg-red-600 dark:bg-red-500 hover:opacity-90 text-white font-bold py-2 rounded-[var(--fd-r-sm)] flex items-center justify-center gap-1 shadow-lg shadow-red-600/10"
                     >
                       {isSavingBlacklist ? 'Kaydediliyor...' : 'Engellenenlere Ekle'}
                     </Button>
@@ -1700,30 +1873,30 @@ export default function EgitimlerPage() {
 
               {/* Kara Liste Listesi */}
               <div className="lg:col-span-2">
-                <Card className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                  <div className="p-4 border-b border-zinc-800 bg-zinc-900/10">
-                    <CardTitle className="text-sm font-semibold uppercase text-zinc-300">
+                <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] overflow-hidden shadow-xl">
+                  <div className="p-4 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/10">
+                    <CardTitle className="text-sm font-semibold uppercase text-[var(--fd-text2)]">
                       🚫 ENGELLENEN KURUMLAR VERİ TABANI ({blacklistList.length})
                     </CardTitle>
                   </div>
                   <CardContent className="p-0">
                     {blacklistList.length === 0 ? (
-                      <div className="text-center p-8 text-zinc-500 text-xs">
+                      <div className="text-center p-8 text-[var(--fd-text3)] text-xs">
                         Sistemde kayıtlı uyarılı/engelli kurum bulunmamaktadır.
                       </div>
                     ) : (
-                      <div className="divide-y divide-zinc-900">
+                      <div className="divide-y divide-[var(--fd-border)]">
                         {blacklistList.map(bl => (
-                          <div key={bl.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-zinc-900/10 transition">
+                          <div key={bl.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-[var(--fd-surface2)]/10 transition">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-zinc-200 text-sm">{bl.kurum_adi}</span>
-                                <span className={`px-2 py-0.5 text-[9px] rounded font-semibold ${bl.aktif_durum ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                                <span className="font-bold text-[var(--fd-text)] text-sm">{bl.kurum_adi}</span>
+                                <span className={`px-2 py-0.5 text-[9px] rounded font-semibold ${bl.aktif_durum ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-zinc-800 text-[var(--fd-text3)]'}`}>
                                   {bl.aktif_durum ? 'AKTİF ENGEL' : 'Kaldırıldı'}
                                 </span>
                               </div>
-                              <div className="text-zinc-500 font-mono text-[10px]">T.C./Vergi No: {bl.vergi_no_or_tc} &nbsp;|&nbsp; Tarih: {new Date(bl.yasaklama_tarihi).toLocaleDateString('tr-TR')}</div>
-                              {bl.gerekce && <div className="text-zinc-400 font-semibold bg-zinc-950/50 p-2 rounded-lg mt-1 border border-zinc-900">{bl.gerekce}</div>}
+                              <div className="text-[var(--fd-text3)] font-mono text-[10px]">T.C./Vergi No: {bl.vergi_no_or_tc} &nbsp;|&nbsp; Tarih: {new Date(bl.yasaklama_tarihi).toLocaleDateString('tr-TR')}</div>
+                              {bl.gerekce && <div className="text-[var(--fd-text3)] font-semibold bg-[var(--fd-surface2)]/50 p-2 rounded-[var(--fd-r-sm)] mt-1 border border-zinc-900">{bl.gerekce}</div>}
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-center">
                               {isMudur && (
@@ -1731,7 +1904,7 @@ export default function EgitimlerPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className={`h-8 border-zinc-800 text-[10px] font-bold ${bl.aktif_durum ? 'text-zinc-400 hover:text-white' : 'text-red-400 hover:text-white hover:bg-red-600/10'}`}
+                                    className={`h-8 border-[var(--fd-border)] text-[10px] font-bold ${bl.aktif_durum ? 'text-[var(--fd-text3)] hover:text-[var(--fd-text)]' : 'text-red-400 hover:text-[var(--fd-text)] hover:bg-red-600 dark:bg-red-500/10'}`}
                                     onClick={() => handleToggleBlacklist(bl.id, bl.aktif_durum)}
                                   >
                                     {bl.aktif_durum ? 'Engeli Pasife Al' : 'Engeli Aktifleştir'}
@@ -1739,7 +1912,7 @@ export default function EgitimlerPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 text-red-500 hover:text-white hover:bg-red-600/20"
+                                    className="h-8 text-red-500 hover:text-[var(--fd-text)] hover:bg-red-600 dark:bg-red-500/20"
                                     onClick={() => handleDeleteBlacklist(bl.id)}
                                   >
                                     Sil
@@ -1766,49 +1939,49 @@ export default function EgitimlerPage() {
             
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r-sm)] relative overflow-hidden group">
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-400 font-bold uppercase">Toplam Eğitim</span>
-                    <h3 className="text-2xl font-bold text-indigo-400">{analyticsData.totalCount} Faaliyet</h3>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase">Toplam Eğitim</span>
+                    <h3 className="text-2xl font-bold text-[var(--fd-accent)]">{analyticsData.totalCount} Faaliyet</h3>
                   </div>
-                  <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+                  <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-[var(--fd-accent)] rounded-[var(--fd-r-sm)]">
                     <GraduationCap className="w-6 h-6" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r-sm)] relative overflow-hidden group">
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-400 font-bold uppercase">Eğitim Süresi</span>
-                    <h3 className="text-2xl font-bold text-emerald-400">{analyticsData.totalHours} Saat</h3>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase">Eğitim Süresi</span>
+                    <h3 className="text-2xl font-bold text-emerald-500">{analyticsData.totalHours} Saat</h3>
                   </div>
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-[var(--fd-r-sm)]">
                     <Clock className="w-6 h-6" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r-sm)] relative overflow-hidden group">
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-400 font-bold uppercase">Eğitilen Vatandaş</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase">Eğitilen Vatandaş</span>
                     <h3 className="text-2xl font-bold text-blue-400">{analyticsData.totalParticipants} Vatandaş</h3>
                   </div>
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-[var(--fd-r-sm)]">
                     <Users className="w-6 h-6" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-950 border border-slate-800 p-4 rounded-xl relative overflow-hidden group">
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r-sm)] relative overflow-hidden group">
                 <CardContent className="p-0 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-400 font-bold uppercase">Bekleyen Başvuru</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase">Bekleyen Başvuru</span>
                     <h3 className="text-2xl font-bold text-amber-400">{analyticsData.pendingCount} Başvuru</h3>
                   </div>
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-[var(--fd-r-sm)]">
                     <FileText className="w-6 h-6" />
                   </div>
                 </CardContent>
@@ -1819,13 +1992,13 @@ export default function EgitimlerPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Kurum Tipi Dağılımı */}
-              <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
-                  <Users className="w-4.5 h-4.5 text-indigo-400" /> KURUM TİPLERİNE GÖRE DAĞILIM
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-6 shadow-xl">
+                <CardTitle className="text-sm font-semibold uppercase text-[var(--fd-text2)] border-b border-[var(--fd-border)] pb-3 flex items-center gap-1.5">
+                  <Users className="w-4.5 h-4.5 text-[var(--fd-accent)]" /> KURUM TİPLERİNE GÖRE DAĞILIM
                 </CardTitle>
                 <div className="h-[250px] w-full mt-4 flex items-center justify-center">
                   {analyticsData.typeData.length === 0 ? (
-                    <div className="text-zinc-500 text-xs">Yeterli veri bulunmamaktadır.</div>
+                    <div className="text-[var(--fd-text3)] text-xs">Yeterli veri bulunmamaktadır.</div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -1843,7 +2016,7 @@ export default function EgitimlerPage() {
                             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: '#090d16', border: '1px solid #1e293b' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--fd-surface2)', border: '1px solid var(--fd-border)', color: 'var(--fd-text)' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   )}
@@ -1851,21 +2024,21 @@ export default function EgitimlerPage() {
               </Card>
 
               {/* Mahalle Dağılımı (Top 5) */}
-              <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
-                  <BarChart3 className="w-4.5 h-4.5 text-indigo-400" /> EN ÇOK EĞİTİM VERİLEN TOP 5 MAHALLE
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-6 shadow-xl">
+                <CardTitle className="text-sm font-semibold uppercase text-[var(--fd-text2)] border-b border-[var(--fd-border)] pb-3 flex items-center gap-1.5">
+                  <BarChart3 className="w-4.5 h-4.5 text-[var(--fd-accent)]" /> EN ÇOK EĞİTİM VERİLEN TOP 5 MAHALLE
                 </CardTitle>
                 <div className="h-[250px] w-full mt-4">
                   {analyticsData.mahalleData.length === 0 ? (
-                    <div className="text-zinc-500 text-xs text-center pt-24">Yeterli veri bulunmamaktadır.</div>
+                    <div className="text-[var(--fd-text3)] text-xs text-center pt-24">Yeterli veri bulunmamaktadır.</div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={analyticsData.mahalleData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis dataKey="name" stroke="#64748b" style={{ fontSize: '10px' }} />
-                        <YAxis stroke="#64748b" style={{ fontSize: '10px' }} />
-                        <Tooltip contentStyle={{ backgroundColor: '#090d16', border: '1px solid #1e293b' }} />
-                        <Bar dataKey="Adet" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--fd-border)" />
+                        <XAxis dataKey="name" stroke="var(--fd-text3)" style={{ fontSize: '10px' }} />
+                        <YAxis stroke="var(--fd-text3)" style={{ fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--fd-surface2)', border: '1px solid var(--fd-border)', color: 'var(--fd-text)' }} />
+                        <Bar dataKey="Adet" fill="var(--fd-accent)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   )}
@@ -1873,27 +2046,27 @@ export default function EgitimlerPage() {
               </Card>
 
               {/* Aylık Eğitim Sayısı Trendi */}
-              <Card className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl lg:col-span-2">
-                <CardTitle className="text-sm font-semibold uppercase text-zinc-300 border-b border-zinc-800 pb-3 flex items-center gap-1.5">
-                  <Clock className="w-4.5 h-4.5 text-indigo-400" /> AYLIK EĞİTİM FAALİYET SAYILARI TRENDİ
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-6 shadow-xl lg:col-span-2">
+                <CardTitle className="text-sm font-semibold uppercase text-[var(--fd-text2)] border-b border-[var(--fd-border)] pb-3 flex items-center gap-1.5">
+                  <Clock className="w-4.5 h-4.5 text-[var(--fd-accent)]" /> AYLIK EĞİTİM FAALİYET SAYILARI TRENDİ
                 </CardTitle>
                 <div className="h-[250px] w-full mt-4">
                   {analyticsData.monthlyData.length === 0 ? (
-                    <div className="text-zinc-500 text-xs text-center pt-24">Yeterli veri bulunmamaktadır.</div>
+                    <div className="text-[var(--fd-text3)] text-xs text-center pt-24">Yeterli veri bulunmamaktadır.</div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={analyticsData.monthlyData}>
                         <defs>
                           <linearGradient id="colorEdu" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="var(--fd-accent)" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="var(--fd-accent)" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis dataKey="name" stroke="#64748b" style={{ fontSize: '10px' }} />
-                        <YAxis stroke="#64748b" style={{ fontSize: '10px' }} />
-                        <Tooltip contentStyle={{ backgroundColor: '#090d16', border: '1px solid #1e293b' }} />
-                        <Area type="monotone" dataKey="Eğitim Adeti" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorEdu)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--fd-border)" />
+                        <XAxis dataKey="name" stroke="var(--fd-text3)" style={{ fontSize: '10px' }} />
+                        <YAxis stroke="var(--fd-text3)" style={{ fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--fd-surface2)', border: '1px solid var(--fd-border)', color: 'var(--fd-text)' }} />
+                        <Area type="monotone" dataKey="Eğitim Adeti" stroke="var(--fd-accent)" fillOpacity={1} fill="url(#colorEdu)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   )}
@@ -1909,24 +2082,24 @@ export default function EgitimlerPage() {
         {activeTab === 'temel' && (
           <div className="space-y-6">
             {/* Alt Sekmeler */}
-            <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+            <div className="flex flex-wrap gap-2 border-b border-[var(--fd-border)] pb-3">
               <Button
                 variant={temelSubTab === 'cizelge' ? 'default' : 'ghost'}
-                className={`font-bold text-xs h-9 rounded-xl ${temelSubTab === 'cizelge' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+                className={`font-bold text-xs h-9 rounded-[var(--fd-r-sm)] ${temelSubTab === 'cizelge' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
                 onClick={() => setTemelSubTab('cizelge')}
               >
                 📊 Yıllık Eğitim Çizelgesi
               </Button>
               <Button
                 variant={temelSubTab === 'mufredat' ? 'default' : 'ghost'}
-                className={`font-bold text-xs h-9 rounded-xl ${temelSubTab === 'mufredat' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+                className={`font-bold text-xs h-9 rounded-[var(--fd-r-sm)] ${temelSubTab === 'mufredat' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
                 onClick={() => setTemelSubTab('mufredat')}
               >
                 📖 Eğitim Müfredatı
               </Button>
               <Button
                 variant={temelSubTab === 'sertifika' ? 'default' : 'ghost'}
-                className={`font-bold text-xs h-9 rounded-xl ${temelSubTab === 'sertifika' ? 'bg-indigo-600 text-white' : 'text-zinc-400'}`}
+                className={`font-bold text-xs h-9 rounded-[var(--fd-r-sm)] ${temelSubTab === 'sertifika' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
                 onClick={() => setTemelSubTab('sertifika')}
               >
                 📜 Sertifika Basımı
@@ -1939,11 +2112,11 @@ export default function EgitimlerPage() {
                 <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                   <div className="flex flex-1 gap-2 w-full">
                     {/* Arama */}
-                    <div className="flex items-center flex-1 bg-slate-900/40 border border-zinc-800 rounded-xl px-3.5 py-2">
-                      <Search className="w-4 h-4 text-zinc-400 mr-2" />
+                    <div className="flex items-center flex-1 bg-[var(--fd-surface2)]/40 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] px-3.5 py-2">
+                      <Search className="w-4 h-4 text-[var(--fd-text3)] mr-2" />
                       <input
                         type="text"
-                        className="bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-sm w-full"
+                        className="bg-transparent border-none outline-none text-[var(--fd-text)] placeholder-zinc-500 text-sm w-full"
                         placeholder="Personel adına göre arayın..."
                         value={cizelgeSearch}
                         onChange={(e) => setCizelgeSearch(e.target.value)}
@@ -1951,7 +2124,7 @@ export default function EgitimlerPage() {
                     </div>
                     {/* Posta Filtresi */}
                     <select
-                      className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                      className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold text-xs"
                       value={cizelgePostaFilter}
                       onChange={(e) => setCizelgePostaFilter(e.target.value)}
                     >
@@ -1961,13 +2134,13 @@ export default function EgitimlerPage() {
                       <option value="C">C Grubu</option>
                     </select>
                     {/* Başarı Barajı */}
-                    <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3.5 py-2 focus-within:border-indigo-500">
-                      <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider whitespace-nowrap">Başarı Barajı:</span>
+                    <div className="flex items-center gap-1.5 bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-3.5 py-2 focus-within:border-indigo-500">
+                      <span className="text-[10px] uppercase font-bold text-[var(--fd-text3)] tracking-wider whitespace-nowrap">Başarı Barajı:</span>
                       <input
                         type="number"
                         min="1"
                         max="1000"
-                        className="bg-transparent border-none outline-none text-zinc-200 text-xs font-bold w-10 text-center"
+                        className="bg-transparent border-none outline-none text-[var(--fd-text)] text-xs font-bold w-10 text-center"
                         value={basariSiniri}
                         onChange={(e) => {
                           const val = Math.max(1, Number(e.target.value) || 240);
@@ -1975,110 +2148,29 @@ export default function EgitimlerPage() {
                           setSertifikaSaat(String(val));
                         }}
                       />
-                      <span className="text-[10px] text-zinc-500 font-semibold">Saat</span>
+                      <span className="text-[10px] text-[var(--fd-text3)] font-semibold">Saat</span>
                     </div>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto justify-end">
                     <Button
                       variant="outline"
-                      className="border-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-bold gap-2"
+                      className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] rounded-[var(--fd-r-sm)] text-xs font-bold gap-2"
                       onClick={handlePrintYillikCizelge}
                     >
-                      <Printer className="w-4 h-4 text-indigo-400" /> PDF Rapor Çıktısı
+                      <Printer className="w-4 h-4 text-[var(--fd-accent)]" /> PDF Rapor Çıktısı
                     </Button>
                   </div>
                 </div>
 
-                <Card className="bg-slate-900/40 border-zinc-800/80 rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-zinc-800/50 bg-zinc-900/20 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                          <th className="p-4">Sicil No</th>
-                          <th className="p-4">Ad Soyad</th>
-                          <th className="p-4">Grup / Posta</th>
-                          <th className="p-4">Unvan</th>
-                          <th className="p-4">Toplam Eğitim Saati</th>
-                          <th className="p-4">Durum</th>
-                          <th className="p-4 text-right">İşlemler</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800/30 text-xs text-zinc-300 font-medium">
-                        {personnelList
-                          .filter(p => {
-                            const matchSearch = normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(cizelgeSearch)) || normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(cizelgeSearch));
-                            const matchPosta = cizelgePostaFilter === 'ALL' || p.posta === cizelgePostaFilter;
-                            return matchSearch && matchPosta;
-
-                          })
-                          .map(p => {
-                            const hours = p.temel_egitim_saati || 0;
-                            const isEligible = hours >= basariSiniri;
-                            return (
-                              <tr key={p.id} className="hover:bg-zinc-800/20 transition">
-                                <td className="p-4 font-mono font-bold text-zinc-400">{p.sicil_no}</td>
-                                <td className="p-4 font-semibold text-zinc-100">{p.ad} {p.soyad}</td>
-                                <td className="p-4">
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                    p.posta === 'A' ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/20' :
-                                    p.posta === 'B' ? 'bg-amber-950/30 text-amber-400 border-amber-500/20' :
-                                    'bg-emerald-950/30 text-emerald-400 border-emerald-500/20'
-                                  }`}>
-                                    {p.posta} Grubu
-                                  </span>
-                                </td>
-                                <td className="p-4 text-zinc-400">{p.unvan || 'İtfaiye Eri'}</td>
-                                <td className="p-4 font-mono font-bold text-indigo-400">{hours} Saat</td>
-                                <td className="p-4">
-                                  {isEligible ? (
-                                    <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                                      <CheckCircle className="w-4 h-4 text-emerald-400" /> Sertifika Hak Kazandı
-                                    </span>
-                                  ) : (
-                                    <span className="flex items-center gap-1.5 text-amber-500 font-bold">
-                                      <Clock className="w-4 h-4 text-amber-500" /> Devam Ediyor ({hours}/{basariSiniri})
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="p-4 text-right flex items-center justify-end gap-2">
-                                  {isMudur && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="text-indigo-400 hover:text-indigo-300 font-bold text-[11px] h-8 rounded-lg hover:bg-indigo-950/20"
-                                      onClick={() => {
-                                        setEditingPersonel(p);
-                                        setNewTrainingHours(hours);
-                                      }}
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5 mr-1" /> Saat Güncelle
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={!isEligible}
-                                    className={`font-bold text-[11px] h-8 rounded-lg ${
-                                      isEligible 
-                                        ? 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20' 
-                                        : 'text-zinc-600 cursor-not-allowed'
-                                    }`}
-                                    onClick={() => {
-                                      setSertifikaPersonelId(p.id);
-                                      setSertifikaSaat(String(hours));
-                                      setTemelSubTab('sertifika');
-                                    }}
-                                  >
-                                    <Award className="w-3.5 h-3.5 mr-1" /> Sertifika
-                                  </Button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
+                <DataTable
+                  data={personnelList.filter(p => {
+                    const matchSearch = normalizeTextForSearch(`${p.ad} ${p.soyad}`).includes(normalizeTextForSearch(cizelgeSearch)) || normalizeTextForSearch(p.sicil_no || '').includes(normalizeTextForSearch(cizelgeSearch));
+                    const matchPosta = cizelgePostaFilter === 'ALL' || p.posta === cizelgePostaFilter;
+                    return matchSearch && matchPosta;
+                  })}
+                  columns={cizelgeColumns}
+                  emptyState="Eğitim çizelgesinde kayıtlı personel bulunmamaktadır."
+                />
               </div>
             )}
 
@@ -2090,7 +2182,7 @@ export default function EgitimlerPage() {
                   <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <div className="flex gap-2">
                       <select
-                        className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                        className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-3 py-1.5 focus:outline-none focus:border-[var(--fd-accent)] font-semibold text-xs"
                         value={mufredatMonth}
                         onChange={(e) => setMufredatMonth(Number(e.target.value))}
                       >
@@ -2099,7 +2191,7 @@ export default function EgitimlerPage() {
                         ))}
                       </select>
                       <select
-                        className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                        className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-3 py-1.5 focus:outline-none focus:border-[var(--fd-accent)] font-semibold text-xs"
                         value={mufredatYear}
                         onChange={(e) => setMufredatYear(Number(e.target.value))}
                       >
@@ -2110,115 +2202,54 @@ export default function EgitimlerPage() {
                     </div>
                     <Button
                       variant="outline"
-                      className="border-zinc-800 text-zinc-300 hover:text-white rounded-xl text-xs font-bold gap-2"
+                      className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] rounded-[var(--fd-r-sm)] text-xs font-bold gap-2"
                       onClick={handlePrintAylikMufredat}
                     >
-                      <Printer className="w-4 h-4 text-indigo-400" /> Müfredat PDF Yazdır
+                      <Printer className="w-4 h-4 text-[var(--fd-accent)]" /> Müfredat PDF Yazdır
                     </Button>
                   </div>
 
-                  <Card className="bg-slate-900/40 border-zinc-800/80 rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="border-b border-zinc-800/50 bg-zinc-900/20 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                            <th className="p-4">Tarih</th>
-                            <th className="p-4">Posta</th>
-                            <th className="p-4">Eğitim Konusu</th>
-                            {isMudur && <th className="p-4 text-right">İşlemler</th>}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-800/30 text-xs text-zinc-300 font-medium">
-                          {mufredatLoading ? (
-                            <tr>
-                              <td colSpan={4} className="p-8 text-center text-zinc-500 font-semibold">
-                                <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-400" />
-                                Müfredat Yükleniyor...
-                              </td>
-                            </tr>
-                          ) : mufredatList.length === 0 ? (
-                            <tr>
-                              <td colSpan={4} className="p-8 text-center text-zinc-500 font-semibold">
-                                <Info className="w-5 h-5 mx-auto mb-2 text-zinc-600" />
-                                Bu ay için eğitim müfredatı planlanmamış.
-                              </td>
-                            </tr>
-                          ) : (
-                            mufredatList.map(row => {
-                              const d = new Date(row.tarih);
-                              const formattedDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${getDayName(d)}`;
-                              return (
-                                <tr key={row.id} className="hover:bg-zinc-800/20 transition">
-                                  <td className="p-4 font-semibold text-zinc-200">{formattedDate}</td>
-                                  <td className="p-4">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                      row.posta === 'A' ? 'bg-cyan-950/30 text-cyan-400 border-cyan-500/20' :
-                                      row.posta === 'B' ? 'bg-amber-950/30 text-amber-400 border-amber-500/20' :
-                                      'bg-emerald-950/30 text-emerald-400 border-emerald-500/20'
-                                    }`}>
-                                      {row.posta} Postası
-                                    </span>
-                                  </td>
-                                  <td className="p-4 text-zinc-100 font-semibold">{row.egitim_konusu}</td>
-                                  {isMudur && (
-                                    <td className="p-4 text-right flex justify-end gap-1.5">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-indigo-400 hover:text-white h-7 w-7 p-0 rounded-lg"
-                                        onClick={() => {
-                                          setMufredatEditRow(row);
-                                          setMufredatForm({
-                                            tarih: row.tarih.split('T')[0],
-                                            posta: row.posta,
-                                            egitim_konusu: row.egitim_konusu
-                                          });
-                                        }}
-                                      >
-                                        <Edit3 className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-red-400 hover:text-red-300 h-7 w-7 p-0 rounded-lg hover:bg-red-950/20"
-                                        onClick={() => handleDeleteMufredat(row.id)}
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </td>
-                                  )}
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
+                  {mufredatLoading ? (
+                    <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-8 text-center text-[var(--fd-text3)] font-semibold shadow-[var(--fd-shadow-sm)]">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-[var(--fd-accent)]" />
+                      Müfredat Yükleniyor...
+                    </Card>
+                  ) : (
+                    <DataTable
+                      data={mufredatList}
+                      columns={mufredatColumns}
+                      emptyState={
+                        <div className="flex flex-col items-center justify-center p-4">
+                          <Info className="w-5 h-5 mx-auto mb-2 text-[var(--fd-text3)]" />
+                          <span>Bu ay için eğitim müfredatı planlanmamış.</span>
+                        </div>
+                      }
+                    />
+                  )}
                 </div>
 
                 {/* Müfredat Formu (Sağ) */}
                 <div>
                   {isMudur ? (
-                    <Card className="bg-slate-900/40 border-zinc-800/80 p-5 rounded-2xl space-y-4">
-                      <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-indigo-400" />
+                    <Card className="bg-[var(--fd-surface2)]/40 border-[var(--fd-border)]/80 p-5 rounded-[var(--fd-r)] space-y-4">
+                      <h3 className="text-sm font-bold text-[var(--fd-text)] uppercase tracking-wider flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-[var(--fd-accent)]" />
                         {mufredatEditRow ? "Müfredat Kaydını Düzenle" : "Yeni Müfredat Ekle"}
                       </h3>
                       <form onSubmit={handleSaveMufredat} className="space-y-4">
                         <div className="space-y-1.5">
-                          <label className="text-zinc-400 font-semibold block text-xs">Eğitim Tarihi</label>
+                          <label className="text-[var(--fd-text3)] font-semibold block text-xs">Eğitim Tarihi</label>
                           <input
                             type="date"
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium text-xs"
                             value={mufredatForm.tarih}
                             onChange={(e) => setMufredatForm(prev => ({ ...prev, tarih: e.target.value }))}
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-zinc-400 font-semibold block text-xs">Grup / Posta</label>
+                          <label className="text-[var(--fd-text3)] font-semibold block text-xs">Grup / Posta</label>
                           <select
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold text-xs"
                             value={mufredatForm.posta}
                             onChange={(e) => setMufredatForm(prev => ({ ...prev, posta: e.target.value }))}
                           >
@@ -2228,11 +2259,11 @@ export default function EgitimlerPage() {
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-zinc-400 font-semibold block text-xs">Eğitim Konusu</label>
+                          <label className="text-[var(--fd-text3)] font-semibold block text-xs">Eğitim Konusu</label>
                           <textarea
                             rows={3}
                             placeholder="Eğitimin detaylı konusu..."
-                            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs resize-none"
+                            className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium text-xs resize-none"
                             value={mufredatForm.egitim_konusu}
                             onChange={(e) => setMufredatForm(prev => ({ ...prev, egitim_konusu: e.target.value }))}
                           />
@@ -2241,7 +2272,7 @@ export default function EgitimlerPage() {
                           <Button
                             type="submit"
                             disabled={isSavingMufredat}
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"
+                            className="flex-1 bg-[var(--fd-accent)] hover:opacity-90 text-white rounded-[var(--fd-r-sm)] text-xs font-bold"
                           >
                             {isSavingMufredat ? "Kaydediliyor..." : mufredatEditRow ? "Güncelle" : "Ekle"}
                           </Button>
@@ -2249,7 +2280,7 @@ export default function EgitimlerPage() {
                             <Button
                               type="button"
                               variant="ghost"
-                              className="border border-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-bold"
+                              className="border border-[var(--fd-border)] text-[var(--fd-text3)] hover:text-[var(--fd-text)] rounded-[var(--fd-r-sm)] text-xs font-bold"
                               onClick={() => {
                                 setMufredatEditRow(null);
                                 setMufredatForm({ tarih: '', posta: 'A', egitim_konusu: '' });
@@ -2262,10 +2293,10 @@ export default function EgitimlerPage() {
                       </form>
                     </Card>
                   ) : (
-                    <Card className="bg-slate-900/20 border-zinc-800/40 p-5 rounded-2xl text-center">
-                      <ShieldCheck className="w-8 h-8 text-zinc-500 mx-auto mb-2" />
-                      <h3 className="text-xs font-bold text-zinc-400 uppercase">Yetki Kısıtlaması</h3>
-                      <p className="text-[11px] text-zinc-500 mt-1">Eğitim müfredatı planlama yetkisi sadece İtfaiye Müdürlüğü yetkililerine aittir.</p>
+                    <Card className="bg-[var(--fd-surface2)]/20 border-[var(--fd-border)]/40 p-5 rounded-[var(--fd-r)] text-center">
+                      <ShieldCheck className="w-8 h-8 text-[var(--fd-text3)] mx-auto mb-2" />
+                      <h3 className="text-xs font-bold text-[var(--fd-text3)] uppercase">Yetki Kısıtlaması</h3>
+                      <p className="text-[11px] text-[var(--fd-text3)] mt-1">Eğitim müfredatı planlama yetkisi sadece İtfaiye Müdürlüğü yetkililerine aittir.</p>
                     </Card>
                   )}
                 </div>
@@ -2274,18 +2305,18 @@ export default function EgitimlerPage() {
 
             {/* ALT SEKME 3: Sertifika Basımı */}
             {temelSubTab === 'sertifika' && (
-              <Card className="bg-slate-900/40 border-zinc-800/80 p-6 rounded-2xl max-w-xl mx-auto space-y-6">
+              <Card className="bg-[var(--fd-surface2)]/40 border-[var(--fd-border)]/80 p-6 rounded-[var(--fd-r)] max-w-xl mx-auto space-y-6">
                 <div className="text-center space-y-2">
-                  <Award className="w-12 h-12 text-indigo-400 mx-auto animate-bounce" />
-                  <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-wider">Temel İtfaiye Eğitimi Başarı Sertifikası</h3>
-                  <p className="text-xs text-zinc-400">Yıllık {basariSiniri} saatlik temel itfaiye eğitimini tamamlayan personel için resmi sertifika baskı paneli.</p>
+                  <Award className="w-12 h-12 text-[var(--fd-accent)] mx-auto animate-bounce" />
+                  <h3 className="text-lg font-bold text-[var(--fd-text)] uppercase tracking-wider">Temel İtfaiye Eğitimi Başarı Sertifikası</h3>
+                  <p className="text-xs text-[var(--fd-text3)]">Yıllık {basariSiniri} saatlik temel itfaiye eğitimini tamamlayan personel için resmi sertifika baskı paneli.</p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-zinc-400 font-semibold block text-xs">Sertifika Alacak Personel</label>
+                    <label className="text-[var(--fd-text3)] font-semibold block text-xs">Sertifika Alacak Personel</label>
                     <select
-                      className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 font-semibold text-xs"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-1.5 h-9 focus:outline-none focus:border-[var(--fd-accent)] font-semibold text-xs"
                       value={sertifikaPersonelId}
                       onChange={(e) => {
                         setSertifikaPersonelId(e.target.value);
@@ -2305,17 +2336,17 @@ export default function EgitimlerPage() {
                         ))}
                     </select>
                     {sertifikaPersonelId && (
-                      <p className="text-[10px] text-emerald-400 font-semibold mt-1">
+                      <p className="text-[10px] text-emerald-500 font-semibold mt-1">
                         ✓ Seçilen personel başarı sınırını ({basariSiniri} Saat) aşmıştır ve sertifika almaya hak kazanmıştır.
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-zinc-400 font-semibold block text-xs">Belgelenecek Eğitim Süresi (Saat)</label>
+                    <label className="text-[var(--fd-text3)] font-semibold block text-xs">Belgelenecek Eğitim Süresi (Saat)</label>
                     <input
                       type="number"
-                      className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium text-xs"
                       value={sertifikaSaat}
                       onChange={(e) => setSertifikaSaat(e.target.value)}
                     />
@@ -2323,7 +2354,7 @@ export default function EgitimlerPage() {
 
                   <Button
                     disabled={!sertifikaPersonelId}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white rounded-xl text-xs font-bold gap-2 py-3"
+                    className="w-full bg-emerald-600 dark:bg-emerald-500 hover:opacity-90 disabled:bg-[var(--fd-surface3)] disabled:text-[var(--fd-text3)] text-white rounded-[var(--fd-r-sm)] text-xs font-bold gap-2 py-2 h-9"
                     onClick={handlePrintSertifika}
                   >
                     <Award className="w-4 h-4" /> Sertifikayı PDF Olarak Bas ve İndir
@@ -2334,33 +2365,33 @@ export default function EgitimlerPage() {
 
             {/* Eğitim Saati Güncelleme Modalı */}
             {editingPersonel && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                <Card className="w-full max-w-md bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200">
-                  <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-4 flex flex-row items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-zinc-100 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-indigo-400" /> EĞİTİM SAATİ GÜNCELLE
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <Card className="w-full max-w-md bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-2xl overflow-hidden rounded-[var(--fd-r)] animate-in zoom-in-95 duration-200">
+                  <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)]/80 p-4 flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-[var(--fd-text)] flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[var(--fd-accent)]" /> EĞİTİM SAATİ GÜNCELLE
                     </CardTitle>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-zinc-400 hover:text-white"
+                      className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
                       onClick={() => setEditingPersonel(null)}
                     >
                       <X className="w-4 h-4" />
                     </Button>
                   </CardHeader>
                   <CardContent className="p-5 space-y-4">
-                    <div className="bg-slate-900/50 p-3 rounded-xl border border-zinc-800 text-xs space-y-1">
-                      <p className="text-zinc-400">Personel: <span className="text-zinc-100 font-bold">{editingPersonel.ad} {editingPersonel.soyad}</span></p>
-                      <p className="text-zinc-400">Sicil No: <span className="text-zinc-100 font-bold font-mono">{editingPersonel.sicil_no}</span></p>
+                    <div className="bg-[var(--fd-surface2)]/50 p-3 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] text-xs space-y-1">
+                      <p className="text-[var(--fd-text3)]">Personel: <span className="text-[var(--fd-text)] font-bold">{editingPersonel.ad} {editingPersonel.soyad}</span></p>
+                      <p className="text-[var(--fd-text3)]">Sicil No: <span className="text-[var(--fd-text)] font-bold font-mono">{editingPersonel.sicil_no}</span></p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-semibold block text-xs">Mevcut Toplam Eğitim Saati (Yıllık)</label>
+                      <label className="text-[var(--fd-text3)] font-semibold block text-xs">Mevcut Toplam Eğitim Saati (Yıllık)</label>
                       <input
                         type="number"
                         min={0}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium text-xs"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium text-xs"
                         value={newTrainingHours}
                         onChange={(e) => setNewTrainingHours(Number(e.target.value))}
                       />
@@ -2369,14 +2400,14 @@ export default function EgitimlerPage() {
                     <div className="flex gap-2">
                       <Button
                         disabled={isUpdatingHours}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"
+                        className="flex-1 bg-[var(--fd-accent)] hover:opacity-90 text-white rounded-[var(--fd-r-sm)] text-xs font-bold"
                         onClick={handleUpdateHours}
                       >
                         {isUpdatingHours ? "Güncelleniyor..." : "Kaydet"}
                       </Button>
                       <Button
                         variant="ghost"
-                        className="border border-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-bold"
+                        className="border border-[var(--fd-border)] text-[var(--fd-text3)] hover:text-[var(--fd-text)] rounded-[var(--fd-r-sm)] text-xs font-bold"
                         onClick={() => setEditingPersonel(null)}
                       >
                         İptal
@@ -2391,19 +2422,19 @@ export default function EgitimlerPage() {
 
         {/* --- CITIZEN REQUEST DETAIL & ACTION MODAL --- */}
         {selectedRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
-              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-2xl overflow-hidden rounded-[var(--fd-r)] animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)]/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
-                    <GraduationCap className="w-5 h-5 text-indigo-400" /> VATANDAŞ EĞİTİM TALEBİ DETAYLARI
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-[var(--fd-text)]">
+                    <GraduationCap className="w-5 h-5 text-[var(--fd-accent)]" /> VATANDAŞ EĞİTİM TALEBİ DETAYLARI
                   </CardTitle>
-                  <p className="text-xs text-zinc-500 mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Eğitim İnceleme Arayüzü</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas Belediyesi İtfaiye Müdürlüğü Vatandaş Eğitim İnceleme Arayüzü</p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-white"
+                  className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
                   onClick={() => setSelectedRequest(null)}
                 >
                   <X className="w-5 h-5" />
@@ -2413,47 +2444,47 @@ export default function EgitimlerPage() {
               <CardContent className="p-6 space-y-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase block">Başvuran Kurum / Kişi</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.basvuran_ad_soyad}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase block">Başvuran Kurum / Kişi</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.basvuran_ad_soyad}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase block">Vergi No / T.C. Kimlik</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.basvuran_tc || 'Girilmemiş'}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase block">Vergi No / T.C. Kimlik</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.basvuran_tc || 'Girilmemiş'}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase block">İrtibat Telefonu</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.irtibat_tel}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase block">İrtibat Telefonu</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.irtibat_tel}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-zinc-500 font-bold uppercase block">Talep Tarihi</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase block">Talep Tarihi</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">
                       {new Date(selectedRequest.basvuru_tarihi).toLocaleString('tr-TR')}
                     </span>
                   </div>
                   <div className="space-y-1 sm:col-span-2">
-                    <span className="text-xs text-zinc-500 font-bold uppercase block">Eğitim Talep Edilen Adres</span>
-                    <span className="text-sm font-semibold text-zinc-200 block">{selectedRequest.adres}</span>
+                    <span className="text-xs text-[var(--fd-text3)] font-bold uppercase block">Eğitim Talep Edilen Adres</span>
+                    <span className="text-sm font-semibold text-[var(--fd-text)] block">{selectedRequest.adres}</span>
                   </div>
                 </div>
 
                 {/* Eğitim Detayları */}
                 {selectedRequest.isyeri_detaylari && (
-                  <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-xl space-y-2">
-                    <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider border-b border-indigo-500/10 pb-1 flex items-center gap-1.5">
+                  <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-[var(--fd-r-sm)] space-y-2">
+                    <h4 className="text-xs font-semibold text-[var(--fd-accent)] uppercase tracking-wider border-b border-indigo-500/10 pb-1 flex items-center gap-1.5">
                       <GraduationCap className="w-3.5 h-3.5" /> Talep Edilen Eğitim Detayları
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-zinc-500 block">Eğitim Türü:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.egitim_turu || 'Temel Yangın Eğitimi'}</span>
+                        <span className="text-[var(--fd-text3)] block">Eğitim Türü:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.egitim_turu || 'Temel Yangın Eğitimi'}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Planlanan Tarih:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.egitim_tarihi || 'Belirtilmemiş'}</span>
+                        <span className="text-[var(--fd-text3)] block">Planlanan Tarih:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.egitim_tarihi || 'Belirtilmemiş'}</span>
                       </div>
                       <div className="col-span-2">
-                        <span className="text-zinc-500 block">Tahmini Katılımcı Sayısı:</span>
-                        <span className="font-bold text-zinc-300">{selectedRequest.isyeri_detaylari.kisi_sayisi || 30} Kişi</span>
+                        <span className="text-[var(--fd-text3)] block">Tahmini Katılımcı Sayısı:</span>
+                        <span className="font-bold text-[var(--fd-text2)]">{selectedRequest.isyeri_detaylari.kisi_sayisi || 30} Kişi</span>
                       </div>
                     </div>
                   </div>
@@ -2461,16 +2492,16 @@ export default function EgitimlerPage() {
 
                 {/* Karar / Amir Audit Trail */}
                 {selectedRequest.islem_yapan_amir && (
-                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-zinc-500 font-semibold">
+                  <div className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r-sm)] space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-[var(--fd-text3)] font-semibold">
                       <span>İŞLEM YAPAN YETKİLİ</span>
                       <span>{selectedRequest.islem_tarihi ? new Date(selectedRequest.islem_tarihi).toLocaleString('tr-TR') : ''}</span>
                     </div>
-                    <div className="text-zinc-300 font-bold">
+                    <div className="text-[var(--fd-text2)] font-bold">
                       {selectedRequest.islem_yapan_amir}
                     </div>
                     {selectedRequest.red_gerekcesi && (
-                      <div className="bg-red-950/20 border border-red-500/10 p-2.5 rounded-lg text-red-400 mt-2 font-mono">
+                      <div className="bg-red-950/20 border border-red-500/10 p-2.5 rounded-[var(--fd-r-sm)] text-red-400 mt-2 font-mono">
                         <span className="font-bold block text-[10px] uppercase text-red-500 mb-0.5">RED GEREKÇESİ:</span>
                         {selectedRequest.red_gerekcesi}
                       </div>
@@ -2480,10 +2511,10 @@ export default function EgitimlerPage() {
 
                 {/* Sub-Action Panels */}
                 {tacticalMode === 'RED' && (
-                  <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl space-y-3">
+                  <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-[var(--fd-r-sm)] space-y-3">
                     <label className="text-xs font-bold text-red-400 block">RED GEREKÇESİNİ YAZIN <span className="text-red-500">*</span></label>
                     <textarea
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 font-semibold"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] p-3 text-sm text-[var(--fd-text)] placeholder-zinc-600 focus:outline-none focus:border-red-500 font-semibold"
                       rows={3}
                       placeholder="Gerekçe girin..."
                       value={rejectionReason}
@@ -2492,13 +2523,13 @@ export default function EgitimlerPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
-                        className="border-zinc-800 text-zinc-400 text-xs px-3 py-1.5 h-8 font-semibold"
+                        className="border-[var(--fd-border)] text-[var(--fd-text3)] text-xs px-3 py-1.5 h-8 font-semibold"
                         onClick={() => setTacticalMode('NONE')}
                       >
                         İptal
                       </Button>
                       <Button
-                        className="bg-red-600 hover:bg-red-700 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
+                        className="bg-red-600 dark:bg-red-500 hover:opacity-90 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
                         onClick={() => handleTacticalAction(selectedRequest.id, 'REDDEDİLDİ', { reason: rejectionReason })}
                       >
                         Reddet
@@ -2508,10 +2539,10 @@ export default function EgitimlerPage() {
                 )}
 
                 {tacticalMode === 'EKIP' && (
-                  <div className="bg-blue-950/20 border border-blue-500/30 p-4 rounded-xl space-y-3">
+                  <div className="bg-blue-950/20 border border-blue-500/30 p-4 rounded-[var(--fd-r-sm)] space-y-3">
                     <label className="text-xs font-bold text-blue-400 block">GÖREVLENDİRİLECEK EKİBİ SEÇİN <span className="text-red-500">*</span></label>
                     <select
-                      className="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-semibold"
+                      className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] font-semibold"
                       value={selectedCrew}
                       onChange={(e) => setSelectedCrew(e.target.value)}
                     >
@@ -2522,13 +2553,13 @@ export default function EgitimlerPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
-                        className="border-zinc-800 text-zinc-400 text-xs px-3 py-1.5 h-8 font-semibold"
+                        className="border-[var(--fd-border)] text-[var(--fd-text3)] text-xs px-3 py-1.5 h-8 font-semibold"
                         onClick={() => setTacticalMode('NONE')}
                       >
                         İptal
                       </Button>
                       <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
+                        className="bg-blue-600 dark:bg-blue-500 hover:opacity-90 text-white text-xs px-3.5 py-1.5 h-8 font-bold flex items-center gap-1"
                         onClick={() => handleTacticalAction(selectedRequest.id, 'EKİP_ATANDI', { crew: selectedCrew })}
                       >
                         Ekip Ata
@@ -2538,12 +2569,12 @@ export default function EgitimlerPage() {
                 )}
               </CardContent>
 
-              <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)]/80 p-5 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   {isMudur && (
                     <Button
                       variant="ghost"
-                      className="text-red-500 hover:text-white hover:bg-red-600/10 text-xs font-bold px-3 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                      className="text-red-500 hover:text-[var(--fd-text)] hover:bg-red-600 dark:bg-red-500/10 text-xs font-bold px-3 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
                       disabled={updating !== null}
                       onClick={() => handleDeleteRequest(selectedRequest.id)}
                     >
@@ -2555,7 +2586,7 @@ export default function EgitimlerPage() {
                 <div className="flex items-center gap-2 text-xs">
                   <Button 
                     variant="outline" 
-                    className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 h-9 rounded-xl text-xs"
+                    className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 font-semibold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] text-xs"
                     onClick={() => setSelectedRequest(null)}
                   >
                     Kapat
@@ -2564,7 +2595,7 @@ export default function EgitimlerPage() {
                   {/* Place on Calendar Integration */}
                   {selectedRequest.durum === 'ONAYLANDI' && (
                     <Button
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                      className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1"
                       onClick={() => {
                         const tc = selectedRequest.basvuran_tc;
                         const matchBlacklist = blacklistList.find(x => x.vergi_no_or_tc === tc);
@@ -2598,21 +2629,21 @@ export default function EgitimlerPage() {
                   {isMudur && selectedRequest.durum !== 'ONAYLANDI' && selectedRequest.durum !== 'REDDEDİLDİ' && (
                     <>
                       <Button
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                        className="bg-red-600 dark:bg-red-500 hover:opacity-90 text-white font-bold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1"
                         disabled={updating !== null || tacticalMode === 'RED'}
                         onClick={() => setTacticalMode('RED')}
                       >
                         Reddet
                       </Button>
                       <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1"
+                        className="bg-blue-600 dark:bg-blue-500 hover:opacity-90 text-white font-bold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1"
                         disabled={updating !== null || tacticalMode === 'EKIP'}
                         onClick={() => setTacticalMode('EKIP')}
                       >
                         Ekip Ata
                       </Button>
                       <Button
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1 shadow-md"
+                        className="bg-emerald-600 dark:bg-emerald-500 hover:opacity-90 text-white font-bold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1 shadow-md"
                         disabled={updating !== null}
                         onClick={() => handleTacticalAction(selectedRequest.id, 'ONAYLANDI')}
                       >
@@ -2628,19 +2659,19 @@ export default function EgitimlerPage() {
 
         {/* --- EDUCATION PROGRAM EDIT / NEW MODAL --- */}
         {isProgramModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-            <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl animate-in zoom-in-95 duration-200 my-auto">
-              <CardHeader className="bg-zinc-900/40 border-b border-zinc-800/80 p-5 flex flex-row items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <Card className="w-full max-w-2xl bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-[var(--fd-r)] animate-in zoom-in-95 duration-200 my-auto">
+              <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)]/80 p-5 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-zinc-100">
-                    <Calendar className="w-5 h-5 text-indigo-400" /> {eduForm.id ? 'PROGRAM DETAY & DÜZENLEME' : 'YENİ EĞİTİM / ZİYARET PROGRAMLA'}
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-[var(--fd-text)]">
+                    <Calendar className="w-5 h-5 text-[var(--fd-accent)]" /> {eduForm.id ? 'PROGRAM DETAY & DÜZENLEME' : 'YENİ EĞİTİM / ZİYARET PROGRAMLA'}
                   </CardTitle>
-                  <p className="text-xs text-zinc-500 mt-1">Sivas İtfaiyesi Eğitim ve Ziyaret Program Planlama Sistemi</p>
+                  <p className="text-xs text-[var(--fd-text3)] mt-1">Sivas İtfaiyesi Eğitim ve Ziyaret Program Planlama Sistemi</p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-white"
+                  className="text-[var(--fd-text3)] hover:text-[var(--fd-text)]"
                   onClick={() => setIsProgramModalOpen(false)}
                 >
                   <X className="w-5 h-5" />
@@ -2653,18 +2684,18 @@ export default function EgitimlerPage() {
                   {/* Blacklist Warning */}
                   {activeBlacklistedInst && (
                     <div className="space-y-4 my-2">
-                      <div className="border border-red-500/50 bg-red-950/35 text-red-200 p-4 rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse flex flex-col gap-2">
+                      <div className="border border-red-500/50 bg-red-950/35 text-red-200 p-4 rounded-[var(--fd-r-sm)] shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse flex flex-col gap-2">
                         <span className="font-bold text-xs sm:text-sm block">
                           ⚠️ RISK ALERTI: Bu kurum/vergi no kara listededir! Yasaklama Gerekçesi: {activeBlacklistedInst.gerekce}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 bg-red-950/10 border border-red-500/10 p-3 rounded-xl">
+                      <div className="flex items-center gap-3 bg-red-950/10 border border-red-500/10 p-3 rounded-[var(--fd-r-sm)]">
                         <input
                           type="checkbox"
                           id="blacklist-acknowledge"
                           checked={blacklistAcknowledged}
                           onChange={(e) => setBlacklistAcknowledged(e.target.checked)}
-                          className="w-4 h-4 rounded border-red-500/40 text-red-600 focus:ring-red-500 bg-zinc-900 cursor-pointer"
+                          className="w-4 h-4 rounded border-red-500/40 text-red-600 focus:ring-red-500 bg-[var(--fd-surface2)] cursor-pointer"
                         />
                         <label htmlFor="blacklist-acknowledge" className="text-xs font-semibold text-red-300 cursor-pointer select-none">
                           Kara Liste Uyarısını Okudum ve Onaylıyorum
@@ -2677,20 +2708,20 @@ export default function EgitimlerPage() {
                     
                     {/* Kurum Adı */}
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-zinc-400 font-bold block">Eğitim Alacak Kurum / Grup Adı <span className="text-red-500">*</span></label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Eğitim Alacak Kurum / Grup Adı <span className="text-red-500">*</span></label>
                       <div className="flex gap-2">
                         <input
                           type="text"
                           required
                           disabled={!isMudur}
-                          className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3.5 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                          className="flex-1 bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3.5 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                           placeholder="Örn: Organize Sanayi Fabrikası veya okul adı"
                           value={eduForm.kurum_adi}
                           onChange={(e) => setEduForm(prev => ({ ...prev, kurum_adi: e.target.value }))}
                         />
                         <select
                           disabled={!isMudur}
-                          className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-xl px-2 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                          className="w-48 bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-2 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                           value={eduForm.kurum_id || ''}
                           onChange={(e) => {
                             const val = e.target.value
@@ -2712,10 +2743,10 @@ export default function EgitimlerPage() {
 
                     {/* Kurum Tipi */}
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-zinc-400 font-bold block">Kurum Sınıflandırma Tipi <span className="text-red-500">*</span></label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Kurum Sınıflandırma Tipi <span className="text-red-500">*</span></label>
                       <select
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                         value={eduForm.kurum_tipi}
                         onChange={(e) => setEduForm(prev => ({ ...prev, kurum_tipi: e.target.value }))}
                       >
@@ -2730,10 +2761,10 @@ export default function EgitimlerPage() {
 
                     {/* Eğitim Türü */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Eğitim / Tatbikat Kapsamı</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Eğitim / Tatbikat Kapsamı</label>
                       <select
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                         value={eduForm.egitim_turu}
                         onChange={(e) => setEduForm(prev => ({ ...prev, egitim_turu: e.target.value }))}
                       >
@@ -2747,12 +2778,12 @@ export default function EgitimlerPage() {
 
                     {/* Kişi Sayısı */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Katılımcı Sayısı</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Katılımcı Sayısı</label>
                       <input
                         type="number"
                         min={1}
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium disabled:opacity-50"
                         value={eduForm.kisi_sayisi}
                         onChange={(e) => setEduForm(prev => ({ ...prev, kisi_sayisi: e.target.value }))}
                       />
@@ -2760,11 +2791,11 @@ export default function EgitimlerPage() {
 
                     {/* Tarih */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Planlanan Tarih</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Planlanan Tarih</label>
                       <input
                         type="date"
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                         value={eduForm.planlanan_tarih}
                         onChange={(e) => setEduForm(prev => ({ ...prev, planlanan_tarih: e.target.value }))}
                       />
@@ -2772,10 +2803,10 @@ export default function EgitimlerPage() {
 
                     {/* Saat Dilimi */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Saat Dilimi</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Saat Dilimi</label>
                       <select
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                         value={eduForm.saat_slot}
                         onChange={(e) => setEduForm(prev => ({ ...prev, saat_slot: e.target.value }))}
                       >
@@ -2787,11 +2818,11 @@ export default function EgitimlerPage() {
 
                     {/* Mahalle */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Eğitim Bölgesi / Mahalle</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Eğitim Bölgesi / Mahalle</label>
                       <input
                         type="text"
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium disabled:opacity-50"
                         placeholder="Örn: Esentepe"
                         value={eduForm.mahalle}
                         onChange={(e) => setEduForm(prev => ({ ...prev, mahalle: e.target.value }))}
@@ -2800,10 +2831,10 @@ export default function EgitimlerPage() {
 
                     {/* Yaş Grubu */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Yaş Grubu</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Yaş Grubu</label>
                       <select
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                         value={eduForm.yas_grubu}
                         onChange={(e) => setEduForm(prev => ({ ...prev, yas_grubu: e.target.value }))}
                       >
@@ -2816,46 +2847,46 @@ export default function EgitimlerPage() {
 
                     {/* Süre Bilgileri */}
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Teorik Eğitim Süresi (Dakika)</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Teorik Eğitim Süresi (Dakika)</label>
                       <input
                         type="number"
                         min={0}
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium disabled:opacity-50"
                         value={eduForm.teorik_sure_dk}
                         onChange={(e) => setEduForm(prev => ({ ...prev, teorik_sure_dk: e.target.value }))}
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-zinc-400 font-bold block">Pratik / Tatbikat Süresi (Dakika)</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Pratik / Tatbikat Süresi (Dakika)</label>
                       <input
                         type="number"
                         min={0}
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-medium disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-medium disabled:opacity-50"
                         value={eduForm.pratik_sure_dk}
                         onChange={(e) => setEduForm(prev => ({ ...prev, pratik_sure_dk: e.target.value }))}
                       />
                     </div>
 
                     {/* Toplam Süre */}
-                    <div className="space-y-1.5 sm:col-span-2 bg-indigo-950/20 border border-indigo-900/30 p-3 rounded-xl flex items-center justify-between">
+                    <div className="space-y-1.5 sm:col-span-2 bg-indigo-950/20 border border-indigo-900/30 p-3 rounded-[var(--fd-r-sm)] flex items-center justify-between">
                       <div>
                         <span className="text-xs font-bold text-indigo-300 block">Toplam Hesaplanan Süre</span>
-                        <span className="text-[10px] text-zinc-500">Teorik ve pratik sürelerin saat cinsinden toplamı</span>
+                        <span className="text-[10px] text-[var(--fd-text3)]">Teorik ve pratik sürelerin saat cinsinden toplamı</span>
                       </div>
-                      <span className="text-base font-bold text-indigo-400 font-mono">
+                      <span className="text-base font-bold text-[var(--fd-accent)] font-mono">
                         {((Number(eduForm.teorik_sure_dk || 0) + Number(eduForm.pratik_sure_dk || 0)) / 60).toFixed(2)} Saat
                       </span>
                     </div>
 
                     {/* Onay Durumu */}
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-zinc-400 font-bold block">Program Durumu</label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Program Durumu</label>
                       <select
                         disabled={!isMudur}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 font-semibold disabled:opacity-50"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
                         value={eduForm.durum}
                         onChange={(e) => setEduForm(prev => ({ ...prev, durum: e.target.value }))}
                       >
@@ -2868,16 +2899,16 @@ export default function EgitimlerPage() {
 
                     {/* Çoklu Eğitmen Seçimi */}
                     <div className="space-y-2 sm:col-span-2">
-                      <label className="text-zinc-400 font-bold block uppercase tracking-wider">Görevli Eğitmen / Personel Seçimi</label>
-                      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 scrollbar-thin">
+                      <label className="text-[var(--fd-text3)] font-bold block uppercase tracking-wider">Görevli Eğitmen / Personel Seçimi</label>
+                      <div className="bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] p-3 max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 scrollbar-thin">
                         {personnelList.map(p => {
                           const isChecked = eduForm.egitimci_personel_ids.includes(p.id) || eduForm.egitimci_personel_ids.includes(p.sicil_no)
                           return (
-                            <label key={p.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-zinc-900 cursor-pointer select-none transition">
+                            <label key={p.id} className="flex items-center gap-2.5 p-2 rounded-[var(--fd-r-sm)] hover:bg-[var(--fd-surface2)] cursor-pointer select-none transition">
                               <input
                                 type="checkbox"
                                 disabled={!isMudur}
-                                className="rounded bg-zinc-950 border-zinc-800 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                                className="rounded bg-[var(--fd-surface2)] border-[var(--fd-border)] text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
                                 checked={isChecked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -2893,8 +2924,8 @@ export default function EgitimlerPage() {
                                   }
                                 }}
                               />
-                              <div className="text-xs font-semibold text-zinc-200">
-                                {p.ad} {p.soyad} <span className="text-[10px] text-zinc-500">({p.unvan || 'Er'})</span>
+                              <div className="text-xs font-semibold text-[var(--fd-text)]">
+                                {p.ad} {p.soyad} <span className="text-[10px] text-[var(--fd-text3)]">({p.unvan || 'Er'})</span>
                               </div>
                             </label>
                           )
@@ -2905,12 +2936,12 @@ export default function EgitimlerPage() {
                   </div>
                 </CardContent>
 
-                <div className="bg-zinc-900/40 border-t border-zinc-800/80 p-5 flex items-center justify-between gap-3">
+                <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)]/80 p-5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     {eduForm.id && isMudur && (
                       <Button
                         type="button"
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                        className="bg-red-600 dark:bg-red-500 hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
                         onClick={() => handleDeleteEducation(eduForm.id)}
                       >
                         <Trash2 className="w-4 h-4" /> Sil
@@ -2919,7 +2950,7 @@ export default function EgitimlerPage() {
                     {eduForm.id && (
                       <Button
                         type="button"
-                        className="bg-indigo-600/10 hover:bg-indigo-600/25 border border-indigo-500/20 text-indigo-400 font-bold text-xs px-3.5 py-2 h-9 rounded-xl flex items-center gap-1.5"
+                        className="bg-[var(--fd-accent)]/10 hover:bg-[var(--fd-accent)]/25 border border-indigo-500/20 text-[var(--fd-accent)] font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
                         onClick={() => handlePrintClick(eduForm)}
                       >
                         <Printer className="w-4 h-4" /> Resmi Rapor Bas
@@ -2931,7 +2962,7 @@ export default function EgitimlerPage() {
                     <Button 
                       type="button"
                       variant="outline" 
-                      className="border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800/60 font-semibold px-4 py-2 h-9 rounded-xl text-xs"
+                      className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]/50 font-semibold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] text-xs"
                       onClick={() => setIsProgramModalOpen(false)}
                     >
                       İptal
@@ -2939,7 +2970,7 @@ export default function EgitimlerPage() {
                     {isMudur && (
                       <Button 
                         type="button"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 shadow-md"
+                        className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-md"
                         disabled={isSavingEdu || (activeBlacklistedInst !== null && !blacklistAcknowledged)}
                         onClick={handleSaveEducation}
                       >

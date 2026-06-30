@@ -130,10 +130,11 @@ export default function TelsizPage() {
         speed = 0.08
       }
       
-      ctx.strokeStyle = '#06b6d4' // cyan-500
+      const accentColor = typeof window !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--fd-accent').trim() || '#06b6d4' : '#06b6d4'
+      ctx.strokeStyle = accentColor
       ctx.lineWidth = 1.5
       ctx.shadowBlur = 4
-      ctx.shadowColor = 'rgba(6, 182, 212, 0.4)'
+      ctx.shadowColor = accentColor + '66' // Add opacity
       
       ctx.beginPath()
       for (let x = 0; x < canvas.width; x++) {
@@ -531,20 +532,20 @@ export default function TelsizPage() {
 
   return (
     <PageGuard pageId="telsiz">
-      <div className="flex flex-col min-h-[calc(100vh-8rem)] lg:min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 p-4 pb-2 md:pb-6 font-sans">
+      <div className="flex flex-col min-h-[calc(100vh-8rem)] lg:min-h-[calc(100vh-4rem)] text-[var(--fd-text)] font-sans w-full relative">
         
         {/* TOP STATUS CONTROL BAR */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between border border-slate-800 bg-slate-900/40 backdrop-blur-md px-4 py-3 rounded-xl gap-4 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] px-4 py-3 rounded-xl gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-cyan-950/50 border border-cyan-800/30 rounded-lg text-cyan-400">
+            <div className="p-2 bg-[var(--fd-accent)]/10 border border-[var(--fd-accent)]/20 rounded-lg text-[var(--fd-accent)]">
               <Radio className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-100 flex items-center gap-2">
+              <h2 className="text-lg font-bold tracking-tight text-[var(--fd-text)] flex items-center gap-2">
                 Dijital Telsiz Muhabere Sistemi
-                <span className="text-[10px] uppercase bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/30">CANLI</span>
+                <span className="text-[10px] uppercase bg-[var(--fd-accent)]/15 text-[var(--fd-accent)] px-2 py-0.5 rounded border border-[var(--fd-accent)]/25">CANLI</span>
               </h2>
-              <p className="text-xs text-slate-400">Sivas İtfaiye Daire Başkanlığı Müfrezeler Arası Ortak Muhabere Ağı</p>
+              <p className="text-xs text-[var(--fd-text3)]">Sivas İtfaiye Müdürlüğü Müfrezeler Arası Ortak Muhabere Ağı</p>
             </div>
           </div>
           <div className="flex items-center gap-2 self-end md:self-auto">
@@ -553,8 +554,8 @@ export default function TelsizPage() {
               onClick={() => setIsMuted(!isMuted)} 
               className={`p-2 rounded-lg border transition-all cursor-pointer ${
                 isMuted 
-                  ? 'bg-rose-950/20 border-rose-800/40 text-rose-400 hover:bg-rose-900/20' 
-                  : 'bg-emerald-950/20 border-emerald-800/40 text-emerald-400 hover:bg-emerald-900/20'
+                  ? 'bg-[var(--fd-danger)]/10 border-[var(--fd-danger)]/30 text-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/25' 
+                  : 'bg-[var(--fd-success)]/10 border-[var(--fd-success)]/30 text-[var(--fd-success)] hover:bg-[var(--fd-success)]/25'
               }`}
               title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
             >
@@ -565,7 +566,7 @@ export default function TelsizPage() {
             <button
               onClick={handlePrintJurnal}
               disabled={messages.length === 0}
-              className="px-3 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 rounded-lg flex items-center gap-1.5 disabled:opacity-50 transition-all cursor-pointer"
+              className="px-3 py-2 text-xs font-bold bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)] text-[var(--fd-text2)] rounded-lg flex items-center gap-1.5 disabled:opacity-50 transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" /> Resmi Jurnal Bas
             </button>
@@ -576,26 +577,26 @@ export default function TelsizPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 items-stretch">
           
           {/* LEFT CHANNEL SELECTOR PANEL (SOL PANEL) */}
-          <div className={`lg:col-span-4 flex flex-col gap-4 border border-slate-900 bg-slate-950 rounded-xl p-4 max-h-[calc(100vh-21rem)] lg:max-h-[calc(100vh-14rem)] overflow-y-auto ${
+          <div className={`lg:col-span-4 flex flex-col gap-4 border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] p-4 max-h-[calc(100vh-21rem)] lg:max-h-[calc(100vh-14rem)] overflow-y-auto ${
             mobileView === 'channels' ? 'flex' : 'hidden lg:flex'
           }`}>
             
             {/* Telsiz Simulation Graphic Panel */}
-            <div className="border border-slate-800/80 bg-slate-950 rounded-lg p-3 relative overflow-hidden shadow-[inset_0_2px_10px_rgba(6,182,212,0.05)]">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-cyan-500/5 rounded-full blur-xl pointer-events-none" />
+            <div className="border border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 rounded-lg p-3 relative overflow-hidden shadow-[inset_0_2px_10px_rgba(6,182,212,0.02)]">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-[var(--fd-accent)]/5 rounded-full blur-xl pointer-events-none" />
               <div className="flex justify-between items-start">
-                <span className="text-[10px] text-cyan-500 font-bold uppercase tracking-wider">MÜFREZE AKSIYON FREKANSI</span>
+                <span className="text-[10px] text-[var(--fd-accent)] font-bold uppercase tracking-wider">MÜFREZE AKSIYON FREKANSI</span>
                 <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${isTxActive ? 'bg-red-500 animate-ping' : 'bg-red-900'}`} title="TX - Gönderme" />
-                  <span className="text-[8px] font-bold text-red-500 mr-1.5">TX</span>
-                  <div className={`w-2 h-2 rounded-full ${isRxActive ? 'bg-emerald-500 animate-ping' : 'bg-emerald-950/80'}`} title="RX - Alma" />
-                  <span className="text-[8px] font-bold text-emerald-500">RX</span>
+                  <div className={`w-2 h-2 rounded-full ${isTxActive ? 'bg-[var(--fd-danger)] animate-ping' : 'bg-[var(--fd-danger)]/20'}`} title="TX - Gönderme" />
+                  <span className="text-[8px] font-bold text-[var(--fd-danger)] mr-1.5">TX</span>
+                  <div className={`w-2 h-2 rounded-full ${isRxActive ? 'bg-[var(--fd-success)] animate-ping' : 'bg-[var(--fd-success)]/20'}`} title="RX - Alma" />
+                  <span className="text-[8px] font-bold text-[var(--fd-success)]">RX</span>
                 </div>
               </div>
               
               {/* Status Screen with animated canvas waveform */}
-              <div className="mt-3 bg-slate-900/90 border border-slate-800/60 rounded px-3 py-2 flex items-center justify-between font-mono">
-                <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase">ANLIK KANAL BAĞLANTISI</span>
+              <div className="mt-3 bg-[var(--fd-surface)] border border-[var(--fd-border)]/80 rounded px-3 py-2 flex items-center justify-between font-mono">
+                <span className="text-xs font-bold text-[var(--fd-accent)] tracking-wider uppercase">ANLIK KANAL BAĞLANTISI</span>
                 <canvas 
                   ref={canvasRef} 
                   width={90} 
@@ -605,14 +606,14 @@ export default function TelsizPage() {
               </div>
             </div>
 
-            <div className="border-t border-slate-900 my-1" />
+            <div className="border-t border-[var(--fd-border)] my-1" />
 
             {/* Channels Lists */}
             <div className="space-y-4">
               
               {/* Category 1: Karargah Main Channel */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">KARARGÂH KANALI</span>
+                <span className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider px-2">KARARGÂH KANALI</span>
                 <button
                   onClick={() => {
                     setSelectedChannel({ id: 'general', name: 'Genel Karargâh Muhabere', type: 'Genel', isClosed: false })
@@ -620,25 +621,25 @@ export default function TelsizPage() {
                   }}
                   className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all cursor-pointer ${
                     selectedChannel.id === 'general'
-                      ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.2)]'
-                      : 'bg-slate-900/20 border-slate-900 hover:border-slate-800 text-slate-300'
+                      ? 'bg-[var(--fd-accent)]/10 border-[var(--fd-accent)] text-[var(--fd-accent)] font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.05)]'
+                      : 'bg-[var(--fd-surface2)]/40 border-[var(--fd-border)]/75 hover:border-[var(--fd-border)] text-[var(--fd-text2)]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Radio className="w-4 h-4 text-cyan-400" />
+                    <Radio className="w-4 h-4 text-[var(--fd-accent)]" />
                     <span className="text-sm">Genel Karargâh Muhabere</span>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--fd-accent)] shadow-[0_0_8px_var(--fd-accent-glow)]" />
                 </button>
               </div>
 
               {/* Category 2: Active incident channels */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">🚨 CANLI OLAY KANALLARI</span>
+                <span className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider px-2">🚨 CANLI OLAY KANALLARI</span>
                 {loadingChannels ? (
-                  <div className="py-4 text-center text-xs text-slate-500">Kanallar yükleniyor...</div>
+                  <div className="py-4 text-center text-xs text-[var(--fd-text3)]">Kanallar yükleniyor...</div>
                 ) : activeIncidents.length === 0 ? (
-                  <div className="py-3 px-2 border border-dashed border-slate-900 text-xs text-slate-500 rounded-lg text-center">
+                  <div className="py-3 px-2 border border-dashed border-[var(--fd-border)] text-xs text-[var(--fd-text3)] rounded-lg text-center bg-[var(--fd-surface2)]/20">
                     Aktif ihbar sevk kanalı bulunmuyor.
                   </div>
                 ) : (
@@ -652,18 +653,18 @@ export default function TelsizPage() {
                         }}
                         className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all cursor-pointer ${
                           selectedChannel.id === inc.id
-                            ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.2)]'
-                            : 'bg-slate-900/20 border-slate-900 hover:border-slate-800 text-slate-300'
+                            ? 'bg-[var(--fd-accent)]/10 border-[var(--fd-accent)] text-[var(--fd-accent)] font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.05)]'
+                            : 'bg-[var(--fd-surface2)]/40 border-[var(--fd-border)]/75 hover:border-[var(--fd-border)] text-[var(--fd-text2)]'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <MessageSquare className="w-4 h-4 text-cyan-400 shrink-0" />
+                          <MessageSquare className="w-4 h-4 text-[var(--fd-accent)] shrink-0" />
                           <div className="truncate">
-                            <span className="text-sm block truncate font-bold text-slate-200">{inc.olay_turu}</span>
-                            <span className="text-[10px] block text-slate-400 truncate">{inc.mahalle} Mah.</span>
+                            <span className="text-sm block truncate font-bold text-[var(--fd-text)]">{inc.olay_turu}</span>
+                            <span className="text-[10px] block text-[var(--fd-text3)] truncate">{inc.mahalle} Mah.</span>
                           </div>
                         </div>
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-[var(--fd-success)] animate-pulse" />
                       </button>
                     ))}
                   </div>
@@ -672,11 +673,11 @@ export default function TelsizPage() {
 
               {/* Category 2.5: Active mission channels */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">📋 CANLI GÖREV KANALLARI</span>
+                <span className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider px-2">📋 CANLI GÖREV KANALLARI</span>
                 {loadingChannels ? (
-                  <div className="py-4 text-center text-xs text-slate-500">Kanallar yükleniyor...</div>
+                  <div className="py-4 text-center text-xs text-[var(--fd-text3)]">Kanallar yükleniyor...</div>
                 ) : activeMissions.length === 0 ? (
-                  <div className="py-3 px-2 border border-dashed border-slate-900 text-xs text-slate-500 rounded-lg text-center">
+                  <div className="py-3 px-2 border border-dashed border-[var(--fd-border)] text-xs text-[var(--fd-text3)] rounded-lg text-center bg-[var(--fd-surface2)]/20">
                     Aktif dış görev kanalı bulunmuyor.
                   </div>
                 ) : (
@@ -690,18 +691,18 @@ export default function TelsizPage() {
                         }}
                         className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all cursor-pointer ${
                           selectedChannel.id === m.id
-                            ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.2)]'
-                            : 'bg-slate-900/20 border-slate-900 hover:border-slate-800 text-slate-300'
+                            ? 'bg-[var(--fd-accent)]/10 border-[var(--fd-accent)] text-[var(--fd-accent)] font-bold shadow-[inset_10px_0_15px_-10px_rgba(6,182,212,0.05)]'
+                            : 'bg-[var(--fd-surface2)]/40 border-[var(--fd-border)]/75 hover:border-[var(--fd-border)] text-[var(--fd-text2)]'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <Radio className="w-4 h-4 text-cyan-400 shrink-0" />
+                          <Radio className="w-4 h-4 text-[var(--fd-accent)] shrink-0" />
                           <div className="truncate">
-                            <span className="text-sm block truncate font-bold text-slate-200">{m.baslik}</span>
-                            <span className="text-[10px] block text-slate-400 truncate">{m.gorev_turu}</span>
+                            <span className="text-sm block truncate font-bold text-[var(--fd-text)]">{m.baslik}</span>
+                            <span className="text-[10px] block text-[var(--fd-text3)] truncate">{m.gorev_turu}</span>
                           </div>
                         </div>
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse" />
                       </button>
                     ))}
                   </div>
@@ -710,9 +711,9 @@ export default function TelsizPage() {
 
               {/* Category 3: Closed incident channels (Archive) */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">🗄️ KAPATILMIŞ VAKA ARŞİVİ (SALT OKUNUR)</span>
+                <span className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider px-2">🗄️ KAPATILMIŞ VAKA ARŞİVİ (SALT OKUNUR)</span>
                 {loadingChannels ? null : closedIncidents.length === 0 ? (
-                  <div className="py-2 text-center text-xs text-slate-600">Arşiv kaydı bulunmuyor.</div>
+                  <div className="py-2 text-center text-xs text-[var(--fd-text3)]">Arşiv kaydı bulunmuyor.</div>
                 ) : (
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
                     {closedIncidents.map(inc => (
@@ -724,18 +725,18 @@ export default function TelsizPage() {
                         }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                           selectedChannel.id === inc.id
-                            ? 'bg-slate-800/80 border-slate-700 text-slate-300 font-bold'
-                            : 'bg-slate-950 border-slate-900/80 hover:border-slate-800 text-slate-400'
+                            ? 'bg-[var(--fd-surface3)] border-[var(--fd-border)] text-[var(--fd-text)] font-bold'
+                            : 'bg-[var(--fd-surface)] border-[var(--fd-border)]/40 hover:border-[var(--fd-border)] text-[var(--fd-text3)]'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <Lock className="w-3.5 h-3.5 text-[var(--fd-text3)] shrink-0" />
                           <div className="truncate">
                             <span className="text-xs block truncate font-semibold">{inc.olay_turu}</span>
-                            <span className="text-[9px] block text-slate-500 truncate">{inc.mahalle} Mah.</span>
+                            <span className="text-[9px] block text-[var(--fd-text3)] truncate">{inc.mahalle} Mah.</span>
                           </div>
                         </div>
-                        <span className="text-[9px] bg-slate-900 border border-slate-800 px-1 rounded text-slate-500">Arşiv</span>
+                        <span className="text-[9px] bg-[var(--fd-surface2)] border border-[var(--fd-border)]/50 px-1 rounded text-[var(--fd-text3)]">Arşiv</span>
                       </button>
                     ))}
                   </div>
@@ -744,9 +745,9 @@ export default function TelsizPage() {
 
               {/* Category 4: Closed mission channels (Archive) */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">🗄️ KAPATILMIŞ GÖREV ARŞİVİ (SALT OKUNUR)</span>
+                <span className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider px-2">🗄️ KAPATILMIŞ GÖREV ARŞİVİ (SALT OKUNUR)</span>
                 {loadingChannels ? null : closedMissions.length === 0 ? (
-                  <div className="py-2 text-center text-xs text-slate-600">Görev arşiv kaydı bulunmuyor.</div>
+                  <div className="py-2 text-center text-xs text-[var(--fd-text3)]">Görev arşiv kaydı bulunmuyor.</div>
                 ) : (
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
                     {closedMissions.map(m => (
@@ -758,18 +759,18 @@ export default function TelsizPage() {
                         }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                           selectedChannel.id === m.id
-                            ? 'bg-slate-800/80 border-slate-700 text-slate-300 font-bold'
-                            : 'bg-slate-950 border-slate-900/80 hover:border-slate-800 text-slate-400'
+                            ? 'bg-[var(--fd-surface3)] border-[var(--fd-border)] text-[var(--fd-text)] font-bold'
+                            : 'bg-[var(--fd-surface)] border-[var(--fd-border)]/40 hover:border-[var(--fd-border)] text-[var(--fd-text3)]'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <Lock className="w-3.5 h-3.5 text-[var(--fd-text3)] shrink-0" />
                           <div className="truncate">
                             <span className="text-xs block truncate font-semibold">{m.baslik}</span>
-                            <span className="text-[9px] block text-slate-500 truncate">{m.gorev_turu}</span>
+                            <span className="text-[9px] block text-[var(--fd-text3)] truncate">{m.gorev_turu}</span>
                           </div>
                         </div>
-                        <span className="text-[9px] bg-slate-900 border border-slate-800 px-1 rounded text-slate-500">Arşiv</span>
+                        <span className="text-[9px] bg-[var(--fd-surface2)] border border-[var(--fd-border)]/50 px-1 rounded text-[var(--fd-text3)]">Arşiv</span>
                       </button>
                     ))}
                   </div>
@@ -780,38 +781,38 @@ export default function TelsizPage() {
           </div>
 
           {/* RIGHT MESSAGE LOGS & CHAT WINDOW (SAĞ PANEL) */}
-          <div className={`lg:col-span-8 flex flex-col border border-slate-900 bg-slate-950/60 rounded-xl overflow-hidden min-h-[300px] lg:min-h-[500px] max-h-[calc(100vh-21rem)] lg:max-h-[calc(100vh-14rem)] ${
+          <div className={`lg:col-span-8 flex flex-col border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] overflow-hidden min-h-[300px] lg:min-h-[500px] max-h-[calc(100vh-21rem)] lg:max-h-[calc(100vh-14rem)] ${
             mobileView === 'chat' ? 'flex' : 'hidden lg:flex'
           }`}>
             
             {/* Header info */}
-            <div className="border-b border-slate-900 bg-slate-950 px-4 py-3 flex items-center justify-between">
+            <div className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 {/* Back Button on Mobile */}
                 <button
                   onClick={() => setMobileView('channels')}
-                  className="lg:hidden p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 mr-2 shrink-0 cursor-pointer"
+                  className="lg:hidden p-1.5 rounded-lg bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] mr-2 shrink-0 cursor-pointer"
                   title="Kanallara Dön"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${selectedChannel.isClosed ? 'bg-slate-500' : 'bg-cyan-500 animate-pulse'}`} />
-                <h3 className="font-bold text-slate-100 truncate text-sm md:text-base">{selectedChannel.name}</h3>
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${selectedChannel.isClosed ? 'bg-[var(--fd-text3)]' : 'bg-[var(--fd-accent)] animate-pulse'}`} />
+                <h3 className="font-bold text-[var(--fd-text)] truncate text-sm md:text-base">{selectedChannel.name}</h3>
               </div>
               <div className="flex items-center gap-1.5">
                 {selectedChannel.isClosed ? (
-                  <Badge className="bg-slate-900 border-slate-800 text-slate-400 flex items-center gap-1 text-[10px]">
+                  <Badge className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] flex items-center gap-1 text-[10px]">
                     <Lock className="w-3 h-3" /> Salt Okunur Mod
                   </Badge>
                 ) : (
-                  <Badge className="bg-cyan-950/45 border-cyan-800/30 text-cyan-400 flex items-center gap-1 text-[10px]">
+                  <Badge className="bg-[var(--fd-accent)]/15 border-[var(--fd-accent)]/20 text-[var(--fd-accent)] flex items-center gap-1 text-[10px]">
                     <Unlock className="w-3 h-3" /> Canlı Kanal
                   </Badge>
                 )}
                 {selectedChannel.isClosed && (
                   <button
                     onClick={handlePrintJurnal}
-                    className="px-2.5 py-1 text-[10px] font-bold bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-800/40 text-cyan-400 rounded cursor-pointer transition-all flex items-center gap-1"
+                    className="px-2.5 py-1 text-[10px] font-bold bg-[var(--fd-accent)]/10 hover:bg-[var(--fd-accent)]/20 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] rounded cursor-pointer transition-all flex items-center gap-1"
                   >
                     <FileText className="w-3.5 h-3.5" /> PDF Jurnali Bas
                   </button>
@@ -823,15 +824,15 @@ export default function TelsizPage() {
             <div 
               ref={chatContainerRef}
               onScroll={handleScroll}
-              className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/30 scrollbar-thin"
+              className="flex-1 p-4 overflow-y-auto space-y-3 bg-[var(--fd-surface2)]/10 scrollbar-thin"
             >
               {loadingMessages ? (
-                <div className="flex flex-col items-center justify-center h-full py-12 text-slate-500 gap-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+                <div className="flex flex-col items-center justify-center h-full py-12 text-[var(--fd-text2)] gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-[var(--fd-accent)]" />
                   <span className="text-xs">Muhabere logları yükleniyor...</span>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-12 text-slate-600 gap-2">
+                <div className="flex flex-col items-center justify-center h-full py-12 text-[var(--fd-text3)] gap-2">
                   <Radio className="w-8 h-8 opacity-20" />
                   <span className="text-xs font-mono">TELSİZ MANDALI AÇIK - SES KAYDI YOK</span>
                 </div>
@@ -844,26 +845,26 @@ export default function TelsizPage() {
                       className={`flex flex-col max-w-[85%] ${isCurrentUser ? 'ml-auto items-end' : 'mr-auto items-start'}`}
                     >
                       {/* Name, Rank & Time */}
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 px-1">
-                        <User className="w-3 h-3 text-cyan-500" />
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--fd-text2)] mb-1 px-1">
+                        <User className="w-3 h-3 text-[var(--fd-accent)]" />
                         <span className="font-semibold">{msg.gonderen_ad_soyad}</span>
-                        <span className="text-slate-500">({msg.gonderen_rutbe})</span>
-                        <Clock className="w-3 h-3 text-slate-500 ml-1" />
-                        <span className="text-slate-500">{new Date(msg.created_at).toLocaleTimeString('tr-TR')}</span>
+                        <span className="text-[var(--fd-text3)]">({msg.gonderen_rutbe})</span>
+                        <Clock className="w-3 h-3 text-[var(--fd-text3)] ml-1" />
+                        <span className="text-[var(--fd-text3)]">{new Date(msg.created_at).toLocaleTimeString('tr-TR')}</span>
                       </div>
 
                       {/* Bubble content */}
                       <div 
-                        className={`rounded-xl px-3 py-2.5 text-sm border shadow-lg ${
+                        className={`rounded-xl px-3 py-2.5 text-sm border shadow-[var(--fd-shadow-sm)] ${
                           isCurrentUser 
-                            ? 'bg-cyan-950/20 border-cyan-800/35 text-slate-100 rounded-tr-none'
-                            : 'bg-slate-900/60 border-slate-800/80 text-slate-200 rounded-tl-none'
+                            ? 'bg-[var(--fd-accent)]/10 border-[var(--fd-accent)]/20 text-[var(--fd-text)] rounded-tr-none'
+                            : 'bg-[var(--fd-surface2)] border border-[var(--fd-border)]/70 text-[var(--fd-text2)] rounded-tl-none'
                         }`}
                       >
                         {/* Radio Code badge if present */}
                         {msg.telsiz_kodu && (
                           <div className="mb-1 flex">
-                            <span className="text-[9px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] font-bold uppercase tracking-wider bg-[var(--fd-accent)]/15 text-[var(--fd-accent)] border border-[var(--fd-accent)]/25 px-1.5 py-0.5 rounded">
                               📟 {msg.telsiz_kodu}
                             </span>
                           </div>
@@ -879,48 +880,48 @@ export default function TelsizPage() {
 
             {/* QUICK ACTIONS BUTTONS & WRITING PANEL */}
             {selectedChannel.isClosed ? (
-              <div className="bg-slate-950 border-t border-slate-900 p-4 flex items-center justify-center gap-2 text-slate-400 bg-gradient-to-r from-slate-900/10 to-amber-950/5">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-mono uppercase tracking-wider text-amber-500/85">Bu vaka kapatılmıştır. Kanal salt okunur moddadır.</span>
+              <div className="bg-[var(--fd-surface2)]/50 border-t border-[var(--fd-border)] p-4 flex items-center justify-center gap-2 text-[var(--fd-text3)] bg-gradient-to-r from-transparent to-[var(--fd-amber)]/5">
+                <AlertTriangle className="w-4 h-4 text-[var(--fd-amber)]" />
+                <span className="text-xs font-mono uppercase tracking-wider text-[var(--fd-amber)]/85">Bu vaka kapatılmıştır. Kanal salt okunur moddadır.</span>
               </div>
             ) : (
-              <div className="bg-slate-950 border-t border-slate-900 p-3 space-y-3">
+              <div className="bg-[var(--fd-surface)] border-t border-[var(--fd-border)] p-3 space-y-3">
                 
                 {/* HIZLI TELSİZ KOD BUTONLARI */}
                 <div className="flex flex-wrap gap-1.5 items-center">
-                  <span className="text-[9px] font-bold text-slate-500 mr-1 uppercase">HIZLI KOD:</span>
+                  <span className="text-[9px] font-bold text-[var(--fd-text3)] mr-1 uppercase">HIZLI KOD:</span>
                   <button
                     onClick={() => handleSendMessage("Anlaşıldı, tamam.", "ANLASILDI")}
                     disabled={sendingMessage || !personnelUuid}
-                    className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
+                    className="px-2.5 py-1 text-xs bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)] hover:border-[var(--fd-accent)]/40 text-[var(--fd-accent)] rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
                     📟 Anlaşıldı
                   </button>
                   <button
                     onClick={() => handleSendMessage("Müfrezeden vaka yerine intikal başladı, tamam.", "INTIKAL")}
                     disabled={sendingMessage || !personnelUuid}
-                    className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
+                    className="px-2.5 py-1 text-xs bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)] hover:border-[var(--fd-accent)]/40 text-[var(--fd-accent)] rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
                     🚒 İntikal / Çıkış
                   </button>
                   <button
                     onClick={() => handleSendMessage("Olay yerine ulaşıldı, yangına müdahale başladı, tamam.", "VARIS")}
                     disabled={sendingMessage || !personnelUuid}
-                    className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
+                    className="px-2.5 py-1 text-xs bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)] hover:border-[var(--fd-accent)]/40 text-[var(--fd-accent)] rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
                     🔥 Olay Yerine Varış
                   </button>
                   <button
                     onClick={() => handleSendMessage("Merkez, acil su tankeri takviyesi sevk edin, tamam.", "SU_TAKVIYESI")}
                     disabled={sendingMessage || !personnelUuid}
-                    className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
+                    className="px-2.5 py-1 text-xs bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)] hover:border-[var(--fd-accent)]/40 text-[var(--fd-accent)] rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
                     💧 Su Takviyesi
                   </button>
                   <button
                     onClick={() => handleSendMessage("Yangın kontrol altına alındı, soğutma başladı, tamam.", "KONTROL")}
                     disabled={sendingMessage || !personnelUuid}
-                    className="px-2.5 py-1 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/60 hover:border-cyan-500/50 text-cyan-400 rounded-lg cursor-pointer transition-all font-mono font-bold"
+                    className="px-2.5 py-1 text-xs bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)] hover:border-[var(--fd-accent)]/40 text-[var(--fd-accent)] rounded-lg cursor-pointer transition-all font-mono font-bold"
                   >
                     🟢 Kontrol Altında
                   </button>
@@ -931,7 +932,7 @@ export default function TelsizPage() {
                       handleSendMessage("🚨 ACİL DURUM İKAZI! İvedi koordinasyon sağlayın, tamam.", "ACIL_DURUM")
                     }}
                     disabled={sendingMessage || !personnelUuid}
-                    className="px-2.5 py-1 text-xs bg-red-950/20 hover:bg-red-900/20 border border-red-800/40 hover:border-red-500 text-red-400 rounded-lg cursor-pointer transition-all font-mono font-bold flex items-center gap-1"
+                    className="px-2.5 py-1 text-xs bg-[var(--fd-danger)]/10 hover:bg-[var(--fd-danger)]/20 border border-[var(--fd-danger)]/30 hover:border-[var(--fd-danger)] text-[var(--fd-danger)] rounded-lg cursor-pointer transition-all font-mono font-bold flex items-center gap-1"
                   >
                     🚨 Acil Durum İkazı
                   </button>
@@ -951,12 +952,12 @@ export default function TelsizPage() {
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder="Mandalı basmak için mesajınızı yazın... (Enter veya Gönder)"
                     disabled={sendingMessage}
-                    className="flex-1 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="flex-1 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-4 py-2 text-sm text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:border-[var(--fd-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]"
                   />
                   <button
                     type="submit"
                     disabled={sendingMessage || !inputText.trim() || !personnelUuid}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold p-2 px-4 rounded-xl flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+                    className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold p-2 px-4 rounded-xl flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>

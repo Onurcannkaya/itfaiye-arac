@@ -246,11 +246,20 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
 
           <div className="space-y-3">
             {items.map((item, idx) => (
-              <div key={idx} className={`p-4 rounded-xl border transition-colors ${item.checkStatus === 'Tam' ? 'bg-success/5 border-success/30' : item.checkStatus ? 'bg-surface border-border' : 'bg-surface border-border/50'}`}>
+              <div 
+                key={idx} 
+                className={cn(
+                  "p-4 rounded-xl border transition-colors",
+                  item.checkStatus === "Tam" && "bg-[rgba(22,163,74,0.04)] border-[rgba(22,163,74,0.25)]",
+                  item.checkStatus === "Eksik" && "bg-[rgba(245,158,11,0.04)] border-[rgba(245,158,11,0.25)]",
+                  item.checkStatus === "Arızalı" && "bg-[rgba(220,38,38,0.04)] border-[rgba(220,38,38,0.25)]",
+                  !item.checkStatus && "bg-[var(--fd-surface)] border-[var(--fd-border)]/70"
+                )}
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold">{item.malzeme}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Sistemde olması gereken: {item.adet} adet</p>
+                    <p className="font-semibold text-[var(--fd-text)]">{item.malzeme}</p>
+                    <p className="text-xs text-[var(--fd-text3)] mt-0.5">Sistemde olması gereken: {item.adet} adet</p>
                   </div>
                   
                   {item.durum === "🔄 GEÇİCİ ZİMMETTE" ? (
@@ -258,25 +267,40 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
                       🔄 GEÇİCİ ZİMMETTE (Muaf)
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 shrink-0 bg-muted/50 p-1 rounded-lg">
+                    <div className="flex items-center gap-1.5 shrink-0 bg-[var(--fd-surface2)] border border-[var(--fd-border)] p-1 rounded-lg">
                       <button 
                         disabled={!isAuthorized}
                         onClick={() => handleStatusChange(idx, "Tam")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Tam" ? "bg-success text-success-foreground" : "text-muted-foreground hover:bg-muted"} disabled:opacity-50`}
+                        className={cn(
+                          "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 disabled:opacity-50",
+                          item.checkStatus === "Tam"
+                            ? "bg-[var(--fd-success)] text-white shadow-sm"
+                            : "text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]"
+                        )}
                       >
                         <Check className="w-3.5 h-3.5" /> Tam
                       </button>
                       <button 
                         disabled={!isAuthorized}
                         onClick={() => handleStatusChange(idx, "Eksik")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Eksik" ? "bg-danger text-danger-foreground" : "text-muted-foreground hover:bg-muted"} disabled:opacity-50`}
+                        className={cn(
+                          "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 disabled:opacity-50",
+                          item.checkStatus === "Eksik"
+                            ? "bg-[var(--fd-amber)] text-white shadow-sm"
+                            : "text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]"
+                        )}
                       >
                         <X className="w-3.5 h-3.5" /> Eksik
                       </button>
                       <button 
                         disabled={!isAuthorized}
                         onClick={() => handleStatusChange(idx, "Arızalı")}
-                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${item.checkStatus === "Arızalı" ? "bg-warning text-warning-foreground" : "text-muted-foreground hover:bg-muted"} disabled:opacity-50`}
+                        className={cn(
+                          "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 disabled:opacity-50",
+                          item.checkStatus === "Arızalı"
+                            ? "bg-[var(--fd-danger)] text-white shadow-sm"
+                            : "text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]"
+                        )}
                       >
                         <AlertTriangle className="w-3.5 h-3.5" /> Arızalı
                       </button>

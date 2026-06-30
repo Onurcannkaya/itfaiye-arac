@@ -1,12 +1,14 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X, BookOpen } from 'lucide-react'
+import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X, BookOpen, Sliders, Menu, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
+import { useThemeStore } from '@/lib/themeStore'
 import { api } from '@/lib/api'
 import Link from 'next/link'
 import { GeofenceButton } from './GeofenceButton'
+import { ThemeDrawer } from '../theme/ThemeDrawer'
 
 interface NotificationItem {
   id: string
@@ -32,9 +34,63 @@ function urlBase64ToUint8Array(base64String: string) {
   }
   return outputArray;
 }
+// ─── Sayfa yolu → breadcrumb eşleme tablosu ─────────────────
+const BREADCRUMB_LABELS: Record<string, string> = {
+  yonetim: 'Yönetim',
+  personel: 'Personel',
+  araclar: 'Araçlar',
+  'arac-bakim': 'Araç Bakım',
+  envanter: 'Envanter',
+  telsiz: 'Telsiz',
+  olaylar: 'Olaylar',
+  raporlar: 'Raporlar',
+  hizmetler: 'Hizmetler',
+  istatistikler: 'İstatistikler',
+  gorevler: 'Görevler',
+  egitimler: 'Eğitimler',
+  yetkiler: 'Yetkiler',
+  sablonlar: 'Şablonlar',
+  kilavuz: 'Kılavuz',
+  tarayici: 'QR Tarayıcı',
+  harita: 'Harita',
+  scba: 'SCBA',
+  bakim: 'Bakım',
+  'envanter-yonetimi': 'Envanter Yönetimi',
+  'sifre-degistir': 'Şifre Değiştir',
+  'gecici-sifreler': 'Geçici Şifreler',
+  403: 'Yetkisiz Erişim',
+}
+
+function Breadcrumb() {
+  const pathname = usePathname()
+  if (!pathname || pathname === '/') return null
+
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length === 0) return null
+
+  // İlk segment "yonetim" ise kök olarak "Genel" göster
+  const crumbs = segments.map((seg) => BREADCRUMB_LABELS[seg] || seg)
+
+  return (
+    <nav className="flex items-center gap-1.5 text-[calc(var(--fd-fs)*0.78)] font-semibold tracking-[0.03em] truncate">
+      {crumbs.map((label, i) => {
+        const isLast = i === crumbs.length - 1
+        return (
+          <span key={i} className="flex items-center gap-1.5">
+            {i > 0 && <ChevronRight size={12} className="text-[var(--fd-text3)] shrink-0" />}
+            <span className={isLast ? 'text-[var(--fd-text)]' : 'text-[var(--fd-text3)]'}>
+              {label}
+            </span>
+          </span>
+        )
+      })}
+    </nav>
+  )
+}
 
 export function Topbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
+  const { sidebarCollapsed, setSidebarCollapsed } = useThemeStore()
   const router = useRouter()
   
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
@@ -43,7 +99,9 @@ export function Topbar() {
   const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
+  const themeRef = useRef<HTMLDivElement>(null)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isThemeDrawerOpen, setIsThemeDrawerOpen] = useState(false)
   const [isPushSubscribed, setIsPushSubscribed] = useState(false)
 
   const [readIds, setReadIds] = useState<string[]>([])
@@ -164,9 +222,9 @@ export function Topbar() {
   const renderNotificationsList = () => {
     if (notifications.length === 0) {
       return (
-        <div className="p-8 text-center text-slate-500 space-y-2">
-          <CheckCircle2 className="w-8 h-8 text-slate-600 mx-auto" />
-          <p className="text-xs text-slate-400">Yeni bir bildirim veya göreviniz yok.</p>
+        <div className="p-8 text-center text-[var(--fd-text3)] flex flex-col items-center justify-center gap-2 bg-[var(--fd-surface)]">
+          <CheckCircle2 className="w-8 h-8 text-[var(--fd-text3)] opacity-60" />
+          <p className="text-[12px] font-medium">Yeni bir bildirim veya göreviniz yok.</p>
         </div>
       )
     }
@@ -177,73 +235,73 @@ export function Topbar() {
       let triageDot = null
 
       if (triage === 'critical') {
-        triageClass = "border-l-4 border-l-red-500 bg-red-950/20 light:bg-red-50/70 light:border-l-red-600"
+        triageClass = "border-l-[3px] border-l-[var(--fd-danger)] bg-[rgba(220,38,38,0.04)]"
         triageDot = (
           <span className="relative flex h-2 w-2 shrink-0 self-center">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--fd-danger)] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--fd-danger)]"></span>
           </span>
         )
       } else if (triage === 'medium') {
-        triageClass = "border-l-4 border-l-amber-500 bg-amber-950/20 light:bg-amber-50/70 light:border-l-amber-600"
+        triageClass = "border-l-[3px] border-l-[var(--fd-amber)] bg-[rgba(245,158,11,0.03)]"
       } else {
-        triageClass = "border-l-4 border-l-emerald-500 bg-emerald-950/20 light:bg-emerald-50/70 light:border-l-emerald-600"
+        triageClass = "border-l-[3px] border-l-[var(--fd-info)] bg-[rgba(37,99,235,0.03)]"
       }
 
       return (
         <div 
           key={item.id}
           onClick={() => handleNotificationClick(item)}
-          className={`p-4 flex items-start justify-between gap-3 transition-colors cursor-pointer group hover:bg-slate-900/40 light:hover:bg-slate-100/50 relative border-b border-slate-800/20 light:border-slate-200/60 ${triageClass} ${
-            !item.read ? 'opacity-100 font-semibold' : 'opacity-80'
+          className={`p-3.5 flex items-start justify-between gap-3.5 transition-colors cursor-pointer group hover:bg-[var(--fd-surface2)] relative border-b border-[var(--fd-border)] ${triageClass} ${
+            !item.read ? 'opacity-100 font-semibold' : 'opacity-70'
           }`}
         >
           {/* Left Icon Indicator */}
           <div className="mt-0.5 shrink-0">
             {item.type === 'urgent' && (
-              <div className="bg-red-500/10 p-1.5 rounded-lg text-red-500 light:bg-red-100 light:text-red-700">
-                <Flame className="w-4 h-4 text-red-500 animate-pulse" />
+              <div className="bg-[rgba(220,38,38,0.11)] p-1.5 rounded-[var(--fd-r-sm)] text-[var(--fd-danger)]">
+                <Flame className="w-4 h-4 text-[var(--fd-danger)] animate-pulse" strokeWidth={1.8} />
               </div>
             )}
             {item.type === 'warning' && (
-              <div className="bg-amber-500/10 p-1.5 rounded-lg text-amber-500 light:bg-amber-100 light:text-amber-700">
-                <AlertTriangle className="w-4 h-4" />
+              <div className="bg-[rgba(245,158,11,0.11)] p-1.5 rounded-[var(--fd-r-sm)] text-[var(--fd-amber)]">
+                <AlertTriangle className="w-4 h-4" strokeWidth={1.8} />
               </div>
             )}
             {item.type === 'info' && (
-              <div className="bg-blue-500/10 p-1.5 rounded-lg text-blue-500 light:bg-blue-100 light:text-blue-700">
-                <Info className="w-4 h-4" />
+              <div className="bg-[rgba(37,99,235,0.11)] p-1.5 rounded-[var(--fd-r-sm)] text-[var(--fd-info)]">
+                <Info className="w-4 h-4" strokeWidth={1.8} />
               </div>
             )}
             {item.type === 'success' && (
-              <div className="bg-emerald-500/10 p-1.5 rounded-lg text-emerald-500 light:bg-emerald-100 light:text-emerald-700">
-                <CheckCircle2 className="w-4 h-4" />
+              <div className="bg-[rgba(22,163,74,0.11)] p-1.5 rounded-[var(--fd-r-sm)] text-[var(--fd-success)]">
+                <CheckCircle2 className="w-4 h-4" strokeWidth={1.8} />
               </div>
             )}
           </div>
 
-          {/* Content using flex flex-col gap-1 layout */}
+          {/* Content */}
           <div className="flex-1 flex flex-col gap-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 {triageDot}
-                <p className={`text-sm font-bold leading-tight truncate ${!item.read ? 'text-slate-100 light:text-slate-900' : 'text-slate-400 light:text-slate-500'}`}>
+                <p className={`text-[12.5px] font-bold leading-tight truncate ${!item.read ? 'text-[var(--fd-text)]' : 'text-[var(--fd-text2)]'}`}>
                   {item.title}
                 </p>
               </div>
-              <span className="text-[10px] text-slate-500 light:text-slate-500 shrink-0 font-medium">{item.time}</span>
+              <span className="text-[10px] text-[var(--fd-text3)] shrink-0 font-medium font-mono">{item.time}</span>
             </div>
-            <p className="text-sm leading-relaxed text-slate-400 light:text-slate-650 line-clamp-2">
+            <p className="text-[12px] leading-relaxed text-[var(--fd-text2)] line-clamp-2">
               {item.description}
             </p>
 
-            {/* Canlı CBS Haritasını Görüntüle Link */}
+            {/* Emergency Live Incident Map Call To Action */}
             {item.type === 'urgent' && item.id.startsWith('inc-') && (
               <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                 <Link
                   href={item.actionUrl || '/yonetim/harita'}
                   onClick={() => setIsOpen(false)}
-                  className="inline-flex items-center text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 light:bg-red-100 light:text-red-800 light:border-red-200 px-2.5 py-1 rounded transition-all animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                  className="inline-flex items-center text-[10.5px] font-bold text-white bg-[var(--fd-danger)] hover:opacity-90 px-2.5 py-1 rounded-[var(--fd-r-sm)] transition-all shadow-sm border-none cursor-pointer"
                 >
                   Canlı CBS Haritasını Görüntüle
                 </Link>
@@ -251,12 +309,12 @@ export function Topbar() {
             )}
           </div>
 
-          {/* Right Control Actions (Visible on hover, and small [X] always visible) */}
-          <div className="flex flex-col gap-1 shrink-0 self-start mt-0.5">
+          {/* Control Actions */}
+          <div className="flex flex-col gap-1 shrink-0 self-start mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => removeNotification(item.id, e)}
               title="Sil"
-              className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-slate-800/40 light:hover:bg-slate-200"
+              className="text-[var(--fd-text3)] hover:text-[var(--fd-danger)] transition-colors p-1 rounded hover:bg-[var(--fd-surface3)] border-none bg-transparent cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -264,7 +322,7 @@ export function Topbar() {
             <button
               onClick={(e) => toggleRead(item.id, e)}
               title={item.read ? "Okunmadı İşaretle" : "Okundu İşaretle"}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-slate-200 light:hover:text-slate-800 p-1 rounded hover:bg-slate-800/40 light:hover:bg-slate-200"
+              className="text-[var(--fd-text3)] hover:text-[var(--fd-accent)] transition-colors p-1 rounded hover:bg-[var(--fd-surface3)] border-none bg-transparent cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" />
             </button>
@@ -433,6 +491,9 @@ export function Topbar() {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false)
       }
+      if (themeRef.current && !themeRef.current.contains(event.target as Node)) {
+        setIsThemeDrawerOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -504,35 +565,62 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-border light:border-b light:border-slate-200 bg-surface px-3 sm:px-4 md:px-6 z-30 h-14 relative">
-      <div className="flex items-center md:hidden space-x-2">
-        <Image src="/logo-itfaiye.png" alt="Logo" width={28} height={28} className="object-contain" />
-        <h1 className="text-lg font-bold tracking-tight light:text-slate-900">Sivas İtfaiyesi</h1>
+    <header className="flex items-center justify-between border-b border-[var(--fd-border)] bg-[var(--fd-surface)] px-[calc(var(--fd-sp)*3)] z-30 h-[60px] relative shadow-sm">
+      <div className="flex items-center gap-3.5 shrink-0">
+        {/* Mobile Title */}
+        <div className="flex items-center md:hidden space-x-2 shrink-0">
+          <div className="bg-[var(--fd-accent)] p-1 rounded text-white">
+             <Flame size={16} strokeWidth={2.5} />
+          </div>
+          <h1 className="text-[14px] font-bold tracking-tight text-[var(--fd-text)]">Sivas İtfaiyesi</h1>
+        </div>
+
+        {/* Desktop Hamburger menu */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden md:flex items-center justify-center w-9 h-9 border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] cursor-pointer hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] transition-colors"
+          title={sidebarCollapsed ? "Menüyü Genişlet" : "Menüyü Daralt"}
+        >
+          <Menu size={18} />
+        </button>
       </div>
-      <div className="hidden md:flex flex-1"></div>
-      <div className="flex items-center space-x-3">
+      <div className="hidden md:flex flex-1 items-center ml-4 min-w-0">
+        <Breadcrumb />
+      </div>
+      <div className="flex items-center space-x-[calc(var(--fd-sp)*1.5)] shrink-0">
         
         {/* Desktop Quick Scan Button */}
         <Link 
           href="/yonetim/tarayici" 
-          className="hidden md:flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full transition-colors mr-2 light:text-slate-900 light:bg-slate-100 light:hover:bg-slate-200/80"
+          className="hidden md:flex items-center space-x-[calc(var(--fd-sp)*1)] bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*0.8)] rounded-[var(--fd-r-sm)] transition-colors mr-2"
         >
-          <Camera size={18} />
-          <span className="text-sm font-bold">QR Araç Tara</span>
+          <Camera size={16} strokeWidth={2} />
+          <span className="text-[calc(var(--fd-fs)*0.85)] font-bold">QR Tara</span>
         </Link>
         
         <GeofenceButton />
+        {/* Theme Drawer/Popup Button */}
+        <div className="relative" ref={themeRef}>
+          <button 
+            onClick={() => setIsThemeDrawerOpen(!isThemeDrawerOpen)}
+            className="hidden md:flex items-center gap-2 h-9 px-3.5 border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] cursor-pointer font-semibold text-[calc(var(--fd-fs)*0.85)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] transition-colors"
+            title="Görünümü özelleştir"
+          >
+            <Sliders size={16} /><span>Tema</span>
+          </button>
+          {isThemeDrawerOpen && (
+            <ThemeDrawer onClose={() => setIsThemeDrawerOpen(false)} />
+          )}
+        </div>
  
         {/* Notifications & Tasks Bell Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className={`rounded-full p-2 hover:bg-muted relative transition-colors focus:outline-none focus:ring-2 focus:ring-primary light:text-slate-600 light:hover:bg-slate-100 ${
-              isOpen ? 'bg-muted text-primary light:bg-slate-100 light:text-slate-900' : 'text-muted-foreground'
-            }`}
+            className="flex items-center justify-center w-9 h-9 border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] cursor-pointer hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] transition-colors relative"
             aria-label="Bildirimler"
           >
-            <Bell size={20} />
+            <Bell size={18} />
             {unreadCount > 0 && (
               <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-red-600 border border-slate-900 light:border-white text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
                 {unreadCount}
@@ -596,25 +684,25 @@ export function Topbar() {
           )}
 
           {isOpen && mounted && !isMobile && (
-            <div className="absolute right-0 mt-3 w-96 origin-top-right bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl overflow-hidden z-50 transition-all duration-300 animate-in fade-in slide-in-from-top-3">
+            <div className="absolute right-0 top-[120%] mt-2 w-96 origin-top-right bg-[var(--fd-surface)] backdrop-blur-xl border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r-lg)] overflow-hidden z-50 transition-all duration-300 animate-in fade-in slide-in-from-top-3">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-slate-800/60 bg-slate-900/40">
+              <div className="flex items-center justify-between p-4 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]">
                 <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-primary" />
-                  <span className="font-bold text-sm text-slate-100">Bildirimler ve Görevler</span>
+                  <Bell className="w-4 h-4 text-[var(--fd-accent)]" />
+                  <span className="font-bold text-sm text-[var(--fd-text)]">Bildirimler ve Görevler</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
                     <button 
                       onClick={markAllAsRead}
-                      className="text-[11px] text-red-500 hover:text-red-400 font-bold transition-all flex items-center gap-1 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] border border-red-500/20 hover:border-red-500/50 bg-red-950/20 px-2.5 py-1 rounded-md"
+                      className="text-[11px] text-[var(--fd-accent)] hover:opacity-80 font-bold transition-all flex items-center gap-1 border border-[var(--fd-border)] bg-[var(--fd-surface)] px-2.5 py-1 rounded-md cursor-pointer"
                     >
                       <Check className="w-3.5 h-3.5" /> Tümünü Okundu İşaretle
                     </button>
                   )}
                   <button 
                     onClick={() => setIsOpen(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-colors font-semibold"
+                    className="p-1 rounded-lg text-[var(--fd-text3)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)] transition-colors font-semibold cursor-pointer border-none bg-transparent"
                     aria-label="Kapat"
                   >
                     <span className="text-xl leading-none">&times;</span>
@@ -623,17 +711,17 @@ export function Topbar() {
               </div>
               
               {/* Content Container */}
-              <div className="max-h-[450px] overflow-y-auto divide-y divide-slate-900/60">
+              <div className="max-h-[450px] overflow-y-auto divide-y divide-[var(--fd-border)] bg-[var(--fd-surface)]">
                 {renderNotificationsList()}
               </div>
 
               {/* Footer view CBS Map shortcut */}
               {notifications.length > 0 && (
-                <div className="p-2.5 border-t border-slate-800/60 bg-slate-950 text-center">
+                <div className="p-2.5 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] text-center">
                   <Link 
                     href="/yonetim/harita" 
                     onClick={() => setIsOpen(false)}
-                    className="text-xs text-primary font-semibold hover:underline block"
+                    className="text-xs text-[var(--fd-accent)] font-semibold hover:underline block"
                   >
                     Canlı CBS Haritasını Görüntüle
                   </Link>
@@ -644,42 +732,38 @@ export function Topbar() {
         </div>
         
         {isAuthenticated ? (
-          <div className="relative" ref={profileRef}>
+          <div className="relative border-l border-[var(--fd-border)] pl-[calc(var(--fd-sp)*1.25)] ml-[calc(var(--fd-sp)*1.25)] flex items-center gap-[10px]" ref={profileRef}>
+            <div className="w-[34px] h-[34px] rounded-full bg-[var(--fd-side-bg2)] text-[var(--fd-side-text)] flex items-center justify-center font-bold text-[calc(var(--fd-fs)*0.82)] shrink-0 shadow-sm border border-[var(--fd-border)]">
+              {initials}
+            </div>
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-3 bg-muted/50 rounded-full py-1.5 px-3 hover:bg-muted cursor-pointer transition-colors group focus:outline-none light:bg-slate-100 light:hover:bg-slate-200"
+              className="flex flex-col text-left cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0"
             >
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm light:bg-cyan-100 light:text-cyan-800">
-                {initials}
-              </div>
-              <div className="hidden md:block text-sm pr-2 text-left">
-                <p className="font-semibold leading-none text-foreground light:text-slate-900">{displayName}</p>
-                <p className="text-muted-foreground text-[11px] mt-0.5 uppercase tracking-wide flex items-center gap-1 light:text-slate-500">
-                  {rolLabel}
-                </p>
-              </div>
+              <span className="text-[calc(var(--fd-fs)*0.85)] font-semibold text-[var(--fd-text)] leading-[1.2]">{displayName}</span>
+              <span className="text-[calc(var(--fd-fs)*0.72)] text-[var(--fd-text3)] font-medium leading-[1.2] truncate max-w-[120px]">{rolLabel}</span>
             </button>
 
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 origin-top-right bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 light:bg-white light:border-slate-200">
-                <div className="p-2.5 border-b border-slate-900/60 bg-slate-900/10 light:bg-slate-50 light:border-slate-200">
-                  <p className="text-xs font-semibold text-slate-400 light:text-slate-550 uppercase tracking-wider px-2">Hesap İşlemleri</p>
+              <div className="absolute right-0 top-[120%] mt-2 w-52 origin-top-right bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow)] rounded-[var(--fd-r)] overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="p-3 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]">
+                  <p className="text-[11px] font-bold text-[var(--fd-text3)] uppercase tracking-wider">Hesap İşlemleri</p>
                 </div>
                 <div className="p-1.5 space-y-1">
                   <Link 
                     href="/yonetim/kilavuz"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-cyan-400 light:hover:text-cyan-600 hover:bg-cyan-500/10 light:hover:bg-cyan-50 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-[var(--fd-r-sm)] text-[13px] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] transition-colors w-full text-left font-medium"
                   >
-                    <BookOpen className="w-4 h-4 text-cyan-400" />
+                    <BookOpen size={16} className="text-[var(--fd-accent)]" />
                     <span>Kullanım Kılavuzu</span>
                   </Link>
                   <Link 
                     href="/sifre-degistir"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-cyan-400 light:hover:text-cyan-600 hover:bg-cyan-500/10 light:hover:bg-cyan-50 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-[var(--fd-r-sm)] text-[13px] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] transition-colors w-full text-left font-medium"
                   >
-                    <Key className="w-4 h-4" />
+                    <Key size={16} />
                     <span>Şifremi Değiştir</span>
                   </Link>
                   <button 
@@ -687,19 +771,19 @@ export function Topbar() {
                       setIsProfileOpen(false);
                       handlePushToggle();
                     }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-cyan-400 light:hover:text-cyan-600 hover:bg-cyan-500/10 light:hover:bg-cyan-50 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-[var(--fd-r-sm)] text-[13px] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] transition-colors w-full text-left font-medium border-none cursor-pointer bg-transparent"
                   >
-                    <Bell className={`w-4 h-4 ${isPushSubscribed ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
-                    <span>{isPushSubscribed ? 'Canlı Bildirimleri Kapat' : 'Canlı İhbar Bildirimlerini Aç'}</span>
+                    <Bell size={16} className={isPushSubscribed ? 'text-green-500 animate-pulse' : 'text-[var(--fd-text3)]'} />
+                    <span>{isPushSubscribed ? 'Bildirimleri Kapat' : 'Bildirimleri Aç'}</span>
                   </button>
                   <button 
                     onClick={() => {
                       setIsProfileOpen(false)
                       handleLogout()
                     }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 light:text-slate-700 hover:text-red-400 light:hover:text-red-650 hover:bg-red-500/10 light:hover:bg-red-50 transition-colors w-full text-left font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-[var(--fd-r-sm)] text-[13px] text-red-500 hover:text-white hover:bg-red-500 transition-colors w-full text-left font-medium border-none cursor-pointer bg-transparent mt-1"
                   >
-                    <LogOut className="w-4 h-4 text-red-500" />
+                    <LogOut size={16} />
                     <span>Çıkış Yap</span>
                   </button>
                 </div>

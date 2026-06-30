@@ -846,21 +846,25 @@ function HaritaContent() {
       <div className="flex flex-col h-[calc(100vh-8rem)] sm:space-y-4 space-y-2 max-w-[1600px] mx-auto w-full relative px-2 sm:px-0">
       {interactionMode === 'add_incident' && <div className="emergency-glow-overlay" />}
       
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-950/40 backdrop-blur-md border border-white/5 shadow-2xl shrink-0 z-10 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-[var(--fd-r)] bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] shrink-0 z-10 relative">
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-4 whitespace-nowrap bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(255,255,255,0.05)]">
-            <MapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
+          <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-3 text-[var(--fd-text)]">
+            <MapIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--fd-accent)] shrink-0" />
             Komuta Kontrol Haritası
           </h1>
-          <p className="text-muted-foreground text-xs sm:text-sm mt-1 font-medium hidden sm:block whitespace-nowrap">
-            İnteraktif mekansal analiz and saha yönetimi
+          <p className="text-[var(--fd-text2)] text-xs sm:text-sm mt-1 font-medium hidden sm:block whitespace-nowrap">
+            İnteraktif mekansal analiz ve saha yönetimi
           </p>
         </div>
         
         <div className="flex flex-row flex-wrap items-center gap-2 shrink-0">
           <Button 
             variant={interactionMode === 'add_incident' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_incident' ? 'bg-danger hover:bg-danger/90' : 'border-danger/50 text-danger hover:bg-danger/10'}`}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+              interactionMode === 'add_incident' 
+                ? 'bg-[var(--fd-danger)] text-white hover:opacity-90' 
+                : 'border-[var(--fd-danger)]/50 text-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/10'
+            }`}
             onClick={() => setInteractionMode(interactionMode === 'add_incident' ? 'idle' : 'add_incident')}
           >
             <Flame className="w-4 h-4 mr-1 sm:mr-2" /> 
@@ -869,7 +873,11 @@ function HaritaContent() {
 
           <Button 
             variant={interactionMode === 'add_external_mission' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_external_mission' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'border-amber-500/50 text-amber-500 hover:bg-amber-500/10'}`}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+              interactionMode === 'add_external_mission' 
+                ? 'bg-[var(--fd-amber)] text-white hover:opacity-90' 
+                : 'border-[var(--fd-amber)]/50 text-[var(--fd-amber)] hover:bg-[var(--fd-amber)]/10'
+            }`}
             onClick={() => setInteractionMode(interactionMode === 'add_external_mission' ? 'idle' : 'add_external_mission')}
           >
             <MapPin className="w-4 h-4 mr-1 sm:mr-2" /> 
@@ -878,7 +886,11 @@ function HaritaContent() {
           
           <Button 
             variant={interactionMode === 'add_hydrant' ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${interactionMode === 'add_hydrant' ? 'bg-blue-500 hover:bg-blue-600' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}`}
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
+              interactionMode === 'add_hydrant' 
+                ? 'bg-[var(--fd-info)] text-white hover:opacity-90' 
+                : 'border-[var(--fd-info)]/50 text-[var(--fd-info)] hover:bg-[var(--fd-info)]/10'
+            }`}
             onClick={() => setInteractionMode(interactionMode === 'add_hydrant' ? 'idle' : 'add_hydrant')}
           >
             <Droplets className="w-4 h-4 mr-1 sm:mr-2" /> 
@@ -887,10 +899,10 @@ function HaritaContent() {
 
           <Button 
             variant={showPersonnelLayer ? 'default' : 'outline'}
-            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap ${
+            className={`min-h-[44px] text-xs sm:text-sm whitespace-nowrap cursor-pointer ${
               showPersonnelLayer 
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-[0_0_12px_rgba(16,185,129,0.3)]' 
-                : 'border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10'
+                ? 'bg-[var(--fd-success)] text-white hover:opacity-90 border-[var(--fd-success)] shadow-[var(--fd-shadow-sm)]' 
+                : 'border-[var(--fd-success)]/50 text-[var(--fd-success)] hover:bg-[var(--fd-success)]/10'
             }`}
             onClick={() => setShowPersonnelLayer(!showPersonnelLayer)}
           >
@@ -898,58 +910,58 @@ function HaritaContent() {
           </Button>
 
           {interactionMode !== 'idle' && (
-            <Button variant="ghost" size="icon" onClick={() => setInteractionMode('idle')} className="text-muted-foreground min-h-[44px] min-w-[44px] whitespace-nowrap" title="İşlemi İptal Et">
+            <Button variant="ghost" size="icon" onClick={() => setInteractionMode('idle')} className="text-[var(--fd-text2)] hover:text-[var(--fd-text)] min-h-[44px] min-w-[44px] whitespace-nowrap cursor-pointer" title="İşlemi İptal Et">
               <X className="w-5 h-5" />
             </Button>
           )}
         </div>
       </div>
 
-      <Card className="flex-1 border-border overflow-hidden shadow-md relative">
+       <Card className="flex-1 overflow-hidden relative">
         <CardContent className="p-0 h-full w-full relative">
           
           {/* Arama Çubuğu (Search Engine) */}
-          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[400] w-[95%] sm:w-full sm:max-w-md sm:px-4">
-            <form onSubmit={handleSearch} className="relative bg-background rounded-full shadow-lg border flex items-center overflow-hidden">
-              <Search className="w-5 h-5 text-muted-foreground ml-4 shrink-0" />
+          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-10 w-[95%] sm:w-full sm:max-w-md sm:px-4">
+            <form onSubmit={handleSearch} className="relative bg-[var(--fd-surface)] rounded-[var(--fd-r-lg)] shadow-[var(--fd-shadow)] border border-[var(--fd-border)] flex items-center overflow-hidden">
+              <Search className="w-5 h-5 text-[var(--fd-text3)] ml-4 shrink-0" />
               <input 
                 type="text" 
                 placeholder="Sivas içi Mahalle, Sokak veya Cadde Ara..." 
-                className="w-full bg-transparent border-none focus:outline-none focus:ring-0 px-3 py-3 text-sm"
+                className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-[var(--fd-text)] px-3 py-3 text-sm placeholder-[var(--fd-text3)]"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setHasSearched(false) }}
                 onKeyDown={handleSearchKeyDown}
               />
-              <Button type="button" variant="ghost" className="rounded-full mr-1 h-11 w-11 sm:h-10 sm:w-10 p-0 shrink-0" onClick={() => handleSearch()}>
-                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              <Button type="button" variant="ghost" className="rounded-[var(--fd-r-sm)] mr-1 h-11 w-11 sm:h-10 sm:w-10 p-0 shrink-0 text-[var(--fd-text2)] hover:text-[var(--fd-text)] cursor-pointer" onClick={() => handleSearch()}>
+                {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-[var(--fd-accent)]" /> : <Search className="w-4 h-4" />}
               </Button>
             </form>
 
             {/* Yükleniyor durumu */}
             {isSearching && (
-              <div className="absolute top-full left-4 right-4 mt-2 bg-background border shadow-xl rounded-xl overflow-hidden animate-in slide-in-from-top-2">
+              <div className="absolute top-full left-4 right-4 mt-2 bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r)] overflow-hidden animate-in slide-in-from-top-2">
                 <div className="flex items-center justify-center gap-2 px-4 py-4">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Aranıyor...</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-[var(--fd-accent)]" />
+                  <span className="text-sm text-[var(--fd-text2)]">Aranıyor...</span>
                 </div>
               </div>
             )}
 
             {/* Arama Sonuçları Modal/Dropdown */}
             {!isSearching && searchResults.length > 0 && (
-              <div className="absolute top-full left-4 right-4 mt-2 bg-background border shadow-xl rounded-xl overflow-hidden max-h-64 overflow-y-auto animate-in slide-in-from-top-2">
-                <div className="flex items-center justify-between px-3 py-2 border-b bg-surface/50">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Arama Sonuçları ({searchResults.length})</span>
-                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { setSearchResults([]); setHasSearched(false) }}>Kapat</Button>
+              <div className="absolute top-full left-4 right-4 mt-2 bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r)] overflow-hidden max-h-64 overflow-y-auto animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50">
+                  <span className="text-xs font-semibold text-[var(--fd-text2)] uppercase tracking-wider">Arama Sonuçları ({searchResults.length})</span>
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-[var(--fd-text2)] hover:text-[var(--fd-text)] cursor-pointer" onClick={() => { setSearchResults([]); setHasSearched(false) }}>Kapat</Button>
                 </div>
                 {searchResults.map(res => (
                   <div 
                     key={res.place_id} 
-                    className="px-4 py-3 hover:bg-surface cursor-pointer border-b last:border-0 transition-colors"
+                    className="px-4 py-3 hover:bg-[var(--fd-surface2)] cursor-pointer border-b border-[var(--fd-border)] last:border-0 transition-colors"
                     onClick={() => handleSelectAddress(res)}
                   >
-                    <div className="font-medium text-sm flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <div className="font-medium text-sm flex items-center gap-2 text-[var(--fd-text)]">
+                      <MapPin className="w-3.5 h-3.5 text-[var(--fd-accent)] shrink-0" />
                       <span className="line-clamp-2">{res.display_name}</span>
                     </div>
                   </div>
@@ -959,11 +971,11 @@ function HaritaContent() {
 
             {/* Sonuç bulunamadı geri bildirimi */}
             {!isSearching && hasSearched && searchResults.length === 0 && (
-              <div className="absolute top-full left-4 right-4 mt-2 bg-background border shadow-xl rounded-xl overflow-hidden animate-in slide-in-from-top-2">
+              <div className="absolute top-full left-4 right-4 mt-2 bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r)] overflow-hidden animate-in slide-in-from-top-2">
                 <div className="flex flex-col items-center justify-center gap-1 px-4 py-4">
-                  <Search className="w-5 h-5 text-muted-foreground/50" />
-                  <span className="text-sm font-medium text-muted-foreground">Sonuç bulunamadı</span>
-                  <span className="text-xs text-muted-foreground/70">Farklı bir mahalle veya sokak adı deneyin</span>
+                  <Search className="w-5 h-5 text-[var(--fd-text3)]" />
+                  <span className="text-sm font-medium text-[var(--fd-text2)]">Sonuç bulunamadı</span>
+                  <span className="text-xs text-[var(--fd-text3)]">Farklı bir mahalle veya sokak adı deneyin</span>
                 </div>
               </div>
             )}
@@ -996,9 +1008,9 @@ function HaritaContent() {
       
       {showModal === 'external_mission' && (
         <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
-          <Card className="w-full sm:max-w-md bg-slate-950/90 border border-slate-800/80 shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800/80 px-4 sm:px-6 py-3 sm:py-4">
-              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-amber-500">
+          <Card className="w-full sm:w-[450px] shadow-[var(--fd-shadow-lg)] animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-[var(--fd-r)] sm:rounded-[var(--fd-r)] max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--fd-border)] px-4 sm:px-5 py-3 sm:py-3.5">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-[var(--fd-amber)]">
                 <MapPin className="w-5 h-5" /> 
                 Yeni Dış Görev Planla
               </h2>
@@ -1006,18 +1018,18 @@ function HaritaContent() {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setShowModal('none')} 
-                className="min-h-[44px] min-w-[44px] text-slate-400 hover:text-white hover:bg-slate-800/50"
+                className="min-h-[44px] min-w-[44px] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
             
-            <form onSubmit={handleSaveExternalMission} className="p-4 sm:p-6 space-y-4">
+            <form onSubmit={handleSaveExternalMission} className="p-4 sm:p-5 space-y-3.5 bg-[var(--fd-surface)]">
               {/* Görev Türü */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400">Görev Türü</label>
+                <label className="text-xs font-bold text-[var(--fd-text2)]">Görev Türü</label>
                 <select 
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] text-sm rounded-[var(--fd-r-sm)] focus:ring-[var(--fd-accent)] focus:border-[var(--fd-accent)] p-2.5"
                   value={externalMissionForm.gorev_turu}
                   onChange={(e) => setExternalMissionForm(prev => ({ ...prev, gorev_turu: e.target.value }))}
                 >
@@ -1028,55 +1040,55 @@ function HaritaContent() {
 
               {/* Başlık */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400">Görev Başlığı</label>
+                <label className="text-xs font-bold text-[var(--fd-text2)]">Görev Başlığı</label>
                 <Input
                   required
                   placeholder="Görev Başlığı Girin..."
                   value={externalMissionForm.baslik}
                   onChange={(e) => setExternalMissionForm(prev => ({ ...prev, baslik: e.target.value }))}
-                  className="bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 focus:ring-amber-500 focus:border-amber-500"
+                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-accent)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)]"
                 />
               </div>
 
               {/* Detay */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400">Detaylar / Açıklama</label>
+                <label className="text-xs font-bold text-[var(--fd-text2)]">Detaylar / Açıklama</label>
                 <textarea
                   placeholder="Görev Detayları Girin..."
                   value={externalMissionForm.detay}
                   onChange={(e) => setExternalMissionForm(prev => ({ ...prev, detay: e.target.value }))}
                   rows={3}
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] text-sm rounded-[var(--fd-r-sm)] focus:ring-[var(--fd-accent)] focus:border-[var(--fd-accent)] p-2.5"
                 />
               </div>
 
               {/* Mahalle & Adres */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400">Mahalle</label>
+                  <label className="text-xs font-bold text-[var(--fd-text2)]">Mahalle</label>
                   <Input
                     placeholder="Mahalle..."
                     value={externalMissionForm.mahalle}
                     onChange={(e) => setExternalMissionForm(prev => ({ ...prev, mahalle: e.target.value }))}
-                    className="bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 text-xs"
+                    className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] text-xs rounded-[var(--fd-r-sm)]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400">Adres</label>
+                  <label className="text-xs font-bold text-[var(--fd-text2)]">Adres</label>
                   <Input
                     placeholder="Adres..."
                     value={externalMissionForm.adres}
                     onChange={(e) => setExternalMissionForm(prev => ({ ...prev, adres: e.target.value }))}
-                    className="bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 text-xs"
+                    className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] text-xs rounded-[var(--fd-r-sm)]"
                   />
                 </div>
               </div>
 
               {/* Tahmini Dönüş Süresi */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400">Tahmini Dönüş Süresi (Saat)</label>
+                <label className="text-xs font-bold text-[var(--fd-text2)]">Tahmini Dönüş Süresi (Saat)</label>
                 <select 
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] text-sm rounded-[var(--fd-r-sm)] focus:ring-[var(--fd-accent)] focus:border-[var(--fd-accent)] p-2.5"
                   value={externalMissionForm.tahmini_donus_saat}
                   onChange={(e) => setExternalMissionForm(prev => ({ ...prev, tahmini_donus_saat: e.target.value }))}
                 >
@@ -1091,9 +1103,9 @@ function HaritaContent() {
 
               {/* Araç */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400">Görevlendirilecek İtfaiye Aracı</label>
+                <label className="text-xs font-bold text-[var(--fd-text2)]">Görevlendirilecek İtfaiye Aracı</label>
                 <select 
-                  className="w-full bg-slate-900 border border-slate-800 text-slate-100 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5"
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] text-sm rounded-[var(--fd-r-sm)] focus:ring-[var(--fd-accent)] focus:border-[var(--fd-accent)] p-2.5"
                   value={externalMissionForm.plaka}
                   onChange={(e) => setExternalMissionForm(prev => ({ ...prev, plaka: e.target.value }))}
                 >
@@ -1109,9 +1121,9 @@ function HaritaContent() {
               {/* Sorumlu Personel (Çoklu Seçim) */}
               <div className="space-y-2 flex flex-col min-h-[220px]">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)] flex items-center gap-2">
                     <span>Görevli Personeller (Posta {activePostaNumber})</span>
-                    <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-slate-300">
+                    <span className="text-[10px] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2 py-0.5 rounded-full text-[var(--fd-text2)]">
                       Seçili: {checkedExternalPersonnel.length}
                     </span>
                   </label>
@@ -1122,14 +1134,14 @@ function HaritaContent() {
                         const allSicils = filteredExternalPersonnel.map(p => p.sicil_no);
                         setCheckedExternalPersonnel(allSicils);
                       }}
-                      className="text-[10px] font-bold text-amber-400 hover:text-amber-300 transition-colors bg-white/5 px-2 py-1 rounded border border-amber-500/20 cursor-pointer"
+                      className="text-[10px] font-bold text-[var(--fd-amber)] hover:opacity-85 transition-colors bg-[var(--fd-surface2)] px-2 py-1 rounded border border-[var(--fd-amber)]/20 cursor-pointer"
                     >
                       Tümünü Seç
                     </button>
                     <button
                       type="button"
                       onClick={() => setCheckedExternalPersonnel([])}
-                      className="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors bg-white/5 px-2 py-1 rounded border border-rose-500/20 cursor-pointer"
+                      className="text-[10px] font-bold text-[var(--fd-danger)] hover:opacity-85 transition-colors bg-[var(--fd-surface2)] px-2 py-1 rounded border border-[var(--fd-danger)]/20 cursor-pointer"
                     >
                       Temizle
                     </button>
@@ -1138,28 +1150,28 @@ function HaritaContent() {
 
                 {/* Personel Arama Kutusu */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--fd-text3)]" />
                   <input
                     type="text"
                     placeholder="Personel ara (İsim, soyisim veya sicil no)..."
                     value={externalPersonnelSearch}
                     onChange={(e) => setExternalPersonnelSearch(e.target.value)}
-                    className="w-full h-9 rounded-xl border border-white/10 bg-slate-950/80 pl-9 pr-8 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full h-9 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] pl-9 pr-8 text-xs text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)] placeholder-[var(--fd-text3)]"
                   />
                   {externalPersonnelSearch && (
                     <button
                       type="button"
                       onClick={() => setExternalPersonnelSearch("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs border-0 bg-transparent cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fd-text3)] hover:text-[var(--fd-text)] text-xs border-0 bg-transparent cursor-pointer"
                     >
                       Temizle
                     </button>
                   )}
                 </div>
                 
-                <div className="flex-1 overflow-y-auto border border-white/10 rounded-xl bg-slate-950/60 p-2 space-y-1.5 max-h-[220px]">
+                <div className="flex-1 overflow-y-auto border border-[var(--fd-border)] rounded-xl bg-[var(--fd-surface2)]/40 p-2 space-y-1.5 max-h-[220px]">
                   {filteredExternalPersonnel.length === 0 ? (
-                    <div className="text-center text-xs text-slate-500 py-6">
+                    <div className="text-center text-xs text-[var(--fd-text3)] py-6">
                       {externalPersonnelSearch ? 'Arama kriterine uygun personel bulunamadı.' : 'Aktif posta personeli bulunamadı.'}
                     </div>
                   ) : (
@@ -1170,8 +1182,8 @@ function HaritaContent() {
                           key={p.id} 
                           className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border ${
                             isChecked 
-                              ? 'bg-amber-500/10 border-amber-500/40 text-white' 
-                              : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400'
+                              ? 'bg-[var(--fd-amber)]/10 border-[var(--fd-amber)]/40 text-[var(--fd-text)]' 
+                              : 'bg-transparent border-transparent hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)]'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -1185,13 +1197,13 @@ function HaritaContent() {
                                   setCheckedExternalPersonnel(prev => prev.filter(s => s !== p.sicil_no));
                                 }
                               }}
-                              className="rounded border-slate-800 text-amber-500 focus:ring-amber-500 bg-slate-950"
+                              className="rounded border-[var(--fd-border)] text-[var(--fd-accent)] focus:ring-[var(--fd-accent)] bg-[var(--fd-surface2)]"
                             />
                             <div>
-                              <span className="text-xs font-semibold block text-slate-200">
+                              <span className="text-xs font-semibold block text-[var(--fd-text)]">
                                 {p.ad} {p.soyad}
                               </span>
-                              <span className="text-[10px] text-slate-500 font-mono">
+                              <span className="text-[10px] text-[var(--fd-text3)] font-mono">
                                 Sicil: {p.sicil_no} | {p.unvan} | {p.istasyon}
                               </span>
                             </div>
@@ -1204,12 +1216,12 @@ function HaritaContent() {
               </div>
 
               {/* Form Buttons */}
-              <div className="pt-4 border-t border-slate-800/80 flex justify-end gap-2 shrink-0">
+              <div className="pt-4 border-t border-[var(--fd-border)] flex justify-end gap-2 shrink-0">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setShowModal('none')} 
-                  className="border-slate-800 text-slate-300 hover:bg-slate-900"
+                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] cursor-pointer"
                 >
                   İptal
                 </Button>
@@ -1229,20 +1241,20 @@ function HaritaContent() {
 
       {showModal === 'incident' && (
         <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
-          <Card className="w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
-              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2"><Flame className="w-5 h-5 text-danger" /> Olay İşaretle</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px]"><X className="w-4 h-4" /></Button>
+          <Card className="w-full sm:w-[450px] shadow-[var(--fd-shadow-lg)] animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-[var(--fd-r)] sm:rounded-[var(--fd-r)] max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--fd-border)] px-4 sm:px-5 py-3 sm:py-3.5">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-[var(--fd-text)]"><Flame className="w-5 h-5 text-[var(--fd-danger)]" /> Olay İşaretle</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] cursor-pointer"><X className="w-4 h-4" /></Button>
             </div>
-            <form onSubmit={handleSaveIncident} className="p-4 sm:p-6 space-y-4">
+            <form onSubmit={handleSaveIncident} className="p-4 sm:p-5 space-y-3.5 bg-[var(--fd-surface)]">
               {/* ─── İnteraktif Adres Arama Motoru (Geocoding) ─────── */}
               <div className="space-y-2 relative">
-                <label className="text-sm font-semibold flex items-center gap-2">
-                  <Search className="w-3.5 h-3.5 text-cyan-400" />
+                <label className="text-sm font-semibold flex items-center gap-2 text-[var(--fd-text)]">
+                  <Search className="w-3.5 h-3.5 text-[var(--fd-accent)]" />
                   <span>Adres veya Önemli Yer Ara</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400/70 pointer-events-none">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fd-accent)]/70 pointer-events-none">
                     {isIncidentSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-base">🔍</span>}
                   </div>
                   <input
@@ -1251,26 +1263,26 @@ function HaritaContent() {
                     value={incidentSearchQuery}
                     onChange={(e) => handleIncidentSearchInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleIncidentSearch(incidentSearchQuery); } }}
-                    className="w-full h-11 rounded-xl border border-cyan-500/30 bg-slate-950/60 backdrop-blur-sm pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/60 transition-all shadow-[0_0_12px_rgba(6,182,212,0.08)]"
+                    className="w-full h-11 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] pl-10 pr-4 text-sm text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:outline-none focus:ring-2 focus:ring-[var(--fd-accent)]/50 focus:border-[var(--fd-accent)]/60 transition-all shadow-[var(--fd-shadow-sm)]"
                   />
                 </div>
 
                 {/* Geocoding Sonuç Dropdown */}
                 {!isIncidentSearching && incidentSearchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-slate-950/95 backdrop-blur-xl border border-cyan-500/20 rounded-xl shadow-[0_8px_32px_rgba(6,182,212,0.15)] max-h-52 overflow-y-auto">
-                    <div className="px-3 py-1.5 border-b border-slate-800/60 flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400/80">Bulunan Adresler ({incidentSearchResults.length})</span>
-                      <button type="button" onClick={() => { setIncidentSearchResults([]); setHasIncidentSearched(false); }} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">Kapat</button>
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-xl shadow-[var(--fd-shadow-lg)] max-h-52 overflow-y-auto">
+                    <div className="px-3 py-1.5 border-b border-[var(--fd-border)] flex items-center justify-between bg-[var(--fd-surface2)]/50">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--fd-accent)]/80">Bulunan Adresler ({incidentSearchResults.length})</span>
+                      <button type="button" onClick={() => { setIncidentSearchResults([]); setHasIncidentSearched(false); }} className="text-[10px] text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors cursor-pointer">Kapat</button>
                     </div>
                     {incidentSearchResults.map(res => (
                       <button
                         key={res.place_id}
                         type="button"
-                        className="w-full text-left px-3 py-2.5 hover:bg-cyan-500/10 border-b border-slate-800/30 last:border-0 transition-colors flex items-start gap-2 min-h-[44px]"
+                        className="w-full text-left px-3 py-2.5 hover:bg-[var(--fd-surface2)] border-b border-[var(--fd-border)] last:border-0 transition-colors flex items-start gap-2 min-h-[44px] cursor-pointer"
                         onClick={() => handleIncidentSelectAddress(res)}
                       >
-                        <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
-                        <span className="text-xs text-slate-200 leading-snug line-clamp-2">{res.display_name}</span>
+                        <MapPin className="w-3.5 h-3.5 text-[var(--fd-accent)] shrink-0 mt-0.5" />
+                        <span className="text-xs text-[var(--fd-text)] leading-snug line-clamp-2">{res.display_name}</span>
                       </button>
                     ))}
                   </div>
@@ -1278,32 +1290,32 @@ function HaritaContent() {
 
                 {/* Sonuç bulunamadı */}
                 {!isIncidentSearching && hasIncidentSearched && incidentSearchResults.length === 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-slate-950/95 backdrop-blur-xl border border-slate-700/40 rounded-xl shadow-lg">
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-xl shadow-lg">
                     <div className="flex items-center justify-center gap-2 px-4 py-3">
-                      <Search className="w-4 h-4 text-slate-600" />
-                      <span className="text-xs text-slate-500">Sonuç bulunamadı — farklı bir adres deneyin</span>
+                      <Search className="w-4 h-4 text-[var(--fd-text3)]" />
+                      <span className="text-xs text-[var(--fd-text3)]">Sonuç bulunamadı — farklı bir adres deneyin</span>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="h-px bg-gradient-to-r from-cyan-500/20 via-slate-800/40 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-[var(--fd-accent)]/20 via-[var(--fd-border)]/40 to-transparent" />
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Olay Türü</label>
-                <select name="olay_turu" value={incidentForm.olay_turu} onChange={(e) => setIncidentForm({...incidentForm, olay_turu: e.target.value})} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                  <optgroup label="🔴 Kritik (Seviye 3)">
+                <label className="text-sm font-semibold text-[var(--fd-text)]">Olay Türü</label>
+                <select name="olay_turu" value={incidentForm.olay_turu} onChange={(e) => setIncidentForm({...incidentForm, olay_turu: e.target.value})} required className="flex h-10 w-full rounded-md border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--fd-accent)]">
+                  <optgroup label="🔴 Kritik (Seviye 3)" className="text-[var(--fd-danger)] bg-[var(--fd-surface2)]">
                     <option value="Ev Yangını">Ev Yangını</option>
                     <option value="Bina/Fabrika Yangını">Bina/Fabrika Yangını</option>
                     <option value="Sıkışmalı Trafik Kazası">Sıkışmalı Trafik Kazası</option>
                     <option value="KBRN Sızıntısı">KBRN Sızıntısı</option>
                   </optgroup>
-                  <optgroup label="🟡 Orta (Seviye 2)">
+                  <optgroup label="🟡 Orta (Seviye 2)" className="text-[var(--fd-amber)] bg-[var(--fd-surface2)]">
                     <option value="Araç Yangını">Araç Yangını</option>
                     <option value="İşyeri Yangını">İşyeri Yangını</option>
                     <option value="Kurtarma Operasyonları">Kurtarma Operasyonları</option>
                   </optgroup>
-                  <optgroup label="🟢 Düşük (Seviye 1)">
+                  <optgroup label="🟢 Düşük (Seviye 1)" className="text-[var(--fd-success)] bg-[var(--fd-surface2)]">
                     <option value="Çöp Yangını">Çöp Yangını</option>
                     <option value="Ot/Anız Yangını">Ot/Anız Yangını</option>
                     <option value="Kapı Açma">Kapı Açma</option>
@@ -1312,29 +1324,29 @@ function HaritaContent() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Mahalle</label>
-                <Input value={incidentForm.mahalle} onChange={(e) => setIncidentForm({...incidentForm, mahalle: e.target.value})} required placeholder="Örn: Alibaba" />
+                <label className="text-sm font-semibold text-[var(--fd-text)]">Mahalle</label>
+                <Input value={incidentForm.mahalle} onChange={(e) => setIncidentForm({...incidentForm, mahalle: e.target.value})} required placeholder="Örn: Alibaba" className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-accent)]" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold flex items-center justify-between w-full">
+                <label className="text-sm font-semibold flex items-center justify-between w-full text-[var(--fd-text)]">
                   <span>Adres / Detay</span>
                   {hasFetchedAddress && (
-                    <span className="flex items-center gap-1 text-[10px] sm:text-xs text-blue-500 font-medium bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                    <span className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--fd-info)] font-medium bg-[var(--fd-info)]/10 px-2 py-0.5 rounded-full border border-[var(--fd-info)]/20">
                       <Sparkles className="w-3 h-3" />
                       Yapay Zeka Tarafından Doğrulandı
                     </span>
                   )}
                 </label>
-                <Input value={incidentForm.adres} onChange={(e) => setIncidentForm({...incidentForm, adres: e.target.value})} required placeholder="Sokak, Bina detayları..." />
+                <Input value={incidentForm.adres} onChange={(e) => setIncidentForm({...incidentForm, adres: e.target.value})} required placeholder="Sokak, Bina detayları..." className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-accent)]" />
               </div>
               
-              <div className="text-xs text-muted-foreground font-mono bg-surface p-2 rounded border mt-4">
+              <div className="text-xs text-[var(--fd-text2)] font-mono bg-[var(--fd-surface2)] p-2 rounded border border-[var(--fd-border)] mt-4">
                 Seçilen Konum: {clickedCoords?.lat.toFixed(6)}, {clickedCoords?.lng.toFixed(6)}
               </div>
 
               <div className="pt-4 flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowModal('none')}>İptal</Button>
-                <Button type="submit" className="bg-danger hover:bg-danger/90 text-white" disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={() => setShowModal('none')} className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] cursor-pointer">İtal</Button>
+                <Button type="submit" className="bg-[var(--fd-danger)] hover:opacity-90 text-white cursor-pointer" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
                   Haritaya Kaydet
                 </Button>
@@ -1346,27 +1358,27 @@ function HaritaContent() {
 
       {showModal === 'hydrant' && (
         <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
-          <Card className="w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
-              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2"><Droplets className="w-5 h-5 text-blue-500" /> Yangın Hidrantı Ekle</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px]"><X className="w-4 h-4" /></Button>
+          <Card className="w-full sm:w-[450px] shadow-[var(--fd-shadow-lg)] animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-[var(--fd-r)] sm:rounded-[var(--fd-r)] max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--fd-border)] px-4 sm:px-5 py-3 sm:py-3.5">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-[var(--fd-text)]"><Droplets className="w-5 h-5 text-[var(--fd-info)]" /> Yangın Hidrantı Ekle</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px] text-[var(--fd-text2)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] cursor-pointer"><X className="w-4 h-4" /></Button>
             </div>
-            <form onSubmit={handleSaveHydrant} className="p-4 sm:p-6 space-y-4">
+            <form onSubmit={handleSaveHydrant} className="p-4 sm:p-5 space-y-3.5 bg-[var(--fd-surface)]">
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Hidrant / Şube No</label>
-                <Input value={hydrantForm.no} onChange={(e) => setHydrantForm({...hydrantForm, no: e.target.value})} required placeholder="Örn: H-128" />
+                <label className="text-sm font-semibold text-[var(--fd-text)]">Hidrant / Şube No</label>
+                <Input value={hydrantForm.no} onChange={(e) => setHydrantForm({...hydrantForm, no: e.target.value})} required placeholder="Örn: H-128" className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-accent)] rounded-[var(--fd-r-sm)]" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Tip</label>
-                  <select value={hydrantForm.tip} onChange={(e) => setHydrantForm({...hydrantForm, tip: e.target.value})} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                  <label className="text-sm font-semibold text-[var(--fd-text)]">Tip</label>
+                  <select value={hydrantForm.tip} onChange={(e) => setHydrantForm({...hydrantForm, tip: e.target.value})} className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--fd-accent)]">
                     <option value="Yer üstü">Yer üstü</option>
                     <option value="Yer altı">Yer altı</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Durum</label>
-                  <select value={hydrantForm.durum} onChange={(e) => setHydrantForm({...hydrantForm, durum: e.target.value})} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                  <label className="text-sm font-semibold text-[var(--fd-text)]">Durum</label>
+                  <select value={hydrantForm.durum} onChange={(e) => setHydrantForm({...hydrantForm, durum: e.target.value})} className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--fd-accent)]">
                     <option value="Aktif">Aktif</option>
                     <option value="Arızalı">Arızalı</option>
                     <option value="Bakımda">Bakımda</option>
@@ -1374,17 +1386,17 @@ function HaritaContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold">Bulunduğu Mahalle</label>
-                <Input value={hydrantForm.mahalle} onChange={(e) => setHydrantForm({...hydrantForm, mahalle: e.target.value})} required placeholder="Örn: Esentepe" />
+                <label className="text-sm font-semibold text-[var(--fd-text)]">Bulunduğu Mahalle</label>
+                <Input value={hydrantForm.mahalle} onChange={(e) => setHydrantForm({...hydrantForm, mahalle: e.target.value})} required placeholder="Örn: Esentepe" className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-accent)] rounded-[var(--fd-r-sm)]" />
               </div>
               
-              <div className="text-xs text-muted-foreground font-mono bg-surface p-2 rounded border mt-4">
+              <div className="text-xs text-[var(--fd-text2)] font-mono bg-[var(--fd-surface2)] p-2 rounded border border-[var(--fd-border)] mt-4">
                 Seçilen Konum: {clickedCoords?.lat.toFixed(6)}, {clickedCoords?.lng.toFixed(6)}
               </div>
 
               <div className="pt-4 flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowModal('none')}>İptal</Button>
-                <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white" disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={() => setShowModal('none')} className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] cursor-pointer">İptal</Button>
+                <Button type="submit" className="bg-[var(--fd-info)] hover:opacity-90 text-white cursor-pointer" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                   Sisteme Ekle
                 </Button>
@@ -1396,39 +1408,39 @@ function HaritaContent() {
       
       {showModal === 'mufreze_cikis' && (
         <div className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in">
-          <Card className="w-full sm:max-w-lg shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col border border-white/10 bg-slate-900/90 text-white">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-4">
-              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-danger">
-                <Flame className="w-5 h-5 animate-pulse text-danger" /> 
+          <Card className="w-full sm:w-[500px] shadow-[var(--fd-shadow-lg)] animate-in slide-in-from-bottom-4 sm:zoom-in-95 rounded-t-[var(--fd-r)] sm:rounded-[var(--fd-r)] max-h-[85vh] flex flex-col border border-[var(--fd-border)] bg-[var(--fd-surface)] text-[var(--fd-text)]">
+            <div className="flex items-center justify-between border-b border-[var(--fd-border)] px-4 sm:px-5 py-3.5 bg-[var(--fd-surface2)]/50">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-[var(--fd-danger)]">
+                <Flame className="w-5 h-5 animate-pulse text-[var(--fd-danger)]" /> 
                 Müfreze Çıkış Paneli (Vaka No: {activeIncidentId})
               </h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px] hover:bg-white/10 text-slate-400 hover:text-white">
+              <Button variant="ghost" size="icon" onClick={() => setShowModal('none')} className="min-h-[44px] min-w-[44px] hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] cursor-pointer">
                 <X className="w-4 h-4" />
               </Button>
             </div>
             
-            <form onSubmit={handleSaveMufrezeCikis} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            <form onSubmit={handleSaveMufrezeCikis} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-[var(--fd-surface)]">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Olay Türü</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)]">Olay Türü</label>
                 <select 
                   name="olay_turu" 
                   value={incidentForm.olay_turu} 
                   onChange={(e) => setIncidentForm({...incidentForm, olay_turu: e.target.value})} 
                   required 
-                  className="flex h-11 w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-danger focus:border-transparent"
+                  className="flex h-11 w-full rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-sm text-[var(--fd-text)] focus:outline-none focus:ring-2 focus:ring-[var(--fd-danger)] focus:border-transparent"
                 >
-                  <optgroup label="🔴 Kritik (Seviye 3)" className="bg-slate-900 text-danger">
+                  <optgroup label="🔴 Kritik (Seviye 3)" className="bg-[var(--fd-surface2)] text-[var(--fd-danger)]">
                     <option value="Ev Yangını">Ev Yangını</option>
                     <option value="Bina/Fabrika Yangını">Bina/Fabrika Yangını</option>
                     <option value="Sıkışmalı Trafik Kazası">Sıkışmalı Trafik Kazası</option>
                     <option value="KBRN Sızıntısı">KBRN Sızıntısı</option>
                   </optgroup>
-                  <optgroup label="🟡 Orta (Seviye 2)" className="bg-slate-900 text-amber-500">
+                  <optgroup label="🟡 Orta (Seviye 2)" className="bg-[var(--fd-surface2)] text-[var(--fd-amber)]">
                     <option value="Araç Yangını">Araç Yangını</option>
                     <option value="İşyeri Yangını">İşyeri Yangını</option>
                     <option value="Kurtarma Operasyonları">Kurtarma Operasyonları</option>
                   </optgroup>
-                  <optgroup label="🟢 Düşük (Seviye 1)" className="bg-slate-900 text-emerald-500">
+                  <optgroup label="🟢 Düşük (Seviye 1)" className="bg-[var(--fd-surface2)] text-[var(--fd-success)]">
                     <option value="Çöp Yangını">Çöp Yangını</option>
                     <option value="Ot/Anız Yangını">Ot/Anız Yangını</option>
                     <option value="Kapı Açma">Kapı Açma</option>
@@ -1439,28 +1451,28 @@ function HaritaContent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Mahalle</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)]">Mahalle</label>
                   <Input 
                     value={incidentForm.mahalle} 
                     onChange={(e) => setIncidentForm({...incidentForm, mahalle: e.target.value})} 
                     required 
-                    className="h-11 rounded-xl bg-slate-950/80 border-white/10 text-white placeholder:text-slate-600 focus:ring-danger" 
+                    className="h-11 rounded-xl bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-danger)]" 
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Adres / Konum Detayı</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)]">Adres / Konum Detayı</label>
                   <Input 
                     value={incidentForm.adres} 
                     onChange={(e) => setIncidentForm({...incidentForm, adres: e.target.value})} 
                     required 
-                    className="h-11 rounded-xl bg-slate-950/80 border-white/10 text-white placeholder:text-slate-600 focus:ring-danger" 
+                    className="h-11 rounded-xl bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:ring-[var(--fd-danger)]" 
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Çıkış Yapacak Araçlar (Birden fazla seçilebilir)</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-white/10 rounded-xl bg-slate-950/60 p-2 max-h-[140px] overflow-y-auto">
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)]">Çıkış Yapacak Araçlar (Birden fazla seçilebilir)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-[var(--fd-border)] rounded-xl bg-[var(--fd-surface2)]/60 p-2 max-h-[140px] overflow-y-auto">
                   {vehicles.map(v => {
                     const isSelected = selectedVehiclePlakas.includes(v.plaka);
                     const isMaint = v.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)';
@@ -1469,10 +1481,10 @@ function HaritaContent() {
                         key={v.plaka}
                         className={`flex items-center justify-between p-2 rounded-lg transition-all border text-xs ${
                           isMaint
-                            ? 'opacity-40 cursor-not-allowed bg-slate-900 border-transparent text-slate-500'
+                            ? 'opacity-40 cursor-not-allowed bg-[var(--fd-surface2)] border-transparent text-[var(--fd-text3)]'
                             : isSelected
-                              ? 'bg-danger/10 border-danger/40 text-white cursor-pointer'
-                              : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400 cursor-pointer'
+                              ? 'bg-[var(--fd-danger)]/10 border-[var(--fd-danger)]/40 text-[var(--fd-text)] cursor-pointer'
+                              : 'bg-transparent border-transparent hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] cursor-pointer'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -1485,7 +1497,7 @@ function HaritaContent() {
                                 handleVehicleToggle(v.plaka, e.target.checked);
                               }
                             }}
-                            className="rounded border-slate-700 bg-slate-900 text-danger focus:ring-danger w-3.5 h-3.5"
+                            className="rounded border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-danger)] focus:ring-[var(--fd-danger)] w-3.5 h-3.5"
                           />
                           <div className="flex flex-col">
                             <span className="font-bold">{v.plaka}</span>
@@ -1494,10 +1506,10 @@ function HaritaContent() {
                         </div>
                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
                           isMaint
-                            ? 'bg-slate-700/30 text-slate-400 border border-slate-600/30'
+                            ? 'bg-[var(--fd-surface3)] text-[var(--fd-text2)] border border-[var(--fd-border)]/30'
                             : v.durum === 'Bakımda' || v.status === 'maintenance'
-                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              ? 'bg-[var(--fd-danger)]/20 text-[var(--fd-danger)] border border-[var(--fd-danger)]/30'
+                              : 'bg-[var(--fd-success)]/20 text-[var(--fd-success)] border border-[var(--fd-success)]/30'
                         }`}>
                           {isMaint ? 'MAKİNE İKMAL' : (v.durum === 'Bakımda' || v.status === 'maintenance') ? 'BAKIMDA' : 'AKTİF'}
                         </span>
@@ -1509,9 +1521,9 @@ function HaritaContent() {
 
               <div className="space-y-2 flex-1 flex flex-col min-h-[220px]">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)] flex items-center gap-2">
                     <span>Aktif Nöbetçi Personeller (Posta {activePostaNumber})</span>
-                    <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-slate-300">
+                    <span className="text-[10px] bg-[var(--fd-surface2)] border border-[var(--fd-border)] px-2 py-0.5 rounded-full text-[var(--fd-text2)]">
                       Seçili: {checkedPersonnel.length}
                     </span>
                   </label>
@@ -1522,14 +1534,14 @@ function HaritaContent() {
                         const allSicils = sortedMufrezePersonnel.map(p => p.sicil_no);
                         setCheckedPersonnel(allSicils);
                       }}
-                      className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors bg-white/5 px-2 py-1 rounded border border-cyan-500/20 cursor-pointer"
+                      className="text-[10px] font-bold text-[var(--fd-info)] hover:opacity-85 transition-colors bg-[var(--fd-surface2)] px-2 py-1 rounded border border-[var(--fd-info)]/20 cursor-pointer"
                     >
                       Tümünü Seç
                     </button>
                     <button
                       type="button"
                       onClick={() => setCheckedPersonnel([])}
-                      className="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors bg-white/5 px-2 py-1 rounded border border-rose-500/20 cursor-pointer"
+                      className="text-[10px] font-bold text-[var(--fd-danger)] hover:opacity-85 transition-colors bg-[var(--fd-surface2)] px-2 py-1 rounded border border-[var(--fd-danger)]/20 cursor-pointer"
                     >
                       Temizle
                     </button>
@@ -1538,28 +1550,28 @@ function HaritaContent() {
 
                 {/* Personel Arama Kutusu */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--fd-text3)]" />
                   <input
                     type="text"
                     placeholder="Personel ara (İsim, soyisim veya sicil no)..."
                     value={personnelSearch}
                     onChange={(e) => setPersonnelSearch(e.target.value)}
-                    className="w-full h-9 rounded-xl border border-white/10 bg-slate-950/80 pl-9 pr-8 text-xs text-white focus:outline-none focus:ring-1 focus:ring-danger"
+                    className="w-full h-9 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] pl-9 pr-8 text-xs text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-danger)]"
                   />
                   {personnelSearch && (
                     <button
                       type="button"
                       onClick={() => setPersonnelSearch("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs border-0 bg-transparent cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fd-text3)] hover:text-[var(--fd-text)] text-xs border-0 bg-transparent cursor-pointer"
                     >
                       Temizle
                     </button>
                   )}
                 </div>
                 
-                <div className="flex-1 overflow-y-auto border border-white/10 rounded-xl bg-slate-950/60 p-2 space-y-1.5 max-h-[220px]">
+                <div className="flex-1 overflow-y-auto border border-[var(--fd-border)] rounded-xl bg-[var(--fd-surface2)]/40 p-2 space-y-1.5 max-h-[220px]">
                   {filteredPersonnel.length === 0 ? (
-                    <div className="text-center text-xs text-slate-500 py-6">
+                    <div className="text-center text-xs text-[var(--fd-text3)] py-6">
                       {personnelSearch ? 'Arama kriterine uygun nöbetçi personel bulunamadı.' : 'Aktif nöbetçi posta personeli bulunamadı.'}
                     </div>
                   ) : (
@@ -1578,10 +1590,10 @@ function HaritaContent() {
                           key={p.id} 
                           className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border ${
                             isChecked 
-                              ? 'bg-danger/10 border-danger/40 text-white' 
+                              ? 'bg-[var(--fd-danger)]/10 border-[var(--fd-danger)]/40 text-[var(--fd-text)]' 
                               : isSameStation 
-                                ? 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200' 
-                                : 'bg-transparent border-transparent hover:bg-white/5 text-slate-400'
+                                ? 'bg-[var(--fd-surface3)] border border-[var(--fd-border)]/30 hover:bg-[var(--fd-surface3)]/80 text-[var(--fd-text)]' 
+                                : 'bg-transparent border-transparent hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)]'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -1595,7 +1607,7 @@ function HaritaContent() {
                                   setCheckedPersonnel(prev => prev.filter(id => id !== p.sicil_no));
                                 }
                               }}
-                              className="rounded border-slate-700 bg-slate-900 text-danger focus:ring-danger w-4 h-4"
+                              className="rounded border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-danger)] focus:ring-[var(--fd-danger)] w-4 h-4"
                             />
                             <div className="flex flex-col">
                               <span className="text-xs font-semibold">{p.ad} {p.soyad}</span>
@@ -1603,11 +1615,11 @@ function HaritaContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--fd-surface2)] border border-[var(--fd-border)]">
                               {p.istasyon || 'İstasyon Belirtilmemiş'}
                             </span>
                             {isSameStation && (
-                              <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-[var(--fd-success)]/20 text-[var(--fd-success)] border border-[var(--fd-success)]/30">
                                 Aynı Şube
                               </span>
                             )}
@@ -1619,11 +1631,11 @@ function HaritaContent() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-2 shrink-0">
-                <Button type="button" variant="outline" onClick={() => setShowModal('none')} className="border-white/10 text-slate-300 hover:bg-white/10">
+              <div className="pt-4 border-t border-[var(--fd-border)] flex justify-end gap-2 shrink-0">
+                <Button type="button" variant="outline" onClick={() => setShowModal('none')} className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] cursor-pointer">
                   İptal
                 </Button>
-                <Button type="submit" className="bg-danger hover:bg-danger/90 text-white font-semibold" disabled={isSubmitting || selectedVehiclePlakas.length === 0}>
+                <Button type="submit" className="bg-[var(--fd-danger)] hover:opacity-90 text-white font-semibold cursor-pointer" disabled={isSubmitting || selectedVehiclePlakas.length === 0}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Flame className="w-4 h-4 mr-2" />}
                   Müfreze Çıkışını Başlat
                 </Button>
@@ -1641,9 +1653,9 @@ function HaritaContent() {
 export default function HaritaPage() {
   return (
     <Suspense fallback={
-      <div className="w-full h-[calc(100vh-8rem)] flex flex-col items-center justify-center bg-surface/50 border rounded-xl border-dashed">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-        <span className="text-sm font-medium text-muted-foreground">Harita Yükleniyor...</span>
+      <div className="w-full h-[calc(100vh-8rem)] flex flex-col items-center justify-center bg-[var(--fd-surface2)]/50 border border-[var(--fd-border)] rounded-[var(--fd-r)] border-dashed">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--fd-accent)] mb-2" />
+        <span className="text-sm font-medium text-[var(--fd-text2)]">Harita Yükleniyor...</span>
       </div>
     }>
       <HaritaContent />

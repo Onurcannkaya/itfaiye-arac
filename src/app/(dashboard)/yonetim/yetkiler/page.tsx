@@ -3,9 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '@/lib/authStore';
 import { api } from '@/lib/api';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Shield, Lock, Unlock, Flame, Users, Wrench, Combine, FileText, Loader2, Sparkles, ShieldAlert, Check, AlertTriangle, GraduationCap, ListChecks } from 'lucide-react';
+import { Switch } from "@/components/ui/Switch";
+import { cn } from "@/lib/utils";
+import {
+  Shield, Lock, Unlock, Flame, Users, Wrench, Combine,
+  FileText, Loader2, Sparkles, ShieldAlert, Check,
+  AlertTriangle, GraduationCap, ListChecks
+} from 'lucide-react';
 
 interface PermissionRow {
   id?: number;
@@ -15,14 +20,14 @@ interface PermissionRow {
 }
 
 const PAGE_METADATA = [
-  { id: 'harita', title: 'Komuta Kontrol Haritası', desc: 'Saha yönetimi, yangın hidrantı ve anlık olay tespiti', icon: Flame, color: 'text-red-500 bg-red-500/10' },
-  { id: 'personel_yonetimi', title: 'Personel Yönetimi', desc: 'Sicil kayıtları, aktif vardiya ve yeterlilik atamaları', icon: Users, color: 'text-cyan-500 bg-cyan-500/10' },
-  { id: 'arac_bakim', title: 'Araç Bakım & Garaj', desc: 'Arıza ihbarları, teknik raporlama ve müdür onay adımları', icon: Wrench, color: 'text-emerald-500 bg-emerald-500/10' },
-  { id: 'envanter', title: 'Malzeme Envanteri', desc: 'QR kod üretimi, araç malzeme zimmetleri ve durum sayımları', icon: Combine, color: 'text-amber-500 bg-amber-500/10' },
-  { id: 'raporlar', title: 'EK-16 Raporları', desc: 'Merkezi log sistemi, geçmiş denetimler ve sorun analizleri', icon: FileText, color: 'text-purple-500 bg-purple-500/10' },
-  { id: 'egitimler', title: 'Eğitim & Faaliyetler', desc: 'Resmi imza sirkülü eğitim raporları, tatbikat ve ziyaret kayıtları', icon: GraduationCap, color: 'text-blue-500 bg-blue-500/10' },
-  { id: 'hizmet_basvurulari', title: 'Vatandaş Hizmetleri', desc: 'Baca temizliği, yangın önlem ruhsatları ve eğitim talepleri onay süreci', icon: Sparkles, color: 'text-indigo-500 bg-indigo-500/10' },
-  { id: 'gorevler', title: 'Görev & Devir-Teslim', desc: 'Dinamik araç devir-teslim, malzeme kontrol ve şablon oluşturma', icon: ListChecks, color: 'text-rose-500 bg-rose-500/10' },
+  { id: 'harita', title: 'Komuta Kontrol Haritası', desc: 'Saha yönetimi, yangın hidrantı ve anlık olay tespiti', icon: Flame, color: 'text-[#dc2626] bg-[rgba(220,38,38,0.1)]' },
+  { id: 'personel_yonetimi', title: 'Personel Yönetimi', desc: 'Sicil kayıtları, aktif vardiya ve yeterlilik atamaları', icon: Users, color: 'text-[#0891b2] bg-[rgba(8,145,178,0.1)]' },
+  { id: 'arac_bakim', title: 'Araç Bakım & Garaj', desc: 'Arıza ihbarları, teknik raporlama ve müdür onay adımları', icon: Wrench, color: 'text-[#16a34a] bg-[rgba(22,163,74,0.1)]' },
+  { id: 'envanter', title: 'Malzeme Envanteri', desc: 'QR kod üretimi, araç malzeme zimmetleri ve durum sayımları', icon: Combine, color: 'text-[#f59e0b] bg-[rgba(245,158,11,0.1)]' },
+  { id: 'raporlar', title: 'EK-16 Raporları', desc: 'Merkezi log sistemi, geçmiş denetimler ve sorun analizleri', icon: FileText, color: 'text-[#7c3aed] bg-[rgba(124,58,237,0.1)]' },
+  { id: 'egitimler', title: 'Eğitim & Faaliyetler', desc: 'Resmi imza sirkülü eğitim raporları, tatbikat ve ziyaret kayıtları', icon: GraduationCap, color: 'text-[#2563eb] bg-[rgba(37,99,235,0.1)]' },
+  { id: 'hizmet_basvurulari', title: 'Vatandaş Hizmetleri', desc: 'Baca temizliği, yangın önlem ruhsatları ve eğitim talepleri onay süreci', icon: Sparkles, color: 'text-[#4f46e5] bg-[rgba(79,70,229,0.1)]' },
+  { id: 'gorevler', title: 'Görev & Devir-Teslim', desc: 'Dinamik araç devir-teslim, malzeme kontrol ve şablon oluşturma', icon: ListChecks, color: 'text-[#e11d48] bg-[rgba(225,29,72,0.1)]' },
 ];
 
 const ROLES = [
@@ -35,13 +40,12 @@ const ROLES = [
 
 export default function YetkilerPage() {
   const { user } = useAuthStore();
+  const isMudur = user?.rol === 'Admin' || user?.rol?.toLowerCase() === 'admin' || user?.unvan === 'Müdür' || user?.unvan?.toLowerCase() === 'müdür';
+
   const [permissions, setPermissions] = useState<PermissionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
-  // Check if current user is Müdür/Admin
-  const isMudur = user?.rol === 'Admin' || user?.rol?.toLowerCase() === 'admin' || user?.unvan === 'Müdür' || user?.unvan?.toLowerCase() === 'müdür';
 
   useEffect(() => {
     fetchPermissions();
@@ -63,8 +67,8 @@ export default function YetkilerPage() {
   };
 
   const handleToggle = async (rol: string, sayfa_id: string, currentVal: boolean) => {
-    if (!isMudur) return; // Non-Müdür users cannot modify matrix settings
-    
+    if (!isMudur) return;
+
     const key = `${rol}-${sayfa_id}`;
     setUpdatingId(key);
     setSaveStatus('idle');
@@ -75,8 +79,7 @@ export default function YetkilerPage() {
       const { data, error } = await api.update('role_permissions', { izinli: newVal }, { rol, sayfa_id });
       if (error) throw error;
 
-      // Update state locally
-      setPermissions(prev => prev.map(p => 
+      setPermissions(prev => prev.map(p =>
         (p.rol === rol && p.sayfa_id === sayfa_id) ? { ...p, izinli: newVal } : p
       ));
 
@@ -113,220 +116,215 @@ export default function YetkilerPage() {
   if (loading) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-gray-400 text-sm">Rol ve Ekran Yetkilendirme Matrisi yükleniyor...</p>
+        <Loader2 className="w-10 h-10 animate-spin text-[var(--fd-accent)]" />
+        <p className="text-[var(--fd-text3)] text-sm">Rol ve Ekran Yetkilendirme Matrisi yükleniyor...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen space-y-6 max-w-7xl mx-auto pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border/50 pb-4 gap-4">
+    <div className="space-y-5 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in duration-300">
+
+      {/* ═══ Header ═══ */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[var(--fd-border)] pb-4 gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Dinamik Rol & Ekran Yetkileri</h1>
-            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 flex items-center gap-1 font-semibold">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-[var(--fd-text)]">
+              Dinamik Rol & Ekran Yetkileri
+            </h1>
+            <Badge variant="outline" className="gap-1 text-[10px]">
               <Shield className="w-3.5 h-3.5" /> Karargâh Paneli
             </Badge>
           </div>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Sivas İtfaiye Otomasyonu bünyesindeki 5 ana kontrol panelinin, 5 ana rütbe grubuna göre erişim kuralları.
+          <p className="text-[var(--fd-text3)] mt-1 text-xs">
+            Sivas İtfaiye Otomasyonu bünyesindeki 8 ana kontrol panelinin, 5 ana rütbe grubuna göre erişim kuralları.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-stretch sm:self-auto">
+        <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
           {saveStatus === 'success' && (
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg animate-fade-in-out">
+            <Badge variant="success" className="gap-1 px-3 py-1.5 text-[10px]">
               <Check className="w-3.5 h-3.5" /> Veritabanına Yazıldı
-            </div>
+            </Badge>
           )}
           {saveStatus === 'error' && (
-            <div className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg animate-fade-in-out">
+            <Badge variant="danger" className="gap-1 px-3 py-1.5 text-[10px]">
               <AlertTriangle className="w-3.5 h-3.5" /> Hata Oluştu!
-            </div>
+            </Badge>
           )}
-          <div className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border ${
-            isMudur 
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-          }`}>
-            {isMudur ? (
-              <>
-                <Unlock className="w-3.5 h-3.5" /> Müdür Yetkisi: Açık
-              </>
-            ) : (
-              <>
-                <Lock className="w-3.5 h-3.5" /> Salt Okunur Mod
-              </>
-            )}
-          </div>
+          <Badge variant={isMudur ? "success" : "warning"} className="gap-1.5 px-3 py-1.5 text-[10px]">
+            {isMudur ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+            {isMudur ? "Müdür Yetkisi: Açık" : "Salt Okunur Mod"}
+          </Badge>
         </div>
       </div>
 
+      {/* ═══ Read-only Warning ═══ */}
       {!isMudur && (
-        <Card className="border-amber-500/20 bg-amber-500/[0.02]">
-          <CardContent className="p-4 flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-amber-200">Sayfa Yetkisi Sınırı Bilgilendirmesi</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Şu an sisteme <span className="text-amber-400 font-semibold">{user?.unvan || 'Kullanıcı'}</span> unvanıyla giriş yaptınız. 
-                Sivas İtfaiyesi kuralları gereği yetki matrisi üzerindeki düzenlemeler sadece **İbrahim Müdür (Müdür)** yetkisiyle yapılabilir. 
-                Değişiklikleri görmek için Müdür hesabı ile giriş yapabilirsiniz; bu ekran size salt-okunur (read-only) hiyerarşide sunulmaktadır.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-start gap-3 p-4 rounded-[var(--fd-r)] border border-[var(--fd-warning)]/20 bg-[rgba(245,158,11,0.05)]">
+          <ShieldAlert className="w-5 h-5 text-[var(--fd-warning)] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-[var(--fd-warning)]">Sayfa Yetkisi Sınırı Bilgilendirmesi</h4>
+            <p className="text-xs text-[var(--fd-text3)] leading-relaxed">
+              Şu an sisteme <span className="text-[var(--fd-warning)] font-semibold">{user?.unvan || 'Kullanıcı'}</span> unvanıyla giriş yaptınız.
+              Sivas İtfaiyesi kuralları gereği yetki matrisi üzerindeki düzenlemeler sadece <strong>İbrahim Müdür (Müdür)</strong> yetkisiyle yapılabilir.
+              Değişiklikleri görmek için Müdür hesabı ile giriş yapabilirsiniz; bu ekran size salt-okunur (read-only) hiyerarşide sunulmaktadır.
+            </p>
+          </div>
+        </div>
       )}
 
-      {/* MATRIX TABLE */}
-      <Card className="bg-slate-950/75 backdrop-blur-lg border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] overflow-hidden rounded-2xl">
-        <CardHeader className="border-b border-zinc-800 bg-zinc-900/20 pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-black tracking-wider uppercase text-zinc-300">MODERN YETKİLENDİRME GRİD MATRİSİ</CardTitle>
-            <span className="text-xs text-zinc-500 font-mono">5 EKRAN x 5 RÜTBE GRUBU</span>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="p-0 w-full max-w-full box-border">
-          {/* ═══ Desktop Tablo Görünümü (md+) ═══ */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full min-w-[900px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-zinc-900 bg-zinc-950/40">
-                  <th className="p-5 text-left font-black text-xs uppercase tracking-wider text-zinc-400 w-1/3">
-                    KONTROL PANELLERİ
+      {/* ═══ Desktop Matrix Table (md+) ═══ */}
+      <div className="hidden md:block bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] overflow-hidden">
+        {/* Table Header */}
+        <div className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/30 px-5 py-3.5 flex items-center justify-between">
+          <h2 className="text-[11px] font-black tracking-[.06em] uppercase text-[var(--fd-text3)]">
+            YETKİLENDİRME GRİD MATRİSİ
+          </h2>
+          <span className="text-[10px] text-[var(--fd-text3)] font-mono">
+            {PAGE_METADATA.length} EKRAN × {ROLES.length} RÜTBE GRUBU
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20">
+                <th className="p-4 text-left font-bold text-[10px] uppercase tracking-[.04em] text-[var(--fd-text3)] w-[280px]">
+                  KONTROL PANELLERİ
+                </th>
+                {ROLES.map(role => (
+                  <th key={role.id} className="p-4 text-center font-bold text-[10px] uppercase tracking-[.04em] text-[var(--fd-text3)]">
+                    <div className="space-y-0.5">
+                      <div className="text-[var(--fd-text2)] font-black text-[11px]">{role.title}</div>
+                      <div className="text-[9px] text-[var(--fd-text3)] font-medium normal-case tracking-normal max-w-[140px] mx-auto line-clamp-1">
+                        {role.desc}
+                      </div>
+                    </div>
                   </th>
-                  {ROLES.map(role => (
-                    <th key={role.id} className="p-5 text-center font-black text-xs uppercase tracking-wider text-zinc-400">
-                      <div className="space-y-1">
-                        <div className="text-zinc-200 font-black">{role.title}</div>
-                        <div className="text-[10px] text-zinc-500 font-medium normal-case tracking-normal max-w-[150px] mx-auto line-clamp-1">{role.desc}</div>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900">
-                {PAGE_METADATA.map(page => {
-                  const PageIcon = page.icon;
-                  return (
-                    <tr key={page.id} className="hover:bg-zinc-900/25 transition duration-150 group">
-                      <td className="p-5 align-middle">
-                        <div className="flex items-start gap-4">
-                          <div className={`p-3 rounded-2xl ${page.color} shrink-0 mt-0.5 transition duration-300 group-hover:scale-110 shadow-lg`}>
-                            <PageIcon className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                            <h4 className="font-bold text-zinc-100 text-sm group-hover:text-primary transition duration-150">{page.title}</h4>
-                            <p className="text-xs text-zinc-400 leading-relaxed font-medium">{page.desc}</p>
-                            <Badge variant="outline" className="text-[9px] font-mono px-2 py-0 h-4 uppercase tracking-wider bg-zinc-900 text-zinc-500 border-zinc-800">
-                              id: {page.id}
-                            </Badge>
-                          </div>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--fd-border)]/50">
+              {PAGE_METADATA.map(page => {
+                const PageIcon = page.icon;
+                return (
+                  <tr key={page.id} className="hover:bg-[var(--fd-surface2)]/40 transition duration-150 group">
+                    <td className="p-4 align-middle">
+                      <div className="flex items-start gap-3">
+                        <div className={cn("p-2.5 rounded-[var(--fd-r-sm)] shrink-0 mt-0.5 transition duration-300 group-hover:scale-105", page.color)}>
+                          <PageIcon className="w-[18px] h-[18px]" />
                         </div>
-                      </td>
-                      {ROLES.map(role => {
-                        const isAllowed = getPermission(role.id, page.id);
-                        const key = `${role.id}-${page.id}`;
-                        const isUpdating = updatingId === key;
-                        return (
-                          <td key={role.id} className="p-5 text-center align-middle">
-                            <div className="flex flex-col items-center justify-center space-y-3">
-                              <button
-                                disabled={!isMudur || isUpdating}
-                                onClick={() => handleToggle(role.id, page.id, isAllowed)}
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 !min-h-[24px] !min-w-[44px] ${isAllowed ? 'bg-emerald-500' : 'bg-red-500/30'}`}
-                              >
-                                <span className="sr-only">Toggle</span>
-                                <span className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${isAllowed ? 'translate-x-5' : 'translate-x-0'}`}>
-                                  {isUpdating && <Loader2 className="w-3 h-3 text-zinc-600 animate-spin" />}
-                                </span>
-                              </button>
-                              <div className="flex items-center gap-1.5">
-                                {isAllowed ? (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] px-2 py-0.5 rounded-full"><Sparkles className="w-2.5 h-2.5" /> İzinli</span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-950/30 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] px-2 py-0.5 rounded-full">Engelli</span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* ═══ Mobil Rütbe Kartı Görünümü (md altı) ═══ */}
-          <div className="md:hidden p-4 space-y-5">
-            {ROLES.map(role => (
-              <div key={role.id} className="bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all">
-                {/* Rütbe Başlığı */}
-                <div className="bg-slate-900/60 border-b border-white/5 px-4 py-3 flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                    <Shield className="w-4 h-4 text-cyan-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-black text-sm text-zinc-100 uppercase tracking-wide">{role.title}</h3>
-                    <p className="text-[10px] text-zinc-500 font-medium leading-tight">{role.desc}</p>
-                  </div>
-                </div>
-
-                {/* Panel Yetki Satırları */}
-                <div className="divide-y divide-white/5">
-                  {PAGE_METADATA.map(page => {
-                    const PageIcon = page.icon;
-                    const isAllowed = getPermission(role.id, page.id);
-                    const key = `${role.id}-${page.id}`;
-                    const isUpdating = updatingId === key;
-                    return (
-                      <div key={page.id} className="flex items-center justify-between gap-3 px-4 py-3 min-h-[52px]">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`p-1.5 rounded-lg ${page.color} shrink-0`}>
-                            <PageIcon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="text-xs font-semibold text-zinc-200 leading-tight">{page.title}</span>
-                        </div>
-                        <div className="flex items-center gap-2.5 shrink-0">
-                          <button
-                            disabled={!isMudur || isUpdating}
-                            onClick={() => handleToggle(role.id, page.id, isAllowed)}
-                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 !min-h-[24px] !min-w-[44px] ${isAllowed ? 'bg-emerald-500' : 'bg-red-500/30'}`}
-                          >
-                            <span className="sr-only">Toggle</span>
-                            <span className={`pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${isAllowed ? 'translate-x-5' : 'translate-x-0'}`}>
-                              {isUpdating && <Loader2 className="w-3 h-3 text-zinc-600 animate-spin" />}
-                            </span>
-                          </button>
-                          {isAllowed ? (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)] px-2 py-1 rounded-full w-[65px] justify-center">
-                              <Sparkles className="w-2.5 h-2.5" /> İzinli
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-[10px] font-bold text-red-400 bg-red-950/30 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.05)] px-2 py-1 rounded-full w-[65px] justify-center">
-                              Engelli
-                            </span>
-                          )}
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-[var(--fd-text)] text-[13px] group-hover:text-[var(--fd-accent)] transition duration-150">
+                            {page.title}
+                          </h4>
+                          <p className="text-[11px] text-[var(--fd-text3)] leading-relaxed font-medium">
+                            {page.desc}
+                          </p>
+                          <Badge variant="outline" className="text-[8px] font-mono px-1.5 py-0 h-4">
+                            id: {page.id}
+                          </Badge>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </td>
+                    {ROLES.map(role => {
+                      const isAllowed = getPermission(role.id, page.id);
+                      const key = `${role.id}-${page.id}`;
+                      const isUpdating = updatingId === key;
+                      return (
+                        <td key={role.id} className="p-4 text-center align-middle">
+                          <div className="flex flex-col items-center justify-center space-y-2">
+                            <Switch
+                              checked={isAllowed}
+                              loading={isUpdating}
+                              disabled={!isMudur}
+                              onChange={() => handleToggle(role.id, page.id, isAllowed)}
+                            />
+                            {isAllowed ? (
+                              <Badge variant="success" className="text-[8px] px-1.5 py-0 gap-0.5">
+                                <Sparkles className="w-2.5 h-2.5" /> İzinli
+                              </Badge>
+                            ) : (
+                              <Badge variant="danger" className="text-[8px] px-1.5 py-0">
+                                Engelli
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ═══ Mobile: Role Cards (md altı) ═══ */}
+      <div className="md:hidden space-y-4">
+        {ROLES.map(role => (
+          <div
+            key={role.id}
+            className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] overflow-hidden shadow-[var(--fd-shadow-sm)] transition-all"
+          >
+            {/* Rütbe Başlığı */}
+            <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] px-4 py-3 flex items-center gap-3">
+              <div className="p-2 rounded-[var(--fd-r-sm)] bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)]">
+                <Shield className="w-4 h-4 text-[var(--fd-accent)]" />
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="min-w-0">
+                <h3 className="font-black text-sm text-[var(--fd-text)] uppercase tracking-wide">{role.title}</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] font-medium leading-tight">{role.desc}</p>
+              </div>
+            </div>
 
-      {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
-      <div 
-        className="w-full block md:hidden pointer-events-none clear-both" 
-        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }} 
-        aria-hidden="true" 
+            {/* Panel Yetki Satırları */}
+            <div className="divide-y divide-[var(--fd-border)]/50">
+              {PAGE_METADATA.map(page => {
+                const PageIcon = page.icon;
+                const isAllowed = getPermission(role.id, page.id);
+                const key = `${role.id}-${page.id}`;
+                const isUpdating = updatingId === key;
+                return (
+                  <div key={page.id} className="flex items-center justify-between gap-3 px-4 py-3 min-h-[52px]">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={cn("p-1.5 rounded-[var(--fd-r-sm)] shrink-0", page.color)}>
+                        <PageIcon className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-semibold text-[var(--fd-text)] leading-tight">{page.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <Switch
+                        checked={isAllowed}
+                        loading={isUpdating}
+                        disabled={!isMudur}
+                        onChange={() => handleToggle(role.id, page.id, isAllowed)}
+                      />
+                      {isAllowed ? (
+                        <Badge variant="success" className="text-[9px] px-1.5 py-0.5 w-[60px] justify-center gap-0.5">
+                          <Sparkles className="w-2.5 h-2.5" /> İzinli
+                        </Badge>
+                      ) : (
+                        <Badge variant="danger" className="text-[9px] px-1.5 py-0.5 w-[60px] justify-center">
+                          Engelli
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Mobil Alt Bar Maskeleme Kalkanı */}
+      <div
+        className="w-full block md:hidden pointer-events-none clear-both"
+        style={{ height: 'calc(7rem + env(safe-area-inset-bottom))' }}
+        aria-hidden="true"
       />
 
     </div>

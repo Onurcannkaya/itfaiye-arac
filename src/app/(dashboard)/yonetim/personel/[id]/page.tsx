@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input"
 import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity, Shield, ActivitySquare, LogOut, CheckCircle2, Clock, AlertTriangle, Pencil, X, Save, Loader2 } from "lucide-react"
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts"
 import { useAuthStore } from "@/lib/authStore"
+import { cn } from "@/lib/utils"
 
 // Types
 type Personel = any; // TODO: Better typing
@@ -432,98 +433,96 @@ export default function PersonelProfilPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full bg-background min-h-screen pb-12">
+    <div className="space-y-6 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in zoom-in-95 duration-300">
       {/* Header */}
-      <div className="bg-surface border-b border-border p-4 sm:p-6 sm:pb-0">
-        <button 
-          onClick={() => router.push('/yonetim/personel')} 
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Personel Listesine Dön
-        </button>
-        
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary text-2xl sm:text-3xl font-bold shrink-0">
-              {personel.ad.charAt(0)}{personel.soyad.charAt(0)}
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">{personel.ad} {personel.soyad}</h1>
-              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
-                <Badge variant="outline" className="font-mono bg-surface">{personel.sicil_no}</Badge>
-                <span>{personel.unvan}</span>
-                <span className="opacity-50">|</span>
-                <span className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${personel.aktif ? 'bg-success' : 'bg-danger'}`} />
-                  {personel.aktif ? 'Sistemde Aktif' : 'Sistemde Pasif'}
-                </span>
-                <span className="opacity-50">|</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Günlük Durum:</span>
-                  {(() => {
-                    const durumLower = (personel.durum || '').toLowerCase();
-                    let variant: 'success' | 'danger' | 'warning' | 'outline' = 'success';
-                    if (durumLower.includes('izinli') || durumLower.includes('raporlu')) {
-                      variant = 'danger';
-                    } else if (durumLower.includes('geçici') || durumLower.includes('gecici') || durumLower.includes('dış') || durumLower.includes('dis')) {
-                      variant = 'warning';
-                    }
-                    return (
-                      <Badge variant={variant} className="text-[11px] font-semibold px-2 py-0.5">
-                        {personel.durum || 'Hazır'}
-                      </Badge>
-                    );
-                  })()}
-                </span>
-              </div>
-            </div>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[var(--fd-border)] pb-4">
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => router.push('/yonetim/personel')} 
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[var(--fd-accent-soft)] hover:text-[var(--fd-accent)] transition-colors shrink-0 text-[var(--fd-text3)] cursor-pointer"
+            title="Personel Listesine Dön"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="w-12 h-12 rounded-[var(--fd-r-sm)] bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] flex items-center justify-center text-[var(--fd-accent)] text-lg font-bold shrink-0 shadow-sm">
+            {personel.ad.charAt(0)}{personel.soyad.charAt(0)}
           </div>
-
-          {/* Print/Certificate Area */}
-          <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0 bg-slate-950/20 border border-slate-800/40 p-3 rounded-2xl backdrop-blur-md shadow-md">
-            {certInfo && (
-              <div className="text-xs font-semibold text-zinc-400">
-                Eğitim Verme Saati: <span className={`font-black ${certInfo.eligible ? "text-emerald-400" : "text-amber-400"}`}>{certInfo.total_hours} / {certInfo.threshold} sa</span>
-              </div>
-            )}
-            <div className="flex flex-row items-center gap-2">
-              {/* Hidden Canvas for QR Generation */}
-              <div style={{ display: 'none' }}>
-                <QRCodeCanvas
-                  id="personnel-qr-canvas"
-                  value={`SIVAS-PDKS-ID: ${personel.sicil_no} | ${personel.ad} ${personel.soyad}`}
-                  size={150}
-                  level="H"
-                />
-              </div>
-              <Button
-                onClick={handlePrintIDCard}
-                className="text-xs font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md font-extrabold shadow-blue-500/20"
-              >
-                🪪 Dijital Kimlik Kartı Üret
-              </Button>
-              {certInfo && (
-                <Button
-                  disabled={!certInfo.eligible}
-                  onClick={handlePrintCertificate}
-                  className={`text-xs font-bold px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 transition-all shadow-md ${
-                    certInfo.eligible 
-                      ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold shadow-amber-500/20" 
-                      : "bg-zinc-800 text-zinc-500 border border-zinc-700/50 cursor-not-allowed"
-                  }`}
-                >
-                  🎓 Resmi Sertifika Bas
-                </Button>
-              )}
+          
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-bold text-[var(--fd-text)]">{personel.ad} {personel.soyad}</h1>
+              <Badge variant="outline" className="font-mono bg-[var(--fd-surface2)] text-[var(--fd-text)] border border-[var(--fd-border)]">{personel.sicil_no}</Badge>
+              <Badge variant="outline" className="bg-[var(--fd-surface2)] text-[var(--fd-text2)] border border-[var(--fd-border)]">{personel.unvan}</Badge>
             </div>
-            {certInfo && !certInfo.eligible && (
-              <span className="text-[10px] text-zinc-500 font-medium">Sertifika için {Math.max(0, certInfo.threshold - certInfo.total_hours).toFixed(1)} saat daha eğitim vermeli.</span>
-            )}
+            <div className="flex items-center gap-2.5 mt-1 text-[11px] text-[var(--fd-text3)] flex-wrap">
+              <span className="flex items-center gap-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${personel.aktif ? 'bg-success' : 'bg-danger'}`} />
+                {personel.aktif ? 'Aktif' : 'Pasif'}
+              </span>
+              <span className="opacity-40">|</span>
+              <span className="flex items-center gap-1.5">
+                <span>Günlük Durum:</span>
+                {(() => {
+                  const durumLower = (personel.durum || '').toLowerCase();
+                  let variant: 'success' | 'danger' | 'warning' | 'outline' = 'success';
+                  if (durumLower.includes('izinli') || durumLower.includes('raporlu')) {
+                    variant = 'danger';
+                  } else if (durumLower.includes('geçici') || durumLower.includes('gecici') || durumLower.includes('dış') || durumLower.includes('dis')) {
+                    variant = 'warning';
+                  }
+                  return (
+                    <Badge variant={variant} className="text-[10px] font-semibold px-1.5 py-0.5">
+                      {personel.durum || 'Hazır'}
+                    </Badge>
+                  );
+                })()}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Custom Tabs Navigation */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-1 border-b border-border/50">
+        {/* Print/Certificate Area */}
+        <div className="flex flex-row items-center gap-3 shrink-0 bg-[var(--fd-surface)] border border-[var(--fd-border)] p-2 rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)]">
+          {certInfo && (
+            <div className="text-[11px] font-semibold text-[var(--fd-text2)] px-1">
+              Eğitim: <span className={`font-black ${certInfo.eligible ? "text-emerald-400" : "text-amber-400"}`}>{certInfo.total_hours} sa</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            {/* Hidden Canvas for QR Generation */}
+            <div style={{ display: 'none' }}>
+              <QRCodeCanvas
+                id="personnel-qr-canvas"
+                value={`SIVAS-PDKS-ID: ${personel.sicil_no} | ${personel.ad} ${personel.soyad}`}
+                size={150}
+                level="H"
+              />
+            </div>
+            <Button
+              onClick={handlePrintIDCard}
+              className="text-xs font-bold px-2.5 py-1.5 h-8 rounded-[var(--fd-r-sm)] flex items-center gap-1 bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] shadow-[var(--fd-shadow-sm)] cursor-pointer"
+            >
+              🪪 Kimlik Kartı
+            </Button>
+            {certInfo && (
+              <Button
+                disabled={!certInfo.eligible}
+                onClick={handlePrintCertificate}
+                className={`text-xs font-bold px-2.5 py-1.5 h-8 rounded-[var(--fd-r-sm)] flex items-center gap-1 transition-all shadow-[var(--fd-shadow-sm)] cursor-pointer ${
+                  certInfo.eligible ? "bg-[var(--fd-amber)] hover:opacity-90 text-[#ffffff]" : "bg-[var(--fd-surface3)] text-[var(--fd-text3)] border border-[var(--fd-border)] cursor-not-allowed"
+                }`}
+              >
+                🎓 Sertifika Bas
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Custom Tabs Navigation */}
+      <div className="flex overflow-x-auto hide-scrollbar gap-1 border-b border-[var(--fd-border)] pb-2 pt-1">
+        <div className="flex bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] border border-[var(--fd-border)] gap-1">
           {tabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -531,13 +530,14 @@ export default function PersonelProfilPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  isActive 
-                    ? 'border-primary text-primary' 
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                  isActive
+                    ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                    : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
+                )}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
                 {tab.label}
               </button>
             )
@@ -546,7 +546,7 @@ export default function PersonelProfilPage() {
       </div>
 
       {/* Tab Content Area */}
-      <div className="p-4 sm:p-6 max-w-5xl mx-auto w-full">
+      <div className="w-full max-w-full space-y-4">
         
         {/* ÖZET SEKMESİ */}
         {activeTab === 'ozet' && (
@@ -554,37 +554,37 @@ export default function PersonelProfilPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Genel Bilgiler</CardTitle>
+                  <CardTitle className="text-xs font-bold text-[var(--fd-text)] uppercase">Genel Bilgiler</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Sicil No</p>
-                      <p className="font-medium">{personel.sicil_no}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">Sicil No</p>
+                      <p className="font-semibold text-xs text-[var(--fd-text)]">{personel.sicil_no}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Rol</p>
-                      <p className="font-medium">{personel.rol}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">Rol</p>
+                      <p className="font-semibold text-xs text-[var(--fd-text)]">{personel.rol}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">E-posta</p>
-                      <p className="font-medium">{personel.posta || '-'}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">E-posta</p>
+                      <p className="font-semibold text-xs text-[var(--fd-text)]">{personel.posta || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Kan Grubu</p>
-                      <p className="font-medium text-danger">{details?.kan_grubu || 'Belirtilmemiş'}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">Kan Grubu</p>
+                      <p className="font-semibold text-xs text-[var(--fd-danger)]">{details?.kan_grubu || 'Belirtilmemiş'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">İşe Başlama Tarihi</p>
-                      <p className="font-medium">{details?.ise_baslama_tarihi ? new Date(details.ise_baslama_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">İşe Başlama Tarihi</p>
+                      <p className="font-semibold text-xs text-[var(--fd-text)]">{details?.ise_baslama_tarihi ? new Date(details.ise_baslama_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Doğum Tarihi</p>
-                      <p className="font-medium">{details?.dogum_tarihi ? new Date(details.dogum_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">Doğum Tarihi</p>
+                      <p className="font-semibold text-xs text-[var(--fd-text)]">{details?.dogum_tarihi ? new Date(details.dogum_tarihi).toLocaleDateString('tr-TR') : '-'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Günlük Nöbet Durumu</p>
-                      <p className="font-medium text-cyan-400">{personel.durum || 'Hazır'}</p>
+                      <p className="text-[10px] text-[var(--fd-text3)]">Günlük Nöbet Durumu</p>
+                      <p className="font-semibold text-xs text-[var(--fd-accent)]">{personel.durum || 'Hazır'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -592,24 +592,24 @@ export default function PersonelProfilPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Sistem Yetkileri</CardTitle>
+                  <CardTitle className="text-xs font-bold text-[var(--fd-text)] uppercase">Sistem Yetkileri</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
+                  <div className="flex items-center justify-between p-2.5 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]">
                     <div className="flex items-center gap-3">
                       <Activity className="w-5 h-5 text-muted-foreground" />
                       <span>Sadece Görüntüler</span>
                     </div>
                     <Badge variant={personel.view_only ? "success" : "outline"}>{personel.view_only ? 'Evet' : 'Hayır'}</Badge>
                   </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
+                  <div className="flex items-center justify-between p-2.5 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]">
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
                       <span>Envanter Onaylayabilir</span>
                     </div>
                     <Badge variant={personel.can_approve ? "success" : "outline"}>{personel.can_approve ? 'Evet' : 'Hayır'}</Badge>
                   </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-surface">
+                  <div className="flex items-center justify-between p-2.5 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]">
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-muted-foreground" />
                       <span>Barkod Basabilir</span>
@@ -620,10 +620,10 @@ export default function PersonelProfilPage() {
               </Card>
             </div>
 
-            <Card className="bg-slate-950/40 backdrop-blur-md border border-slate-800 text-slate-100 shadow-xl overflow-hidden">
+            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] overflow-hidden">
               <CardHeader className="border-b border-slate-800/60 pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-cyan-400">
-                  <ActivitySquare className="w-5 h-5 text-cyan-400" />
+                <CardTitle className="text-xs font-bold flex items-center gap-1.5 text-[var(--fd-text)] uppercase">
+                  <ActivitySquare className="w-4 h-4 text-[var(--fd-accent)]" />
                   Operasyonel Görev Dağılım Radarı
                 </CardTitle>
               </CardHeader>
@@ -633,10 +633,10 @@ export default function PersonelProfilPage() {
                     <Clock className="w-5 h-5 animate-spin" /> İstatistikler yükleniyor...
                   </div>
                 ) : totalMissions === 0 ? (
-                  <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/10 border border-dashed border-slate-800/60 rounded-xl space-y-2">
+                  <div className="flex flex-col items-center justify-center text-center p-4 bg-[var(--fd-surface2)] border border-dashed border-[var(--fd-border)] rounded-[var(--fd-r)] space-y-2">
                     <AlertTriangle className="w-10 h-10 text-amber-500/80 animate-pulse" />
-                    <h3 className="font-semibold text-slate-200">Kayıtlı Vaka Görevi Bulunmuyor</h3>
-                    <p className="text-xs text-slate-400 max-w-sm">
+                    <h3 className="font-bold text-xs text-[var(--fd-text)]">Kayıtlı Vaka Görevi Bulunmuyor</h3>
+                    <p className="text-[11px] text-[var(--fd-text3)] max-w-sm">
                       Bu personelin son dönemde katıldığı herhangi bir aktif itfaiye/kurtarma operasyonu veya dış lojistik görevi kayda geçmemiştir.
                     </p>
                   </div>
@@ -644,9 +644,9 @@ export default function PersonelProfilPage() {
                   <div className="w-full h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="70%" data={stats || []}>
-                        <PolarGrid stroke="#334155" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: '#475569' }} />
+                        <PolarGrid stroke="var(--fd-border)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--fd-text2)', fontSize: 10, fontWeight: 'bold' }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: 'var(--fd-text3)', fontSize: 9 }} />
                         <Radar
                           name="Görev Sayısı"
                           dataKey="value"
@@ -656,8 +656,8 @@ export default function PersonelProfilPage() {
                         />
                       </RadarChart>
                     </ResponsiveContainer>
-                    <div className="text-center text-xs text-slate-400 mt-2">
-                      Toplam Görev Sayısı: <span className="text-cyan-400 font-bold">{totalMissions}</span>
+                    <div className="text-center text-[11px] text-[var(--fd-text3)] mt-2">
+                      Toplam Görev Sayısı: <span className="text-[var(--fd-accent)] font-bold">{totalMissions}</span>
                     </div>
                   </div>
                 )}
@@ -669,14 +669,14 @@ export default function PersonelProfilPage() {
         {/* İLETİŞİM SEKMESİ */}
         {activeTab === 'iletisim' && (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-lg">İletişim & Acil Durum Bilgileri</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)] p-3">
+              <CardTitle className="text-xs font-bold text-[var(--fd-text)] uppercase">İletişim & Acil Durum Bilgileri</CardTitle>
               {canEdit && (
                 <Button 
                   onClick={handleStartEdit} 
                   variant="outline" 
                   size="sm"
-                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  className="border-[var(--fd-accent-soft2)] bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] text-xs font-semibold px-2.5 py-1 rounded-[var(--fd-r-sm)] transition"
                 >
                   <Pencil className="w-4 h-4 mr-2" /> Bilgileri Düzenle
                 </Button>
@@ -685,27 +685,27 @@ export default function PersonelProfilPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-muted-foreground border-b pb-2">Kişisel İletişim</h3>
+                  <h3 className="font-bold text-xs text-[var(--fd-text2)] border-b border-[var(--fd-border)] pb-1.5 uppercase">Kişisel İletişim</h3>
                   <div>
-                    <p className="text-sm text-muted-foreground">Telefon</p>
-                    <p className="font-medium text-lg">{details?.telefon || '-'}</p>
+                    <p className="text-[10px] text-[var(--fd-text3)]">Telefon</p>
+                    <p className="font-semibold text-xs text-[var(--fd-text)] text-lg">{details?.telefon || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Açık Adres</p>
-                    <p className="font-medium">{details?.adres || '-'}</p>
+                    <p className="text-[10px] text-[var(--fd-text3)]">Açık Adres</p>
+                    <p className="font-semibold text-xs text-[var(--fd-text)]">{details?.adres || '-'}</p>
                   </div>
                 </div>
-                <div className="space-y-4 bg-danger/5 border border-danger/20 p-4 rounded-xl">
-                  <h3 className="font-semibold text-danger border-b border-danger/20 pb-2 flex items-center gap-2">
+                <div className="space-y-3 bg-[var(--fd-danger-soft)] border border-[var(--fd-danger-soft2)] p-3 rounded-[var(--fd-r)]">
+                  <h3 className="font-bold text-xs text-[var(--fd-danger)] border-b border-[var(--fd-danger-soft2)] pb-1.5 flex items-center gap-1.5 uppercase">
                     <AlertTriangle className="w-4 h-4" /> Acil Durumda Ulaşılacak Kişi
                   </h3>
                   <div>
-                    <p className="text-sm text-muted-foreground">Kişi Adı Soyadı</p>
-                    <p className="font-medium">{details?.acil_durum_kisi_ad || '-'}</p>
+                    <p className="text-[10px] text-[var(--fd-text3)]">Kişi Adı Soyadı</p>
+                    <p className="font-semibold text-xs text-[var(--fd-text)]">{details?.acil_durum_kisi_ad || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Telefon Numarası</p>
-                    <p className="font-medium">{details?.acil_durum_kisi_telefon || '-'}</p>
+                    <p className="text-[10px] text-[var(--fd-text3)]">Telefon Numarası</p>
+                    <p className="font-semibold text-xs text-[var(--fd-text)]">{details?.acil_durum_kisi_telefon || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -717,7 +717,7 @@ export default function PersonelProfilPage() {
         {activeTab === 'izinler' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">İzin Kayıtları</h2>
+              <h2 className="text-xs font-bold text-[var(--fd-text)] uppercase">İzin Kayıtları</h2>
               <Button>Yeni İzin Talebi</Button>
             </div>
             
@@ -728,18 +728,18 @@ export default function PersonelProfilPage() {
             ) : (
               <div className="space-y-4">
                 {leaves.map(leave => (
-                  <div key={leave.id} className="p-4 border rounded-xl bg-surface flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div key={leave.id} className="p-2.5 px-3 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/60 flex flex-row items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant={leave.durum === 'Onaylandı' ? 'success' : leave.durum === 'Reddedildi' ? 'danger' : 'warning'}>
                           {leave.durum}
                         </Badge>
-                        <span className="font-semibold">{leave.izin_turu}</span>
+                        <span className="font-bold text-xs text-[var(--fd-text)]">{leave.izin_turu}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-2">
+                      <div className="text-[10px] text-[var(--fd-text3)] mt-2">
                         {new Date(leave.baslangic_tarihi).toLocaleDateString('tr-TR')} - {new Date(leave.bitis_tarihi).toLocaleDateString('tr-TR')}
                       </div>
-                      <p className="text-sm mt-1">{leave.aciklama}</p>
+                      <p className="text-xs text-[var(--fd-text2)] mt-0.5">{leave.aciklama}</p>
                     </div>
                     {leave.belge_url && (
                       <a href={leave.belge_url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
@@ -757,7 +757,7 @@ export default function PersonelProfilPage() {
         {activeTab === 'zimmet' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">Zimmetli Ekipmanlar</h2>
+              <h2 className="text-xs font-bold text-[var(--fd-text)] uppercase">Zimmetli Ekipmanlar</h2>
               <Button>Zimmet Ekle</Button>
             </div>
             
@@ -769,11 +769,11 @@ export default function PersonelProfilPage() {
               ) : (
                 equipments.map(eq => (
                   <Card key={eq.id}>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-bold">{eq.ekipman_adi}</h3>
-                          <p className="text-xs text-muted-foreground font-mono">Seri No: {eq.seri_no || '-'}</p>
+                          <h3 className="font-bold text-xs text-[var(--fd-text)]">{eq.ekipman_adi}</h3>
+                          <p className="text-[10px] text-[var(--fd-text3)] font-mono">Seri No: {eq.seri_no || '-'}</p>
                         </div>
                         <Badge variant={eq.durum === 'Aktif' ? 'success' : 'outline'}>{eq.durum}</Badge>
                       </div>
@@ -817,14 +817,14 @@ export default function PersonelProfilPage() {
               ) : (
                 <div className="space-y-4">
                   {records.map(rec => (
-                    <div key={rec.id} className="flex gap-4 p-3 border-b last:border-0">
-                      <div className="w-24 shrink-0 text-sm text-muted-foreground pt-1">
+                    <div key={rec.id} className="flex gap-3 p-2 px-3 border-b border-[var(--fd-border)] last:border-0 items-center">
+                      <div className="w-24 shrink-0 text-[10px] text-[var(--fd-text3)] pt-1">
                         {new Date(rec.tarih).toLocaleDateString('tr-TR')}
                       </div>
                       <div>
                         <Badge className="mb-1" variant="outline">{rec.kayit_turu}</Badge>
-                        <p className="text-sm">{rec.aciklama}</p>
-                        {rec.belge_no && <p className="text-xs text-muted-foreground mt-1">Belge No: {rec.belge_no}</p>}
+                        <p className="text-xs text-[var(--fd-text2)]">{rec.aciklama}</p>
+                        {rec.belge_no && <p className="text-[10px] text-[var(--fd-text3)] mt-0.5">Belge No: {rec.belge_no}</p>}
                       </div>
                     </div>
                   ))}
@@ -847,17 +847,17 @@ export default function PersonelProfilPage() {
               ) : (
                 <div className="space-y-4">
                   {activities.map(act => (
-                    <div key={act.id} className="flex items-center gap-4 p-3 border rounded-lg bg-surface">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                        <ActivitySquare className="w-5 h-5" />
+                    <div key={act.id} className="flex items-center gap-3 p-2.5 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/60">
+                      <div className="w-9 h-9 rounded-full bg-[var(--fd-accent-soft)] flex items-center justify-center text-[var(--fd-accent)] shrink-0">
+                        <ActivitySquare className="w-4 h-4" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold">{act.faaliyet_turu}</h4>
-                        <p className="text-sm text-muted-foreground">{act.aciklama}</p>
+                        <h4 className="font-bold text-xs text-[var(--fd-text)]">{act.faaliyet_turu}</h4>
+                        <p className="text-[10px] text-[var(--fd-text3)]">{act.aciklama}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium">{new Date(act.tarih).toLocaleDateString('tr-TR')}</p>
-                        <p className="text-xs text-muted-foreground">{act.sure_dakika} dk</p>
+                        <p className="text-sm font-semibold text-xs text-[var(--fd-text)]">{new Date(act.tarih).toLocaleDateString('tr-TR')}</p>
+                        <p className="text-[10px] text-[var(--fd-text3)] mt-0.5">{act.sure_dakika} dk</p>
                       </div>
                     </div>
                   ))}
@@ -869,15 +869,15 @@ export default function PersonelProfilPage() {
 
         {/* İLETİŞİM DÜZENLEME MODALI */}
         {isEditing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-            <Card className="w-full max-w-md bg-slate-900 border border-slate-800 shadow-2xl p-6 rounded-xl animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <Card className="w-full max-w-md bg-[var(--fd-surface)] border border-[var(--fd-border-strong)] shadow-[var(--fd-shadow-lg)] p-5 rounded-[var(--fd-r-lg)] animate-in zoom-in-95 duration-200">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-base font-bold text-[var(--fd-text)] flex items-center gap-1.5 uppercase">
                   <Pencil className="w-5 h-5 text-cyan-400" /> İletişim Bilgilerini Düzenle
                 </h3>
                 <button 
                   onClick={() => setIsEditing(false)} 
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-950 border border-slate-800 transition-all cursor-pointer"
+                  className="p-1 text-[var(--fd-text3)] hover:text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] transition-all cursor-pointer"
                   title="Kapat"
                 >
                   <X className="h-4 w-4" />
@@ -886,54 +886,54 @@ export default function PersonelProfilPage() {
 
               <form onSubmit={handleSaveDetails} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-400">Telefon Numarası</label>
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Telefon Numarası</label>
                   <Input 
                     type="tel" 
                     value={editPhone} 
                     onChange={e => setEditPhone(e.target.value)} 
                     placeholder="Örn: 0555 123 4567" 
-                    className="bg-slate-950 border-slate-800 focus:border-cyan-500" 
+                    className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] focus:border-[var(--fd-accent)] h-9 text-xs" 
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-400">Açık Adres</label>
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Açık Adres</label>
                   <textarea 
                     value={editAddress} 
                     onChange={e => setEditAddress(e.target.value)} 
                     placeholder="Ev adresi..." 
                     rows={3}
-                    className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none" 
+                    className="w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-xs text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:border-[var(--fd-accent)] focus:outline-none" 
                   />
                 </div>
                 
                 <div className="border-t border-slate-800 my-4 pt-4 space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-danger flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--fd-danger)] flex items-center gap-1.5 border-b border-[var(--fd-border)] pb-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" /> Acil Durumda Ulaşılacak Kişi
                   </h4>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-400">Adı Soyadı</label>
+                    <label className="text-xs font-semibold text-[var(--fd-text3)]">Adı Soyadı</label>
                     <Input 
                       value={editEmergencyName} 
                       onChange={e => setEditEmergencyName(e.target.value)} 
                       placeholder="Örn: Yakını, Eşi vb." 
-                      className="bg-slate-950 border-slate-800 focus:border-cyan-500" 
+                      className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] focus:border-[var(--fd-accent)] h-9 text-xs" 
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-400">İrtibat Telefonu</label>
+                    <label className="text-xs font-semibold text-[var(--fd-text3)]">İrtibat Telefonu</label>
                     <Input 
                       type="tel" 
                       value={editEmergencyPhone} 
                       onChange={e => setEditEmergencyPhone(e.target.value)} 
                       placeholder="Örn: 0555 987 6543" 
-                      className="bg-slate-950 border-slate-800 focus:border-cyan-500" 
+                      className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] focus:border-[var(--fd-accent)] h-9 text-xs" 
                     />
                   </div>
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2">
-                  <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>İptal</Button>
-                  <Button type="submit" disabled={savingDetails} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-5">
+                  <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="h-9 text-xs border border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-4">İptal</Button>
+                  <Button type="submit" disabled={savingDetails} className="bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-bold text-xs h-9 rounded-[var(--fd-r-sm)] px-5">
                     {savingDetails ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Kaydet
                   </Button>
                 </div>

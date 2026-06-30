@@ -89,6 +89,7 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
   const [list, setList] = useState<Personnel[]>(personnel)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [explanations, setExplanations] = useState<Record<string, string>>({})
+  const [activeStationKey, setActiveStationKey] = useState<string>('merkez')
 
   useEffect(() => {
     setList(personnel)
@@ -105,8 +106,14 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
 
   const isAuthorized = user && (
     user.rol === 'Admin' || 
+    user.rol === 'Editor' ||
+    (user.unvan || '').toLowerCase().includes('müdür') ||
     (user.unvan || '').toLowerCase().includes('amir') || 
-    (user.unvan || '').toLowerCase().includes('çavuş')
+    (user.unvan || '').toLowerCase().includes('çavuş') ||
+    (user.unvan || '').toLowerCase().includes('çvş')
+  ) && !(
+    (user.unvan || '').toLowerCase() === 'er' || 
+    (user.unvan || '').toLowerCase() === 'itfaiye eri'
   )
 
   // Durum açıklamasına göre personelin geçici görev yaptığı aktif istasyonu bulur
@@ -136,6 +143,12 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
       personnel: sortByHierarchy(list.filter(p => station.match(getActiveIstasyon(p)))),
     })).filter(g => g.personnel.length > 0)
   }, [list])
+
+  useEffect(() => {
+    if (groupedStations.length > 0 && !groupedStations.some(g => g.key === activeStationKey)) {
+      setActiveStationKey(groupedStations[0].key)
+    }
+  }, [groupedStations, activeStationKey])
 
   const handleExportPDF = () => {
     if (!list || list.length === 0) {
@@ -236,173 +249,199 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
   }
 
   return (
-    <div className="space-y-5">
-      {/* Export Buttons */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2">
-          <FileText className="w-4 h-4 text-red-500" />
-          PDF İndir
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportExcel} className="gap-2">
-          <TableIcon className="w-4 h-4 text-emerald-600" />
-          Excel İndir
-        </Button>
+    <div className="space-y-4">
+      {/* Station Pills & Export Buttons Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--fd-border)] pb-4">
+        {/* Station Pills */}
+        <div className="flex flex-wrap gap-2">
+          {groupedStations.map((station) => {
+            const isActive = activeStationKey === station.key;
+            return (
+              <button
+                key={station.key}
+                type="button"
+                onClick={() => setActiveStationKey(station.key)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer bg-transparent ${
+                  isActive
+                    ? `border-[var(--fd-accent)] bg-[var(--fd-accent)]/10 text-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]/20`
+                    : 'text-[var(--fd-text3)] border-[var(--fd-border)] hover:border-[var(--fd-text2)] hover:bg-[var(--fd-surface2)]/50'
+                }`}
+              >
+                {station.icon}
+                <span>{station.label.replace(' İtfaiye Müdürlüğü', '').replace(' Şubesi', '')}</span>
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] ${
+                  isActive ? 'bg-[var(--fd-accent)] text-white' : 'bg-[var(--fd-surface3)] text-[var(--fd-text2)]'
+                }`}>
+                  {station.personnel.length}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Export Buttons */}
+        <div className="flex gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2 text-[var(--fd-text2)] border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] bg-[var(--fd-surface)]">
+            <FileText className="w-4 h-4 text-[var(--fd-danger)]" />
+            PDF İndir
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel} className="gap-2 text-[var(--fd-text2)] border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] bg-[var(--fd-surface)]">
+            <TableIcon className="w-4 h-4 text-[var(--fd-success)]" />
+            Excel İndir
+          </Button>
+        </div>
       </div>
 
-      {/* Station Panels */}
-      {groupedStations.map((station) => (
-        <div
-          key={station.key}
-          className={`rounded-xl border ${station.borderColor} ${station.bgColor} overflow-hidden`}
-        >
-          {/* Station Header */}
-          <div className={`flex items-center justify-between px-4 py-3 border-b ${station.borderColor}`}>
-            <div className="flex items-center gap-2.5">
-              <div className={station.color}>{station.icon}</div>
-              <h3 className={`text-sm font-bold ${station.color}`}>{station.label}</h3>
+      {/* Selected Station Panel */}
+      {(() => {
+        const station = groupedStations.find(g => g.key === activeStationKey);
+        if (!station) return null;
+
+        return (
+          <div className="rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] overflow-hidden shadow-[var(--fd-shadow-sm)]">
+            {/* Station Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/40">
+              <div className="flex items-center gap-2.5">
+                <div className="text-[var(--fd-accent)]">{station.icon}</div>
+                <h3 className="text-sm font-bold text-[var(--fd-text)]">{station.label}</h3>
+              </div>
+              <Badge variant="outline" className="text-[10px] bg-[var(--fd-surface3)] text-[var(--fd-text2)] border-[var(--fd-border)]">
+                {station.personnel.length} Personel
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-[10px] bg-slate-950/40 text-slate-300 border-slate-800">
-              {station.personnel.length} Personel
-            </Badge>
-          </div>
 
-          {/* Station Personnel Table */}
-          <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
-            <table className="w-full text-sm text-left">
-              <thead className="text-[10px] text-slate-400 uppercase bg-slate-950/30">
-                <tr>
-                  <th className="px-4 py-2.5 whitespace-nowrap">Sicil No</th>
-                  <th className="px-4 py-2.5 whitespace-nowrap">Ad Soyad</th>
-                  <th className="px-4 py-2.5 min-w-[120px] whitespace-nowrap">Unvan</th>
-                  <th className="px-4 py-2.5 whitespace-nowrap">Durum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {station.personnel.map((p) => {
-                  const durumLower = (p.durum || '').toLowerCase()
-                  const isAbsent = durumLower.includes('izinli') || durumLower.includes('raporlu') || durumLower.includes('dış görev')
-                  const isLeader = p.unvan?.toLowerCase().includes('başçavuş') || 
-                                   p.unvan?.toLowerCase().includes('çavuş') || 
-                                   p.rol === 'Admin' || p.rol === 'Editor'
-                  const isCellUpdating = updatingId === p.sicil_no
+            {/* Station Personnel Table */}
+            <div className="w-full max-w-full overflow-x-auto -webkit-overflow-scrolling-touch box-border">
+              <table className="w-full text-sm text-left border-collapse">
+                <thead className="text-[10px] text-[var(--fd-text3)] uppercase bg-[var(--fd-surface2)]/60 border-b border-[var(--fd-border)] font-semibold tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 whitespace-nowrap">Sicil No</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Ad Soyad</th>
+                    <th className="px-4 py-3 min-w-[120px] whitespace-nowrap">Unvan</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Durum</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--fd-border)]/40">
+                  {station.personnel.map((p) => {
+                    const durumLower = (p.durum || '').toLowerCase()
+                    const isAbsent = durumLower.includes('izinli') || durumLower.includes('raporlu') || durumLower.includes('dış görev')
+                    const isLeader = p.unvan?.toLowerCase().includes('başçavuş') || 
+                                     p.unvan?.toLowerCase().includes('çavuş') || 
+                                     p.rol === 'Admin' || p.rol === 'Editor'
+                    const isCellUpdating = updatingId === p.sicil_no
 
-                  return (
-                    <tr
-                      key={p.sicil_no}
-                      className={`border-b border-border/30 last:border-0 transition-all duration-250 ${
-                        isAbsent
-                          ? 'opacity-[0.40] text-slate-500 bg-slate-950/40 saturate-[0.2] hover:opacity-[0.55] hover:bg-slate-950/50 light:text-slate-400 light:bg-slate-50'
-                          : isLeader
-                            ? 'bg-primary/[0.03] hover:bg-primary/[0.06]'
-                            : 'hover:bg-muted/20'
-                      }`}
-                    >
-                      <td className="px-4 py-2.5 font-mono text-xs font-medium whitespace-nowrap text-slate-400 light:text-slate-600">{p.sicil_no}</td>
-                      <td className="px-4 py-2.5 font-medium whitespace-nowrap">
-                        <span className={
-                          isAbsent 
-                            ? 'text-slate-500 light:text-slate-400 line-through font-normal' 
-                            : isLeader 
-                              ? 'text-slate-100 light:text-slate-900 font-bold' 
-                              : 'text-slate-300 light:text-slate-800'
-                        }>
-                          {p.ad} {p.soyad}
-                        </span>
-                        {isLeader && (
-                          <Badge variant="default" className="ml-2 scale-[0.85] text-[9px] px-1.5 py-0">{p.unvan}</Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-slate-400 light:text-slate-650 whitespace-nowrap">{p.unvan}</td>
-                      <td className="px-4 py-2.5 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {isAuthorized ? (
-                            (() => {
-                              const parts = (p.durum || '').split(' - ');
-                              const statusBase = parts[0] || 'Hazır';
-                              
-                              const selectValue = statusBase === 'Geçici Şube Görevi'
-                                ? 'Geçici Şube Görevi'
-                                : statusBase === 'İzinli'
-                                  ? 'İzinli'
-                                  : statusBase === 'Raporlu'
-                                    ? 'Raporlu'
-                                    : statusBase === 'Dış Görev' || statusBase.startsWith('Dış Görev')
-                                      ? 'Dış Görev (Stadyum/Etkinlik)'
-                                      : 'Hazır';
- 
-                              const getSelectClass = (status: string) => {
-                                const base = "rounded bg-slate-900 border text-xs focus:ring-1 focus:outline-none p-1.5 font-semibold transition-colors light:bg-slate-100 light:text-slate-800 light:border-slate-300";
-                                if (status === 'Hazır' || !status) {
-                                  return `${base} border-emerald-500/30 text-emerald-400 focus:ring-emerald-500 bg-emerald-500/5 light:border-emerald-250 light:text-emerald-700 light:bg-emerald-50/60`;
-                                }
-                                if (status.startsWith('Geçici Şube Görevi')) {
-                                  return `${base} border-cyan-500/30 text-cyan-400 focus:ring-cyan-500 bg-cyan-500/5 light:border-cyan-250 light:text-cyan-700 light:bg-cyan-50/60`;
-                                }
-                                return `${base} border-slate-700 text-slate-400 focus:ring-slate-600 bg-slate-950/40 light:border-slate-200 light:text-slate-600 light:bg-slate-100`;
-                              };
- 
-                              return (
-                                <>
-                                  <select
-                                    value={selectValue}
-                                    disabled={isCellUpdating}
-                                    onChange={(e) => handleStatusChange(p.sicil_no, e.target.value)}
-                                    className={getSelectClass(selectValue)}
-                                  >
-                                    <option value="Hazır" className="bg-slate-950 text-emerald-400 light:bg-white light:text-emerald-700">Hazır</option>
-                                    <option value="Geçici Şube Görevi" className="bg-slate-950 text-cyan-400 light:bg-white light:text-cyan-700">Geçici Şube Görevi</option>
-                                    <option value="İzinli" className="bg-slate-950 text-amber-500 light:bg-white light:text-amber-600">İzinli</option>
-                                    <option value="Raporlu" className="bg-slate-950 text-rose-500 light:bg-white light:text-rose-600">Raporlu</option>
-                                    <option value="Dış Görev (Stadyum/Etkinlik)" className="bg-slate-950 text-blue-400 light:bg-white light:text-blue-600">Dış Görev (Stadyum/Etkinlik)</option>
-                                  </select>
- 
-                                  {statusBase !== 'Hazır' && (
-                                    <input
-                                      type="text"
-                                      value={explanations[p.sicil_no] ?? ''}
-                                      disabled={isCellUpdating}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        setExplanations(prev => ({ ...prev, [p.sicil_no]: val }));
-                                      }}
-                                      onBlur={() => handleStatusChange(p.sicil_no, statusBase, explanations[p.sicil_no])}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          (e.target as HTMLInputElement).blur();
-                                        }
-                                      }}
-                                      placeholder={statusBase === 'Geçici Şube Görevi' ? 'Şube adı (Örn: Esentepe)...' : 'Açıklama giriniz...'}
-                                      className={`px-2 py-1 text-xs rounded border focus:outline-none focus:ring-1 w-48 font-medium transition-colors ${
-                                        statusBase === 'Geçici Şube Görevi'
-                                          ? 'border-cyan-500/20 text-cyan-200 bg-slate-950 focus:border-cyan-500 focus:ring-cyan-500 light:border-cyan-300 light:text-slate-800 light:bg-slate-100 light:focus:border-cyan-500'
-                                          : 'border-slate-700 text-slate-300 bg-slate-950 focus:border-slate-500 focus:ring-slate-500 light:border-slate-200 light:text-slate-800 light:bg-slate-100 light:focus:border-slate-400'
-                                      }`}
-                                    />
-                                  )}
-                                </>
-                              );
-                            })()
-                          ) : (
-                            isAbsent ? (
-                              <Badge variant="danger" className="scale-90 text-[10px]">{p.durum}</Badge>
-                            ) : (
-                              <Badge variant="success" className="scale-90 bg-success/20 text-success border-success/30 text-[10px]">{p.durum || 'Hazır'}</Badge>
-                            )
+                    return (
+                      <tr
+                        key={p.sicil_no}
+                        className={`transition-colors duration-150 ${
+                          isAbsent
+                            ? 'opacity-[0.55] text-[var(--fd-text3)] bg-[var(--fd-surface2)]/20 saturate-[0.5] hover:opacity-[0.95] hover:bg-[var(--fd-surface2)]/40'
+                            : isLeader
+                              ? 'bg-[var(--fd-accent)]/[0.04] hover:bg-[var(--fd-accent)]/[0.12] hover:text-[var(--fd-text)]'
+                              : 'hover:bg-[var(--fd-surface2)]/80 hover:text-[var(--fd-text)]'
+                        }`}
+                      >
+                        <td className="px-4 py-3 font-mono text-xs font-medium whitespace-nowrap text-[var(--fd-text3)]">{p.sicil_no}</td>
+                        <td className="px-4 py-3 font-medium whitespace-nowrap">
+                          <span className={
+                            isAbsent 
+                              ? 'text-[var(--fd-text3)] line-through font-normal' 
+                              : 'text-[var(--fd-text)] font-semibold'
+                          }>
+                            {p.ad} {p.soyad}
+                          </span>
+                          {isLeader && (
+                            <Badge variant="default" className="ml-2 scale-[0.85] text-[9px] px-1.5 py-0 bg-[var(--fd-accent)] text-white">{p.unvan}</Badge>
                           )}
-                          {isCellUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[var(--fd-text3)] whitespace-nowrap">{p.unvan}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {isAuthorized ? (
+                              (() => {
+                                const parts = (p.durum || '').split(' - ');
+                                const statusBase = parts[0] || 'Hazır';
+                                
+                                const selectValue = statusBase === 'Geçici Şube Görevi'
+                                  ? 'Geçici Şube Görevi'
+                                  : statusBase === 'İzinli'
+                                    ? 'İzinli'
+                                    : statusBase === 'Raporlu'
+                                      ? 'Raporlu'
+                                      : statusBase === 'Dış Görev' || statusBase.startsWith('Dış Görev')
+                                        ? 'Dış Görev (Stadyum/Etkinlik)'
+                                        : 'Hazır';
+    
+                                const getSelectClass = (status: string) => {
+                                  const base = "rounded bg-[var(--fd-surface2)] border text-xs focus:ring-1 focus:outline-none p-1.5 font-semibold transition-colors text-[var(--fd-text)] border-[var(--fd-border)] cursor-pointer";
+                                  if (status === 'Hazır' || !status) {
+                                    return `${base} border-[var(--fd-success)]/30 text-[var(--fd-success)] focus:ring-[var(--fd-success)] bg-[var(--fd-success)]/5`;
+                                  }
+                                  if (status.startsWith('Geçici Şube Görevi')) {
+                                    return `${base} border-[var(--fd-accent)]/30 text-[var(--fd-accent)] focus:ring-[var(--fd-accent)] bg-[var(--fd-accent)]/5`;
+                                  }
+                                  return `${base} border-[var(--fd-border)] text-[var(--fd-text3)] focus:ring-slate-600 bg-[var(--fd-surface3)]`;
+                                };
+    
+                                return (
+                                  <>
+                                    <select
+                                      value={selectValue}
+                                      disabled={isCellUpdating}
+                                      onChange={(e) => handleStatusChange(p.sicil_no, e.target.value)}
+                                      className={getSelectClass(selectValue)}
+                                    >
+                                      <option value="Hazır" className="bg-[var(--fd-surface)] text-[var(--fd-success)]">Hazır</option>
+                                      <option value="Geçici Şube Görevi" className="bg-[var(--fd-surface)] text-[var(--fd-accent)]">Geçici Şube Görevi</option>
+                                      <option value="İzinli" className="bg-[var(--fd-surface)] text-[var(--fd-amber)]">İzinli</option>
+                                      <option value="Raporlu" className="bg-[var(--fd-surface)] text-[var(--fd-danger)]">Raporlu</option>
+                                      <option value="Dış Görev (Stadyum/Etkinlik)" className="bg-[var(--fd-surface)] text-blue-400">Dış Görev (Stadyum/Etkinlik)</option>
+                                    </select>
+    
+                                    {statusBase !== 'Hazır' && (
+                                      <input
+                                        type="text"
+                                        value={explanations[p.sicil_no] ?? ''}
+                                        disabled={isCellUpdating}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setExplanations(prev => ({ ...prev, [p.sicil_no]: val }));
+                                        }}
+                                        onBlur={() => handleStatusChange(p.sicil_no, statusBase, explanations[p.sicil_no])}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            (e.target as HTMLInputElement).blur();
+                                          }
+                                        }}
+                                        placeholder={statusBase === 'Geçici Şube Görevi' ? 'Şube adı (Örn: Esentepe)...' : 'Açıklama giriniz...'}
+                                        className={`px-2 py-1.5 text-xs rounded border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] focus:outline-none focus:ring-1 w-48 font-medium transition-colors focus:border-[var(--fd-accent)] focus:ring-[var(--fd-accent)]/30`}
+                                      />
+                                    )}
+                                  </>
+                                );
+                              })()
+                            ) : (
+                              isAbsent ? (
+                                <Badge variant="danger" className="scale-90 text-[10px]">{p.durum}</Badge>
+                              ) : (
+                                <Badge variant="success" className="scale-90 bg-[var(--fd-success)]/10 text-[var(--fd-success)] border-[var(--fd-success)]/20 text-[10px]">{p.durum || 'Hazır'}</Badge>
+                              )
+                            )}
+                            {isCellUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--fd-accent)]" />}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })()}
 
       {list.length === 0 && (
-        <div className="p-8 text-center text-muted-foreground text-sm bg-slate-950/20 rounded-xl border border-slate-800/50">
+        <div className="p-8 text-center text-[var(--fd-text3)] text-sm bg-[var(--fd-surface2)]/20 rounded-xl border border-[var(--fd-border)] border-dashed">
           Bu postada personel bulunmuyor.
         </div>
       )}
