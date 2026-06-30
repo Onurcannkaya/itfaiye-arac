@@ -1032,11 +1032,17 @@ function VehicleInventoryTab() {
 
                           return (
                             <div key={comp} className="flex flex-col">
-                              {/* Accordion Header */}
-                              <button
-                                type="button"
+                              <div
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => toggleCompartment(comp)}
-                                className="w-full flex items-center justify-between p-4 bg-[var(--fd-surface2)]/15 hover:bg-[var(--fd-surface2)]/40 transition-colors border-0 cursor-pointer select-none text-left"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    toggleCompartment(comp)
+                                  }
+                                }}
+                                className="w-full flex items-center justify-between p-4 bg-[var(--fd-surface2)]/15 hover:bg-[var(--fd-surface2)]/40 transition-colors border-0 cursor-pointer select-none text-left focus:outline-none"
                               >
                                 <div className="flex items-center gap-3">
                                   <span className="text-[10px] text-[var(--fd-accent)] font-bold font-mono w-4">
@@ -1063,7 +1069,7 @@ function VehicleInventoryTab() {
                                     + Yeni Ekle
                                   </Button>
                                 </div>
-                              </button>
+                              </div>
 
                               {/* Accordion Content */}
                               {isExpanded && (
