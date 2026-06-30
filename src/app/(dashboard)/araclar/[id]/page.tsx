@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { COMPARTMENT_NAMES } from "@/lib/constants"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
@@ -36,6 +37,18 @@ import { InventoryList } from "@/components/vehicle/InventoryList"
 import { Vehicle3DSchematic } from "@/components/vehicle/Vehicle3DSchematic"
 import { AuditTimeline } from "@/components/inventory/AuditTimeline"
 import { useState, useEffect } from "react"
+
+const Vehicle3DGarage = dynamic(
+  () => import('@/components/vehicle/Vehicle3DGarage').then(m => ({ default: m.Vehicle3DGarage })),
+  { ssr: false, loading: () => (
+    <div className="h-[420px] sm:h-[500px] lg:h-[550px] w-full rounded-xl bg-[#0a0e1a] border border-[var(--fd-border)] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-mono text-cyan-400 uppercase tracking-wider">3D Sahne Hazırlanıyor...</p>
+      </div>
+    </div>
+  )}
+)
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { api } from "@/lib/api"
@@ -104,6 +117,7 @@ export default function VehicleDetailPage() {
   const [showTimeline, setShowTimeline] = useState(false)
   const [maintenanceLogs, setMaintenanceLogs] = useState<AracBakimGecmisi[]>([])
   const [visibleMaintenanceCount, setVisibleMaintenanceCount] = useState(5)
+  const [schemaViewMode, setSchemaViewMode] = useState<'3d' | '2d'>('3d')
 
   // Manuel Bakım Giriş Modalı States
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false)
@@ -1019,20 +1033,57 @@ export default function VehicleDetailPage() {
       {/* İnteraktif Araç Şeması */}
       <Card className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] overflow-hidden">
         <CardHeader className="pb-[calc(var(--fd-sp)*1)] border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse shadow-[var(--fd-shadow)]" />
-            İnteraktif Araç Şeması — Bölme Seçin
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse shadow-[var(--fd-shadow)]" />
+              İnteraktif Araç Şeması — Bölme Seçin
+            </CardTitle>
+            <div className="flex items-center gap-1 bg-[var(--fd-surface2)] border border-[var(--fd-border)] rounded-lg p-0.5">
+              <button
+                onClick={() => setSchemaViewMode('3d')}
+                className={cn(
+                  "min-h-[36px] px-3 py-1.5 text-[11px] font-bold font-mono uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5",
+                  schemaViewMode === '3d'
+                    ? "bg-[var(--fd-accent)] text-white shadow-[var(--fd-shadow-sm)]"
+                    : "text-[var(--fd-text3)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]"
+                )}
+              >
+                🚒 3D Garaj
+              </button>
+              <button
+                onClick={() => setSchemaViewMode('2d')}
+                className={cn(
+                  "min-h-[36px] px-3 py-1.5 text-[11px] font-bold font-mono uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5",
+                  schemaViewMode === '2d'
+                    ? "bg-[var(--fd-accent)] text-white shadow-[var(--fd-shadow-sm)]"
+                    : "text-[var(--fd-text3)] hover:text-[var(--fd-text)] hover:bg-[var(--fd-surface3)]"
+                )}
+              >
+                📐 2D Şema
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-4 pb-2">
-          <Vehicle3DSchematic
-            compartmentKeys={compartKeys}
-            activeCompartment={activeCompartment}
-            onSelect={handleSelectCompartment}
-            vehicleType={vehicle.aracTipi}
-            suKapasite={vehicle.su_kapasite}
-            kopukKapasite={vehicle.kopuk_kapasite}
-          />
+          {schemaViewMode === '3d' ? (
+            <Vehicle3DGarage
+              compartmentKeys={compartKeys}
+              activeCompartment={activeCompartment}
+              onSelect={handleSelectCompartment}
+              vehicleType={vehicle.aracTipi}
+              suKapasite={vehicle.su_kapasite}
+              kopukKapasite={vehicle.kopuk_kapasite}
+            />
+          ) : (
+            <Vehicle3DSchematic
+              compartmentKeys={compartKeys}
+              activeCompartment={activeCompartment}
+              onSelect={handleSelectCompartment}
+              vehicleType={vehicle.aracTipi}
+              suKapasite={vehicle.su_kapasite}
+              kopukKapasite={vehicle.kopuk_kapasite}
+            />
+          )}
         </CardContent>
       </Card>
 
