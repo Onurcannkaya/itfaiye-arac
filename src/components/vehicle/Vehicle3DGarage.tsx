@@ -51,7 +51,7 @@ const COMPARTMENT_HOTSPOTS: Record<string, { position: [number, number, number];
   sag_arka_kapak:  { position: [-1.08, 1.1,  -1.6], label: "Sağ Arka Kapak" },
   arka_kapak:      { position: [0.0,   1.2,  -3.0], label: "Arka Kapak" },
   arka_bolme:      { position: [0.0,   0.8,  -2.8], label: "Arka Bölme" },
-  arac_ici:        { position: [0.4,   0.9,  1.8],  label: "Araç İçi" },
+  arac_ici:        { position: [0.5,   1.2,  2.3],  label: "Araç İçi" },
 }
 
 // ——— Helper: match hotspot keys ———
