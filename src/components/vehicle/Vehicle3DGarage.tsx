@@ -32,6 +32,7 @@ export interface Vehicle3DGarageProps {
   className?: string
   suKapasite?: number
   kopukKapasite?: number
+  isModalOpen?: boolean
 }
 
 // ——— Compartment Hotspot positions (world-space after model is centered & scaled to exactly 6m length) ———
@@ -116,14 +117,14 @@ function FireTruckModel({ url }: { url: string }) {
   return <primitive object={scene} />
 }
 
-// ——— Hotspot marker sub-component ———
 function HotspotMarker({ 
   position, 
   label, 
   isActive, 
   isAvailable,
   onClick,
-  showLabels 
+  showLabels,
+  isModalOpen
 }: { 
   position: [number, number, number]
   label: string
@@ -131,6 +132,7 @@ function HotspotMarker({
   isAvailable: boolean
   onClick: () => void
   showLabels: boolean
+  isModalOpen?: boolean
 }) {
   const meshRef = useRef<THREE.Mesh>(null!)
   const [hovered, setHovered] = useState(false)
@@ -176,7 +178,7 @@ function HotspotMarker({
       </mesh>
       
       {/* Label */}
-      {(showLabels || isActive || hovered) && (
+      {!isModalOpen && (showLabels || isActive || hovered) && (
         <Html
           position={[0, 0.28, 0]}
           center
@@ -227,13 +229,15 @@ function Scene({
   activeCompartment, 
   onSelect,
   showLabels,
-  autoRotate
+  autoRotate,
+  isModalOpen
 }: {
   compartmentKeys: string[]
   activeCompartment: string | null
   onSelect: (key: string) => void
   showLabels: boolean
   autoRotate: boolean
+  isModalOpen?: boolean
 }) {
   const controlsRef = useRef<any>(null)
 
@@ -299,6 +303,7 @@ function Scene({
           isAvailable={hotspot.isAvailable}
           onClick={() => hotspot.matchedKey && onSelect(hotspot.matchedKey)}
           showLabels={showLabels}
+          isModalOpen={isModalOpen}
         />
       ))}
 
@@ -344,7 +349,8 @@ export function Vehicle3DGarage({
   vehicleType,
   className,
   suKapasite,
-  kopukKapasite
+  kopukKapasite,
+  isModalOpen
 }: Vehicle3DGarageProps) {
   const [showLabels, setShowLabels] = useState(true)
   const [autoRotate, setAutoRotate] = useState(true)
@@ -442,6 +448,7 @@ export function Vehicle3DGarage({
               onSelect={onSelect}
               showLabels={showLabels}
               autoRotate={autoRotate}
+              isModalOpen={isModalOpen}
             />
           </Suspense>
         </Canvas>

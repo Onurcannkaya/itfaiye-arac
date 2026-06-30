@@ -1083,6 +1083,7 @@ export default function VehicleDetailPage() {
               vehicleType={vehicle.aracTipi}
               suKapasite={vehicle.su_kapasite}
               kopukKapasite={vehicle.kopuk_kapasite}
+              isModalOpen={isInventoryModalOpen}
             />
           ) : (
             <Vehicle3DSchematic
