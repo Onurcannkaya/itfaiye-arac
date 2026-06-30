@@ -35,19 +35,22 @@ export interface Vehicle3DGarageProps {
   kopukKapasite?: number
 }
 
-// ——— Compartment Hotspot positions (relative to model center) ———
+// ——— Compartment Hotspot positions (world-space after model is centered & scaled) ———
+// Model raw: X=0.254 (width), Y=0.721 (length), Z=0.348 (height)
+// Root matrix swaps Y↔Z, then Center normalizes. Rendered approx: X=width, Y=height, Z=length
+// Truck faces +Z (front=cabin), -Z (rear=arka)
 const COMPARTMENT_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  kabin_ici:       { position: [0.12, 0.18, 0.07], label: "Kabin İçi" },
-  arac_ustu:       { position: [0.0, 0.28, -0.05], label: "Araç Üstü" },
-  sol_on_kapak:    { position: [-0.08, 0.08, 0.07], label: "Sol Ön Kapak" },
-  sag_on_kapak:    { position: [-0.08, 0.08, -0.07], label: "Sağ Ön Kapak" },
-  sol_orta_kapak:  { position: [-0.04, 0.08, 0.07], label: "Sol Orta Kapak" },
-  sag_orta_kapak:  { position: [-0.04, 0.08, -0.07], label: "Sağ Orta Kapak" },
-  sol_arka_kapak:  { position: [-0.10, 0.08, 0.07], label: "Sol Arka Kapak" },
-  sag_arka_kapak:  { position: [-0.10, 0.08, -0.07], label: "Sağ Arka Kapak" },
-  arka_kapak:      { position: [-0.16, 0.12, 0.0], label: "Arka Kapak" },
-  arka_bolme:      { position: [-0.14, 0.08, 0.0], label: "Arka Bölme" },
-  arac_ici:        { position: [0.0, 0.02, 0.0], label: "Araç İçi" },
+  kabin_ici:       { position: [0.0,  0.32, 0.42], label: "Kabin İçi" },
+  arac_ustu:       { position: [0.0,  0.52, 0.0],  label: "Araç Üstü" },
+  sol_on_kapak:    { position: [0.22, 0.15, 0.22],  label: "Sol Ön Kapak" },
+  sag_on_kapak:    { position: [-0.22, 0.15, 0.22], label: "Sağ Ön Kapak" },
+  sol_orta_kapak:  { position: [0.22, 0.15, -0.02], label: "Sol Orta Kapak" },
+  sag_orta_kapak:  { position: [-0.22, 0.15, -0.02],label: "Sağ Orta Kapak" },
+  sol_arka_kapak:  { position: [0.22, 0.15, -0.25], label: "Sol Arka Kapak" },
+  sag_arka_kapak:  { position: [-0.22, 0.15, -0.25],label: "Sağ Arka Kapak" },
+  arka_kapak:      { position: [0.0,  0.22, -0.48], label: "Arka Kapak" },
+  arka_bolme:      { position: [0.0,  0.10, -0.40], label: "Arka Bölme" },
+  arac_ici:        { position: [0.0,  0.02, 0.05],  label: "Araç İçi" },
 }
 
 // ——— Helper: match hotspot keys ———
@@ -68,34 +71,33 @@ const matchHotspotToKey = (hotspot: string, keys: string[]): string | null => {
 }
 
 // ——— Fire Truck Model sub-component ———
-function FireTruckModel({ url }: { url: string }) {
+function FireTruckModel({ url, onLoaded }: { url: string; onLoaded?: (box: THREE.Box3) => void }) {
   const { scene } = useGLTF(url)
   const modelRef = useRef<THREE.Group>(null!)
 
   useEffect(() => {
     if (scene) {
-      // Compute bounding box to normalize model position
-      const box = new THREE.Box3().setFromObject(scene)
-      const center = box.getCenter(new THREE.Vector3())
-      const size = box.getSize(new THREE.Vector3())
-      const maxDim = Math.max(size.x, size.y, size.z)
-      const scale = 0.5 / maxDim
-
-      scene.position.set(-center.x, -center.y, -center.z)
-      scene.scale.setScalar(scale * 2)
-
-      // Enhance materials
+      // Enhance materials for better rendering
       scene.traverse((child: any) => {
         if (child.isMesh) {
           child.castShadow = true
           child.receiveShadow = true
           if (child.material) {
-            child.material.envMapIntensity = 1.2
+            child.material.envMapIntensity = 1.5
+            child.material.needsUpdate = true
           }
         }
       })
+
+      // Report bounding box after Center processes the model
+      if (onLoaded) {
+        setTimeout(() => {
+          const box = new THREE.Box3().setFromObject(scene)
+          onLoaded(box)
+        }, 100)
+      }
     }
-  }, [scene])
+  }, [scene, onLoaded])
 
   return (
     <group ref={modelRef}>
@@ -147,7 +149,7 @@ function HotspotMarker({
         onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer' }}
         onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto' }}
       >
-        <sphereGeometry args={[0.012, 16, 16]} />
+        <sphereGeometry args={[0.028, 16, 16]} />
         <meshStandardMaterial 
           color={color} 
           emissive={color} 
@@ -159,14 +161,14 @@ function HotspotMarker({
       
       {/* Inner core */}
       <mesh>
-        <sphereGeometry args={[0.006, 12, 12]} />
+        <sphereGeometry args={[0.012, 12, 12]} />
         <meshStandardMaterial color="white" emissive="white" emissiveIntensity={0.5} />
       </mesh>
       
       {/* Label */}
       {(showLabels || isActive || hovered) && (
         <Html
-          position={[0, 0.025, 0]}
+          position={[0, 0.055, 0]}
           center
           distanceFactor={0.5}
           style={{ pointerEvents: 'none' }}
@@ -270,8 +272,8 @@ function Scene({
         far={1}
       />
 
-      {/* Fire truck model */}
-      <Center>
+      {/* Fire truck model — Center handles auto-centering + scale */}
+      <Center scale={1.2}>
         <FireTruckModel url="/3dmodels/scene.gltf" />
       </Center>
 
@@ -296,16 +298,16 @@ function Scene({
       <OrbitControls
         ref={controlsRef}
         autoRotate={autoRotate}
-        autoRotateSpeed={0.8}
+        autoRotateSpeed={0.6}
         enableDamping
         dampingFactor={0.05}
-        minDistance={0.3}
-        maxDistance={2.0}
-        minPolarAngle={Math.PI / 6}
-        maxPolarAngle={Math.PI / 2.2}
+        minDistance={0.8}
+        maxDistance={4.0}
+        minPolarAngle={Math.PI / 8}
+        maxPolarAngle={Math.PI / 2.1}
         enablePan={true}
         panSpeed={0.5}
-        target={[0, 0.1, 0]}
+        target={[0, 0.15, 0]}
       />
     </>
   )
@@ -415,7 +417,7 @@ export function Vehicle3DGarage({
         {/* Three.js Canvas */}
         <Canvas
           shadows
-          camera={{ position: [0.6, 0.4, 0.6], fov: 45, near: 0.01, far: 100 }}
+          camera={{ position: [1.4, 0.9, 1.4], fov: 40, near: 0.01, far: 100 }}
           gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
           dpr={[1, 1.5]}
           onCreated={({ gl }) => {
