@@ -1073,59 +1073,67 @@ function VehicleInventoryTab() {
 
                               {/* Accordion Content */}
                               {isExpanded && (
-                                <div className="w-full bg-[var(--fd-surface2)]/5 border-t border-[var(--fd-border)]/60 animate-in slide-in-from-top-1 duration-150">
-                                  {/* Mobile Cards List View (Visible on < md screens) */}
-                                  <div className="md:hidden divide-y divide-[var(--fd-border)]/20 p-2 space-y-3">
-                                    {rowsInComp.length === 0 ? (
-                                      <div className="py-6 text-center text-[var(--fd-text3)] italic font-mono text-xs">
-                                        Bu bölmede kayıtlı malzeme bulunamadı. "+ Yeni Ekle" butonuna basarak ekleyin.
-                                      </div>
-                                    ) : (
-                                      rowsInComp.map((row) => (
-                                        <div key={row.internalId} className="py-3.5 space-y-3 first:pt-1 last:pb-1">
-                                          {/* Section 1: Compartment and Material Name */}
-                                          <div className="grid grid-cols-2 gap-3.5">
-                                            <div className="flex flex-col gap-1.5">
-                                              <span className="text-[10px] text-[var(--fd-text3)] font-bold uppercase font-mono tracking-wider">Bölme (Kapak)</span>
+                                <div className="overflow-x-auto w-full bg-[var(--fd-surface2)]/5 border-t border-[var(--fd-border)]/60 animate-in slide-in-from-top-1 duration-150">
+                                  <table className="w-full text-sm min-w-[700px]">
+                                    <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-[var(--fd-border)]/40 font-mono">
+                                      <tr>
+                                        <th className="px-5 py-3 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
+                                        <th className="px-5 py-3 text-left font-semibold">MALZEME ADI</th>
+                                        <th className="px-5 py-3 text-left font-semibold w-24">ADET</th>
+                                        <th className="px-5 py-3 text-left font-semibold w-40">DURUM</th>
+                                        <th className="px-5 py-3 text-center font-semibold w-40">İŞLEMLER</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--fd-border)]/30 font-medium">
+                                      {rowsInComp.length === 0 ? (
+                                        <tr>
+                                          <td colSpan={5} className="py-8 text-center text-[var(--fd-text3)] italic font-mono text-xs">
+                                            Bu bölmede kayıtlı malzeme bulunamadı. "+ Yeni Ekle" butonuna basarak ekleyin.
+                                          </td>
+                                        </tr>
+                                      ) : (
+                                        rowsInComp.map((row) => (
+                                          <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
+                                            {/* Compartment select */}
+                                            <td className="px-5 py-2 align-middle">
                                               <select
                                                 value={row.bolme_kapak}
                                                 onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
-                                                className="h-9.5 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 outline-none font-mono"
+                                                className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono"
                                               >
                                                 {CLEAN_COMPARTMENT_OPTIONS.map(option => (
                                                   <option key={option} value={option}>{option}</option>
                                                 ))}
                                               </select>
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                              <span className="text-[10px] text-[var(--fd-text3)] font-bold uppercase font-mono tracking-wider">Malzeme Adı</span>
+                                            </td>
+
+                                            {/* Material Name input */}
+                                            <td className="px-5 py-2 align-middle">
                                               <Input 
                                                 placeholder="Malzeme ismi..."
                                                 value={row.malzeme_adi}
                                                 onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
-                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9.5 w-full"
+                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9 w-full"
                                               />
-                                            </div>
-                                          </div>
+                                            </td>
 
-                                          {/* Section 2: Quantity and Status */}
-                                          <div className="grid grid-cols-2 gap-3.5">
-                                            <div className="flex flex-col gap-1.5">
-                                              <span className="text-[10px] text-[var(--fd-text3)] font-bold uppercase font-mono tracking-wider">Adet</span>
+                                            {/* Quantity input */}
+                                            <td className="px-5 py-2 align-middle">
                                               <Input 
                                                 type="number"
                                                 min="1"
                                                 value={row.adet}
                                                 onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
-                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9.5 w-full text-center"
+                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9 w-20 text-center"
                                               />
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                              <span className="text-[10px] text-[var(--fd-text3)] font-bold uppercase font-mono tracking-wider">Durum</span>
+                                            </td>
+
+                                            {/* Status select */}
+                                            <td className="px-5 py-2 align-middle">
                                               <select
                                                 value={row.durum}
                                                 onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
-                                                className="h-9.5 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 outline-none font-mono font-bold"
+                                                className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono font-bold"
                                               >
                                                 {DURUM_OPTIONS.map(opt => (
                                                   <option key={opt.value} value={opt.value} className={opt.colorClass}>
@@ -1133,132 +1141,34 @@ function VehicleInventoryTab() {
                                                   </option>
                                                 ))}
                                               </select>
-                                            </div>
-                                          </div>
+                                            </td>
 
-                                          {/* Section 3: Actions */}
-                                          <div className="flex items-center gap-2 pt-2 justify-end">
-                                            <button
-                                              type="button"
-                                              onClick={() => handleOpenAssignmentModal(row)}
-                                              disabled={!row.malzeme_adi}
-                                              className="min-h-[38px] px-3 flex items-center justify-center gap-1.5 text-xs font-bold border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] text-[var(--fd-accent)] hover:bg-[var(--fd-surface3)] transition-colors disabled:opacity-40"
-                                            >
-                                              <span>🔄</span>
-                                              <span>Zimmetle</span>
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => handleDeleteItem(row.internalId)}
-                                              className="min-h-[38px] px-3 flex items-center justify-center gap-1.5 text-xs font-bold border border-[var(--fd-danger)]/20 rounded-[var(--fd-r-sm)] bg-[var(--fd-danger)]/5 text-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/15 transition-colors"
-                                            >
-                                              <Trash2 className="w-3.5 h-3.5" />
-                                              <span>Kaldır</span>
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-
-                                  {/* Desktop Table View (Visible on >= md screens) */}
-                                  <div className="hidden md:block overflow-x-auto w-full">
-                                    <table className="w-full text-sm min-w-[700px]">
-                                      <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-[var(--fd-border)]/40 font-mono">
-                                        <tr>
-                                          <th className="px-5 py-3 text-left font-semibold w-1/4">BÖLME (KAPAK)</th>
-                                          <th className="px-5 py-3 text-left font-semibold">MALZEME ADI</th>
-                                          <th className="px-5 py-3 text-left font-semibold w-24">ADET</th>
-                                          <th className="px-5 py-3 text-left font-semibold w-40">DURUM</th>
-                                          <th className="px-5 py-3 text-center font-semibold w-40">İŞLEMLER</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-[var(--fd-border)]/30 font-medium">
-                                        {rowsInComp.length === 0 ? (
-                                          <tr>
-                                            <td colSpan={5} className="py-8 text-center text-[var(--fd-text3)] italic font-mono text-xs">
-                                              Bu bölmede kayıtlı malzeme bulunamadı. "+ Yeni Ekle" butonuna basarak ekleyin.
+                                            {/* Actions cell */}
+                                            <td className="px-5 py-2 text-center align-middle flex items-center justify-center gap-1.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenAssignmentModal(row)}
+                                                disabled={!row.malzeme_adi}
+                                                className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
+                                                title="Geçici Zimmetle"
+                                              >
+                                                <span>🔄</span>
+                                                <span className="hidden sm:inline">Zimmetle</span>
+                                              </button>
+                                              <button 
+                                                type="button"
+                                                onClick={() => handleDeleteItem(row.internalId)}
+                                                className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px]"
+                                                title="Satırı Kaldır"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                              </button>
                                             </td>
                                           </tr>
-                                        ) : (
-                                          rowsInComp.map((row) => (
-                                            <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
-                                              {/* Compartment select */}
-                                              <td className="px-5 py-2 align-middle">
-                                                <select
-                                                  value={row.bolme_kapak}
-                                                  onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
-                                                  className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono"
-                                                >
-                                                  {CLEAN_COMPARTMENT_OPTIONS.map(option => (
-                                                    <option key={option} value={option}>{option}</option>
-                                                  ))}
-                                                </select>
-                                              </td>
-
-                                              {/* Material Name input */}
-                                              <td className="px-5 py-2 align-middle">
-                                                <Input 
-                                                  placeholder="Malzeme ismi..."
-                                                  value={row.malzeme_adi}
-                                                  onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
-                                                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9 w-full"
-                                                />
-                                              </td>
-
-                                              {/* Quantity input */}
-                                              <td className="px-5 py-2 align-middle">
-                                                <Input 
-                                                  type="number"
-                                                  min="1"
-                                                  value={row.adet}
-                                                  onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
-                                                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9 w-20 text-center"
-                                                />
-                                              </td>
-
-                                              {/* Status select */}
-                                              <td className="px-5 py-2 align-middle">
-                                                <select
-                                                  value={row.durum}
-                                                  onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
-                                                  className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono font-bold"
-                                                >
-                                                  {DURUM_OPTIONS.map(opt => (
-                                                    <option key={opt.value} value={opt.value} className={opt.colorClass}>
-                                                      {opt.label}
-                                                    </option>
-                                                  ))}
-                                                </select>
-                                              </td>
-
-                                              {/* Actions cell */}
-                                              <td className="px-5 py-2 text-center align-middle flex items-center justify-center gap-1.5">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleOpenAssignmentModal(row)}
-                                                  disabled={!row.malzeme_adi}
-                                                  className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
-                                                  title="Geçici Zimmetle"
-                                                >
-                                                  <span>🔄</span>
-                                                  <span className="hidden sm:inline">Zimmetle</span>
-                                                </button>
-                                                <button 
-                                                  type="button"
-                                                  onClick={() => handleDeleteItem(row.internalId)}
-                                                  className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px]"
-                                                  title="Satırı Kaldır"
-                                                >
-                                                  <Trash2 className="w-4 h-4" />
-                                                </button>
-                                              </td>
-                                            </tr>
-                                          ))
-                                        )}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                        ))
+                                      )}
+                                    </tbody>
+                                  </table>
                                 </div>
                               )}
                             </div>
