@@ -94,6 +94,12 @@ export default function VehiclesPage() {
   // Add Modal state
   const [addModalOpen, setAddModalOpen] = useState(false)
 
+  // Delete Modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deletingPlaka, setDeletingPlaka] = useState("")
+  const [confirmPlakaInput, setConfirmPlakaInput] = useState("")
+  const [deleting, setDeleting] = useState(false)
+
   // Faz 28.51: Şube Değiştir Modal state
   const [branchModalOpen, setBranchModalOpen] = useState(false)
   const [branchChangePlaka, setBranchChangePlaka] = useState<string | null>(null)
@@ -189,6 +195,15 @@ export default function VehiclesPage() {
 
   const canEdit = user?.rol !== 'User'
 
+  const canDelete = useMemo(() => {
+    if (!user) return false;
+    const rol = user.rol;
+    const unvan = (user.unvan || '').toLowerCase();
+    if (rol === 'Admin' || rol === 'Editor' || rol === 'Shift_Leader') return true;
+    const allowedTitles = ['müdür', 'amir', 'çavuş', 'başçavuş', 'başşöför', 'baş şoför', 'baş.çvş.', 'çvş.', 'eğitim çavuşu'];
+    return allowedTitles.some(title => unvan.includes(title));
+  }, [user]);
+
   // Turkish character encoding cleaning helper for jsPDF Helvetica font compatibility
   const cleanTurkishChars = (str: string): string => {
     if (!str) return "";
@@ -201,6 +216,36 @@ export default function VehiclesPage() {
       'ç': 'c', 'Ç': 'C'
     };
     return str.replace(/[şŞğĞıİöÖüÜçÇ]/g, m => map[m] || m);
+  };
+
+  const handleDeleteVehicle = async () => {
+    if (!deletingPlaka) return;
+    if (confirmPlakaInput.trim().toUpperCase() !== deletingPlaka.toUpperCase()) {
+      alert("Girdiğiniz plaka uyuşmuyor.");
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await api.remove('vehicle_maintenances', { plaka: deletingPlaka });
+      await api.remove('fuel_logs', { plaka: deletingPlaka });
+      const { error } = await api.remove('vehicles', { plaka: deletingPlaka });
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      setDeleteModalOpen(false);
+      setDeletingPlaka("");
+      setConfirmPlakaInput("");
+      fetchVehicles();
+      alert("Araç ve ilişkili tüm kayıtlar başarıyla silindi.");
+    } catch (err: any) {
+      console.error("Araç silinirken hata:", err);
+      alert("Araç silinemedi: " + (err.message || err));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleSaveAriza = async () => {
@@ -613,7 +658,7 @@ export default function VehiclesPage() {
   }, [vehicles])
 
   const renderPlateHeader = (plaka: string) => {
-    const isPlate = plaka.match(/(58\s+[A-Z]+\s+\d+)/i);
+    const isPlate = plaka.match(/(\d{2}\s+[A-Z]+\s+\d+)/i);
     if (!isPlate) return <span className="font-bold tracking-tight text-[var(--fd-text2)] font-sans text-sm">{plaka}</span>;
     return (
       <div className="inline-flex items-center border border-[var(--fd-border)] rounded bg-[var(--fd-surface2)] overflow-hidden text-[12px] font-mono leading-none shadow-[var(--fd-shadow-sm)]">
@@ -700,7 +745,7 @@ export default function VehiclesPage() {
               <div className="space-y-3 border-r border-[var(--fd-border)]/40 pr-0 lg:pr-6">
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--fd-text3)] font-medium">Model / Marka:</span>
-                  <span className="font-bold">{v.marka} {v.model}</span>
+                  <span className="font-bold">{v.model && v.model.toLowerCase().startsWith((v.marka || '').toLowerCase()) ? v.model : `${v.marka || ''} ${v.model || ''}`}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--fd-text3)] font-medium">Kilometre (KM):</span>
@@ -844,6 +889,20 @@ export default function VehiclesPage() {
             >
               <PlusCircle className="w-4 h-4 md:w-5 h-5" />
               <span>Yeni Araç Ekle</span>
+            </button>
+          )}
+
+          {canDelete && (
+            <button
+              onClick={() => {
+                setConfirmPlakaInput("");
+                setDeletingPlaka("");
+                setDeleteModalOpen(true);
+              }}
+              className="px-4 py-2 bg-[var(--fd-surface)] border border-[var(--fd-danger)]/30 hover:border-[var(--fd-danger)] text-[var(--fd-danger)] shadow-[var(--fd-shadow-sm)] hover:bg-[var(--fd-danger)]/5 transition-all font-semibold rounded-xl flex items-center gap-2 text-xs md:text-sm active:scale-95 cursor-pointer uppercase tracking-wider"
+            >
+              <Trash2 className="w-4 h-4 md:w-5 h-5" />
+              <span>Araç Sil</span>
             </button>
           )}
         </div>
@@ -1411,6 +1470,72 @@ export default function VehiclesPage() {
           fetchVehicles()
         }}
       />
+
+      {/* Delete Vehicle Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="max-w-md bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-2xl shadow-2xl p-6 font-sans">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-[var(--fd-danger)] flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-[var(--fd-danger)]" />
+              Araç Sil
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4 text-sm text-[var(--fd-text2)]">
+            <p>
+              Silmek istediğiniz aracı seçin ve onaylamak için plakasını yazın.
+              Bu araca ait tüm bakım ve yakıt geçmişi de kalıcı olarak silinecektir.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--fd-text3)] block uppercase">Silinecek Araç</label>
+              <select
+                value={deletingPlaka}
+                onChange={(e) => {
+                  setDeletingPlaka(e.target.value);
+                  setConfirmPlakaInput("");
+                }}
+                className="w-full h-10 px-3 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--fd-danger)]/50"
+              >
+                <option value="">Araç Seçin...</option>
+                {vehicles.map((v) => (
+                  <option key={v.plaka} value={v.plaka}>
+                    {v.plaka} - {v.model && v.model.toLowerCase().startsWith((v.marka || '').toLowerCase()) ? v.model : `${v.marka || ''} ${v.model || v.aracTipi || v.arac_tipi}`} ({v.istasyon})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {deletingPlaka && (
+              <div className="space-y-2 animate-in fade-in duration-200">
+                <label className="text-xs font-bold text-[var(--fd-text3)] block uppercase">
+                  Onaylamak için <span className="text-[var(--fd-danger)] font-mono select-none">{deletingPlaka}</span> yazın
+                </label>
+                <input
+                  type="text"
+                  value={confirmPlakaInput}
+                  onChange={(e) => setConfirmPlakaInput(e.target.value)}
+                  placeholder={deletingPlaka}
+                  className="w-full h-10 px-3 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--fd-danger)]/50 uppercase"
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 font-sans">
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)} className="w-full sm:w-auto border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]">
+              İptal
+            </Button>
+            <Button
+              onClick={handleDeleteVehicle}
+              disabled={deleting || !deletingPlaka || confirmPlakaInput.trim().toUpperCase() !== deletingPlaka.toUpperCase()}
+              className="w-full sm:w-auto bg-[var(--fd-danger)] hover:bg-[var(--fd-danger)]/90 text-white font-semibold shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse"
+            >
+              {deleting ? "Siliniyor..." : "Aracı Kalıcı Olarak Sil"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Mobil Alt Bar Maskeleme Kalkanı - Spacer */}
       <div 

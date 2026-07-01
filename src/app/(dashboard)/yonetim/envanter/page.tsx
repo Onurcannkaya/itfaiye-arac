@@ -336,7 +336,7 @@ function VehicleInventoryTab() {
   
   // Render plate as a beautiful realistic Turkish license plate badge
   const renderPlateHeader = (plaka: string) => {
-    const isPlate = plaka.match(/(58\s+[A-Z]+\s+\d+)/i);
+    const isPlate = plaka.match(/(\d{2}\s+[A-Z]+\s+\d+)/i);
     if (!isPlate) return <span className="font-bold tracking-tight text-[var(--fd-text2)] font-sans">{plaka}</span>;
     return (
       <div className="inline-flex items-center border border-[var(--fd-border-strong)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] overflow-hidden text-[10px] font-mono leading-none shadow-[var(--fd-shadow-sm)] border-b-2 border-[var(--fd-border-strong)]">

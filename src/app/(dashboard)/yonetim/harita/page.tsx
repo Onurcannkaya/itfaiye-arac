@@ -277,7 +277,7 @@ function HaritaContent() {
       }
 
       try {
-        const resVeh = await fetch('/api/mobiliz/live')
+        const resVeh = await fetch(`/api/mobiliz/live?t=${Date.now()}`)
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
@@ -329,7 +329,7 @@ function HaritaContent() {
 
       let initialVehicles = vehData || []
       try {
-        const resVeh = await fetch('/api/mobiliz/live')
+        const resVeh = await fetch(`/api/mobiliz/live?t=${Date.now()}`)
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {

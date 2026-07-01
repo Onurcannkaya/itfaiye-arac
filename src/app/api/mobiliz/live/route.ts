@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { queryMany } from "@/lib/db";
 import { getSessionFromRequest } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Session check to prevent unauthorized external access
@@ -34,7 +36,13 @@ export async function GET(request: NextRequest) {
         if (res.ok) {
           const data = await res.json();
           if (data && data.success && Array.isArray(data.result) && data.result.length > 0) {
-            const mappedVehicles = data.result.map((v: any) => ({
+            const allowedGroups = ["itfaiye müdürlüğü afad", "İtfaiye Müdürlüğü"];
+            const itfaiyeOnly = data.result.filter((v: any) => {
+              const gName = String(v.groupName || '').toLowerCase();
+              return gName.includes('itfaiye') || allowedGroups.some(g => g.toLowerCase() === gName);
+            });
+
+            const mappedVehicles = itfaiyeOnly.map((v: any) => ({
               plate: v.plate || '',
               latitude: Number(v.latitude || 0),
               longitude: Number(v.longitude || 0),

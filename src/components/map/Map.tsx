@@ -1667,7 +1667,15 @@ export default function Map({
         const lngOffset = Math.cos(angle) * radius
         const latOffset = Math.sin(angle) * radius
         
-        let coords: [number, number] = [STATION_COORDS[0] + lngOffset, STATION_COORDS[1] + latOffset]
+        const branchStr = (veh.current_branch || veh.istasyon || '').toLowerCase();
+        let defaultCenter: [number, number] = STATION_COORDS; // Merkez
+        if (branchStr.includes('esentepe')) {
+          defaultCenter = [36.988576, 39.748762]; // Esentepe coordinates
+        } else if (branchStr.includes('osb') || branchStr.includes('organize')) {
+          defaultCenter = [37.085315, 39.786707]; // OSB coordinates
+        }
+
+        let coords: [number, number] = [defaultCenter[0] + lngOffset, defaultCenter[1] + latOffset]
         const vAny = veh as any
         const vLat = Number(vAny.enlem || vAny.latitude || vAny.lat)
         const vLng = Number(vAny.boylam || vAny.longitude || vAny.lon || vAny.lng)

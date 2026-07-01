@@ -64,6 +64,7 @@ export interface AracBakimGecmisi {
   plaka: string;
   tarih: string;
   tip: 'tamir' | 'yag_bakimi';
+  islem_turu?: string;
   aciklama: string;
   maliyet: number;
   durum?: 'Onaylandı' | 'Bekliyor' | string;
@@ -178,6 +179,7 @@ export default function VehicleDetailPage() {
             plaka: l.plaka,
             tarih: l.tarih ? new Date(l.tarih).toISOString().split('T')[0] : '',
             tip: (l.islem_turu === 'Yağ Değişimi' || l.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' : 'tamir',
+            islem_turu: l.islem_turu,
             aciklama: l.aciklama,
             maliyet: Number(l.maliyet) || 0,
             durum: l.durum || 'Onaylandı',
@@ -395,11 +397,12 @@ export default function VehicleDetailPage() {
       const { data: logs } = await api.from('vehicle_maintenances')
         .eq('plaka', vehicle.plaka)
         .order('tarih', { ascending: false }) as { data: any[] | null; error: unknown }
-      const mappedLogs: AracBakimGecmisi[] = (logs || []).map((l: any) => ({
+       const mappedLogs: AracBakimGecmisi[] = (logs || []).map((l: any) => ({
         id: l.id,
         plaka: l.plaka,
         tarih: l.tarih ? new Date(l.tarih).toISOString().split('T')[0] : '',
         tip: (l.islem_turu === 'Yağ Değişimi' || l.islem_turu === 'Periyodik Bakım') ? 'yag_bakimi' : 'tamir',
+        islem_turu: l.islem_turu,
         aciklama: l.aciklama,
         maliyet: Number(l.maliyet) || 0,
         durum: l.durum || 'Onaylandı',
@@ -1485,7 +1488,31 @@ export default function VehicleDetailPage() {
             <>
               <div className="relative border-l border-[var(--fd-border)] ml-[calc(var(--fd-sp)*2)] pl-[calc(var(--fd-sp)*3)] md:ml-[calc(var(--fd-sp)*3)] md:pl-[calc(var(--fd-sp)*4)] space-y-[calc(var(--fd-sp)*3)]">
                 {maintenanceLogs.slice(0, visibleMaintenanceCount).map((log, idx) => {
-                const isTamir = log.tip === 'tamir';
+                const isTamir = log.tip === 'tamir' || log.islem_turu === 'Arıza/Tamir';
+                const isYag = log.islem_turu === 'Yağ Değişimi';
+                const isPeriyodik = log.islem_turu === 'Periyodik Bakım';
+                
+                let colorClass = "border-[var(--fd-amber)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]";
+                let bulletClass = "bg-[var(--fd-amber)]";
+                let tagClass = "bg-[rgba(245,158,11,0.11)] border-transparent text-[var(--fd-amber)]";
+                let tagText = log.islem_turu || "🔧 BAKIM";
+                
+                if (isTamir) {
+                  colorClass = "border-[var(--fd-danger)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]";
+                  bulletClass = "bg-[var(--fd-danger)]";
+                  tagClass = "bg-[var(--fd-surface)] border-[var(--fd-border)] text-[var(--fd-danger)]";
+                  tagText = "🔧 ARIZA & TAMİR";
+                } else if (isYag) {
+                  colorClass = "border-[var(--fd-success)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]";
+                  bulletClass = "bg-[var(--fd-success)]";
+                  tagClass = "bg-[rgba(22,163,74,0.11)] border-transparent text-[var(--fd-success)]";
+                  tagText = "🛢️ YAĞ DEĞİŞİMİ";
+                } else if (isPeriyodik) {
+                  colorClass = "border-[var(--fd-accent)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]";
+                  bulletClass = "bg-[var(--fd-accent)]";
+                  tagClass = "bg-[rgba(6,182,212,0.11)] border-transparent text-[var(--fd-accent)]";
+                  tagText = "📅 PERİYODİK BAKIM";
+                }
                 
                 // Parse date
                 const logDate = new Date(log.tarih);
@@ -1508,13 +1535,11 @@ export default function VehicleDetailPage() {
                     {/* Timeline Node Glow Bullet */}
                     <span className={cn(
                       "absolute -left-[calc(var(--fd-sp)*3.88)] md:-left-[calc(var(--fd-sp)*5.12)] top-1.5 w-[18px] h-[18px] rounded-full border-2 bg-[var(--fd-surface)] transition-all group-hover:scale-125 z-10",
-                      isTamir 
-                        ? "border-[var(--fd-danger)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]" 
-                        : "border-[var(--fd-amber)] shadow-[var(--fd-shadow)] group-hover:shadow-[var(--fd-shadow)]"
+                      colorClass
                     )}>
                       <span className={cn(
                         "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full",
-                        isTamir ? "bg-[var(--fd-danger)]" : "bg-[var(--fd-amber)]"
+                        bulletClass
                       )} />
                     </span>
 
@@ -1526,11 +1551,9 @@ export default function VehicleDetailPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={cn(
                             "px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider border uppercase",
-                            isTamir 
-                              ? "bg-[var(--fd-surface)] border-[var(--fd-border)] text-[var(--fd-danger)]" 
-                              : "bg-[rgba(245,158,11,0.11)] border-transparent text-[var(--fd-amber)]"
+                            tagClass
                           )}>
-                            {isTamir ? "🔧 TAMİR & PARÇA" : "🛢️ PERİYODİK BAKIM"}
+                            {tagText}
                           </span>
                           
                           <div className="flex items-center gap-1 text-xs text-[var(--fd-text2)] font-mono">
@@ -1627,7 +1650,7 @@ export default function VehicleDetailPage() {
                   <span>🚒 Plaka:</span>
                   <span className="font-bold text-[var(--fd-text)]">{vehicle.plaka}</span>
                   <span>| Model:</span>
-                  <span className="font-bold text-[var(--fd-text)]">{vehicle.marka} {vehicle.model}</span>
+                  <span className="font-bold text-[var(--fd-text)]">{vehicle.model && vehicle.model.toLowerCase().startsWith((vehicle.marka || '').toLowerCase()) ? vehicle.model : `${vehicle.marka || ''} ${vehicle.model || ''}`}</span>
                 </div>
 
                 <div className="space-y-2">
