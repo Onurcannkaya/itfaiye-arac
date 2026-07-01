@@ -1666,7 +1666,14 @@ export default function Map({
         const radius = 0.00035 // cluster around Sivas fire station coordinates beautifully
         const lngOffset = Math.cos(angle) * radius
         const latOffset = Math.sin(angle) * radius
-        const coords: [number, number] = [STATION_COORDS[0] + lngOffset, STATION_COORDS[1] + latOffset]
+        
+        let coords: [number, number] = [STATION_COORDS[0] + lngOffset, STATION_COORDS[1] + latOffset]
+        const vAny = veh as any
+        const vLat = Number(vAny.enlem || vAny.latitude || vAny.lat)
+        const vLng = Number(vAny.boylam || vAny.longitude || vAny.lon || vAny.lng)
+        if (vLat && vLng && vLat !== 0 && vLng !== 0) {
+          coords = [vLng, vLat]
+        }
 
         const el = document.createElement('div')
         el.className = 'map-marker-vehicle'
@@ -1809,6 +1816,11 @@ export default function Map({
             </div>
             
             <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:11.5px;margin-bottom:8px;font-family:monospace;">
+              ${vAny.hiz !== undefined ? `
+                <span style="color:var(--fd-text3);font-weight:500;">Hız:</span>
+                <span style="font-weight:700;color:${vAny.hiz > 0 ? '#10b981' : 'var(--fd-text)'};text-align:right;">${vAny.hiz} km/s</span>
+              ` : ''}
+
               <span style="color:var(--fd-text3);font-weight:500;">Kilometre:</span>
               <span style="font-weight:700;color:var(--fd-text);text-align:right;">${veh.km?.toLocaleString() || '0'} km</span>
               
@@ -1823,6 +1835,11 @@ export default function Map({
               ${veh.yil && veh.model ? `
                 <span style="color:var(--fd-text3);font-weight:500;">Model:</span>
                 <span style="font-weight:600;color:var(--fd-text2);text-align:right;font-size:11px;">${veh.yil} - ${veh.model}</span>
+              ` : ''}
+
+              ${vAny.address ? `
+                <span style="color:var(--fd-text3);font-weight:500;">Canlı Konum:</span>
+                <span style="font-weight:600;color:var(--fd-text2);text-align:right;font-size:10px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;" title="${vAny.address}">${vAny.address}</span>
               ` : ''}
             </div>
 

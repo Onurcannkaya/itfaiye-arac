@@ -241,7 +241,7 @@ function HaritaContent() {
   useEffect(() => {
     fetchData()
 
-    // ─── Real-Time Canlı Vaka Polling Dinleyicisi ─────────
+    // ─── Real-Time Canlı Vaka & Araç Takip Polling Dinleyicisi ─────────
     const intervalId = setInterval(async () => {
       try {
         const res = await fetch('/api/harita-canli-vaka')
@@ -275,6 +275,37 @@ function HaritaContent() {
       } catch (err) {
         console.warn('[Real-Time] Canlı vaka sorgulama hatası:', err)
       }
+
+      try {
+        const resVeh = await fetch('/api/mobiliz/live')
+        if (resVeh.ok) {
+          const dataVeh = await resVeh.json()
+          if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
+            setVehicles(prevVehicles => {
+              const liveMap = new Map(dataVeh.vehicles.map((v: any) => [v.plate, v]))
+              return prevVehicles.map((v: any) => {
+                const live = liveMap.get(v.plaka)
+                if (live) {
+                  return {
+                    ...v,
+                    enlem: live.latitude,
+                    boylam: live.longitude,
+                    latitude: live.latitude,
+                    longitude: live.longitude,
+                    hiz: live.speed,
+                    kontak: live.ignition,
+                    sonGuncelleme: live.dataTime,
+                    address: live.address
+                  }
+                }
+                return v
+              })
+            })
+          }
+        }
+      } catch (err) {
+        console.warn('[Real-Time] Canlı araç takip sorgulama hatası:', err)
+      }
     }, 5000) // 5 saniyede bir sorgula
 
     return () => clearInterval(intervalId)
@@ -289,9 +320,39 @@ function HaritaContent() {
       const { data: persData } = await api.from('personnel').select('*').eq('aktif', true)
       const { data: extData } = await api.from('external_missions').select('*')
 
+      let initialVehicles = vehData || []
+      try {
+        const resVeh = await fetch('/api/mobiliz/live')
+        if (resVeh.ok) {
+          const dataVeh = await resVeh.json()
+          if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
+            const liveMap = new Map(dataVeh.vehicles.map((v: any) => [v.plate, v]))
+            initialVehicles = initialVehicles.map((v: any) => {
+              const live = liveMap.get(v.plaka)
+              if (live) {
+                return {
+                  ...v,
+                  enlem: live.latitude,
+                  boylam: live.longitude,
+                  latitude: live.latitude,
+                  longitude: live.longitude,
+                  hiz: live.speed,
+                  kontak: live.ignition,
+                  sonGuncelleme: live.dataTime,
+                  address: live.address
+                }
+              }
+              return v
+            })
+          }
+        }
+      } catch (err) {
+        console.warn('[Initial Load] Canlı araç takip sorgulama hatası:', err)
+      }
+
       if (incData) setIncidents(incData)
       if (hydData) setHydrants(hydData)
-      if (vehData) setVehicles(vehData)
+      if (initialVehicles) setVehicles(initialVehicles)
 
       // ─── Posta Devir Filtresi (08:00) ───────────────────
       // Sadece aktif nöbet dönemindeki görevler haritada gösterilir.
