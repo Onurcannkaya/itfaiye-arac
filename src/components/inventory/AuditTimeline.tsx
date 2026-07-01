@@ -77,7 +77,7 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
 
   if (loading) {
     return (
-      <div className="p-4 text-center text-muted-foreground text-sm">
+      <div className="p-4 text-center text-[var(--fd-text3)] text-sm">
         <Loader2 className="w-5 h-5 mx-auto mb-2 animate-spin text-[var(--fd-accent)]" />
         Kontrol geçmişi yükleniyor...
       </div>
@@ -86,8 +86,8 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
 
   if (logs.length === 0) {
     return (
-      <div className="p-4 text-center text-muted-foreground text-sm border border-dashed border-border/50 rounded-xl bg-[var(--fd-surface3)]/50">
-        <Clock className="w-5 h-5 mx-auto mb-2 text-muted-foreground/50" />
+      <div className="p-4 text-center text-[var(--fd-text3)] text-sm border border-dashed border-[var(--fd-border)] rounded-xl bg-[var(--fd-surface2)]/50">
+        <Clock className="w-5 h-5 mx-auto mb-2 text-[var(--fd-text3)]/50" />
         Bu bölme için henüz kontrol kaydı bulunmuyor.
       </div>
     )
@@ -98,10 +98,10 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-1.5 h-1.5 rounded-full bg-[var(--fd-accent)] animate-pulse shadow-[var(--fd-shadow-sm)]" />
-        <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--fd-text3)]">
           Kontrol Geçmişi
         </h4>
-        <span className="text-[10px] bg-[var(--fd-surface3)] px-2 py-0.5 rounded-full font-mono text-[var(--fd-text2)]">{logs.length} kayıt</span>
+        <span className="text-[10px] bg-[var(--fd-surface2)] px-2 py-0.5 rounded-full font-mono text-[var(--fd-text2)]">{logs.length} kayıt</span>
       </div>
 
       {/* Timeline line */}
@@ -125,7 +125,7 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                       : "border-[var(--fd-border)] bg-[var(--fd-surface)]"
                   }`}
                 >
-                  <div className={`w-2 h-2 rounded-full ${isLatest ? "bg-cyan-400" : "bg-muted-foreground/40"}`} />
+                  <div className={`w-2 h-2 rounded-full ${isLatest ? "bg-[var(--fd-accent)]" : "bg-[var(--fd-text3)]/40"}`} />
                 </div>
               </div>
 
@@ -144,7 +144,7 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <User className="w-3.5 h-3.5 text-[var(--fd-text3)] shrink-0" />
                         <span className="text-sm font-semibold truncate">{log.checked_by_name}</span>
                         {isLatest && (
                           <span className="text-[9px] bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -152,29 +152,29 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-[var(--fd-text3)]">
                         <Clock className="w-3 h-3 shrink-0" />
                         <span>{formatTime(log.created_at)}</span>
-                        <span className="text-muted-foreground/50">·</span>
+                        <span className="text-[var(--fd-text3)]/50">·</span>
                         <span className="font-medium">{formatRelativeTime(log.created_at)}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {issues.length > 0 ? (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-danger bg-[rgba(220,38,38,0.11)] px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[var(--fd-danger)] bg-[var(--fd-danger)]/10 px-2 py-0.5 rounded-full">
                           <AlertCircle className="w-3 h-3" />
                           {issues.length} sorun
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-success bg-[rgba(22,163,74,0.11)] px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[var(--fd-success)] bg-[var(--fd-success)]/10 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="w-3 h-3" />
                           Tam
                         </span>
                       )}
                       {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                        <ChevronUp className="w-4 h-4 text-[var(--fd-text3)]" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        <ChevronDown className="w-4 h-4 text-[var(--fd-text3)]" />
                       )}
                     </div>
                   </div>
@@ -189,27 +189,27 @@ export function AuditTimeline({ plaka, compartmentKey }: AuditTimelineProps) {
                         className="flex items-start gap-2 text-xs py-1"
                       >
                         {r.durum === "Tam" ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[var(--fd-success)] shrink-0 mt-0.5" />
                         ) : r.durum === "Arızalı" ? (
-                          <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-[var(--fd-amber)] shrink-0 mt-0.5" />
                         ) : (
-                          <AlertCircle className="w-3.5 h-3.5 text-danger shrink-0 mt-0.5" />
+                          <AlertCircle className="w-3.5 h-3.5 text-[var(--fd-danger)] shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <span className={`font-medium ${r.durum !== "Tam" ? "text-foreground" : "text-muted-foreground"}`}>
+                          <span className={`font-medium ${r.durum !== "Tam" ? "text-[var(--fd-text)]" : "text-[var(--fd-text3)]"}`}>
                             {r.malzeme}
                           </span>
                           {r.durum !== "Tam" && (
-                            <span className="ml-1.5 text-danger font-semibold">({r.durum})</span>
+                            <span className="ml-1.5 text-[var(--fd-danger)] font-semibold">({r.durum})</span>
                           )}
                           {r.note && (
-                            <p className="text-[10px] text-muted-foreground mt-0.5 italic">{r.note}</p>
+                            <p className="text-[10px] text-[var(--fd-text3)] mt-0.5 italic">{r.note}</p>
                           )}
                         </div>
                       </div>
                     ))}
                     {log.notes && (
-                      <div className="mt-2 p-2 bg-warning/5 border border-warning/15 rounded-lg text-[11px] text-warning">
+                      <div className="mt-2 p-2 bg-[var(--fd-amber)]/10 border border-[var(--fd-amber)]/20 rounded-lg text-[11px] text-[var(--fd-amber)]">
                         <strong>Not:</strong> {log.notes}
                       </div>
                     )}

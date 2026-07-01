@@ -1419,19 +1419,38 @@ export default function VehicleDetailPage() {
              </CardContent>
           </Card>
 
-          {/* Audit Timeline */}
+          {/* Audit Timeline Modal */}
           {showTimeline && activeCompartment && (
-            <Card className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] animate-in fade-in slide-in-from-top-3">
-              <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/50">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <History className="w-4 h-4 text-[var(--fd-text)]" />
-                  Vardiya Devir Logları — {getCompartmentLabel(activeCompartment)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <AuditTimeline plaka={vehicle.plaka} compartmentKey={activeCompartment} />
-              </CardContent>
-            </Card>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+              <Card className="w-full max-w-2xl bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto flex flex-col max-h-[90vh]">
+                <CardHeader className="bg-[var(--fd-surface2)]/50 border-b border-[var(--fd-border)] p-4 sm:p-5 flex flex-row items-center justify-between shrink-0">
+                  <div className="flex flex-col gap-0.5">
+                    <CardTitle className="text-sm md:text-base font-bold text-[var(--fd-text)] flex items-center gap-2">
+                      <History className="w-5 h-5 text-[var(--fd-accent)]" />
+                      <span>{getCompartmentLabel(activeCompartment)} Bölmesi Vardiya Devir Logları</span>
+                    </CardTitle>
+                    <p className="text-[11px] text-[var(--fd-text3)] mt-0.5">Bu bölmeye ait geçmiş vardiya devir, kontrol ve eksik malzeme logları.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowTimeline(false)}
+                    className="w-7 h-7 rounded-lg bg-[var(--fd-surface2)] hover:bg-[var(--fd-surface3)] text-[var(--fd-text3)] hover:text-[var(--fd-text)] flex items-center justify-center transition-colors border border-[var(--fd-border)] cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6 overflow-y-auto flex-1">
+                  <AuditTimeline plaka={vehicle.plaka} compartmentKey={activeCompartment} />
+                </CardContent>
+                <div className="bg-[var(--fd-surface2)]/50 border-t border-[var(--fd-border)] p-4 flex items-center justify-end shrink-0">
+                  <button
+                    onClick={() => setShowTimeline(false)}
+                    className="min-h-[38px] px-5 bg-[var(--fd-accent)] hover:opacity-90 text-white rounded-[var(--fd-r-sm)] font-semibold text-xs transition-all cursor-pointer border-none"
+                  >
+                    Kapat
+                  </button>
+                </div>
+              </Card>
+            </div>
           )}
         </div>
       </div>
