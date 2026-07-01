@@ -282,9 +282,12 @@ function HaritaContent() {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
             setVehicles(prevVehicles => {
-              const liveMap = new Map(dataVeh.vehicles.map((v: any) => [v.plate, v]))
+              const liveMap: Record<string, any> = {}
+              dataVeh.vehicles.forEach((v: any) => {
+                if (v.plate) liveMap[v.plate] = v
+              })
               return prevVehicles.map((v: any) => {
-                const live = liveMap.get(v.plaka)
+                const live = liveMap[v.plaka]
                 if (live) {
                   return {
                     ...v,
@@ -326,9 +329,12 @@ function HaritaContent() {
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
-            const liveMap = new Map(dataVeh.vehicles.map((v: any) => [v.plate, v]))
+            const liveMap: Record<string, any> = {}
+            dataVeh.vehicles.forEach((v: any) => {
+              if (v.plate) liveMap[v.plate] = v
+            })
             initialVehicles = initialVehicles.map((v: any) => {
-              const live = liveMap.get(v.plaka)
+              const live = liveMap[v.plaka]
               if (live) {
                 return {
                   ...v,
