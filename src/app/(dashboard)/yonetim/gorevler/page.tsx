@@ -545,7 +545,7 @@ export default function UnifiedGorevlerPage() {
             }`}
           >
             <CheckSquare className="w-4 h-4" />
-            <span><span className="hidden sm:inline">Vardiya </span>Görevleri ({pendingTasks.length + completedTasks.length})</span>
+            <span><span className="hidden sm:inline">Vardiya </span>Görevler<span className="hidden sm:inline">i</span> ({pendingTasks.length + completedTasks.length})</span>
           </Button>
           <Button
             onClick={() => setActiveTab('dis_gorevler')}
@@ -569,7 +569,7 @@ export default function UnifiedGorevlerPage() {
             }`}
           >
             <ListChecks className="w-4 h-4" />
-            <span><span className="hidden sm:inline">Görev </span>Şablonları ({templates.length})</span>
+            <span><span className="hidden sm:inline">Görev </span>Şablonlar<span className="hidden sm:inline">ı</span> ({templates.length})</span>
           </Button>
         </div>
 
