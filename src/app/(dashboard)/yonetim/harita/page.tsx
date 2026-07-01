@@ -284,10 +284,14 @@ function HaritaContent() {
             setVehicles(prevVehicles => {
               const liveMap: Record<string, any> = {}
               dataVeh.vehicles.forEach((v: any) => {
-                if (v.plate) liveMap[v.plate] = v
+                if (v.plate) {
+                  const normKey = v.plate.replace(/\s+/g, '').toUpperCase()
+                  liveMap[normKey] = v
+                }
               })
               return prevVehicles.map((v: any) => {
-                const live = liveMap[v.plaka]
+                const normKey = (v.plaka || '').replace(/\s+/g, '').toUpperCase()
+                const live = liveMap[normKey]
                 if (live) {
                   return {
                     ...v,
@@ -331,10 +335,14 @@ function HaritaContent() {
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
             const liveMap: Record<string, any> = {}
             dataVeh.vehicles.forEach((v: any) => {
-              if (v.plate) liveMap[v.plate] = v
+              if (v.plate) {
+                const normKey = v.plate.replace(/\s+/g, '').toUpperCase()
+                liveMap[normKey] = v
+              }
             })
             initialVehicles = initialVehicles.map((v: any) => {
-              const live = liveMap[v.plaka]
+              const normKey = (v.plaka || '').replace(/\s+/g, '').toUpperCase()
+              const live = liveMap[normKey]
               if (live) {
                 return {
                   ...v,

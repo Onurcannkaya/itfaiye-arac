@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
         if (res.ok) {
           const data = await res.json();
-          if (data && data.success && Array.isArray(data.result)) {
+          if (data && data.success && Array.isArray(data.result) && data.result.length > 0) {
             const mappedVehicles = data.result.map((v: any) => ({
               plate: v.plate || '',
               latitude: Number(v.latitude || 0),
