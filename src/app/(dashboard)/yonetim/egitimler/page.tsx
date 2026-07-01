@@ -1400,7 +1400,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('requests')}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
                 activeTab === 'requests'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1412,7 +1412,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('calendar')}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
                 activeTab === 'calendar'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1424,7 +1424,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('blacklist')}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
                 activeTab === 'blacklist'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1436,7 +1436,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('analytics')}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
                 activeTab === 'analytics'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1448,7 +1448,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('temel')}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
                 activeTab === 'temel'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
