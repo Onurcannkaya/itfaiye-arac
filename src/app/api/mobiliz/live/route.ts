@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
 
     if (isRealTokenAvailable) {
       try {
-        const res = await fetch(`${baseUrl}/activity/last`, {
+        const targetUrl = baseUrl.endsWith('/activity/last') ? baseUrl : `${baseUrl}/activity/last`;
+        const res = await fetch(targetUrl, {
           headers: {
             'Content-Type': 'application/json',
             'Mobiliz-Token': token
