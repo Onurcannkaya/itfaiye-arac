@@ -565,7 +565,13 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-[var(--fd-border)] bg-[var(--fd-surface)] px-[calc(var(--fd-sp)*3)] z-30 h-[60px] relative shadow-sm">
+    <header 
+      className="flex items-center justify-between border-b border-[var(--fd-border)] bg-[var(--fd-surface)] px-[calc(var(--fd-sp)*3)] z-30 relative shadow-sm"
+      style={{
+        height: 'calc(60px + env(safe-area-inset-top, 0px))',
+        paddingTop: 'env(safe-area-inset-top, 0px)'
+      }}
+    >
       <div className="flex items-center gap-3.5 shrink-0">
         {/* Mobile Title */}
         <div className="flex items-center md:hidden space-x-2 shrink-0">

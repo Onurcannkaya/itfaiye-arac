@@ -202,7 +202,7 @@ h3 { font-size: calc(var(--fd-fs) * 1.2); font-weight: 600; }
   }
   input[type="text"], input[type="number"], input[type="date"], input[type="password"], input[type="search"], textarea, select {
     min-height: 48px;
-    font-size: 16px !important;
+    font-size: max(16px, calc(var(--fd-fs) * 1.14)) !important;
   }
 }
 
@@ -298,26 +298,73 @@ div:has(> table), .table-responsive, .overflow-x-auto {
   overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; box-sizing: border-box !important;
 }
 
-/* ===== SMALL TEXT SCALING FACTOR ===== */
+/* ===== DYNAMIC TYPOGRAPHY SCALING SYSTEM (Design.md Proportional) ===== */
 :root {
-  --fd-small-text-scale: 1;
+  --fd-small-text-scale: 1.0;
 }
 
 .text-\[9px\] {
-  font-size: calc(9px * var(--fd-small-text-scale, 1)) !important;
+  font-size: calc(var(--fd-fs) * 0.64 * var(--fd-small-text-scale, 1)) !important;
 }
 .text-\[10px\] {
-  font-size: calc(10px * var(--fd-small-text-scale, 1)) !important;
+  font-size: calc(var(--fd-fs) * 0.71 * var(--fd-small-text-scale, 1)) !important;
 }
 .text-\[11px\] {
-  font-size: calc(11px * var(--fd-small-text-scale, 1)) !important;
+  font-size: calc(var(--fd-fs) * 0.78 * var(--fd-small-text-scale, 1)) !important;
 }
 .text-xs, .text-\[12px\] {
-  font-size: calc(12px * var(--fd-small-text-scale, 1)) !important;
+  font-size: calc(var(--fd-fs) * 0.85 * var(--fd-small-text-scale, 1)) !important;
 }
 .text-\[13px\] {
-  font-size: calc(13px * var(--fd-small-text-scale, 1)) !important;
+  font-size: calc(var(--fd-fs) * 0.92 * var(--fd-small-text-scale, 1)) !important;
 }
 .text-sm, .text-\[14px\] {
-  font-size: calc(14px * var(--fd-small-text-scale, 1)) !important;
+  font-size: calc(var(--fd-fs) * 1.00 * var(--fd-small-text-scale, 1)) !important;
+}
+.text-base, .text-\[15px\], .text-\[16px\] {
+  font-size: calc(var(--fd-fs) * 1.14) !important;
+}
+.text-lg, .text-\[18px\] {
+  font-size: calc(var(--fd-fs) * 1.28) !important;
+}
+.text-xl, .text-\[20px\] {
+  font-size: calc(var(--fd-fs) * 1.42) !important;
+}
+.text-2xl, .text-\[24px\] {
+  font-size: calc(var(--fd-fs) * 1.71) !important;
+}
+.text-3xl, .text-\[30px\] {
+  font-size: calc(var(--fd-fs) * 2.14) !important;
+}
+.text-4xl, .text-\[36px\] {
+  font-size: calc(var(--fd-fs) * 2.57) !important;
+}
+.text-5xl {
+  font-size: calc(var(--fd-fs) * 3.42) !important;
+}
+.text-6xl {
+  font-size: calc(var(--fd-fs) * 4.28) !important;
+}
+
+/* ===== MOBİL CİHAZ YERLEŞİM VE GÜVENLİ ALAN İYİLEŞTİRMELERİ ===== */
+@media (max-width: 640px) {
+  /* Kart iç dolgularını küçülterek formlar ve metinler için yer açıyoruz */
+  .card, 
+  [class*="p-6"], 
+  [class*="p-5"], 
+  [class*="p-4"] {
+    padding: calc(var(--fd-sp) * 1.5) !important;
+  }
+  
+  /* Form elemanlarının taşmasını önlemek için tam genişlik sınırları */
+  input, select, textarea, button, form {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Safe area sol ve sağ korumaları */
+  main, .main-container {
+    padding-left: max(calc(var(--fd-sp) * 1.5), env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(calc(var(--fd-sp) * 1.5), env(safe-area-inset-right, 0px)) !important;
+  }
 }
