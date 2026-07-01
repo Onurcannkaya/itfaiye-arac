@@ -1588,11 +1588,11 @@ export default function EgitimlerPage() {
         {activeTab === 'calendar' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--fd-surface)] border border-[var(--fd-border)] p-4 rounded-[var(--fd-r)] shadow-lg">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
+                  className="flex-1 sm:flex-none justify-center border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
                   onClick={handlePrevWeek}
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Önceki Hafta
@@ -1600,7 +1600,7 @@ export default function EgitimlerPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] font-bold"
+                  className="flex-1 sm:flex-none justify-center border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)] font-bold"
                   onClick={handleTodayWeek}
                 >
                   Bu Hafta
@@ -1608,13 +1608,13 @@ export default function EgitimlerPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
+                  className="flex-1 sm:flex-none justify-center border-[var(--fd-border)] text-[var(--fd-text2)] hover:text-[var(--fd-text)]"
                   onClick={handleNextWeek}
                 >
                   Sonraki Hafta <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
-              <div className="text-[var(--fd-text)] font-extrabold text-sm sm:text-base">
+              <div className="text-[var(--fd-text)] font-extrabold text-sm sm:text-base w-full sm:w-auto text-center sm:text-left">
                 📅 {formatDateLabel(daysOfWeek[0])} - {formatDateLabel(daysOfWeek[6])} {daysOfWeek[0].getFullYear()}
               </div>
               <div>
@@ -1646,25 +1646,26 @@ export default function EgitimlerPage() {
               </div>
             </div>
 
-            {/* Mobile Day Selector Tabs (Visible only on mobile/tablet) */}
-            <div className="flex md:hidden overflow-x-auto gap-1 bg-[var(--fd-surface2)] p-1.5 rounded-xl border border-[var(--fd-border)] shrink-0 mb-4 hide-scrollbar">
+            {/* Mobile Day Selector Tabs (Visible only on mobile/tablet, exactly fitting without scroll) */}
+            <div className="grid grid-cols-7 gap-1 bg-[var(--fd-surface2)] p-1 rounded-xl border border-[var(--fd-border)] shrink-0 mb-4">
               {daysOfWeek.map((day, idx) => {
                 const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
                 const isSelected = selectedMobileDayIdx === idx
+                const shortDayName = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'][day.getDay()]
                 return (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setSelectedMobileDayIdx(idx)}
                     className={cn(
-                      "flex-1 min-h-[38px] px-3 py-1 text-center rounded-[var(--fd-r-sm)] font-bold text-[11px] whitespace-nowrap cursor-pointer transition-all flex flex-col items-center justify-center gap-0.5",
+                      "w-full min-h-[38px] px-0.5 py-1 text-center rounded-[var(--fd-r-sm)] font-bold text-[10px] sm:text-[11px] cursor-pointer transition-all flex flex-col items-center justify-center gap-0.5",
                       isSelected
                         ? "bg-[var(--fd-accent)] text-white shadow-[var(--fd-shadow-sm)]"
                         : "text-[var(--fd-text3)] hover:bg-[var(--fd-surface3)]/50"
                     )}
                   >
-                    <span className="opacity-75 text-[9px] uppercase">{getDayName(day).substring(0, 3)}</span>
-                    <span className="font-mono">{formatDateLabel(day).split(" ")[0]}</span>
+                    <span className="opacity-75 text-[8px] sm:text-[9px] uppercase tracking-wider">{shortDayName}</span>
+                    <span className="font-mono text-xs sm:text-sm">{day.getDate()}</span>
                     {isToday && !isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[var(--fd-accent)] mt-0.5" />}
                   </button>
                 )
