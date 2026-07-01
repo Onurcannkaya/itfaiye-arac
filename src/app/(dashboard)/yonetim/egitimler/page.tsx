@@ -306,6 +306,8 @@ export default function EgitimlerPage() {
     return getMonday(d)
   })
 
+  const [selectedMobileDayIdx, setSelectedMobileDayIdx] = useState<number>(0)
+
   const daysOfWeek = useMemo<Date[]>(() => {
     const days: Date[] = []
     for (let i = 0; i < 7; i++) {
@@ -1634,8 +1636,139 @@ export default function EgitimlerPage() {
               </div>
             </div>
 
-            {/* Matrix Table */}
-            <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] overflow-hidden rounded-[var(--fd-r)]">
+            {/* Mobile Day Selector Tabs (Visible only on mobile/tablet) */}
+            <div className="flex md:hidden overflow-x-auto gap-1 bg-[var(--fd-surface2)] p-1.5 rounded-xl border border-[var(--fd-border)] shrink-0 mb-4 hide-scrollbar">
+              {daysOfWeek.map((day, idx) => {
+                const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
+                const isSelected = selectedMobileDayIdx === idx
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedMobileDayIdx(idx)}
+                    className={cn(
+                      "flex-1 min-h-[38px] px-3 py-1 text-center rounded-[var(--fd-r-sm)] font-bold text-[11px] whitespace-nowrap cursor-pointer transition-all flex flex-col items-center justify-center gap-0.5",
+                      isSelected
+                        ? "bg-[var(--fd-accent)] text-white shadow-[var(--fd-shadow-sm)]"
+                        : "text-[var(--fd-text3)] hover:bg-[var(--fd-surface3)]/50"
+                    )}
+                  >
+                    <span className="opacity-75 text-[9px] uppercase">{getDayName(day).substring(0, 3)}</span>
+                    <span className="font-mono">{formatDateLabel(day).split(" ")[0]}</span>
+                    {isToday && !isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[var(--fd-accent)] mt-0.5" />}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Mobile Timeline View (Visible only on mobile/tablet) */}
+            <div className="md:hidden space-y-3.5 mb-4">
+              {CALENDAR_SLOTS.map((slot) => {
+                const activeDay = daysOfWeek[selectedMobileDayIdx]
+                const dateStr = getYYYYMMDD(activeDay)
+                const cellEdus = educations.filter(edu => {
+                  const eduDateStr = getYYYYMMDD(new Date(edu.planlanan_tarih))
+                  return eduDateStr === dateStr && edu.saat_slot === slot
+                })
+
+                return (
+                  <div key={slot} className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-xl p-3 flex gap-3.5 items-start">
+                    {/* Time Slot Label */}
+                    <div className="w-20 shrink-0 font-mono font-bold text-[var(--fd-text3)] text-[10px] bg-[var(--fd-surface2)]/40 p-1 px-1.5 rounded border border-[var(--fd-border)] text-center">
+                      {slot.split(" ")[0]}
+                    </div>
+
+                    {/* Planned Educations */}
+                    <div className="flex-1 space-y-2">
+                      {cellEdus.length === 0 ? (
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] text-[var(--fd-text3)] italic mt-1">Planlanmış program yok</p>
+                          {isMudur && (
+                            <button
+                              onClick={() => {
+                                setEduForm({
+                                  id: '',
+                                  kurum_id: '',
+                                  kurum_adi: '',
+                                  kurum_tipi: 'Isyeri',
+                                  egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
+                                  kisi_sayisi: '20',
+                                  planlanan_tarih: dateStr,
+                                  saat_slot: slot,
+                                  egitimci_personel_ids: [],
+                                  durum: 'Beklemede',
+                                  mahalle: '',
+                                  yas_grubu: 'Yetişkin',
+                                  teorik_sure_dk: '45',
+                                  pratik_sure_dk: '45'
+                                })
+                                setBlacklistAcknowledged(false)
+                                setIsProgramModalOpen(true)
+                              }}
+                              className="h-7 w-7 rounded-lg border border-dashed border-[var(--fd-border)] hover:border-[var(--fd-accent)] hover:bg-[var(--fd-surface2)] flex items-center justify-center text-[var(--fd-text3)] hover:text-[var(--fd-accent)] transition cursor-pointer"
+                              title="Program Ekle"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        cellEdus.map(edu => {
+                          const isBlacklisted = blacklistList.some(x => (x.kurum_adi.trim().toLowerCase() === edu.kurum_adi?.trim().toLowerCase() || x.id === edu.kurum_id) && x.aktif_durum)
+                          return (
+                            <div
+                              key={edu.id}
+                              onClick={() => {
+                                setEduForm({
+                                  id: edu.id,
+                                  kurum_id: edu.kurum_id || '',
+                                  kurum_adi: edu.kurum_adi || '',
+                                  kurum_tipi: edu.kurum_tipi || 'Isyeri',
+                                  egitim_turu: edu.egitim_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
+                                  kisi_sayisi: String(edu.kisi_sayisi || 20),
+                                  planlanan_tarih: getYYYYMMDD(new Date(edu.planlanan_tarih)),
+                                  saat_slot: edu.saat_slot,
+                                  egitimci_personel_ids: edu.egitimci_personel_ids || [],
+                                  durum: edu.durum,
+                                  mahalle: edu.mahalle || '',
+                                  yas_grubu: edu.yas_grubu || 'Yetişkin',
+                                  teorik_sure_dk: String(edu.teorik_sure_dk || 0),
+                                  pratik_sure_dk: String(edu.pratik_sure_dk || 0)
+                                })
+                                setBlacklistAcknowledged(false)
+                                setIsProgramModalOpen(true)
+                              }}
+                              className={`p-2.5 rounded-lg border cursor-pointer hover:scale-[1.01] transition text-left space-y-1 ${
+                                isBlacklisted ? 'bg-red-950/45 border-red-500/40 text-red-200' :
+                                edu.durum === 'Tamamlandı' ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-500' :
+                                edu.durum === 'Onaylandı' ? 'bg-blue-950/30 border-blue-500/25 text-blue-400' :
+                                'bg-amber-950/30 border-amber-500/20 text-amber-400'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                                <span className="font-bold text-xs">{edu.kurum_adi}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider bg-black/20 px-1.5 py-0.5 rounded">
+                                  {edu.durum}
+                                </span>
+                              </div>
+                              <p className="text-[11px] opacity-90">{edu.egitim_turu}</p>
+                              {isBlacklisted && <div className="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider inline-block">KARA LİSTE</div>}
+                              <div className="text-[10px] opacity-75 flex items-center justify-between gap-2 border-t border-white/5 pt-1 mt-1 font-mono">
+                                <span>👥 {edu.kisi_sayisi} kişi • {edu.yas_grubu}</span>
+                                <span>⏱️ {((Number(edu.teorik_sure_dk || 0) + Number(edu.pratik_sure_dk || 0)) / 60).toFixed(1)} sa</span>
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop Matrix Table View (Visible only on desktop screens) */}
+            <Card className="hidden md:block bg-[var(--fd-surface)] border border-[var(--fd-border)] overflow-hidden rounded-[var(--fd-r)]">
               <div className="overflow-x-auto scrollbar-thin">
                 <table className="w-full min-w-[1200px] border-collapse table-fixed">
                   <thead>
