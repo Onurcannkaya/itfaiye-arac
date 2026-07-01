@@ -182,7 +182,7 @@ export default function VehiclesPage() {
     });
   }, [personnel]);
 
-  const handleUpdateResponsibles = async (plaka: string, updateData: { sorumlu_sofor_id?: string | null, sorumlu_er_id?: string | null }) => {
+  const handleUpdateResponsibles = async (plaka: string, updateData: any) => {
     try {
       const { error } = await api.update('vehicles', updateData, { plaka });
       if (error) throw new Error(error);
@@ -764,36 +764,112 @@ export default function VehiclesPage() {
               </div>
 
               {/* Middle Column: Sorumlular */}
-              <div className="space-y-3.5 border-r border-[var(--fd-border)]/40 pr-0 lg:pr-6">
-                <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider block font-mono">Sorumlu Personel</span>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[11px] text-[var(--fd-text3)] mb-1 block">Sorumlu Şoför</label>
-                    <select
-                      value={v.sorumlu_sofor_id || ""}
-                      disabled={!canEdit}
-                      onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_sofor_id: e.target.value || null })}
-                      className="w-full h-9 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-xs text-[var(--fd-text)] px-2 focus:outline-none cursor-pointer"
-                    >
-                      <option value="">Şoför Atanmadı</option>
-                      {drivers.map(d => (
-                        <option key={d.id} value={d.id}>{d.ad} {d.soyad} ({d.sicil_no})</option>
-                      ))}
-                    </select>
+              <div className="space-y-3.5 border-r border-[var(--fd-border)]/40 pr-0 lg:pr-6 max-h-[290px] overflow-y-auto pr-1">
+                <span className="text-[10px] font-bold text-[var(--fd-text3)] uppercase tracking-wider block font-mono">🔒 POSTALARA GÖRE SORUMLULAR</span>
+                <div className="space-y-4">
+                  {/* Posta 1 */}
+                  <div className="border border-[var(--fd-border)]/60 rounded-xl p-2.5 space-y-2 bg-[var(--fd-surface2)]/20">
+                    <span className="text-[10px] font-bold text-[var(--fd-accent)] uppercase block">1. POSTA</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-[var(--fd-text3)] mb-1 block">Şoför</label>
+                        <select
+                          value={v.sorumlu_sofor_id_p1 || ""}
+                          disabled={!canEdit}
+                          onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_sofor_id_p1: e.target.value || null, sorumlu_sofor_id: e.target.value || null })}
+                          className="w-full h-8 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[11px] text-[var(--fd-text)] px-1.5 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Atanmadı</option>
+                          {drivers.map(d => (
+                            <option key={d.id} value={d.id}>{d.ad} {d.soyad}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-[var(--fd-text3)] mb-1 block">Er</label>
+                        <select
+                          value={v.sorumlu_er_id_p1 || ""}
+                          disabled={!canEdit}
+                          onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_er_id_p1: e.target.value || null, sorumlu_er_id: e.target.value || null })}
+                          className="w-full h-8 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[11px] text-[var(--fd-text)] px-1.5 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Atanmadı</option>
+                          {ers.map(er => (
+                            <option key={er.id} value={er.id}>{er.ad} {er.soyad}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[11px] text-[var(--fd-text3)] mb-1 block">Sorumlu Er</label>
-                    <select
-                      value={v.sorumlu_er_id || ""}
-                      disabled={!canEdit}
-                      onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_er_id: e.target.value || null })}
-                      className="w-full h-9 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-xs text-[var(--fd-text)] px-2 focus:outline-none cursor-pointer"
-                    >
-                      <option value="">Er Atanmadı</option>
-                      {ers.map(er => (
-                        <option key={er.id} value={er.id}>{er.ad} {er.soyad} ({er.sicil_no})</option>
-                      ))}
-                    </select>
+
+                  {/* Posta 2 */}
+                  <div className="border border-[var(--fd-border)]/60 rounded-xl p-2.5 space-y-2 bg-[var(--fd-surface2)]/20">
+                    <span className="text-[10px] font-bold text-[var(--fd-accent)] uppercase block">2. POSTA</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-[var(--fd-text3)] mb-1 block">Şoför</label>
+                        <select
+                          value={v.sorumlu_sofor_id_p2 || ""}
+                          disabled={!canEdit}
+                          onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_sofor_id_p2: e.target.value || null })}
+                          className="w-full h-8 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[11px] text-[var(--fd-text)] px-1.5 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Atanmadı</option>
+                          {drivers.map(d => (
+                            <option key={d.id} value={d.id}>{d.ad} {d.soyad}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-[var(--fd-text3)] mb-1 block">Er</label>
+                        <select
+                          value={v.sorumlu_er_id_p2 || ""}
+                          disabled={!canEdit}
+                          onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_er_id_p2: e.target.value || null })}
+                          className="w-full h-8 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[11px] text-[var(--fd-text)] px-1.5 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Atanmadı</option>
+                          {ers.map(er => (
+                            <option key={er.id} value={er.id}>{er.ad} {er.soyad}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Posta 3 */}
+                  <div className="border border-[var(--fd-border)]/60 rounded-xl p-2.5 space-y-2 bg-[var(--fd-surface2)]/20">
+                    <span className="text-[10px] font-bold text-[var(--fd-accent)] uppercase block">3. POSTA</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-[var(--fd-text3)] mb-1 block">Şoför</label>
+                        <select
+                          value={v.sorumlu_sofor_id_p3 || ""}
+                          disabled={!canEdit}
+                          onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_sofor_id_p3: e.target.value || null })}
+                          className="w-full h-8 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[11px] text-[var(--fd-text)] px-1.5 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Atanmadı</option>
+                          {drivers.map(d => (
+                            <option key={d.id} value={d.id}>{d.ad} {d.soyad}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-[var(--fd-text3)] mb-1 block">Er</label>
+                        <select
+                          value={v.sorumlu_er_id_p3 || ""}
+                          disabled={!canEdit}
+                          onChange={(e) => handleUpdateResponsibles(v.plaka, { sorumlu_er_id_p3: e.target.value || null })}
+                          className="w-full h-8 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[11px] text-[var(--fd-text)] px-1.5 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Atanmadı</option>
+                          {ers.map(er => (
+                            <option key={er.id} value={er.id}>{er.ad} {er.soyad}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -31,6 +31,12 @@ export interface Vehicle {
   current_branch?: string;
   sorumlu_sofor_id?: string | null;
   sorumlu_er_id?: string | null;
+  sorumlu_sofor_id_p1?: string | null;
+  sorumlu_er_id_p1?: string | null;
+  sorumlu_sofor_id_p2?: string | null;
+  sorumlu_er_id_p2?: string | null;
+  sorumlu_sofor_id_p3?: string | null;
+  sorumlu_er_id_p3?: string | null;
 }
 
 
