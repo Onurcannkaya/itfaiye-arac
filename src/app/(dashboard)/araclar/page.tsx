@@ -819,7 +819,7 @@ export default function VehiclesPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-y-auto pb-[calc(8rem+env(safe-area-inset-bottom))] space-y-6">
+    <div className="space-y-6 w-full max-w-full pb-12 animate-in fade-in duration-300">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[var(--fd-border)] pb-5">
         <div>
