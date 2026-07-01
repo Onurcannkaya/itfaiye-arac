@@ -824,7 +824,7 @@ function VehicleInventoryTab() {
 
   return (
     <PageGuard pageId="envanter">
-      <div className="flex flex-col min-h-screen space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8">
+      <div className="space-y-6 w-full max-w-full pb-12 animate-in fade-in duration-300">
         
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[var(--fd-border)] pb-4 print:hidden gap-4">
@@ -1934,7 +1934,7 @@ export default function EnvanterPage() {
 
   return (
     <PageGuard pageId="envanter">
-      <div className="flex flex-col min-h-screen space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-8">
+      <div className="space-y-6 w-full max-w-full pb-12 animate-in fade-in duration-300">
         
         {/* Siberian-matte Top-level Tabs */}
         <div className="flex gap-2.5 p-1 bg-[var(--fd-surface2)] backdrop-blur-lg rounded-2xl border border-white/5 self-start print:hidden">
