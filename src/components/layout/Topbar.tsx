@@ -575,9 +575,7 @@ export function Topbar() {
       <div className="flex items-center gap-3.5 shrink-0">
         {/* Mobile Title */}
         <div className="flex items-center md:hidden space-x-2 shrink-0">
-          <div className="bg-[var(--fd-accent)] p-1 rounded text-white">
-             <Flame size={16} strokeWidth={2.5} />
-          </div>
+          <Image src="/logo-itfaiye.png" alt="Sivas İtfaiyesi" width={24} height={24} className="object-contain rounded-full" />
           <h1 className="text-[14px] font-bold tracking-tight text-[var(--fd-text)]">Sivas İtfaiyesi</h1>
         </div>
 
@@ -609,10 +607,11 @@ export function Topbar() {
         <div className="relative" ref={themeRef}>
           <button 
             onClick={() => setIsThemeDrawerOpen(!isThemeDrawerOpen)}
-            className="hidden md:flex items-center gap-2 h-9 px-3.5 border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] cursor-pointer font-semibold text-[calc(var(--fd-fs)*0.85)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] transition-colors"
+            className="flex items-center justify-center w-9 h-9 md:w-auto md:h-9 md:px-3.5 border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] cursor-pointer hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] transition-colors"
             title="Görünümü özelleştir"
           >
-            <Sliders size={16} /><span>Tema</span>
+            <Sliders size={16} />
+            <span className="hidden md:inline md:ml-1.5 text-[calc(var(--fd-fs)*0.85)] font-semibold">Tema</span>
           </button>
           {isThemeDrawerOpen && (
             <ThemeDrawer onClose={() => setIsThemeDrawerOpen(false)} />
