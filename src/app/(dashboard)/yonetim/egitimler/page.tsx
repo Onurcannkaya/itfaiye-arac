@@ -1397,10 +1397,11 @@ export default function EgitimlerPage() {
         {/* Sekme Butonları */}
         <div className="border-b border-[var(--fd-border)] pb-2 pt-1">
           <div className="flex flex-wrap bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] border border-[var(--fd-border)] gap-1 w-full">
-            <button
+            <Button
               onClick={() => setActiveTab('requests')}
+              variant={activeTab === 'requests' ? 'default' : 'ghost'}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center",
                 activeTab === 'requests'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1408,11 +1409,12 @@ export default function EgitimlerPage() {
             >
               <span>📋</span>
               <span><span className="hidden sm:inline">Kurumsal </span>Talepler ({trainingRequests.length})</span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('calendar')}
+              variant={activeTab === 'calendar' ? 'default' : 'ghost'}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center",
                 activeTab === 'calendar'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1420,11 +1422,12 @@ export default function EgitimlerPage() {
             >
               <span>📅</span>
               <span><span className="hidden sm:inline">Teşkilat </span>Programı</span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('blacklist')}
+              variant={activeTab === 'blacklist' ? 'default' : 'ghost'}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center",
                 activeTab === 'blacklist'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1432,11 +1435,12 @@ export default function EgitimlerPage() {
             >
               <span>🚫</span>
               <span>Kara Liste<span className="hidden sm:inline"> & Sorgu</span></span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('analytics')}
+              variant={activeTab === 'analytics' ? 'default' : 'ghost'}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center",
                 activeTab === 'analytics'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1444,11 +1448,12 @@ export default function EgitimlerPage() {
             >
               <span>📊</span>
               <span>Analiz<span className="hidden sm:inline"> Paneli</span></span>
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('temel')}
+              variant={activeTab === 'temel' ? 'default' : 'ghost'}
               className={cn(
-                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs md:text-sm font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer focus:outline-none text-center",
+                "flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-[10px] sm:text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center",
                 activeTab === 'temel'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1456,7 +1461,7 @@ export default function EgitimlerPage() {
             >
               <span>🎓</span>
               <span><span className="hidden sm:inline">Personel </span>Temel Eğitim<span className="hidden sm:inline">i</span></span>
-            </button>
+            </Button>
           </div>
         </div>
 
