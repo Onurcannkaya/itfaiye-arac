@@ -1355,7 +1355,7 @@ export default function VehicleDetailPage() {
         {/* Envanter Listesi + Audit Trail */}
         <div className="md:col-span-2 space-y-4">
           <Card className="border border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)]">
-             <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface)] sticky top-0 z-40 shadow-[var(--fd-shadow-sm)]">
+             <CardHeader className="pb-[calc(var(--fd-sp)*1.5)] border-b border-[var(--fd-border)] bg-[var(--fd-surface)]">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center space-x-2">
                     <span className="w-2 h-2 rounded-full bg-[var(--fd-accent)] animate-pulse"></span>
@@ -1367,36 +1367,39 @@ export default function VehicleDetailPage() {
                         <>
                           <button
                             onClick={handleOpenAddModal}
-                            className="min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--fd-surface)] text-cyan-300 border border-cyan-500/50 shadow-[var(--fd-shadow)] hover:shadow-[var(--fd-shadow)] hover:bg-cyan-500/30 hover:#ffffff transition-all font-mono uppercase tracking-wider"
+                            className="min-h-[44px] w-11 md:w-auto flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--fd-surface)] text-[var(--fd-accent)] border border-[var(--fd-accent)]/50 shadow-[var(--fd-shadow-sm)] hover:bg-[var(--fd-accent)]/10 transition-all font-mono uppercase tracking-wider"
+                            title="Yeni Ekipman"
                           >
-                            <Plus className="w-3.5 h-3.5 text-[var(--fd-text)] " />
-                            Yeni Ekipman
+                            <Plus className="w-3.5 h-3.5 text-[var(--fd-accent)]" />
+                            <span className="hidden sm:inline">Yeni Ekipman</span>
                           </button>
                           <button
                             onClick={() => setIsEditingList(!isEditingList)}
                             className={cn(
-                              "min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all font-mono uppercase tracking-wider border shadow-md",
+                              "min-h-[44px] w-11 md:w-auto flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all font-mono uppercase tracking-wider border shadow-md",
                               isEditingList
-                                ? "bg-[var(--fd-amber)]/25 text-amber-300 border-[var(--fd-amber)]/60 shadow-[var(--fd-shadow)] hover:shadow-[var(--fd-shadow)] hover:bg-[var(--fd-amber)]/35 hover:text-amber-200"
-                                : "bg-[var(--fd-surface)] text-[var(--fd-text2)] border-[var(--fd-border-strong)] hover:bg-[var(--fd-surface2)] hover:border-[var(--fd-border-strong)] shadow-[var(--fd-shadow)]"
+                                ? "bg-[var(--fd-amber)]/15 text-[var(--fd-amber)] border-[var(--fd-amber)]/40 hover:bg-[var(--fd-amber)]/25"
+                                : "bg-[var(--fd-surface)] text-[var(--fd-text2)] border-[var(--fd-border)] hover:bg-[var(--fd-surface2)]"
                             )}
+                            title={isEditingList ? "Kapat" : "Düzenle"}
                           >
-                            <Wrench className={cn("w-3.5 h-3.5", isEditingList ? "text-[var(--fd-text)] " : "text-[var(--fd-text2)]")} />
-                            {isEditingList ? "Kapat" : "Düzenle"}
+                            <Wrench className={cn("w-3.5 h-3.5", isEditingList ? "text-[var(--fd-amber)]" : "text-[var(--fd-text2)]")} />
+                            <span className="hidden sm:inline">{isEditingList ? "Kapat" : "Düzenle"}</span>
                           </button>
                         </>
                       )}
                       <button
                         onClick={() => setShowTimeline(!showTimeline)}
                         className={cn(
-                          "min-h-[44px] flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors",
+                          "min-h-[44px] w-11 md:w-auto flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border",
                           showTimeline
                             ? "bg-[var(--fd-surface)] text-[var(--fd-text)] border border-[var(--fd-border)]"
-                            : "bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] border border-[var(--fd-accent)] text-[var(--fd-text3)] hover:bg-[var(--fd-surface2)] border border-border/50"
+                            : "bg-[var(--fd-accent-soft)] text-[var(--fd-accent)] border border-[var(--fd-accent)]/30 hover:bg-[var(--fd-accent-soft2)]"
                         )}
+                        title="Vardiya Geçmişi"
                       >
                         <History className="w-3.5 h-3.5" />
-                        Geçmiş
+                        <span className="hidden sm:inline">Geçmiş</span>
                       </button>
                     </div>
                   )}
