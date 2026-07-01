@@ -827,36 +827,58 @@ export default function PersonelYonetimPage() {
             İtfaiye personeli kayıtları, yetkilendirme ve rol atama işlemleri.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
             onClick={() => setIsAnalysisOpen(true)} 
             variant="outline" 
             size="sm" 
             className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border"
+            title="Görev Analizi"
           >
-            <Activity className="w-3.5 h-3.5 text-rose-500" /> Görev Analizi
+            <Activity className="w-3.5 h-3.5 text-rose-500" />
+            <span className="hidden sm:inline">Görev Analizi</span>
           </Button>
           <Button 
             onClick={() => setIsLicenseDashboardOpen(true)} 
             variant="outline" 
             size="sm" 
             className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border"
+            title="Ehliyet Durumları"
           >
-            <Truck className="w-3.5 h-3.5 text-cyan-400" /> Ehliyet Durumları
+            <Truck className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Ehliyet Durumları</span>
           </Button>
           {currentUser?.rol === 'Admin' && (
             <Link href="/yonetim/personel/gecici-sifreler">
-              <Button variant="outline" size="sm" className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border">
-                <Key className="w-3.5 h-3.5 text-amber-500" /> Geçici Şifreler
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border"
+                title="Geçici Şifreler"
+              >
+                <Key className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden sm:inline">Geçici Şifreler</span>
               </Button>
             </Link>
           )}
-          <Button onClick={fetchPersonnel} variant="secondary" size="sm" className="gap-1.5 h-9 text-xs rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)]">
-            <RefreshCcw className="w-3.5 h-3.5" /> Yenile
+          <Button 
+            onClick={fetchPersonnel} 
+            variant="secondary" 
+            size="sm" 
+            className="gap-1.5 h-9 text-xs rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] border border-[var(--fd-border)]"
+            title="Yenile"
+          >
+            <RefreshCcw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Yenile</span>
           </Button>
-          <Button onClick={() => setIsAdding(!isAdding)} className="shrink-0 gap-1.5 h-9 text-xs rounded-[var(--fd-r-sm)]">
+          <Button 
+            onClick={() => setIsAdding(!isAdding)} 
+            className="shrink-0 gap-1.5 h-9 text-xs rounded-[var(--fd-r-sm)]"
+            title={isAdding ? "İptal" : "Yeni Personel Ekle"}
+          >
             {isAdding ? <Settings2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-            {isAdding ? "İptal" : "Yeni Personel Ekle"}
+            <span className="hidden sm:inline">{isAdding ? "İptal" : "Yeni Personel Ekle"}</span>
+            <span className="sm:hidden">{isAdding ? "İptal" : "Ekle"}</span>
           </Button>
         </div>
       </div>
@@ -1283,7 +1305,7 @@ export default function PersonelYonetimPage() {
                   </Link>
 
                   {/* Toggle Permissions & Edit Button */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ml-12 xl:ml-0 overflow-x-auto pb-1 xl:pb-0 hide-scrollbar">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-5 mt-2 xl:mt-0 ml-12 xl:ml-0">
                     <button 
                       onClick={() => openEditModal(person)} 
                       className="flex items-center justify-center gap-1 cursor-pointer bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-accent-soft2)] px-2 py-1 rounded-[var(--fd-r-sm)] text-[11px] font-bold transition-colors"
@@ -1580,7 +1602,7 @@ export default function PersonelYonetimPage() {
           </DialogHeader>
 
           {/* Quick Stats Grid */}
-          <div className="p-3 bg-[var(--fd-surface2)] border-b border-[var(--fd-border)] shrink-0 grid grid-cols-4 gap-2 text-center">
+          <div className="p-3 bg-[var(--fd-surface2)] border-b border-[var(--fd-border)] shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
             <div className="bg-[var(--fd-surface3)] p-2 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)]">
               <p className="text-[10px] text-muted-foreground uppercase font-bold">Toplam Şoför</p>
               <p className="text-base font-bold text-[var(--fd-text)] mt-0.5">{licenseStats.total}</p>
@@ -1711,9 +1733,9 @@ export default function PersonelYonetimPage() {
             <p className="text-[11px] text-[var(--fd-text3)] mt-0.5 font-sans">Müfrezeler arası görev dağılım dengesi ve en az göreve çıkan personel listesi (son 30 gün)</p>
           </DialogHeader>
           
-          <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
+          <div className="flex-1 overflow-y-auto md:overflow-hidden flex flex-col md:flex-row min-h-0">
             {/* Left Section: Rank list */}
-            <div className="w-full md:w-1/2 border-r border-[var(--fd-border)] flex flex-col min-h-0 bg-[var(--fd-surface2)]/10">
+            <div className="w-full md:w-1/2 h-[250px] md:h-full border-b md:border-b-0 md:border-r border-[var(--fd-border)] flex flex-col min-h-0 bg-[var(--fd-surface2)]/10 shrink-0">
               <div className="p-3 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-xs font-bold text-[var(--fd-text3)] uppercase tracking-wider flex items-center justify-between font-sans">
                 <span>Personel (Azdan Çoka)</span>
                 <span className="text-[10px] lowercase text-[var(--fd-text3)]">30 günlük görev</span>
