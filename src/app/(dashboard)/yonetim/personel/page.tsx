@@ -59,8 +59,48 @@ const normalizeTextForSearch = (str: string): string => {
     .replace(/ş/g, "s").replace(/Ş/g, "s")
     .replace(/ö/g, "o").replace(/Ö/g, "o")
     .replace(/ç/g, "c").replace(/Ç/g, "c")
-    .toLowerCase();
+    .toLowerCase()
+    .trim();
 }
+
+const COMBINED_JOBS = [
+  { label: "İtfaiye Eri (Kullanıcı)", role: "User", unvan: "Er" },
+  { label: "Şoför (Kullanıcı)", role: "User", unvan: "Şoför" },
+  { label: "Posta Başşoförü (Kullanıcı)", role: "User", unvan: "Pos.Baş.Şof." },
+  { label: "Vardiya Çavuşu (Grup Sorumlusu)", role: "Shift_Leader", unvan: "Çvş." },
+  { label: "Başçavuş (Grup Sorumlusu)", role: "Shift_Leader", unvan: "Baş.Çvş." },
+  { label: "Eğitim Çavuşu (Grup Sorumlusu)", role: "Shift_Leader", unvan: "Eğitim Çavuşu" },
+  { label: "Baş Şoför (Yönetici)", role: "Editor", unvan: "Baş Şoför" },
+  { label: "Grup Amiri (Yönetici)", role: "Editor", unvan: "Amir" },
+  { label: "İtfaiye Müdürü (Admin)", role: "Admin", unvan: "Müdür" },
+  { label: "Santral Operatörü (Kullanıcı)", role: "User", unvan: "Santral" },
+  { label: "Yazı İşleri Sorumlusu (Grup Sorumlusu)", role: "Shift_Leader", unvan: "Yazı İşleri" },
+  { label: "İdari İşler Sorumlusu (Yönetici)", role: "Editor", unvan: "İdari İşler" },
+  { label: "Sistem Geliştirici (Admin)", role: "Admin", unvan: "Geliştirici" },
+  { label: "Kalem Personeli (Kullanıcı)", role: "User", unvan: "Kalem" },
+  { label: "Memur (Kullanıcı)", role: "User", unvan: "Memur" },
+  { label: "Çay Ocağı Sorumlusu (Kullanıcı)", role: "User", unvan: "Çay Ocağı" },
+];
+
+const getCombinedOptions = (currentRole?: string | null, currentUnvan?: string | null) => {
+  const list = [...COMBINED_JOBS];
+  const role = currentRole || "User";
+  const unvan = currentUnvan || "Er";
+  
+  const exists = list.some(item => 
+    item.role === role && 
+    (item.unvan === unvan || (item.unvan === "Çvş." && unvan === "Çvş"))
+  );
+  
+  if (!exists) {
+    list.push({
+      label: `${unvan} (${role === 'Admin' ? 'Admin' : role === 'Editor' ? 'Yönetici' : role === 'Shift_Leader' ? 'Grup Sorumlusu' : 'Kullanıcı'})`,
+      role: role,
+      unvan: unvan
+    });
+  }
+  return list;
+};
 
 export default function PersonelYonetimPage() {
   const { user: currentUser } = useAuthStore()
@@ -1392,33 +1432,21 @@ export default function PersonelYonetimPage() {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Görev / Rol</label>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Görev / Ünvan</label>
                   <select 
                     className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
+                    value={`${editRole}:${editUnvan}`}
+                    onChange={(e) => {
+                      const [role, unvan] = e.target.value.split(":");
+                      setEditRole(role);
+                      setEditUnvan(unvan);
+                    }}
                   >
-                    <option value="Admin">Sistem Yöneticisi (Admin)</option>
-                    <option value="Editor">Amir (Editor)</option>
-                    <option value="Shift_Leader">Çavuş (Shift_Leader)</option>
-                    <option value="User">İtfaiye Eri (User)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Ünvan / Görev Tipi</label>
-                  <select 
-                    className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
-                    value={editUnvan}
-                    onChange={(e) => setEditUnvan(e.target.value)}
-                  >
-                    <option value="Er">İtfaiye Eri</option>
-                    <option value="Şoför">Şoför</option>
-                    <option value="Çvş">Çavuş (Çvş)</option>
-                    <option value="Pos.Baş.Şof.">Posta Başşoförü</option>
-                    <option value="Eğitim Çavuşu">Eğitim Çavuşu</option>
-                    <option value="Amir">Amir</option>
-                    <option value="Müdür">Müdür</option>
+                    {getCombinedOptions(selectedPerson.rol, selectedPerson.unvan).map((opt) => (
+                      <option key={`${opt.role}:${opt.unvan}`} value={`${opt.role}:${opt.unvan}`}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
