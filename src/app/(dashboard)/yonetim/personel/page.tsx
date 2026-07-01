@@ -1206,112 +1206,124 @@ export default function PersonelYonetimPage() {
               return (
                 <div key={person.sicil_no} className="p-2 px-3 hover:bg-[var(--fd-surface2)]/40 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
                   
-                  {/* Info Section - Clickable Link to Profile */}
-                  <Link 
-                    href={`/yonetim/personel/${person.sicil_no}`} 
-                    className="flex items-center gap-3 w-full xl:w-2/5 shrink-0 group cursor-pointer"
-                  >
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border-2 transition-transform group-hover:scale-105",
-                      isAdmin ? "bg-primary/10 text-primary border-primary/20" : 
-                      isLeader ? "bg-warning/10 text-warning border-warning/20" : 
-                      "bg-muted border-border"
-                    )}>
-                      {person.ad.charAt(0)}{person.soyad.charAt(0)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-[var(--fd-text)] truncate">{person.ad} {person.soyad}</span>
-                        {(() => {
-                          const assignedVehicle = vehicles.find(v => v.sorumlu_sofor_id === person.id || v.sorumlu_er_id === person.id);
-                          if (!assignedVehicle) return null;
-                          return (
-                            <Badge variant="outline" className="bg-[var(--fd-accent-soft)] text-[var(--fd-accent)] border-[var(--fd-accent-soft2)] text-[9px] px-1.5 py-0 font-bold font-mono flex items-center gap-1 shadow-[var(--fd-shadow-sm)] shrink-0">
-                              <Truck className="w-2.5 h-2.5" />
-                              {assignedVehicle.plaka}
+                  {/* Info Section Header Wrapper (Flex row to place Edit on right for mobile) */}
+                  <div className="flex items-center justify-between gap-3 w-full xl:w-2/5 shrink-0">
+                    {/* Info Section - Clickable Link to Profile */}
+                    <Link 
+                      href={`/yonetim/personel/${person.sicil_no}`} 
+                      className="flex items-center gap-3 flex-1 min-w-0 group cursor-pointer"
+                    >
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border-2 transition-transform group-hover:scale-105",
+                        isAdmin ? "bg-primary/10 text-primary border-primary/20" : 
+                        isLeader ? "bg-warning/10 text-warning border-warning/20" : 
+                        "bg-muted border-border"
+                      )}>
+                        {person.ad.charAt(0)}{person.soyad.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-[var(--fd-text)] truncate">{person.ad} {person.soyad}</span>
+                          {(() => {
+                            const assignedVehicle = vehicles.find(v => v.sorumlu_sofor_id === person.id || v.sorumlu_er_id === person.id);
+                            if (!assignedVehicle) return null;
+                            return (
+                              <Badge variant="outline" className="bg-[var(--fd-accent-soft)] text-[var(--fd-accent)] border-[var(--fd-accent-soft2)] text-[9px] px-1.5 py-0 font-bold font-mono flex items-center gap-1 shadow-[var(--fd-shadow-sm)] shrink-0">
+                                <Truck className="w-2.5 h-2.5" />
+                                {assignedVehicle.plaka}
+                              </Badge>
+                            );
+                          })()}
+                          {isLeader && (
+                            <Badge className="bg-[rgba(245,158,11,0.08)] text-[var(--fd-amber)] border border-[rgba(245,158,11,0.2)] text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
+                              <Star className="w-2.5 h-2.5 fill-warning" />
+                              {person.unvan}
                             </Badge>
-                          );
-                        })()}
-                        {isLeader && (
-                          <Badge className="bg-[rgba(245,158,11,0.08)] text-[var(--fd-amber)] border border-[rgba(245,158,11,0.2)] text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
-                            <Star className="w-2.5 h-2.5 fill-warning" />
-                            {person.unvan}
-                          </Badge>
-                        )}
-                        {isAdmin && !isLeader && (
-                          <Badge className="bg-[rgba(220,38,38,0.08)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.2)] text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
-                            <Shield className="w-2.5 h-2.5" />
-                            {person.unvan}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-[var(--fd-text3)] mt-0.5 font-mono">
-                        <Key className="w-3 h-3" />
-                        {person.sicil_no}
-                        <span className="opacity-50">|</span>
-                        <span>Rol: {person.rol}</span>
-                        {!isLeader && !isAdmin && (
-                          <>
-                            <span className="opacity-50">|</span>
-                            <span>{person.unvan}</span>
-                          </>
-                        )}
-                        <span className="opacity-50">|</span>
-                        <span>Posta: {person.posta_no || 1}</span>
-                        <span className="opacity-50">|</span>
-                        <span className={cn(
-                          "font-medium",
-                          person.durum === 'İzinli' ? "text-warning" : 
-                          person.durum === 'Raporlu' ? "text-danger" : 
-                          "text-success"
-                        )}>
-                          {person.durum || 'Görevde'}
-                        </span>
-                      </div>
-                      
-                      {/* Durum Sertifika Badges */}
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {(() => {
-                          const cert = getCertStatus(person.sicil_no, 'Ehliyet')
-                          return (
-                            <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
-                              <Truck className="w-2.5 h-2.5" />
-                              <span>Ağır Vasıta: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
-                            </span>
-                          )
-                        })()}
+                          )}
+                          {isAdmin && !isLeader && (
+                            <Badge className="bg-[rgba(220,38,38,0.08)] text-[var(--fd-danger)] border border-[rgba(220,38,38,0.2)] text-[9px] px-1.5 py-0 uppercase flex items-center gap-1">
+                              <Shield className="w-2.5 h-2.5" />
+                              {person.unvan}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-[var(--fd-text3)] mt-0.5 font-mono">
+                          <Key className="w-3 h-3" />
+                          {person.sicil_no}
+                          <span className="opacity-50">|</span>
+                          <span>Rol: {person.rol}</span>
+                          {!isLeader && !isAdmin && (
+                            <>
+                              <span className="opacity-50">|</span>
+                              <span>{person.unvan}</span>
+                            </>
+                          )}
+                          <span className="opacity-50">|</span>
+                          <span>Posta: {person.posta_no || 1}</span>
+                          <span className="opacity-50">|</span>
+                          <span className={cn(
+                            "font-medium",
+                            person.durum === 'İzinli' ? "text-warning" : 
+                            person.durum === 'Raporlu' ? "text-danger" : 
+                            "text-success"
+                          )}>
+                            {person.durum || 'Görevde'}
+                          </span>
+                        </div>
+                        
+                        {/* Durum Sertifika Badges */}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {(() => {
+                            const cert = getCertStatus(person.sicil_no, 'Ehliyet')
+                            return (
+                              <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
+                                <Truck className="w-2.5 h-2.5" />
+                                <span>Ağır Vasıta: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
+                              </span>
+                            )
+                          })()}
 
-                        {(() => {
-                          const cert = getCertStatus(person.sicil_no, 'İlkyardım')
-                          return (
-                            <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
-                              <HeartPulse className="w-2.5 h-2.5" />
-                              <span>İlk Yardım: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
-                            </span>
-                          )
-                        })()}
+                          {(() => {
+                            const cert = getCertStatus(person.sicil_no, 'İlkyardım')
+                            return (
+                              <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
+                                <HeartPulse className="w-2.5 h-2.5" />
+                                <span>İlk Yardım: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
+                              </span>
+                            )
+                          })()}
 
-                        {(() => {
-                          const cert = getCertStatus(person.sicil_no, 'SCBA')
-                          return (
-                            <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
-                              <Wind className="w-2.5 h-2.5" />
-                              <span>SCBA: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
-                            </span>
-                          )
-                        })()}
+                          {(() => {
+                            const cert = getCertStatus(person.sicil_no, 'SCBA')
+                            return (
+                              <span className={cn("text-[9px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1", cert.color)}>
+                                <Wind className="w-2.5 h-2.5" />
+                                <span>SCBA: {cert.status === 'missing' ? 'Yok' : cert.label}</span>
+                              </span>
+                            )
+                          })()}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
 
-                  {/* Toggle Permissions & Edit Button */}
+                    {/* Edit Button visible on mobile, hidden on desktop/xl */}
+                    <button 
+                      onClick={() => openEditModal(person)} 
+                      className="xl:hidden h-8.5 px-3 flex items-center justify-center gap-1.5 cursor-pointer bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-accent-soft2)] rounded-lg text-xs font-bold transition-all shrink-0"
+                    >
+                      <Settings2 className="w-4 h-4" />
+                      <span>Düzenle</span>
+                    </button>
+                  </div>
+
+                  {/* Toggle Permissions Switches (Edit Button only visible on xl here) */}
                   <div className="flex flex-wrap items-center gap-3 sm:gap-5 mt-2 xl:mt-0 ml-12 xl:ml-0">
                     <button 
                       onClick={() => openEditModal(person)} 
-                      className="flex items-center justify-center gap-1 cursor-pointer bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-accent-soft2)] px-2 py-1 rounded-[var(--fd-r-sm)] text-[11px] font-bold transition-colors"
+                      className="hidden xl:flex h-9 px-3.5 items-center justify-center gap-1.5 cursor-pointer bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent)] text-[var(--fd-accent)] hover:text-[#ffffff] border border-[var(--fd-accent-soft2)] rounded-lg text-xs font-bold transition-all"
                     >
                       <Settings2 className="w-4 h-4" />
-                      <span className="text-sm font-medium">Düzenle</span>
+                      <span>Düzenle</span>
                     </button>
                     <Switch
                       checked={perms.view_only}
