@@ -1647,7 +1647,7 @@ export default function EgitimlerPage() {
             </div>
 
             {/* Mobile Day Selector Tabs (Visible only on mobile/tablet, exactly fitting without scroll) */}
-            <div className="grid grid-cols-7 gap-1 bg-[var(--fd-surface2)] p-1 rounded-xl border border-[var(--fd-border)] shrink-0 mb-4">
+            <div className="grid md:hidden grid-cols-7 gap-1 bg-[var(--fd-surface2)] p-1 rounded-xl border border-[var(--fd-border)] shrink-0 mb-4">
               {daysOfWeek.map((day, idx) => {
                 const isToday = getYYYYMMDD(day) === getYYYYMMDD(new Date())
                 const isSelected = selectedMobileDayIdx === idx
