@@ -1448,8 +1448,19 @@ export default function DashboardPage() {
                  }
                }
 
+               let href = "/yonetim/olaylar";
+               if (activity.id.startsWith("ext-")) {
+                 href = "/yonetim/gorevler";
+               } else if (activity.id.startsWith("mnt-")) {
+                 href = "/yonetim/arac-bakim";
+               } else if (activity.id.startsWith("hyd-")) {
+                 href = "/yonetim/harita";
+               } else if (activity.id.startsWith("trn-")) {
+                 href = "/yonetim/egitimler";
+               }
+
                return (
-                 <div key={i} className="flex justify-between items-center py-3.5 border-b border-[var(--fd-border-strong)]/30 last:border-0 hover:bg-[var(--fd-surface2)] transition-colors -mx-[calc(var(--fd-sp)*2.5)] px-[calc(var(--fd-sp)*2.5)] cursor-pointer">
+                 <Link key={i} href={href} className="flex justify-between items-center py-3.5 border-b border-[var(--fd-border-strong)]/30 last:border-0 hover:bg-[var(--fd-surface2)] transition-colors -mx-[calc(var(--fd-sp)*2.5)] px-[calc(var(--fd-sp)*2.5)] cursor-pointer">
                     <div className="flex items-center gap-3">
                        <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
                        <div>
@@ -1463,8 +1474,8 @@ export default function DashboardPage() {
                        </span>
                        <span className="text-[calc(var(--fd-fs)*0.85)] font-mono text-[var(--fd-text3)] w-12 text-right">{activity.time.split(' ')[0]}</span>
                     </div>
-                 </div>
-               )
+                 </Link>
+                )
              }) : (
                <div className="text-xs text-center py-8 text-[var(--fd-text3)] bg-[var(--fd-surface2)]/50 rounded-lg border border-[var(--fd-border)] border-dashed">
                  Henüz vaka veya aktivite kaydı bulunmuyor.
