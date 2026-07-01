@@ -93,6 +93,7 @@ export default function PersonelYonetimPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPerson, setSelectedPerson] = useState<Personnel | null>(null)
   const [editRole, setEditRole] = useState("User")
+  const [editUnvan, setEditUnvan] = useState("")
   const [editPostaNo, setEditPostaNo] = useState("1")
   const [ehliyetDate, setEhliyetDate] = useState("")
   const [ilkyardimDate, setIlkyardimDate] = useState("")
@@ -524,6 +525,7 @@ export default function PersonelYonetimPage() {
   const openEditModal = (person: Personnel) => {
     setSelectedPerson(person)
     setEditRole(person.rol || "User")
+    setEditUnvan(person.unvan || "Er")
     setEditPostaNo(person.posta_no?.toString() || "1")
 
     const personCerts = certifications.filter(c => c.sicil_no === person.sicil_no)
@@ -640,6 +642,7 @@ export default function PersonelYonetimPage() {
       // 1. Update Role and Posta
       await api.update('personnel', {
         rol: editRole,
+        unvan: editUnvan,
         posta_no: parseInt(editPostaNo, 10),
         posta: `${editPostaNo}. Posta`
       }, { sicil_no: selectedPerson.sicil_no })
@@ -1399,6 +1402,23 @@ export default function PersonelYonetimPage() {
                     <option value="Editor">Amir (Editor)</option>
                     <option value="Shift_Leader">Çavuş (Shift_Leader)</option>
                     <option value="User">İtfaiye Eri (User)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Ünvan / Görev Tipi</label>
+                  <select 
+                    className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
+                    value={editUnvan}
+                    onChange={(e) => setEditUnvan(e.target.value)}
+                  >
+                    <option value="Er">İtfaiye Eri</option>
+                    <option value="Şoför">Şoför</option>
+                    <option value="Çvş">Çavuş (Çvş)</option>
+                    <option value="Pos.Baş.Şof.">Posta Başşoförü</option>
+                    <option value="Eğitim Çavuşu">Eğitim Çavuşu</option>
+                    <option value="Amir">Amir</option>
+                    <option value="Müdür">Müdür</option>
                   </select>
                 </div>
 
