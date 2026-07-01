@@ -534,40 +534,43 @@ export default function UnifiedGorevlerPage() {
         </div>
 
         {/* ═══ Glassmorphism Tabs Trigger ═══ */}
-        <div className="flex border border-[var(--fd-border)] bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] w-full sm:w-fit">
-          <button
+        <div className="flex flex-wrap bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] border border-[var(--fd-border)] gap-1 w-full sm:w-fit">
+          <Button
             onClick={() => setActiveTab('gorevler')}
-            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+            variant={activeTab === 'gorevler' ? 'default' : 'ghost'}
+            className={`flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center ${
               activeTab === 'gorevler'
-                ? 'bg-[var(--fd-accent)]/15 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] shadow-sm'
-                : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
+                ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
             }`}
           >
             <CheckSquare className="w-4 h-4" />
-            Vardiya Görevleri ({pendingTasks.length + completedTasks.length})
-          </button>
-          <button
+            <span><span className="hidden sm:inline">Vardiya </span>Görevleri ({pendingTasks.length + completedTasks.length})</span>
+          </Button>
+          <Button
             onClick={() => setActiveTab('dis_gorevler')}
-            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+            variant={activeTab === 'dis_gorevler' ? 'default' : 'ghost'}
+            className={`flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center ${
               activeTab === 'dis_gorevler'
-                ? 'bg-[var(--fd-accent)]/15 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] shadow-sm'
-                : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
+                ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
             }`}
           >
             <Milestone className="w-4 h-4" />
-            Dış Görevler ({activeMissions.length})
-          </button>
-          <button
+            <span>Dış Görevler ({activeMissions.length})</span>
+          </Button>
+          <Button
             onClick={() => setActiveTab('sablonlar')}
-            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+            variant={activeTab === 'sablonlar' ? 'default' : 'ghost'}
+            className={`flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 h-auto py-2 sm:h-9 sm:py-0 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all cursor-pointer text-center ${
               activeTab === 'sablonlar'
-                ? 'bg-[var(--fd-accent)]/15 border border-[var(--fd-accent)]/30 text-[var(--fd-accent)] shadow-sm'
-                : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
+                ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
+                : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
             }`}
           >
             <ListChecks className="w-4 h-4" />
-            Görev Şablonları ({templates.length})
-          </button>
+            <span><span className="hidden sm:inline">Görev </span>Şablonları ({templates.length})</span>
+          </Button>
         </div>
 
         {/* ═══ TAB 1: GÖREVLER & TESLİM KONTROLLERİ ═══ */}
