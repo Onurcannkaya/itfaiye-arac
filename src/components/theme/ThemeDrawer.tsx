@@ -39,7 +39,7 @@ export function ThemeDrawer({ onClose }: ThemeDrawerProps) {
   ]
 
   return (
-    <div className="absolute right-0 top-[120%] mt-2 w-80 z-50 bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+    <div className="fixed md:absolute inset-x-4 md:inset-x-auto md:right-0 top-20 md:top-[120%] mt-2 w-auto md:w-80 z-50 bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-lg)] rounded-[var(--fd-r)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
       
       {/* Header */}
       <div className="shrink-0 p-3.5 flex items-center justify-between border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]">

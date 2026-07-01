@@ -743,7 +743,7 @@ export function Topbar() {
             </div>
             <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex flex-col text-left cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0"
+              className="flex flex-col justify-center text-left cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0 min-h-[34px]"
             >
               <span className="text-[calc(var(--fd-fs)*0.85)] font-semibold text-[var(--fd-text)] leading-[1.2]">{displayName}</span>
               <span className="text-[calc(var(--fd-fs)*0.72)] text-[var(--fd-text3)] font-medium leading-[1.2] truncate max-w-[120px]">{rolLabel}</span>
