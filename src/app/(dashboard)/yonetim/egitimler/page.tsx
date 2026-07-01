@@ -1395,12 +1395,12 @@ export default function EgitimlerPage() {
         </div>
 
         {/* Sekme Butonları */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-1 border-b border-[var(--fd-border)] pb-2 pt-1">
-          <div className="flex bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] border border-[var(--fd-border)] gap-1">
+        <div className="border-b border-[var(--fd-border)] pb-2 pt-1">
+          <div className="flex flex-wrap bg-[var(--fd-surface2)] p-1 rounded-[var(--fd-r)] border border-[var(--fd-border)] gap-1 w-full">
             <button
               onClick={() => setActiveTab('requests')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-normal sm:whitespace-nowrap cursor-pointer focus:outline-none text-center",
                 activeTab === 'requests'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1411,7 +1411,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('calendar')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-normal sm:whitespace-nowrap cursor-pointer focus:outline-none text-center",
                 activeTab === 'calendar'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1422,7 +1422,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('blacklist')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-normal sm:whitespace-nowrap cursor-pointer focus:outline-none text-center",
                 activeTab === 'blacklist'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1433,7 +1433,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('analytics')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-normal sm:whitespace-nowrap cursor-pointer focus:outline-none text-center",
                 activeTab === 'analytics'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -1444,7 +1444,7 @@ export default function EgitimlerPage() {
             <button
               onClick={() => setActiveTab('temel')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-nowrap cursor-pointer focus:outline-none",
+                "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[var(--fd-r-sm)] transition-all whitespace-normal sm:whitespace-nowrap cursor-pointer focus:outline-none text-center",
                 activeTab === 'temel'
                   ? "bg-[var(--fd-accent)] text-[#ffffff] shadow-[var(--fd-shadow-sm)]"
                   : "text-[var(--fd-text3)] hover:text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]/50"
@@ -2218,21 +2218,21 @@ export default function EgitimlerPage() {
             <div className="flex flex-wrap gap-2 border-b border-[var(--fd-border)] pb-3">
               <Button
                 variant={temelSubTab === 'cizelge' ? 'default' : 'ghost'}
-                className={`font-bold text-xs h-9 rounded-[var(--fd-r-sm)] ${temelSubTab === 'cizelge' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
+                className={`flex-1 sm:flex-none font-bold text-xs h-9 rounded-[var(--fd-r-sm)] justify-center text-center ${temelSubTab === 'cizelge' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
                 onClick={() => setTemelSubTab('cizelge')}
               >
                 📊 Yıllık Eğitim Çizelgesi
               </Button>
               <Button
                 variant={temelSubTab === 'mufredat' ? 'default' : 'ghost'}
-                className={`font-bold text-xs h-9 rounded-[var(--fd-r-sm)] ${temelSubTab === 'mufredat' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
+                className={`flex-1 sm:flex-none font-bold text-xs h-9 rounded-[var(--fd-r-sm)] justify-center text-center ${temelSubTab === 'mufredat' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
                 onClick={() => setTemelSubTab('mufredat')}
               >
                 📖 Eğitim Müfredatı
               </Button>
               <Button
                 variant={temelSubTab === 'sertifika' ? 'default' : 'ghost'}
-                className={`font-bold text-xs h-9 rounded-[var(--fd-r-sm)] ${temelSubTab === 'sertifika' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
+                className={`flex-1 sm:flex-none font-bold text-xs h-9 rounded-[var(--fd-r-sm)] justify-center text-center ${temelSubTab === 'sertifika' ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text3)]'}`}
                 onClick={() => setTemelSubTab('sertifika')}
               >
                 📜 Sertifika Basımı
