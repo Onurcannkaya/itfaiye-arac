@@ -46,6 +46,11 @@ export function MobileNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user } = useAuthStore()
   const isEr = user?.rol === 'User' || user?.unvan === 'İtfaiye Eri' || user?.unvan?.toLowerCase().includes('er')
+  const isManager = !!(user?.rol === 'Admin' || user?.rol === 'Editor' || user?.rol === 'Shift_Leader' || 
+                    user?.unvan === 'Müdür' || user?.unvan === 'Amir' || 
+                    user?.unvan?.toLowerCase().includes('çavuş') || 
+                    user?.unvan?.toLowerCase().includes('çvş') || 
+                    user?.unvan?.toLowerCase().includes('baş'))
 
   // Dynamic status match helper
   const isActive = (href: string, matchStart?: string) => {
@@ -88,7 +93,7 @@ export function MobileNav() {
         { href: "/yonetim/hizmetler", label: "Hizmet Başvuruları", icon: Building, visible: !isEr },
         { href: "/yonetim/olaylar", label: "Olay & Vaka Raporları", icon: FileText, visible: !isEr },
         { href: "/yonetim/yetkiler", label: "Yetki & Rol Matrisi", icon: ShieldAlert, visible: user?.rol === 'Admin' || user?.unvan === 'Müdür' },
-        { href: "/yonetim/raporlar", label: "Sistem Raporları & Loglar", icon: History, visible: !isEr },
+        { href: "/yonetim/raporlar", label: "Sistem Raporları & Loglar", icon: History, visible: isManager },
         { href: "/yonetim/kilavuz", label: "Kullanım Kılavuzu", icon: BookOpen, visible: true },
       ]
     }

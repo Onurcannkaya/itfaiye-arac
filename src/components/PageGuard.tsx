@@ -75,7 +75,7 @@ export default function PageGuard({ pageId, children }: PageGuardProps) {
             } else if (mappedRole === 'Çavuş') {
               setHasPermission(['harita', 'arac_bakim', 'envanter', 'raporlar', 'egitimler', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
             } else if (mappedRole === 'Santral') {
-              setHasPermission(['harita', 'raporlar', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
+              setHasPermission(['harita', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
             } else {
               setHasPermission(['harita', 'envanter', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
             }
@@ -88,7 +88,7 @@ export default function PageGuard({ pageId, children }: PageGuardProps) {
             } else if (mappedRole === 'Çavuş') {
               setHasPermission(['harita', 'arac_bakim', 'envanter', 'raporlar', 'egitimler', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
             } else if (mappedRole === 'Santral') {
-              setHasPermission(['harita', 'raporlar', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
+              setHasPermission(['harita', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
             } else {
               setHasPermission(['harita', 'envanter', 'hizmet_basvurulari', 'gorevler'].includes(pageId));
             }

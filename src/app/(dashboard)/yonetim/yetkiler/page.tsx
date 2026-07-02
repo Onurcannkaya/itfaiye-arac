@@ -24,7 +24,7 @@ const PAGE_METADATA = [
   { id: 'personel_yonetimi', title: 'Personel Yönetimi', desc: 'Sicil kayıtları, aktif vardiya ve yeterlilik atamaları', icon: Users, color: 'text-[#0891b2] bg-[rgba(8,145,178,0.1)]' },
   { id: 'arac_bakim', title: 'Araç Bakım & Garaj', desc: 'Arıza ihbarları, teknik raporlama ve müdür onay adımları', icon: Wrench, color: 'text-[#16a34a] bg-[rgba(22,163,74,0.1)]' },
   { id: 'envanter', title: 'Malzeme Envanteri', desc: 'QR kod üretimi, araç malzeme zimmetleri ve durum sayımları', icon: Combine, color: 'text-[#f59e0b] bg-[rgba(245,158,11,0.1)]' },
-  { id: 'raporlar', title: 'EK-16 Raporları', desc: 'Merkezi log sistemi, geçmiş denetimler ve sorun analizleri', icon: FileText, color: 'text-[#7c3aed] bg-[rgba(124,58,237,0.1)]' },
+  { id: 'raporlar', title: 'Sistem Raporları & Loglar', desc: 'Merkezi log sistemi, geçmiş denetimler, personel ve sistem hareket logları', icon: FileText, color: 'text-[#7c3aed] bg-[rgba(124,58,237,0.1)]' },
   { id: 'egitimler', title: 'Eğitim & Faaliyetler', desc: 'Resmi imza sirkülü eğitim raporları, tatbikat ve ziyaret kayıtları', icon: GraduationCap, color: 'text-[#2563eb] bg-[rgba(37,99,235,0.1)]' },
   { id: 'hizmet_basvurulari', title: 'Vatandaş Hizmetleri', desc: 'Baca temizliği, yangın önlem ruhsatları ve eğitim talepleri onay süreci', icon: Sparkles, color: 'text-[#4f46e5] bg-[rgba(79,70,229,0.1)]' },
   { id: 'gorevler', title: 'Görev & Devir-Teslim', desc: 'Dinamik araç devir-teslim, malzeme kontrol ve şablon oluşturma', icon: ListChecks, color: 'text-[#e11d48] bg-[rgba(225,29,72,0.1)]' },
