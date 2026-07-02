@@ -221,6 +221,7 @@ export default function UnifiedGorevlerPage() {
         tip: tpl.baslik || 'Genel Kontrol',
         checklist,
         durum: 'beklemede',
+        tarih: new Date().toISOString().split('T')[0],
         notlar: newNotlar || null,
         atanan: newAtanan,
         created_by: user?.sicilNo || null,
