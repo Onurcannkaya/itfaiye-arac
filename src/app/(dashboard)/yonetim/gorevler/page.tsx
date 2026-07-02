@@ -224,7 +224,6 @@ export default function UnifiedGorevlerPage() {
         tarih: new Date().toISOString().split('T')[0],
         notlar: newNotlar || null,
         atanan: newAtanan,
-        created_by: user?.sicilNo || null,
       })
 
       if (error) throw error
