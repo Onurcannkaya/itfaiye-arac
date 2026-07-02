@@ -1717,24 +1717,18 @@ export default function Map({
 
         const isRunning = !isStale && (vAny.kontak === 'aktif' || Number(vAny.hiz || vAny.speed || 0) > 5);
 
-        if (isMakineIkmal) {
-          color = '#64748b';
-          glowClass = '';
+        if (isRunning) {
+          color = '#10b981';
+          glowClass = 'vehicle-aktif-glow'; // Pulsing green
         } else if (activeDurum === 'bakimda') {
           color = '#f59e0b';
-          glowClass = 'vehicle-bakimda-glow';
+          glowClass = 'vehicle-bakimda-glow'; // Amber/Yellow
         } else if (activeDurum === 'arizali') {
           color = '#ef4444';
-          glowClass = 'vehicle-arizali-glow';
-        } else if (activeDurum === 'pasif' || isStale) {
-          color = '#64748b';
-          glowClass = '';
-        } else if (isRunning) {
-          color = '#10b981';
-          glowClass = 'vehicle-aktif-glow'; // Pulse green if running/moving and fresh
+          glowClass = 'vehicle-arizali-glow'; // Red
         } else {
-          color = '#10b981';
-          glowClass = ''; // Solid green for ready but stationary vehicle in station
+          color = '#64748b'; // Grey for all other stationary, offline, passive, or Makine Ikmal vehicles
+          glowClass = '';
         }
 
         if (isMakineIkmal) {
