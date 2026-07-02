@@ -588,7 +588,7 @@ export default function Map({
     }
     let list = vehicles || [];
     if (onlyRunningVehicles) {
-      list = list.filter((v: any) => v.kontak === 'aktif' || Number(v.hiz || v.speed || 0) > 0);
+      list = list.filter((v: any) => v.kontak === 'aktif' && Number(v.hiz || v.speed || 0) > 3);
     }
     return list;
   }, [vehicles, onlyActiveIncidents, showFilo, onlyRunningVehicles]);
@@ -1697,8 +1697,10 @@ export default function Map({
         const typeStr = (veh.arac_tipi || veh.aracTipi || "").toLowerCase();
         const isMakineIkmal = veh.current_branch === 'Makine İkmal Müdürlüğü (Bakım-Onarım)';
         let color = '#10b981'; // Default green for aktif
-        let glowClass = 'vehicle-aktif-glow';
+        let glowClass = '';
         const activeDurum = (veh.durum || "aktif").toLowerCase();
+        const isRunning = vAny.kontak === 'aktif' && Number(vAny.hiz || vAny.speed || 0) > 3;
+
         if (isMakineIkmal) {
           color = '#64748b';
           glowClass = '';
@@ -1711,6 +1713,12 @@ export default function Map({
         } else if (activeDurum === 'pasif') {
           color = '#64748b';
           glowClass = '';
+        } else if (isRunning) {
+          color = '#10b981';
+          glowClass = 'vehicle-aktif-glow'; // Only pulse green if engine is active and speed is > 3 km/h
+        } else {
+          color = '#10b981';
+          glowClass = ''; // Solid green for ready but stationary vehicle in station
         }
 
         if (isMakineIkmal) {
