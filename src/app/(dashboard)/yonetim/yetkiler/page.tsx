@@ -222,9 +222,6 @@ export default function YetkilerPage() {
                           <p className="text-[11px] text-[var(--fd-text3)] leading-relaxed font-medium">
                             {page.desc}
                           </p>
-                          <Badge variant="outline" className="text-[8px] font-mono px-1.5 py-0 h-4">
-                            id: {page.id}
-                          </Badge>
                         </div>
                       </div>
                     </td>
