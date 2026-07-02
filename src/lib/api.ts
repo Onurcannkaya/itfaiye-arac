@@ -119,8 +119,7 @@ function createQueryBuilder<T = any>(table: string): QueryBuilder<T> {
           }
         })
         .catch(err => {
-          if (reject) reject(err);
-          else resolve({ data: null, error: err.message });
+          resolve({ data: null, error: err.message || String(err), count: 0 });
         });
     }
   };

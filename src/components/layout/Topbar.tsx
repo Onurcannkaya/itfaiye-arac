@@ -343,6 +343,11 @@ export function Topbar() {
   // Fetch dynamic notifications and tasks
   useEffect(() => {
     const fetchNotificationsAndTasks = async () => {
+      if (!isAuthenticated || !user) {
+        setNotifications([])
+        return
+      }
+
       const items: NotificationItem[] = []
       const now = new Date()
 
