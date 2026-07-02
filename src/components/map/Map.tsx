@@ -1785,50 +1785,52 @@ export default function Map({
         let silhouetteSvg = '';
         if (typeStr.includes("arazöz")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
-              <rect x="10" y="15" width="80" height="30" rx="4" />
-              <rect x="70" y="15" width="20" height="18" rx="2" fill="currentColor" fill-opacity="0.2" />
-              <circle cx="25" cy="48" r="8" fill="currentColor" />
-              <circle cx="75" cy="48" r="8" fill="currentColor" />
+            <svg viewBox="0 0 40 60" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; stroke-linejoin:round;">
+              <path d="M6 18 L2 20 M34 18 L38 20" stroke-width="2.5" />
+              <rect x="8" y="6" width="24" height="48" rx="3" fill="currentColor" fill-opacity="0.15" />
+              <path d="M10 16 L30 16" />
+              <rect x="12" y="24" width="16" height="24" rx="2" stroke-dasharray="2,3" />
             </svg>
           `;
         } else if (typeStr.includes("merdiven")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
-              <rect x="10" y="20" width="80" height="25" rx="3" />
-              <path d="M15 14 L75 7" stroke-width="4" />
-              <circle cx="25" cy="48" r="8" fill="currentColor" />
-              <circle cx="75" cy="48" r="8" fill="currentColor" />
+            <svg viewBox="0 0 40 60" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; stroke-linejoin:round;">
+              <path d="M6 18 L2 20 M34 18 L38 20" stroke-width="2.5" />
+              <rect x="8" y="6" width="24" height="48" rx="3" fill="currentColor" fill-opacity="0.15" />
+              <path d="M10 16 L30 16" />
+              <rect x="15" y="20" width="10" height="30" rx="1" />
+              <path d="M15 25 L25 25 M15 30 L25 30 M15 35 L25 35 M15 40 L25 40 M15 45 L25 45" />
             </svg>
           `;
         } else if (typeStr.includes("kurtarma") || typeStr.includes("arama")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
-              <rect x="10" y="15" width="80" height="30" rx="4" />
-              <path d="M15 20 L15 8 L35 4" stroke-width="4" />
-              <circle cx="25" cy="48" r="8" fill="currentColor" />
-              <circle cx="75" cy="48" r="8" fill="currentColor" />
+            <svg viewBox="0 0 40 60" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; stroke-linejoin:round;">
+              <path d="M7 16 L3 18 M33 16 L37 18" stroke-width="2" />
+              <rect x="9" y="8" width="22" height="44" rx="6" fill="currentColor" fill-opacity="0.15" />
+              <path d="M11 20 L29 20" />
+              <path d="M12 42 L28 42" />
+              <rect x="13" y="24" width="14" height="4" rx="1" fill="currentColor" />
             </svg>
           `;
         } else if (typeStr.includes("lojistik") || typeStr.includes("tanker")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
-              <path d="M68 18 L88 18 L90 45 L68 45 Z" fill="currentColor" fill-opacity="0.2" />
-              <rect x="10" y="15" width="55" height="30" rx="10" />
-              <circle cx="20" cy="48" r="8" fill="currentColor" />
-              <circle cx="78" cy="48" r="8" fill="currentColor" />
+            <svg viewBox="0 0 40 60" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; stroke-linejoin:round;">
+              <path d="M6 18 L2 20 M34 18 L38 20" stroke-width="2.5" />
+              <rect x="8" y="6" width="24" height="18" rx="3" fill="currentColor" fill-opacity="0.15" />
+              <path d="M10 16 L30 16" />
+              <rect x="9" y="26" width="22" height="28" rx="8" fill="currentColor" fill-opacity="0.25" />
             </svg>
           `;
         } else {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
-              <path d="M10 25 L45 25 L45 20 L75 20 L90 30 L90 45 L10 45 Z" />
-              <circle cx="25" cy="47" r="7" fill="currentColor" />
-              <circle cx="75" cy="47" r="7" fill="currentColor" />
+            <svg viewBox="0 0 40 60" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; stroke-linejoin:round;">
+              <path d="M7 18 L3 20 M33 18 L37 20" />
+              <rect x="9" y="8" width="22" height="44" rx="5" fill="currentColor" fill-opacity="0.15" />
+              <path d="M11 20 L29 20" />
             </svg>
           `;
         }
- 
+
         innerEl.innerHTML = silhouetteSvg
 
         // Add beautiful glowing directional triangle pointer at the top of the circle
