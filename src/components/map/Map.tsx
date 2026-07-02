@@ -297,6 +297,7 @@ export default function Map({
   const [onlyActiveIncidents, setOnlyActiveIncidents] = useState(false)
   const [onlyArizaliHydrants, setOnlyArizaliHydrants] = useState(false)
   const [showFilo, setShowFilo] = useState(true)
+  const [onlyRunningVehicles, setOnlyRunningVehicles] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(14)
 
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
@@ -585,8 +586,12 @@ export default function Map({
     if (onlyActiveIncidents || !showFilo) {
       return [];
     }
-    return vehicles || [];
-  }, [vehicles, onlyActiveIncidents, showFilo]);
+    let list = vehicles || [];
+    if (onlyRunningVehicles) {
+      list = list.filter((v: any) => v.kontak === 'aktif' || Number(v.hiz || v.speed || 0) > 0);
+    }
+    return list;
+  }, [vehicles, onlyActiveIncidents, showFilo, onlyRunningVehicles]);
 
   // Find vehicle/station coordinates closest to targetLngLat
   const getStartCoords = useCallback((targetLngLat: [number, number]): [number, number] => {
@@ -2074,6 +2079,25 @@ export default function Map({
             </div>
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${showFilo ? 'bg-[var(--fd-success)]' : 'bg-[var(--fd-text3)]'}`}></span>
           </button>
+
+          {/* ⚡ Sadece Çalışan Araçlar */}
+          <button
+            onClick={() => setOnlyRunningVehicles(!onlyRunningVehicles)}
+            disabled={onlyActiveIncidents || !showFilo}
+            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg border text-left transition-all duration-300 min-h-[36px] ${
+              (onlyActiveIncidents || !showFilo) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+            } ${
+              onlyRunningVehicles
+                ? 'bg-[var(--fd-amber)]/10 border-[var(--fd-amber)]/60 text-[var(--fd-amber)] shadow-[var(--fd-shadow-sm)]'
+                : 'bg-[var(--fd-surface2)]/60 border-[var(--fd-border)] text-[var(--fd-text2)] hover:border-[var(--fd-border-strong)]/50 hover:bg-[var(--fd-surface3)]/40'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm shrink-0">⚡</span>
+              <span className="text-[11px] font-medium leading-none">Sadece Çalışan Araçlar</span>
+            </div>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${onlyRunningVehicles ? 'bg-[var(--fd-amber)] animate-pulse' : 'bg-[var(--fd-text3)]'}`}></span>
+          </button>
         </div>
 
         <div className="space-y-2.5">
@@ -2516,6 +2540,25 @@ export default function Map({
                 <span className="text-xs font-semibold leading-none">Tüm Filoyu Göster</span>
               </div>
               <span className={`w-2 h-2 rounded-full shrink-0 ${showFilo ? 'bg-[var(--fd-success)]' : 'bg-[var(--fd-text3)]'}`}></span>
+            </button>
+
+            {/* ⚡ Sadece Çalışan Araçlar */}
+            <button
+              onClick={() => setOnlyRunningVehicles(!onlyRunningVehicles)}
+              disabled={onlyActiveIncidents || !showFilo}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all duration-300 min-h-[44px] ${
+                (onlyActiveIncidents || !showFilo) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+              } ${
+                onlyRunningVehicles
+                  ? 'bg-[var(--fd-amber)]/15 border-[var(--fd-amber)]/60 text-[var(--fd-amber)] shadow-[var(--fd-shadow-sm)]'
+                  : 'bg-[var(--fd-surface2)]/60 border border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-base shrink-0">⚡</span>
+                <span className="text-xs font-semibold leading-none">Sadece Çalışan Araçlar</span>
+              </div>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${onlyRunningVehicles ? 'bg-[var(--fd-amber)] animate-pulse' : 'bg-[var(--fd-text3)]'}`}></span>
             </button>
             {/* Faz 28.55: Aktif Personel Katmanı Toggle (Mobile) */}
             <button
