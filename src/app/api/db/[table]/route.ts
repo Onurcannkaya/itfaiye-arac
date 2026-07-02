@@ -12,6 +12,13 @@ webpush.setVapidDetails(
   vapidPrivateKey
 );
 
+const JSON_COLUMNS = [
+  'details', 'baca_detaylari', 'isyeri_detaylari', 
+  'kurtarma_sayisi', 'yangin_sayisi', 'fotograflar', 
+  'bildirilen_kurumlar', 'hedef_araclar', 'sorular', 
+  'checklist', 'bolmeler'
+];
+
 async function sendIncidentPushNotifications(incidentId: string, assignedSicilNos: string[]) {
   try {
     const locRes = await query(`
@@ -1221,7 +1228,13 @@ export async function POST(
       const keys = Object.keys(row);
       const safeCols = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, '')}"`);
       const placeholders = keys.map((_, i) => `$${i + 1}`);
-      const values = keys.map(k => row[k]);
+      const values = keys.map(k => {
+        const val = row[k];
+        if (val !== null && typeof val === 'object' && JSON_COLUMNS.includes(k)) {
+          return JSON.stringify(val);
+        }
+        return val;
+      });
 
       let sql = `INSERT INTO ${table} (${safeCols.join(', ')}) VALUES (${placeholders.join(', ')})`;
       
@@ -1408,7 +1421,11 @@ export async function PATCH(
 
     Object.entries(data).forEach(([key, val]) => {
       setClauses.push(`"${key.replace(/[^a-zA-Z0-9_]/g, '')}" = $${idx}`);
-      values.push(val);
+      if (val !== null && typeof val === 'object' && JSON_COLUMNS.includes(key)) {
+        values.push(JSON.stringify(val));
+      } else {
+        values.push(val);
+      }
       idx++;
     });
 
