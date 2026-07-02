@@ -301,6 +301,7 @@ function HaritaContent() {
                     longitude: live.longitude,
                     hiz: live.speed,
                     kontak: live.ignition,
+                    yon: live.direction,
                     sonGuncelleme: live.dataTime,
                     address: live.address
                   }
@@ -352,6 +353,7 @@ function HaritaContent() {
                   longitude: live.longitude,
                   hiz: live.speed,
                   kontak: live.ignition,
+                  yon: live.direction,
                   sonGuncelleme: live.dataTime,
                   address: live.address
                 }

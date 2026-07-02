@@ -1763,23 +1763,29 @@ export default function Map({
 
         const innerEl = document.createElement('div')
         innerEl.className = `map-marker-vehicle-inner ${glowClass}`
+        
+        const angleRad = Number(vAny.yon || vAny.direction || 0);
+        const angleDeg = angleRad * (180 / Math.PI);
+
         innerEl.style.cssText = `
           width: 100%; height: 100%;
-          background: rgba(15, 23, 42, 0.85);
+          background: rgba(15, 23, 42, 0.88);
           border: 2px solid ${color};
-          border-radius: 8px;
+          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           color: ${color};
           box-shadow: 0 0 10px ${color}33;
-          transition: all 0.3s;
+          transform: rotate(${angleDeg.toFixed(1)}deg);
+          transition: transform 0.4s ease-out, border-color 0.3s;
+          position: relative;
         `
         
         let silhouetteSvg = '';
         if (typeStr.includes("arazöz")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round;">
+            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
               <rect x="10" y="15" width="80" height="30" rx="4" />
               <rect x="70" y="15" width="20" height="18" rx="2" fill="currentColor" fill-opacity="0.2" />
               <circle cx="25" cy="48" r="8" fill="currentColor" />
@@ -1788,7 +1794,7 @@ export default function Map({
           `;
         } else if (typeStr.includes("merdiven")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round;">
+            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
               <rect x="10" y="20" width="80" height="25" rx="3" />
               <path d="M15 14 L75 7" stroke-width="4" />
               <circle cx="25" cy="48" r="8" fill="currentColor" />
@@ -1797,7 +1803,7 @@ export default function Map({
           `;
         } else if (typeStr.includes("kurtarma") || typeStr.includes("arama")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round;">
+            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
               <rect x="10" y="15" width="80" height="30" rx="4" />
               <path d="M15 20 L15 8 L35 4" stroke-width="4" />
               <circle cx="25" cy="48" r="8" fill="currentColor" />
@@ -1806,7 +1812,7 @@ export default function Map({
           `;
         } else if (typeStr.includes("lojistik") || typeStr.includes("tanker")) {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round;">
+            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
               <path d="M68 18 L88 18 L90 45 L68 45 Z" fill="currentColor" fill-opacity="0.2" />
               <rect x="10" y="15" width="55" height="30" rx="10" />
               <circle cx="20" cy="48" r="8" fill="currentColor" />
@@ -1815,15 +1821,33 @@ export default function Map({
           `;
         } else {
           silhouetteSvg = `
-            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round;">
+            <svg viewBox="0 0 100 60" width="22" height="15" fill="none" stroke="currentColor" stroke-width="3" style="stroke-linecap:round; transform: rotate(-90deg); transform-origin: center;">
               <path d="M10 25 L45 25 L45 20 L75 20 L90 30 L90 45 L10 45 Z" />
               <circle cx="25" cy="47" r="7" fill="currentColor" />
               <circle cx="75" cy="47" r="7" fill="currentColor" />
             </svg>
           `;
         }
-
+ 
         innerEl.innerHTML = silhouetteSvg
+
+        // Add beautiful glowing directional triangle pointer at the top of the circle
+        const arrowEl = document.createElement('div')
+        arrowEl.style.cssText = `
+          position: absolute;
+          top: -7px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-bottom: 6px solid ${color};
+          filter: drop-shadow(0 0 2px ${color});
+          z-index: 5;
+        `
+        innerEl.appendChild(arrowEl)
+
         el.appendChild(innerEl)
 
         const idStr = veh.plaka.replace(/\s+/g, '-').toLowerCase()
