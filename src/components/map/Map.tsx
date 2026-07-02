@@ -588,7 +588,15 @@ export default function Map({
     }
     let list = vehicles || [];
     if (onlyRunningVehicles) {
-      list = list.filter((v: any) => v.kontak === 'aktif' && Number(v.hiz || v.speed || 0) > 3);
+      list = list.filter((v: any) => {
+        // Stale check (dataTime older than 5 mins)
+        const dTime = v.sonGuncelleme || v.dataTime;
+        if (dTime) {
+          const diffMs = Date.now() - new Date(dTime).getTime();
+          if (diffMs > 5 * 60 * 1000) return false;
+        }
+        return v.kontak === 'aktif' || Number(v.hiz || v.speed || 0) > 5;
+      });
     }
     return list;
   }, [vehicles, onlyActiveIncidents, showFilo, onlyRunningVehicles]);
@@ -1699,7 +1707,15 @@ export default function Map({
         let color = '#10b981'; // Default green for aktif
         let glowClass = '';
         const activeDurum = (veh.durum || "aktif").toLowerCase();
-        const isRunning = vAny.kontak === 'aktif' && Number(vAny.hiz || vAny.speed || 0) > 3;
+        
+        let isStale = false;
+        const dTime = vAny.sonGuncelleme || vAny.dataTime;
+        if (dTime) {
+          const diffMs = Date.now() - new Date(dTime).getTime();
+          isStale = diffMs > 5 * 60 * 1000;
+        }
+
+        const isRunning = !isStale && (vAny.kontak === 'aktif' || Number(vAny.hiz || vAny.speed || 0) > 5);
 
         if (isMakineIkmal) {
           color = '#64748b';
@@ -1710,12 +1726,12 @@ export default function Map({
         } else if (activeDurum === 'arizali') {
           color = '#ef4444';
           glowClass = 'vehicle-arizali-glow';
-        } else if (activeDurum === 'pasif') {
+        } else if (activeDurum === 'pasif' || isStale) {
           color = '#64748b';
           glowClass = '';
         } else if (isRunning) {
           color = '#10b981';
-          glowClass = 'vehicle-aktif-glow'; // Only pulse green if engine is active and speed is > 3 km/h
+          glowClass = 'vehicle-aktif-glow'; // Pulse green if running/moving and fresh
         } else {
           color = '#10b981';
           glowClass = ''; // Solid green for ready but stationary vehicle in station

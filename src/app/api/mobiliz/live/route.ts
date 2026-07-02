@@ -42,15 +42,23 @@ export async function GET(request: NextRequest) {
               return gName.includes('itfaiye') || allowedGroups.some(g => g.toLowerCase() === gName);
             });
 
-            const mappedVehicles = itfaiyeOnly.map((v: any) => ({
-              plate: v.plate || '',
-              latitude: Number(v.latitude || 0),
-              longitude: Number(v.longitude || 0),
-              speed: Number(v.speed || 0),
-              ignition: v.ignition === 'A' || v.ignition === 'active' ? 'aktif' : 'pasif',
-              address: v.address || 'Konum Bilgisi Alınamadı',
-              dataTime: v.dataTime || new Date().toISOString()
-            }));
+             const mappedVehicles = itfaiyeOnly.map((v: any) => {
+               const dataTimeStr = v.dataTime;
+               let isStale = false;
+               if (dataTimeStr) {
+                 const diffMs = Date.now() - new Date(dataTimeStr).getTime();
+                 isStale = diffMs > 5 * 60 * 1000; // Older than 5 minutes
+               }
+               return {
+                 plate: v.plate || '',
+                 latitude: Number(v.latitude || 0),
+                 longitude: Number(v.longitude || 0),
+                 speed: isStale ? 0 : Number(v.speed || 0),
+                 ignition: !isStale && (v.ignition === 'A' || v.ignition === 'active') ? 'aktif' : 'pasif',
+                 address: v.address || 'Konum Bilgisi Alınamadı',
+                 dataTime: v.dataTime || new Date().toISOString()
+               };
+             });
 
             return NextResponse.json({
               success: true,
