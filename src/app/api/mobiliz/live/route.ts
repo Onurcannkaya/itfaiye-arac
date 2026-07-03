@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
                  longitude: Number(v.longitude || 0),
                  speed: isStale ? 0 : Number(v.speed || 0),
                  ignition: !isStale && (v.ignition === 'A' || v.ignition === 'active') ? 'aktif' : 'pasif',
+                 direction: v.direction !== undefined && v.direction !== null ? Number(v.direction) : 0,
                  address: v.address || 'Konum Bilgisi Alınamadı',
                  dataTime: v.dataTime || new Date().toISOString()
                };
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
       let lng = STATION_LNG;
       let speed = 0;
       let ignition = 'pasif';
+      let heading = 0;
       let address = "Sivas İtfaiye Komuta Merkezi";
 
       if (isMoving) {
@@ -94,6 +96,9 @@ export async function GET(request: NextRequest) {
         lng += Math.cos(angle) * radius;
         speed = Math.floor(35 + Math.sin(angle) * 15);
         ignition = 'aktif';
+        // Direction is perpendicular to the circle radius (tangent)
+        heading = angle + Math.PI / 2;
+        heading = (heading % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
         address = `Sivas Canlı Devriye Bölgesi - Kod ${i + 10}`;
       } else if (v.durum === 'Bakımda') {
         // Position at Makine Ikmal coordinates (offset slightly from station)
@@ -105,6 +110,8 @@ export async function GET(request: NextRequest) {
         const angle = (i * 2 * Math.PI) / 8;
         lat += Math.sin(angle) * 0.0002;
         lng += Math.cos(angle) * 0.0002;
+        // Point towards the center of the station
+        heading = angle + Math.PI;
       }
 
       return {
@@ -113,6 +120,7 @@ export async function GET(request: NextRequest) {
         longitude: lng,
         speed: speed,
         ignition: ignition,
+        direction: heading,
         address: address,
         dataTime: new Date().toISOString()
       };
