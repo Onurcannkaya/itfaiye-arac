@@ -221,8 +221,8 @@ export default function GeciciSifrelerPage() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center space-y-3">
-          <ShieldAlert className="w-10 h-10 text-red-500 mx-auto" />
-          <p className="text-slate-400 text-sm font-semibold">Bu sayfaya erişim yetkiniz bulunmamaktadır.</p>
+          <ShieldAlert className="w-10 h-10 text-[var(--fd-danger)] mx-auto" />
+          <p className="text-[var(--fd-text3)] text-sm font-semibold">Bu sayfaya erişim yetkiniz bulunmamaktadır.</p>
         </div>
       </div>
     )
@@ -241,22 +241,22 @@ export default function GeciciSifrelerPage() {
 
 
   return (
-    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+    <div className="space-y-[var(--fd-sp)] animate-in fade-in zoom-in-95 duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Geçici Şifreler</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="text-[calc(var(--fd-fs)*1.7)] font-bold tracking-tight text-[var(--fd-text)]">Geçici Şifreler</h1>
+          <p className="text-[var(--fd-text3)] text-sm mt-1">
             Admin tarafından sıfırlanan geçici personel şifreleri.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
-          <Button onClick={downloadCSV} variant="outline" size="sm" className="gap-1.5 bg-slate-950/40 hover:bg-slate-900 border-slate-800 text-slate-300">
-            <Download className="w-3.5 h-3.5 text-cyan-400" /> Excel/CSV İndir
+          <Button onClick={downloadCSV} variant="outline" size="sm" className="gap-1.5 rounded-[var(--fd-r-sm)]">
+            <Download className="w-3.5 h-3.5 text-[var(--fd-info)]" /> Excel/CSV İndir
           </Button>
-          <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1.5 bg-slate-950/40 hover:bg-slate-900 border-slate-800 text-slate-300">
-            <Printer className="w-3.5 h-3.5 text-amber-500" /> Resmi Evrak Yazdır (PDF)
+          <Button onClick={handlePrint} variant="outline" size="sm" className="gap-1.5 rounded-[var(--fd-r-sm)]">
+            <Printer className="w-3.5 h-3.5 text-[var(--fd-amber)]" /> Resmi Evrak Yazdır (PDF)
           </Button>
-          <Button onClick={fetchData} variant="secondary" size="sm" className="gap-1.5">
+          <Button onClick={fetchData} variant="secondary" size="sm" className="gap-1.5 rounded-[var(--fd-r-sm)]">
             <RefreshCcw className="w-3.5 h-3.5" /> Yenile
           </Button>
         </div>
@@ -264,49 +264,49 @@ export default function GeciciSifrelerPage() {
 
       {/* Reset Result Banner */}
       {resetResult && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm animate-in fade-in slide-in-from-top-2">
+        <div className="flex items-center gap-3 p-4 rounded-[var(--fd-r)] bg-[var(--fd-success)]/10 border border-[var(--fd-success)]/20 text-[var(--fd-success)] text-sm animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="w-5 h-5 shrink-0" />
           <div className="flex-1">
             <span className="font-bold">{resetResult.sicil}</span> için yeni geçici şifre:
-            <span className="ml-2 font-mono font-black text-emerald-300 text-base tracking-widest">{resetResult.password}</span>
+            <span className="ml-2 font-mono font-bold text-[var(--fd-success)] text-base tracking-widest">{resetResult.password}</span>
           </div>
           <button
             onClick={() => copyPassword(resetResult.sicil, resetResult.password)}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-all cursor-pointer"
+            className="p-2 rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text3)] hover:text-[var(--fd-success)] hover:border-[var(--fd-success)]/30 transition-all cursor-pointer"
           >
-            {copiedSicil === resetResult.sicil ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            {copiedSicil === resetResult.sicil ? <Check className="w-4 h-4 text-[var(--fd-success)]" /> : <Copy className="w-4 h-4" />}
           </button>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div className="flex items-center gap-3 p-4 rounded-[var(--fd-r)] bg-[var(--fd-danger)]/10 border border-[var(--fd-danger)]/20 text-[var(--fd-danger)] text-sm">
           <ShieldAlert className="w-4 h-4 shrink-0" />
           <span className="font-semibold">{error}</span>
         </div>
       )}
 
-      <Card className="border-slate-800 bg-slate-950/40 backdrop-blur-md shadow-xl overflow-hidden">
-        <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
+      <Card className="shadow-[var(--fd-shadow-lg)] overflow-hidden">
+        <CardHeader className="pb-3 border-b border-[var(--fd-border)]/50 bg-[var(--fd-surface2)]/50">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
+              <div className="p-2 bg-[var(--fd-amber)]/10 rounded-[var(--fd-r-sm)] text-[var(--fd-amber)]">
                 <Key className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-bold text-slate-100">Geçici Şifre Kayıtları</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <CardTitle className="text-[calc(var(--fd-fs)*1.02)] font-bold text-[var(--fd-text)]">Geçici Şifre Kayıtları</CardTitle>
+                <p className="text-[calc(var(--fd-fs)*0.74)] text-[var(--fd-text3)] mt-0.5">
                   Toplam {data.length} kayıt bulunmaktadır.
                 </p>
               </div>
             </div>
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--fd-text3)]" />
               <Input
                 placeholder="Sicil, kullanıcı adı veya isim..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 pl-9 bg-slate-950/60 border-slate-800 focus:border-amber-500 focus:ring-amber-500/20 rounded-lg text-slate-100 text-xs"
+                className="h-9 pl-9 bg-[var(--fd-surface)] border-[var(--fd-border)] focus:border-[var(--fd-accent)] focus:ring-[var(--fd-accent)]/20 rounded-[var(--fd-r-sm)] text-[var(--fd-text)] text-xs"
               />
             </div>
           </div>
@@ -315,17 +315,17 @@ export default function GeciciSifrelerPage() {
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="text-center space-y-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-                <p className="text-muted-foreground text-sm">Geçici şifreler yükleniyor...</p>
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--fd-accent)] mx-auto" />
+                <p className="text-[var(--fd-text3)] text-sm">Geçici şifreler yükleniyor...</p>
               </div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Key className="w-10 h-10 text-slate-600 mb-3" />
-              <p className="text-slate-400 text-sm font-semibold">
+              <Key className="w-10 h-10 text-[var(--fd-text3)] mb-3" />
+              <p className="text-[var(--fd-text2)] text-sm font-semibold">
                 {searchQuery ? 'Arama sonucu bulunamadı.' : 'Henüz geçici şifre kaydı bulunmuyor.'}
               </p>
-              <p className="text-slate-500 text-xs mt-1">
+              <p className="text-[var(--fd-text3)] text-xs mt-1">
                 Personel yönetimi sayfasından şifre sıfırlama işlemi yapabilirsiniz.
               </p>
             </div>
@@ -333,47 +333,47 @@ export default function GeciciSifrelerPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/30">
-                    <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sicil No</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Kullanıcı Adı</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ad Soyad</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Geçici Şifre</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Durum</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">İşlem</th>
+                  <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]">
+                    <th className="text-left px-4 py-3 text-[calc(var(--fd-fs)*0.74)] font-bold text-[var(--fd-text3)] uppercase tracking-[0.04em]">Sicil No</th>
+                    <th className="text-left px-4 py-3 text-[calc(var(--fd-fs)*0.74)] font-bold text-[var(--fd-text3)] uppercase tracking-[0.04em]">Kullanıcı Adı</th>
+                    <th className="text-left px-4 py-3 text-[calc(var(--fd-fs)*0.74)] font-bold text-[var(--fd-text3)] uppercase tracking-[0.04em]">Ad Soyad</th>
+                    <th className="text-left px-4 py-3 text-[calc(var(--fd-fs)*0.74)] font-bold text-[var(--fd-text3)] uppercase tracking-[0.04em]">Geçici Şifre</th>
+                    <th className="text-left px-4 py-3 text-[calc(var(--fd-fs)*0.74)] font-bold text-[var(--fd-text3)] uppercase tracking-[0.04em]">Durum</th>
+                    <th className="text-right px-4 py-3 text-[calc(var(--fd-fs)*0.74)] font-bold text-[var(--fd-text3)] uppercase tracking-[0.04em]">İşlem</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((row) => (
                     <tr
                       key={row.sicil_no}
-                      className="border-b border-slate-800/50 hover:bg-slate-900/20 transition-colors"
+                      className="border-b border-[var(--fd-border)]/50 hover:bg-[var(--fd-surface2)]/50 transition-colors"
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono font-bold text-slate-200 text-xs">{row.sicil_no}</span>
+                        <span className="font-mono font-bold text-[var(--fd-text)] text-xs">{row.sicil_no}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-slate-300 text-xs">{row.username || '—'}</span>
+                        <span className="text-[var(--fd-text2)] text-xs">{row.username || '—'}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-slate-200 text-xs">{row.ad} {row.soyad}</span>
+                        <span className="font-semibold text-[var(--fd-text)] text-xs">{row.ad} {row.soyad}</span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-black text-amber-400 tracking-widest text-sm">{row.plain_password}</span>
+                          <span className="font-mono font-bold text-[var(--fd-amber)] tracking-[0.1em] text-sm">{row.plain_password}</span>
                           <button
                             onClick={() => copyPassword(row.sicil_no, row.plain_password)}
-                            className="p-1 rounded-md hover:bg-slate-800 text-slate-500 hover:text-amber-400 transition-all cursor-pointer"
+                            className="p-1 rounded-[var(--fd-r-sm)] hover:bg-[var(--fd-surface3)] text-[var(--fd-text3)] hover:text-[var(--fd-accent)] transition-all cursor-pointer"
                             title="Kopyala"
                           >
-                            {copiedSicil === row.sicil_no ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                            {copiedSicil === row.sicil_no ? <Check className="w-3 h-3 text-[var(--fd-success)]" /> : <Copy className="w-3 h-3" />}
                           </button>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         {row.used ? (
-                          <Badge className="bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[9px]">Kullanıldı</Badge>
+                          <Badge variant="muted">Kullanıldı</Badge>
                         ) : (
-                          <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px]">Aktif</Badge>
+                          <Badge variant="warning">Aktif</Badge>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -382,7 +382,7 @@ export default function GeciciSifrelerPage() {
                           variant="outline"
                           onClick={() => handleReset(row.sicil_no)}
                           disabled={resetting === row.sicil_no}
-                          className="gap-1.5 h-7 text-[10px] bg-slate-950/40 hover:bg-slate-900 border-slate-800 text-slate-300 hover:text-white"
+                          className="gap-1.5 h-7 text-[10px] rounded-[var(--fd-r-sm)]"
                         >
                           {resetting === row.sicil_no ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
