@@ -1,0 +1,5098 @@
+[
+  {
+    "plaka": "58 AGF 355",
+    "arac_tipi": "Arazöz",
+    "marka": "RENAULT",
+    "km": 24000,
+    "motorSaatiPTO": 450,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK ÇARIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALÜMİNİZE ELBİSE TAKIM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ŞARJ KABLOSU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYAKLI PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "🔄 GEÇİCİ ZİMMETTE",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BUJİ ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇIKRIK YEDEK REKOR"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "EL FENERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO T 1"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "IŞIKLI İKAZ LAMBASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KASIK ÇİZME"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESER"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MIKNATISLI PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MONİTOR KABLOLU KUMANDA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MONİTÖR SEYYAR KUMANDA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "PLASTİK TAKOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PÜRMÜZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SİYAH EL FENERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TABLET"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TELSİZ"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI MASKESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TERMAL KAMERA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "YANGIN SÖNDÜRME CİHAZI (KKT)"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "CESET TORBASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAŞIK SEDYE"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        }
+      ],
+      "arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ANTİ PANİK SİSTEMLİ İNİŞ ALETİ ( I D )"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BETON KESME HIZARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BETON KESME YEDEK UÇ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ BEL TİPİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "GÖGÜS JUMARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HIZAR YEDEK ZİNCİR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİLTİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO KÜÇÜK KESİCİ (ŞARJLI)"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "KARABİNA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KATLANIR KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KULAKLI 8 DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KEMERİ (İSVEÇ OTURAĞI )"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MAKARALI İP"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "NACAK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "PERLON İPİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SAC KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL KESİCİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TİLKİ KUYRUĞU TESTERE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TİLKİ KUYRUĞU TESTERE UCU"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DUMAN TAHLİYE FANI (BÜYÜK)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MAKARALI KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YANGIN BATTANİYESİ"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK CAFS LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇIKRIK + ÇIKRIK KOLU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "POMPA KÖPÜK BAĞLANTI HORTUMU (SARI)"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DRAGER SOLUNUM MASKESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DUMAN TAHLİYE FANI (KÜÇÜK)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DUMAN TAHLİYE KÖRÜĞÜ KÜÇÜK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HAVALANDIRMA FANI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI AHTAPOT"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "110 LUK HORTUM"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "110' LUK TURBO LANS"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "85' TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ARA REKOR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK BİDONU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BÜYÜK PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DUMAN TAHLİYE KÖRÜĞÜ BÜYÜK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "İKAZ FLAMASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.384Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2020,
+    "model": "Renault Midlum Arazöz",
+    "su_kapasite": 7000,
+    "kopuk_kapasite": 600,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Renault",
+    "id": "d4b62bc9-15e9-493f-827d-e61ca72358cd",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 FP 148",
+    "arac_tipi": "Diğer",
+    "marka": "Bilinmeyen",
+    "km": 0,
+    "motorSaatiPTO": 0,
+    "durum": "Aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {},
+    "created_at": "2026-06-04T06:31:32.400Z",
+    "istasyon": null,
+    "yil": null,
+    "model": "58 FP 148 (Excel Sürücüsü)",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": null,
+    "id": "3597ae18-4b2d-4c65-8ef4-5db7a9bcc25f",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 FP 851",
+    "arac_tipi": "Diğer",
+    "marka": "Bilinmeyen",
+    "km": 0,
+    "motorSaatiPTO": 0,
+    "durum": "Aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {},
+    "created_at": "2026-06-04T06:31:32.398Z",
+    "istasyon": null,
+    "yil": null,
+    "model": "58 FP 851 (Excel Sürücüsü)",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": null,
+    "id": "6c2f85c8-ea10-47b5-8962-93e7997838ca",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 FP 852",
+    "arac_tipi": "Diğer",
+    "marka": "Bilinmeyen",
+    "km": 0,
+    "motorSaatiPTO": 0,
+    "durum": "Aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {},
+    "created_at": "2026-06-04T06:31:32.396Z",
+    "istasyon": null,
+    "yil": null,
+    "model": "58 FP 852 (Excel Sürücüsü)",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": null,
+    "id": "9aa15f4f-be69-4042-b2c4-16cfc485c8d2",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 DK 650",
+    "arac_tipi": "Merdivenli",
+    "marka": "MERCEDES",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HAVA HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ AMİR BALTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MONİTÖR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ÇARIK 85 LİK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KASKI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KUPA KALDIRMA DEMİRİ"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "110 LUK YANGIN HORTUMU"
+        },
+        {
+          "adet": 7,
+          "durum": "Tam",
+          "malzeme": "85 LİK YANGIN HORTUMU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YER ALTI ( T. ANAHTARI)"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "YSC SÖNDÜRÜCÜ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON (3 LÜ DAĞITICI)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KRİKO,KALDIRMA KOLU,BİJON ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESME AYIRMA SETİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MANİVELLA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA SÜZGECİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK MELANJÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İSPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BETON KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ORTA KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMETRO GÜÇ ÜNİTESİ VE HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMETRO KESİCİ AYIRCI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REM ÜNİTESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "50 CM 30 CM 20 CM REM KOLU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REM DEMİR DESTEK TAKOZU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA ZİNCİRİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA ZİNCİR KANCASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR FENER ARA KABLOSU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YILAN YAKALAMA APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK SENTETİK %3"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTALI KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BARET"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BÜYÜK BALTA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HALAT MERDİVENİ"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HALAT MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YILAN APARATI"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESİCİ-AYIRICI GÜÇ ÜNİTESİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KESİCİ-AYIRICI HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO KESİCİ AYIRICI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO RAM"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO RAM UZATMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO RAM DESTEKLEYİCİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO T 1"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AHŞAP TAKOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ(10 METRE)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ HAVA KABLOSU"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "110' LUK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110' LUK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85' LİK HORTUM"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85' LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85' LİK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTALI KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ORTA KÖPÜK LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ZİNCİRİ"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ZİNCİRLİ KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YER ALTI \"T\" ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM SÜZGECİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BENZİNLİ HIZAR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL BETON KESME MOTORU"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "DUBA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BENZİN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HIZAR YAĞI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HIZAR ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL ANAHTARI"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.373Z",
+    "istasyon": "Organize İstasyonu",
+    "yil": 2015,
+    "model": "Organize Sanayi Merdivenli",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Organi̇ze Ford Cargo",
+    "id": "c90bcdba-ea1f-43f5-a807-90a035fffa85",
+    "current_branch": "OSB (Organize)",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AEH 221",
+    "arac_tipi": "Merdivenli",
+    "marka": "MAN",
+    "km": 18400,
+    "motorSaatiPTO": 450,
+    "durum": "aktif",
+    "sigortaBitis": "2026-11-30T21:00:00.000Z",
+    "muayeneBitis": "2026-11-14T21:00:00.000Z",
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "EL FENERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BEL EMNİYET KEMERİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "YARALI SABİTLEME SARGISI"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ATLAMA YATAĞI (Büyük)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ATLAMA YATAĞI (KÜÇÜK)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEPET SEDYESİ"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ASPİRATÖR VE HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ (KKT)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BÜYÜK AMİR BALTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BÜYÜK BALTA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DUBA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEPET ENGELLİ RAMPASI"
+        }
+      ],
+      "küçük_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CESET TORBASI"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "SEPET EMNİYET KEMERİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "SEDYE TUTMA KOLU"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "KURT AĞZI"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85' LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85' LİK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110' LUK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110' LUK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME MOTORU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEPET ÇAPA DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEPET ARA DEMİRİ"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KATLANIR NAYLON SEDYE"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "FLAMA BAYRAK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "AYAK DESTEKLERİ (TAKOZ)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KARABİNALI İP (35 METRE-SİYAH)"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "REFLEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "LEVYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLOSU"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "ATLAMA YATAĞI TÜP"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ŞARJ KABLOSU"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİ HALATI"
+        }
+      ]
+    },
+    "created_at": "2026-04-16T19:34:41.606Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2016,
+    "model": "MAN 42m Merdivenli",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": "2026-11-14T21:00:00.000Z",
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "42 Metre Man",
+    "id": "370e20c8-72e4-4c38-916e-911d05e252b9",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 NC 182",
+    "arac_tipi": "Kurtarma",
+    "marka": "MERCEDES",
+    "km": 100,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇARIK 85 LİK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CESET TORBASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "VAKUM ATELLER"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KASK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BOYUNLUK"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MOTOPOMP ALA HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "YER ALTI T ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "ÇEKME HALATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİ DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA SÜZGECİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        }
+      ],
+      "arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KOMPRASÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ POMPA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MAKARALI İP"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MOTOPOMP"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "220 V ARA KABLO"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 6,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇIKRIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "380VOLT ARA KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110'LUK TURBO LANS"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "HİDRANT  ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR"
+        },
+        {
+          "adet": 6,
+          "durum": "Tam",
+          "malzeme": "110'LUK HORTUM"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.379Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2005,
+    "model": "Mercedes 8 Numara Arazöz",
+    "su_kapasite": 3000,
+    "kopuk_kapasite": 200,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 8,
+    "aciklama": "Mercedes",
+    "id": "73c84313-9506-4368-b159-3befb8566dcc",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 TU 817",
+    "arac_tipi": "Merdivenli",
+    "marka": "FORD",
+    "km": 123,
+    "motorSaatiPTO": 450,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YSC 6 KG LIK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ELDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "PLASTİK DUBA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "STEPNE LASTİK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İKAZ REFLEKTÖRÜ ÜÇGEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BİJON ANAHTARI VE KOLU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KASK"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.361Z",
+    "istasyon": "Kılavuz İstasyonu",
+    "yil": 2019,
+    "model": "Ford Platform Merdivenli",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 12,
+    "aciklama": "Platform",
+    "id": "c7e648a3-dc5a-4fd7-bd65-0148a90f32d9",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 FR 021",
+    "arac_tipi": "Tanker",
+    "marka": "BMC",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "kabin_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İlk Yardım Çantası"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "El Feneri"
+        }
+      ],
+      "arka_bolme": [
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "85'lik Hortum"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "Alıcı Hortum Süzgeci"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85'lik Kollu Lans"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.355Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2016,
+    "model": "BMC Fatih Tanker",
+    "su_kapasite": 18000,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": null,
+    "id": "c4a7dc66-1a20-4802-9d1f-56b1adbd289e",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AP 601",
+    "arac_tipi": "Merdivenli",
+    "marka": "FORD",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LIK KURU KİMYEVİ TOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İSVEÇ OTURAĞI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "8 DEMİRİ"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KARABİNA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇARIK 85 LİK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞARZLI MATKAP(set)"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAMA LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KLEPE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "STEPNE LASTİK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS(SEPET)"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "45 LİK KURU KİM.TOZ HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "46 LİK KURU KİM.TOZ LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LIK KURU KİMYEVİ TOZ"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "45 LİK KURU KİM.TOZ HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "45 LİK KURU KİM.TOZ LANSI"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 6,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HIZARLI MOTOR"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ESPEKTÖR"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YER ALTI \"T\" ANAHTARI"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 6,
+          "durum": "Tam",
+          "malzeme": "110 LUK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK DÜZ LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.369Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2010,
+    "model": "Ford Cargo Merdiven",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 4,
+    "aciklama": "Ford Kargo Merdi̇ven",
+    "id": "9cddace1-25b2-4275-8de7-ed98901e7b6d",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AP 614",
+    "arac_tipi": "Merdivenli",
+    "marka": "FORD",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85’lik ÇARIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALİMÜNİZE ELBİSE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTALI BEL EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESER"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KASKI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MUCURGAT APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞARJLI PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TELSİZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YANGIN BATTANİYESİ"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS (SEPETTE)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALICI HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "🔄 GEÇİCİ ZİMMETTE",
+          "malzeme": "SEYYAR MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "STEPNE LASTİK"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "YANGIN SÖNDÜRME TÜPÜ K.K.T"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ZİNCİR TAKIMI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YERALTI T ANAHTARI"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA SÜZGECİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇIKRIK"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "110'LUK HORTUM"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME HIZARI (STHİL)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.353Z",
+    "istasyon": "Esentepe Şubesi",
+    "yil": 2015,
+    "model": "Ford Cargo Merdiven",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 3,
+    "aciklama": "Ford Kargo Merdi̇ven",
+    "id": "035b2252-eac5-4c92-902c-690832a2336b",
+    "current_branch": "Esentepe",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 HD 458",
+    "arac_tipi": "Tanker",
+    "marka": "MERCEDES",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LIK KKT"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "85 LİK HOTUM"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "110 LUK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.387Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2018,
+    "model": "Mercedes Actros 22 Ton Tanker",
+    "su_kapasite": 22000,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Mercedes Yeni̇",
+    "id": "8011fb3c-20b6-4604-a0fe-f066b8c975ad",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AP 734",
+    "arac_tipi": "Diğer",
+    "marka": "Bilinmeyen",
+    "km": 0,
+    "motorSaatiPTO": 0,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {},
+    "created_at": "2026-06-04T06:31:32.399Z",
+    "istasyon": null,
+    "yil": null,
+    "model": "58 AP 734 (Excel Sürücüsü)",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": null,
+    "id": "2675fcfd-5be3-466c-9dd6-ee5a9df43b66",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AT 105",
+    "arac_tipi": "Diğer",
+    "marka": "Bilinmeyen",
+    "km": 0,
+    "motorSaatiPTO": 0,
+    "durum": "Aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {},
+    "created_at": "2026-06-04T06:31:32.392Z",
+    "istasyon": null,
+    "yil": null,
+    "model": "58 AT 105 (Excel Sürücüsü)",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": null,
+    "id": "1f44cb65-dc93-4e83-9268-d2367afb1f89",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AEL 289",
+    "arac_tipi": "Arazöz",
+    "marka": "IVECO",
+    "km": 12,
+    "motorSaatiPTO": 450,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BUJİ ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MUCURGAT KUMANDASI (KABLOLU)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MUCURGAT KUMANDASI (KABLOSUZ)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MONİTÖR KUMANDASI"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "T ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK ORTA KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK AĞIR KÖPÜK LANSI"
+        }
+      ],
+      "arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "ARA REKOR"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME MOTORU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR - BETON KESME MOTORU"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85' LİK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "NE-Pİ-RO ÇIKRIK KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "NE-Pİ-PO ÇIKRIK LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85' LİK TURBO LANS"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "220-380 DÖNÜŞTÜRÜCÜ KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ŞARJ KABLOSU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "UZATMA KABLOSU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "110' LUK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110' LUK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİKRASYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REDÜKSİYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM SÜZGECİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM SEPETİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PERDE LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUMREKORU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR 85 LİK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK EMİŞ HORTUMU"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "SENTETİK DETERJAN"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TELESKOPİK MERDİVEN"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG' LIK YSC"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.351Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2020,
+    "model": "Iveco Eurocargo",
+    "su_kapasite": 6000,
+    "kopuk_kapasite": 500,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "İveco",
+    "id": "a04fb130-7073-442a-9501-4b20228e253c",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 ACT 367",
+    "arac_tipi": "Arazöz",
+    "marka": "FORD",
+    "km": 13,
+    "motorSaatiPTO": 2145,
+    "durum": "aktif",
+    "sigortaBitis": "2026-11-19T21:00:00.000Z",
+    "muayeneBitis": "2026-08-14T21:00:00.000Z",
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KRİKO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "LASTİK ŞİŞİRME APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİ DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞARJLI PROJEKTÖT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK ÇARIK"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SÜRGÜLÜ MERDİVEN"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALICI HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA SÜZGECİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALTALI KAZMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAMA LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT T ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYAKLI AYDINLATMA LAMBASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR KABLO APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA BEL KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDROLİK GÜÇ ÜNİTESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDROLİK KESİCİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDROLİK AYIRICI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HİDROLİK HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞAPLAK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇİZME"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK MELANJÖR VE EMİŞ HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLİGAN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "110 LUK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110 LUK KOLLU LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "45 LİK PLASTİK LANS"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK KOLLU LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ORTA KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PERDE LANS"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        }
+      ]
+    },
+    "created_at": "2026-04-16T19:34:40.600Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2021,
+    "model": "Ford Arazöz",
+    "su_kapasite": 6000,
+    "kopuk_kapasite": 500,
+    "next_inspection_date": "2026-08-14T21:00:00.000Z",
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Ford",
+    "id": "b2705749-6930-4a2e-b87d-cb39b75edd1c",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 FR 872",
+    "arac_tipi": "Arazöz",
+    "marka": "HINO",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110 LUK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.360Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2008,
+    "model": "Hino Arazöz",
+    "su_kapasite": 4000,
+    "kopuk_kapasite": 300,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Büyük Tanker Hi̇no",
+    "id": "2a10e3a2-9a67-4d83-81e2-b0c1ff013693",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 AF 240",
+    "arac_tipi": "Tanker",
+    "marka": "BMC",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BEL EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA BARETİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESER"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YER ALTI T ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİ DEMİRİ"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85'LİK TURBO LANS"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "85'LİK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "110'LUK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110'LİK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 DÜZ LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA ANAHTAR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.378Z",
+    "istasyon": "Organize İstasyonu",
+    "yil": 2013,
+    "model": "BMC Organize Tanker",
+    "su_kapasite": 15000,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 7,
+    "aciklama": "Bmc Fati̇h Tanker",
+    "id": "a7106b93-053a-4fdb-9013-fac020cb0b1c",
+    "current_branch": "OSB (Organize)",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 TH 257",
+    "arac_tipi": "Kurtarma",
+    "marka": "IVECO",
+    "km": 32150,
+    "motorSaatiPTO": 940,
+    "durum": "aktif",
+    "sigortaBitis": "2026-10-09T21:00:00.000Z",
+    "muayeneBitis": "2026-05-11T21:00:00.000Z",
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "220 - 380 DÖNÜŞTÜRÜCÜ KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BEZ ÇANTA ANAHTAR TAKIMI"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "BOYUN ATELİ"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "CESET TORBASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İLK YARDIM ÇANTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KRİKO"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "KURTARMA BARETİ"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "KURTARMA ELDİVENİ"
+        },
+        {
+          "adet": 7,
+          "durum": "Tam",
+          "malzeme": "KURTARMA YELEĞİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "LASTİK ŞİŞİRME HORTUMU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REFLEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞARJLI AYAKLI PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TABLET + TERMAL KAMERA(1 ADET)"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YANGIN BATTANİYESİ"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALICI HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALTALI KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BATTANİYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BEZ SEDYE"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BOYUN ÇİZMESİ"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI (2 BÜYÜK , 1 KÜÇÜK)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KLEPE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA SEDYE (2 ADET SİNGER)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "STEPNE VE KURTARMA VİNCİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEKERLEK TAKOZU (METAL)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YER ALTI T ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YILAN YAKALAMA APARATI"
+        }
+      ],
+      "arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ZİNCİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HAVA YASTIĞI 10-20-30-40 TON KAPASİTELİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YÜZ KORUMA LEVHASI"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "8 DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ANTİ PANİK SİSTEMLİ İNİŞ ALETİ ( I D )"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYAK PERLONU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BEL EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CAM KESME TESTERESİ VE CAM KIRMA APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİÇ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ÇİFTLİ MAKARA"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "EKSPRES"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "EL JUMARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "GÖĞÜS JUMARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO AYIRMA ŞARJLI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO AYIRMA ZİNCİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO KESİCİ ŞARJLI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO REM DESTEK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO REM ŞARJLI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO REM UZATMA BAŞLIĞI"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO ŞARJ KABLOSU"
+        },
+        {
+          "adet": 8,
+          "durum": "Tam",
+          "malzeme": "KAPALI PERLON"
+        },
+        {
+          "adet": 7,
+          "durum": "Tam",
+          "malzeme": "KARABİNA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESER"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "KULAKLI 8 DEMİRİ"
+        },
+        {
+          "adet": 7,
+          "durum": "Tam",
+          "malzeme": "KURTARMA ELDİVENİ"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KEMERİ (İSVEÇ OTURAĞI VE KARABİNA)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA MAKARA (ÇİFTLİ)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA MAKARA (TEKLİ)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA ÜÇGENİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ORTA KÖPÜK LANSI -M-"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "PLASTİK TAKOZ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "STATİK İP 150 MT(1 ADEDİ 50 M-1ADEDİ 100 M"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ŞAN"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TANDEM MAKARA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "TEKLİ KÜÇÜK MAKARA"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HAVA YASTIĞI ŞİŞİRME TÜPÜ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLİGAN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO T 1"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAŞIK SEDYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KIYMA MAKİNESİ AÇMA APARATLARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA SİMİDİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜÇÜK SPİRAL"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "MAKARALI KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PROJEKTÖR VE AYAĞI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞARJLI PROJEKTÖR VE AYAĞI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TRİPOT"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85'LİK DİRSEK LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85'LİK PERDE LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇIKRIK VE KOLU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR -Z4-"
+        }
+      ],
+      "sag_orta_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "110'LUK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110'LUK TURBO LANS"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85'LİK HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85'LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞIR KÖPÜK LANSI -S2-"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALİMÜNİZE ELBİSE"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BETON KESME MOTORU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO GÜÇ ÜNİTESİ (SABİT)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KIVILCIMSIZ TESTERE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TRİFOR"
+        }
+      ],
+      "sol_orta_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYIRMA ZİNCİRİ VE UÇLARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CAM KIRMA APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇOKLU ŞARJLI ALET ÇANTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DİREKSİYON AİRBAG KORUYUCUSU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ KESME APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HAVA YASTIĞI VE ŞİŞİRME APARATLARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDROLİK EL MANUELİ VE HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDROLİK REM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO AYIRICI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO KESİCİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜÇÜK HİDROLİK MANUEL GÜÇ KRİKOSU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MANUEL DEBRİYAJ KESME APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MANUEL KAPI AÇMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "RAM DESTEKLEYİCİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REM (KISA-UZUN UZATMA DESTEĞİ)"
+        }
+      ],
+      "halat_çantası": [
+        {
+          "adet": 50,
+          "durum": "Tam",
+          "malzeme": "KURTARMA HALATI 12 MM"
+        },
+        {
+          "adet": 50,
+          "durum": "Tam",
+          "malzeme": "KURTARMA YARDIMCI HALATI 8 MM"
+        }
+      ],
+      "yüksek_açı_kurtarma_çantası": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "2 Lİ MAKARA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "8 DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYAK JUMARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ÇİFT EMNİYETLİ KARABİNA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "EKSPRES"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EL JUMARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "GÖĞÜS JUMARI"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KARABİNA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KONUMLANDIRILABİLİR KURTARMA KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA BARETİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA ÜÇGENİ (YENİ)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TEKLİ MAKARA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YÜKSEK AÇI KURTARMA ÇANTASI"
+        }
+      ]
+    },
+    "created_at": "2026-04-16T19:34:41.294Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2022,
+    "model": "Iveco Arama Kurtarma",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": "2026-05-11T21:00:00.000Z",
+    "status": "active",
+    "filo_no": 5,
+    "aciklama": "Atego Arama-kurtarma",
+    "id": "a11039ee-9dae-4718-b53a-48eae588afa0",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 NC 184",
+    "arac_tipi": "Merdivenli",
+    "marka": "MERCEDES",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTALI EMNİYET KEMERİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM TÜPÜ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BATTANİYE"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ATLAMA YATAĞI(FANLI)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "FAN"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BENZİN BİDONU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ATLAMA YATAĞI (KÜÇÜK)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SANDALYE SEDYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DARALTMA ( SEPETTE)"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "İSTİNAT AYAK DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ (KKT)"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HALATLI İP MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "LASTİK ZİNCİRİ"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "DUBA"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA BRANDASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "GÜÇ KAYNAĞI"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.381Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2012,
+    "model": "Mercedes 54 Metre Dev Merdiven",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 15,
+    "aciklama": "Mercedes 54 Mt Merdi̇ven",
+    "id": "a6830875-8ad7-47f2-a7e0-371ef233aef0",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 TH 256",
+    "arac_tipi": "Kurtarma",
+    "marka": "IVECO",
+    "km": 45230,
+    "motorSaatiPTO": 1287,
+    "durum": "aktif",
+    "sigortaBitis": "2026-09-14T21:00:00.000Z",
+    "muayeneBitis": "2026-07-19T21:00:00.000Z",
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK ÇARIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME TÜPÜ K.K.T"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK ÇARIK"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "BALTALI EMNİYET KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CESET TRBASI"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KASKI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÜÇÜK FENER"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PROJEKYÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞARJLI PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TELSİZ"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI MASKE"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "YANGIN BATTANİYESİ"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALICI HORTUM"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALTALI KAZMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BEZ SEDYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİ HALATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ POMPA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAŞIK SEDYE"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REDÜKSİYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEDYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TRİPOT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YERALTI T ANAHTARI"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "2 Lİ BÜYÜK MAKARA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "8 DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ANTİ PANİK SİSTEMLİ İNİŞ ALETİ ( I D )"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTALI KEMER"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BEL EMNİYET KEMERİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BÜYÜK MAKARA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "EL JUMARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ELEKTRİKLİ ARAÇ YANGIN BATTANİYESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "GÖĞÜS JUMARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 14,
+          "durum": "Tam",
+          "malzeme": "KARABİNA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KARE KURTARMA TAKOZU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KULAKLI 8 DEMİRİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KEMERİ (İSVEÇ OTURAĞI )"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "KÜÇÜK MAKARA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "MAKARALI KABLO"
+        },
+        {
+          "adet": 10,
+          "durum": "Tam",
+          "malzeme": "PERLON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞAN"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BETON KESME"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİÇ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HAVA YASTIĞI ŞİŞİRME APARATI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HAVA YASTIĞI ŞİŞİRME TÜPÜ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİLTİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLİGAN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO AYIRICI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO GÜÇ ÜNİTESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO KESİCİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HOLMATRO T1"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KESER"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KANCASI VE UÇLARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REM DESTEK TAKOZU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REM TAKIMI"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ ZİNCİR TAKIMI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KIVILCIMSIZ TESTERE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KÖPÜK BİDONU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PERDE LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "110 LUK YANGIN HORTUMU"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85 LİK YANGIN HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME HIZARI (STIHL)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM SÜZGECİ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "HAVA YASTIĞI ( POMPA ÜZERİ )"
+        },
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        }
+      ]
+    },
+    "created_at": "2026-04-16T19:34:40.986Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2022,
+    "model": "Iveco Daily Hızlı Müdahale",
+    "su_kapasite": 1000,
+    "kopuk_kapasite": 100,
+    "next_inspection_date": "2026-07-19T21:00:00.000Z",
+    "status": "active",
+    "filo_no": 2,
+    "aciklama": "İlk Müdahale",
+    "id": "93ec0e34-e1ce-4ee1-9287-170f692a572a",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 FP 968",
+    "arac_tipi": "Arazöz",
+    "marka": "BMC",
+    "km": 145000,
+    "motorSaatiPTO": 5600,
+    "durum": "aktif",
+    "sigortaBitis": "2026-06-24T21:00:00.000Z",
+    "muayeneBitis": "2026-03-09T21:00:00.000Z",
+    "bolmeler": {
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KLEPE"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEYYAR MERDİVEN"
+        }
+      ],
+      "arka_kapak": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "REKOR ANAHTARI"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TANK ISITMA KABLOSU"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85'LİK HORTUM"
+        },
+        {
+          "adet": 3,
+          "durum": "Tam",
+          "malzeme": "110'LUK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "85'LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110'LUK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "T ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        }
+      ]
+    },
+    "created_at": "2026-04-16T19:34:41.910Z",
+    "istasyon": "Fatih İstasyonu",
+    "yil": 2014,
+    "model": "BMC Profesyonel Arazöz",
+    "su_kapasite": 8000,
+    "kopuk_kapasite": 800,
+    "next_inspection_date": "2026-03-09T21:00:00.000Z",
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Bmc Fati̇h",
+    "id": "f763bfba-4563-4f42-bfe6-e33a3a8cce14",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "GARAJ",
+    "arac_tipi": "Diğer",
+    "marka": "Bilinmeyen",
+    "km": 0,
+    "motorSaatiPTO": 0,
+    "durum": "Aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "garaj": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ POMPA 21/2\""
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MOTOPOMP DİZEL 21/2\""
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PANCAR MOTORU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARAÇ YIKAMA MAKİNASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SU ÇEKİM CİHAZI"
+        },
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "TÜP LPG 12 KG.LIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇİM BİÇME MAKİNASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MOTOPOMP BENZİNLİ 21/2\""
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HORTUM ALICI"
+        },
+        {
+          "adet": 7,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ POMPA 2\" ELEKTRİKLİ"
+        }
+      ]
+    },
+    "created_at": "2026-06-04T07:40:12.281Z",
+    "istasyon": null,
+    "yil": null,
+    "model": "GARAJ (Excel)",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Garaj",
+    "id": "1f014076-8541-4da7-a426-f36c20e6c578",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 TL 737",
+    "arac_tipi": "Lojistik",
+    "marka": "FORD",
+    "km": 129438,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LİK YANGIN SÖNDÜRME  TÜPÜ KKT"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO (MAKARALI)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALTA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BATTANİYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CESET TORBASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇARIK 110 LUK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇARIK 85 LİK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİÇ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇİZME"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "EMNİYET KEMERİ (DÜZ)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HALAT MERDİVEN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HIZAR (OLEOMAC) MARKA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HYDRAM GÜÇ ÜNİTESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HYDRAM KESİCİ AYIRICI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İLK YARDIM ÇANTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KIYMA MAKİNESİ AÇMA APARATI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KEMERİ (İSVEÇ OTURAĞI)"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "PERLON"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SEDYE (KATLANABİLİR)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞAN"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TELSİZ"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.363Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2012,
+    "model": "Ford Transit Klavuz",
+    "su_kapasite": 0,
+    "kopuk_kapasite": 0,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": 1,
+    "aciklama": "Spri̇nter Kilavuz",
+    "id": "1df3eebc-dafc-48da-af72-2e837c827b49",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  },
+  {
+    "plaka": "58 ACU 765",
+    "arac_tipi": "Arazöz",
+    "marka": "MAN",
+    "km": 124000,
+    "motorSaatiPTO": 2100,
+    "durum": "aktif",
+    "sigortaBitis": null,
+    "muayeneBitis": null,
+    "bolmeler": {
+      "arac_ici": [
+        {
+          "adet": 4,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA SOLUNUM CİHAZI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BATTANİYE"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "YANGIN BATTANİYESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TELSİZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TABLET"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "İLK YARDIM ÇANTASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KORUYUCU GÖZLÜK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYAKLI ŞARJLI PROJEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "REFLEKTÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KUPA DEMİRİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KRİKO"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO DÖNÜŞTÜRÜCÜ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL HAVA HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK ÇARIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "110 LUK ÇARIK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "CESET TORBASI"
+        }
+      ],
+      "arac_ustu": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SÜRGÜLÜ MERDİVEN"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "ALA HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MOTOPOMP ALICI HORTUMU"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KAMA LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "BALTALI KAZMA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MANİVELA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "T ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "BALYOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ALA SÜZGECİ"
+        }
+      ],
+      "sag_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "SPİRAL"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MOTOPOMP"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DEMİR KESME MAKASI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ARA KABLO"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "TEMİZ HAVA DOLUM KOMPRESÖRÜ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AĞAÇ KESME HIZARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AMİR BALTASI"
+        }
+      ],
+      "sol_on_kapak": [
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "JENERATÖR"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "MELANJÖR VE HORTUMU"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA KEMERİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "PLASTİK TAKOZ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "LUKAS GÜÇ ÜNİTESİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "LUKAS KESİCİ- AYIRICI- RAM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇEKİ HALATI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KANCA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ŞAPLAK"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "KÜREK"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "KURTARMA İPİ"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "ÇİZME"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "AYDINLATMA LAMBASI"
+        }
+      ],
+      "sag_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "85 LİK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "FİGRASYON -DAĞITICI-"
+        }
+      ],
+      "sol_arka_kapak": [
+        {
+          "adet": 5,
+          "durum": "Tam",
+          "malzeme": "110 LUK HORTUM"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK TURBO LANS"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110 LUK TURBO LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK PERDE LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK ORTA KÖPÜK LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "DARALTMA"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "6 KG LIK YANGIN SÖNDÜRME  TÜPÜ (KKT)"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "DALGIÇ POMPA"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "HİDRANT ANAHTARI"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK AĞIR KÖPÜK LANSI"
+        },
+        {
+          "adet": 2,
+          "durum": "Tam",
+          "malzeme": "110 LUK MUSLUKLU LANS"
+        },
+        {
+          "adet": 1,
+          "durum": "Tam",
+          "malzeme": "85 LİK MUSLUKLU LANS"
+        }
+      ]
+    },
+    "created_at": "2026-05-22T11:17:02.367Z",
+    "istasyon": "Merkez İstasyonu",
+    "yil": 2018,
+    "model": "MAN Arazöz",
+    "su_kapasite": 10000,
+    "kopuk_kapasite": 1000,
+    "next_inspection_date": null,
+    "status": "active",
+    "filo_no": null,
+    "aciklama": "Man",
+    "id": "e70099d6-4d3f-4fd2-9129-6b2efc296c17",
+    "current_branch": "Merkez",
+    "sorumlu_sofor_id": null,
+    "sorumlu_er_id": null
+  }
+]
