@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
     // Check if token exists and is not the default demo token
     const isRealTokenAvailable = token && token !== 'ecfba725cc7b912da16c9db786d0086e68ec39f27e25c06e0b7aa94e193585de';
 
+    let fallbackReason = "Bilinmeyen Neden";
+    if (!isRealTokenAvailable) {
+      fallbackReason = `Token geçersiz veya bulunamadı. Token var mı: ${!!token}`;
+    }
+
     if (isRealTokenAvailable) {
       try {
         const targetUrl = baseUrl.endsWith('/activity/last') ? baseUrl : `${baseUrl}/activity/last`;
@@ -66,10 +71,15 @@ export async function GET(request: NextRequest) {
               mode: 'realtime',
               vehicles: mappedVehicles
             });
+          } else {
+            fallbackReason = `API döndü fakat veri geçersiz veya result dizisi boş. (data.success: ${data?.success})`;
           }
+        } else {
+          fallbackReason = `API HTTP hatası döndürdü: ${res.status} ${res.statusText}`;
+          console.warn('[Mobiliz API] Real API call returned non-ok status:', res.status, res.statusText);
         }
-        console.warn('[Mobiliz API] Real API call returned non-ok status or invalid format, falling back to simulation.');
-      } catch (apiErr) {
+      } catch (apiErr: any) {
+        fallbackReason = `API isteği sırasında hata oluştu: ${apiErr.message}`;
         console.warn('[Mobiliz API] Failed to connect to external service:', apiErr);
       }
     }
@@ -129,6 +139,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       mode: 'simulation',
+      fallbackReason: fallbackReason,
       vehicles: simulatedVehicles
     });
 

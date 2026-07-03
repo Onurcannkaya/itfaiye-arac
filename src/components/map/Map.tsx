@@ -58,6 +58,7 @@ interface MapProps {
   onTogglePersonnelLayer?: (val: boolean) => void
   onCompleteExternalMission?: (id: string) => void
   isSimulation?: boolean
+  simulationReason?: string
 }
 
 const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -257,7 +258,8 @@ export default function Map({
   showPersonnelLayer = true,
   onTogglePersonnelLayer,
   onCompleteExternalMission,
-  isSimulation = false
+  isSimulation = false,
+  simulationReason
 }: MapProps) {
   const { resolvedTheme } = useTheme()
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -2060,11 +2062,16 @@ export default function Map({
       />
 
       {isSimulation && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center">
           <div className="bg-[var(--fd-warning)]/90 backdrop-blur-sm text-[var(--fd-warning-foreground)] px-4 py-2 rounded-full font-semibold shadow-[var(--fd-shadow-lg)] flex items-center gap-2 text-sm border border-[var(--fd-warning)]/50 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
             Simülasyon Modu (Canlı Veri Alınamıyor)
           </div>
+          {simulationReason && (
+            <div className="mt-2 bg-black/70 backdrop-blur-md text-white text-[11px] px-3 py-1 rounded-md max-w-md text-center shadow-md">
+              Sebep: {simulationReason}
+            </div>
+          )}
         </div>
       )}
 
