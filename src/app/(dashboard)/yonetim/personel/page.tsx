@@ -366,21 +366,21 @@ export default function PersonelYonetimPage() {
                             p.unvan.toLowerCase().includes("pos.baş şof.")
 
       if (cert && cert.gecerlilik_tarihi) {
-        const today = new Date('2026-05-20') // Proje referans tarihi
-        const expiry = new Date(cert.gecerlilik_tarihi)
-        const diffTime = expiry.getTime() - today.getTime()
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-        days = diffDays
+        const res = calculateRemainingDays(cert.gecerlilik_tarihi)
+        days = res.days
 
-        if (diffDays <= 0) {
+        if (days !== null && days <= 0) {
           status = 'expired'
-          label = `Süresi Geçti (${Math.abs(diffDays)} gün önce)`
-        } else if (diffDays <= 30) {
+          label = `Süresi Geçti (${Math.abs(days)} gün önce)`
+        } else if (days !== null && days <= 30) {
           status = 'critical'
-          label = `Kritik (${diffDays} gün kaldı)`
-        } else {
+          label = `Kritik (${days} gün kaldı)`
+        } else if (days !== null) {
           status = 'active'
-          label = `Aktif (${diffDays} gün kaldı)`
+          label = `Aktif (${days} gün kaldı)`
+        } else {
+          status = 'missing'
+          label = 'Ehliyet Tanımsız'
         }
       } else {
         if (isDriverTitle) {
