@@ -932,15 +932,15 @@ export default function PersonelYonetimPage() {
 
       {/* Kritik Belge Takip ve Planlama Radarı */}
       <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] overflow-hidden relative rounded-[var(--fd-r)]">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-amber-500/5 rounded-full blur-2xl pointer-events-none" />
-        <CardHeader className="pb-3 border-b border-border/50 bg-muted/10">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--fd-amber)]/10 to-[var(--fd-danger)]/5 rounded-full blur-2xl pointer-events-none" />
+        <CardHeader className="pb-3 border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/60">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
-              <ShieldAlert className="w-5 h-5 animate-pulse" />
+            <div className="p-2 bg-[var(--fd-amber)]/15 rounded-[var(--fd-r-sm)] text-[var(--fd-amber)] animate-pulse shadow-[var(--fd-shadow-sm)]">
+              <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
               <CardTitle className="text-sm font-bold text-[var(--fd-text)]">Kritik Belge Takip ve Planlama Radarı</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-[var(--fd-text2)] mt-0.5">
                 Geçerlilik süresi dolan veya son 30 güne giren personel ehliyet, ilk yardım ve SCBA sertifikaları.
               </p>
             </div>
@@ -948,13 +948,13 @@ export default function PersonelYonetimPage() {
         </CardHeader>
         <CardContent className="p-3 sm:p-4">
           {criticalPersonnel.length === 0 ? (
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-              <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-full shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-[var(--fd-success)]/10 border border-[var(--fd-success)]/20 rounded-[var(--fd-r)]">
+              <div className="p-3 bg-[var(--fd-success)]/15 text-[var(--fd-success)] rounded-full shrink-0">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div className="text-center sm:text-left">
-                <p className="font-semibold text-emerald-400 text-sm">Tüm Personel Belgeleri Güvenli & Güncel</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="font-bold text-[var(--fd-success)] text-sm">Tüm Personel Belgeleri Güvenli & Güncel</p>
+                <p className="text-xs text-[var(--fd-text2)] mt-0.5">
                   Süre aşımı veya kritik aşamaya yaklaşan ehliyet, ilk yardım veya SCBA sertifikası bulunmamaktadır.
                 </p>
               </div>
@@ -970,7 +970,7 @@ export default function PersonelYonetimPage() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-bold text-[var(--fd-text)] text-sm">{person.ad} {person.soyad}</h4>
-                        <p className="text-[10px] font-mono text-muted-foreground">{person.sicil_no} • {person.unvan} • Posta {person.posta_no || 1}</p>
+                        <p className="text-[10px] font-mono text-[var(--fd-text3)]">{person.sicil_no} • {person.unvan} • Posta {person.posta_no || 1}</p>
                       </div>
                       <Badge variant="outline" className="text-[9px] bg-[var(--fd-surface3)] border-[var(--fd-border)] text-[var(--fd-text3)]">
                         Posta {person.posta_no || 1}
@@ -981,27 +981,27 @@ export default function PersonelYonetimPage() {
                       {issues.map((issue, idx) => (
                         <div key={idx} className="flex flex-col gap-1">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-[var(--fd-text3)] flex items-center gap-1.5 font-medium">
-                              {issue.type === 'Ehliyet' ? <Truck className="w-3.5 h-3.5 text-cyan-500" /> :
-                               issue.type === 'İlkyardım' ? <HeartPulse className="w-3.5 h-3.5 text-rose-500" /> :
-                               <Wind className="w-3.5 h-3.5 text-teal-500" />}
+                            <span className="text-[var(--fd-text2)] flex items-center gap-1.5 font-medium">
+                              {issue.type === 'Ehliyet' ? <Truck className="w-3.5 h-3.5 text-[var(--fd-info)]" /> :
+                               issue.type === 'İlkyardım' ? <HeartPulse className="w-3.5 h-3.5 text-[var(--fd-danger)]" /> :
+                               <Wind className="w-3.5 h-3.5 text-[var(--fd-success)]" />}
                               {issue.label}
                             </span>
                             {issue.isExpired ? (
-                              <Badge className="bg-red-500/10 text-red-500 border border-red-500/20 text-[9px] animate-pulse py-0.5">
+                              <Badge variant="danger" className="text-[9px] animate-pulse py-0.5">
                                 Süresi Geçti
                               </Badge>
                             ) : (
-                              <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] py-0.5">
+                              <Badge variant="warning" className="text-[9px] py-0.5">
                                 Kritik Eşik
                               </Badge>
                             )}
                           </div>
                           <div className="text-[10px] pl-5">
                             {issue.isExpired ? (
-                              <span className="text-rose-500 font-bold">🚨 {Math.abs(issue.days || 0)} gün önce süresi doldu</span>
+                              <span className="text-[var(--fd-danger)] font-bold">🚨 {Math.abs(issue.days || 0)} gün önce süresi doldu</span>
                             ) : (
-                              <span className="text-amber-500 font-semibold">⏳ {issue.days} gün kaldı</span>
+                              <span className="text-[var(--fd-amber)] font-semibold">⏳ {issue.days} gün kaldı</span>
                             )}
                           </div>
                         </div>
