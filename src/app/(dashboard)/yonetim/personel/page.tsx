@@ -118,7 +118,7 @@ export default function PersonelYonetimPage() {
   // Registration form
   const [isAdding, setIsAdding] = useState(false)
   const [newAdSoyad, setNewAdSoyad] = useState("")
-  const [newRole, setNewRole] = useState("User")
+  const [newJobIndex, setNewJobIndex] = useState(0)
   const [newPostaNo, setNewPostaNo] = useState("1")
   const [newDurum, setNewDurum] = useState("Görevde")
   const [newPassword, setNewPassword] = useState("")
@@ -456,16 +456,20 @@ export default function PersonelYonetimPage() {
     const soyad = parts.length > 1 ? parts.pop() || "" : ""
     const ad = parts.join(" ")
 
+    const selectedJob = COMBINED_JOBS[newJobIndex] || COMBINED_JOBS[0]
+    const roleVal = selectedJob.role
+    const unvanVal = selectedJob.unvan
+
     try {
       const { error: insertErr } = await api.insert('personnel', {
         sicil_no: nextSicil,
         ad,
         soyad,
-        unvan: 'İtfaiye Eri',
-        rol: newRole,
-        view_only: newRole === 'User',
-        can_approve: newRole === 'Shift_Leader' || newRole === 'Admin' || newRole === 'Editor',
-        can_print: newRole === 'Admin' || newRole === 'Editor',
+        unvan: unvanVal,
+        rol: roleVal,
+        view_only: roleVal === 'User',
+        can_approve: roleVal === 'Shift_Leader' || roleVal === 'Admin' || roleVal === 'Editor',
+        can_print: roleVal === 'Admin' || roleVal === 'Editor',
         posta_no: parseInt(newPostaNo, 10),
         durum: newDurum,
         password: newPassword || '1234'
@@ -477,7 +481,7 @@ export default function PersonelYonetimPage() {
       await fetchPersonnel()
       setNewAdSoyad("")
       setNewPassword("")
-      setNewRole("User")
+      setNewJobIndex(0)
       setIsAdding(false)
 
       // Audit log: Personel ekleme işlemini kaydet
@@ -489,7 +493,7 @@ export default function PersonelYonetimPage() {
           actor_sicil_no: currentUser?.sicilNo || 'unknown',
           actor_name: currentUser ? `${currentUser.ad} ${currentUser.soyad}` : 'Bilinmeyen',
           target: nextSicil,
-          details: { ad, soyad, rol: newRole },
+          details: { ad, soyad, rol: roleVal, unvan: unvanVal },
         }),
       }).catch(err => console.error('[AuditLog] Personel ekleme logu gönderilemedi:', err))
     } catch (err: any) {
@@ -497,21 +501,21 @@ export default function PersonelYonetimPage() {
       // Fallback: add locally
       const newPerson: Personnel = {
         sicil_no: nextSicil, ad, soyad,
-        unvan: 'İtfaiye Eri', rol: newRole, posta: '',
+        unvan: unvanVal, rol: roleVal, posta: '',
         posta_no: parseInt(newPostaNo, 10), durum: newDurum
       }
       setPersonnel(prev => [...prev, newPerson])
       setPermissions(prev => ({
         ...prev,
         [nextSicil]: {
-          view_only: newRole === 'User',
-          can_approve: newRole !== 'User',
-          can_print: newRole === 'Admin' || newRole === 'Editor',
+          view_only: roleVal === 'User',
+          can_approve: roleVal !== 'User',
+          can_print: roleVal === 'Admin' || roleVal === 'Editor',
         }
       }))
       setNewAdSoyad("")
       setNewPassword("")
-      setNewRole("User")
+      setNewJobIndex(0)
       setIsAdding(false)
     } finally {
       setSaving(false)
@@ -1066,16 +1070,17 @@ export default function PersonelYonetimPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Sistem Rolü</label>
+                <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Görevi / Ünvanı (Sistem Rolü)</label>
                 <select 
                   className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface)] px-3 py-1 text-xs text-[var(--fd-text)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fd-accent)]"
-                  value={newRole}
-                  onChange={e => setNewRole(e.target.value)}
+                  value={newJobIndex}
+                  onChange={e => setNewJobIndex(parseInt(e.target.value, 10))}
                 >
-                  <option value="Admin">Sistem Yöneticisi (Admin)</option>
-                  <option value="Editor">Amir (Editor)</option>
-                  <option value="Shift_Leader">Çavuş (Shift Leader)</option>
-                  <option value="User">İtfaiye Eri (Kullanıcı)</option>
+                  {COMBINED_JOBS.map((job, idx) => (
+                    <option key={idx} value={idx}>
+                      {job.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
