@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer } from "lucide-react"
+import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer, X } from "lucide-react"
 import { api } from "@/lib/api"
 import { type Personnel } from "@/types"
 import { cn, calculateRemainingDays } from "@/lib/utils"
@@ -1029,35 +1029,46 @@ export default function PersonelYonetimPage() {
         </div>
       )}
 
-      {isAdding && (
-        <Card className="border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)] p-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-bold flex items-center gap-1.5 text-[var(--fd-accent)] uppercase">
+      <Dialog open={isAdding} onOpenChange={setIsAdding}>
+        <DialogContent className="max-w-lg bg-[var(--fd-surface)] border-[var(--fd-border)] rounded-[var(--fd-r)] overflow-hidden shadow-[var(--fd-shadow-lg)]">
+          <DialogHeader className="p-4 border-b border-[var(--fd-border)]/60 flex flex-row items-center justify-between">
+            <DialogTitle className="text-sm font-bold flex items-center gap-1.5 text-[var(--fd-accent)] uppercase">
               <UserPlus className="w-4 h-4" /> 
               Hızlı Personel Kayıt Formu
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddPersonel} className="flex flex-wrap gap-4 items-end">
-              <div className="space-y-2 flex-col w-full sm:w-[110px]">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Sicil No</label>
-                <Input value={nextSicil} disabled className="font-mono bg-[var(--fd-surface2)] border-[var(--fd-border)] h-9 text-xs rounded-[var(--fd-r-sm)]" />
+            </DialogTitle>
+            <button 
+              onClick={() => setIsAdding(false)} 
+              type="button"
+              className="text-[var(--fd-danger)] hover:opacity-90 bg-[var(--fd-danger)]/15 border border-[var(--fd-danger)]/30 rounded-[var(--fd-r-sm)] transition-all active:scale-95 flex items-center justify-center w-8 h-8 cursor-pointer"
+              title="Kapat"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </DialogHeader>
+          <div className="p-5">
+            <form onSubmit={handleAddPersonel} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="space-y-1.5 flex-1">
+                  <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Sicil No</label>
+                  <Input value={nextSicil} disabled className="font-mono bg-[var(--fd-surface2)] border-[var(--fd-border)] h-10 text-xs rounded-[var(--fd-r-sm)]" />
+                </div>
+                <div className="space-y-1.5 flex-[2]">
+                  <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Ad Soyad</label>
+                  <Input 
+                    placeholder="Örn: Serdar Vatansever" 
+                    value={newAdSoyad} 
+                    onChange={e => setNewAdSoyad(e.target.value)}
+                    autoFocus
+                    required
+                    className="h-10 text-xs border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r-sm)]"
+                  />
+                </div>
               </div>
-              <div className="space-y-2 flex-col w-full sm:flex-1 min-w-[200px]">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Ad Soyad</label>
-                <Input 
-                  placeholder="Örn: Serdar Vatansever" 
-                  value={newAdSoyad} 
-                  onChange={e => setNewAdSoyad(e.target.value)}
-                  autoFocus
-                  required
-                  className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
-                />
-              </div>
-              <div className="space-y-2 flex-col w-full sm:w-[220px]">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Sistem Rolü</label>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Sistem Rolü</label>
                 <select 
-                  className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fd-accent)]"
+                  className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface)] px-3 py-1 text-xs text-[var(--fd-text)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fd-accent)]"
                   value={newRole}
                   onChange={e => setNewRole(e.target.value)}
                 >
@@ -1067,50 +1078,69 @@ export default function PersonelYonetimPage() {
                   <option value="User">İtfaiye Eri (Kullanıcı)</option>
                 </select>
               </div>
-              <div className="space-y-2 flex-col w-full sm:w-[110px]">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Posta</label>
-                <select 
-                  className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
-                  value={newPostaNo}
-                  onChange={e => setNewPostaNo(e.target.value)}
-                >
-                  <option value="1">1. Posta</option>
-                  <option value="2">2. Posta</option>
-                  <option value="3">3. Posta</option>
-                </select>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="space-y-1.5 flex-1">
+                  <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Posta No</label>
+                  <select 
+                    className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface)] px-3 py-1 text-xs text-[var(--fd-text)] focus-visible:outline-none"
+                    value={newPostaNo}
+                    onChange={e => setNewPostaNo(e.target.value)}
+                  >
+                    <option value="1">1. Posta</option>
+                    <option value="2">2. Posta</option>
+                    <option value="3">3. Posta</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Durum</label>
+                  <select 
+                    className="flex h-10 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface)] px-3 py-1 text-xs text-[var(--fd-text)] focus-visible:outline-none"
+                    value={newDurum}
+                    onChange={e => setNewDurum(e.target.value)}
+                  >
+                    <option value="Görevde">Görevde</option>
+                    <option value="İzinli">İzinli</option>
+                    <option value="Raporlu">Raporlu</option>
+                  </select>
+                </div>
               </div>
-              <div className="space-y-2 flex-col w-full sm:w-[110px]">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Durum</label>
-                <select 
-                  className="flex h-9 w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1 text-xs"
-                  value={newDurum}
-                  onChange={e => setNewDurum(e.target.value)}
-                >
-                  <option value="Görevde">Görevde</option>
-                  <option value="İzinli">İzinli</option>
-                  <option value="Raporlu">Raporlu</option>
-                </select>
-              </div>
-              <div className="space-y-2 flex-col w-full sm:w-[150px]">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Başlangıç Şifresi</label>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase text-[var(--fd-text3)] tracking-wider">Başlangıç Şifresi</label>
                 <Input 
                   type="password"
-                  placeholder="Şifre belirleyin" 
+                  placeholder="En az 4 karakter şifre belirleyin" 
                   value={newPassword} 
                   onChange={e => setNewPassword(e.target.value)}
                   required
                   minLength={4}
-                  className="h-9 text-xs border-[var(--fd-border)] bg-[var(--fd-surface2)] rounded-[var(--fd-r-sm)]"
+                  className="h-10 text-xs border-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r-sm)]"
                 />
               </div>
-              <Button type="submit" disabled={saving} className="w-full sm:w-auto h-9 px-6 gap-1.5 bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-semibold text-xs rounded-[var(--fd-r-sm)]">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {saving ? "Kaydediliyor..." : "Ekle"}
-              </Button>
+
+              <DialogFooter className="pt-4 border-t border-[var(--fd-border)]/60">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsAdding(false)} 
+                  className="h-9 px-4 rounded-[var(--fd-r-sm)] text-xs"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={saving} 
+                  className="h-9 px-6 gap-1.5 bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-semibold text-xs rounded-[var(--fd-r-sm)]"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {saving ? "Kaydediliyor..." : "Personel Ekle"}
+                </Button>
+              </DialogFooter>
             </form>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Arama ve Liste */}
       <Card>
