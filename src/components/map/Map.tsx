@@ -57,6 +57,7 @@ interface MapProps {
   showPersonnelLayer?: boolean
   onTogglePersonnelLayer?: (val: boolean) => void
   onCompleteExternalMission?: (id: string) => void
+  isSimulation?: boolean
 }
 
 const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -255,7 +256,8 @@ export default function Map({
   onEditIncident,
   showPersonnelLayer = true,
   onTogglePersonnelLayer,
-  onCompleteExternalMission
+  onCompleteExternalMission,
+  isSimulation = false
 }: MapProps) {
   const { resolvedTheme } = useTheme()
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -2056,6 +2058,15 @@ export default function Map({
         ref={mapContainerRef}
         style={{ width: '100%', height: '100%' }}
       />
+
+      {isSimulation && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="bg-[var(--fd-warning)]/90 backdrop-blur-sm text-[var(--fd-warning-foreground)] px-4 py-2 rounded-full font-semibold shadow-[var(--fd-shadow-lg)] flex items-center gap-2 text-sm border border-[var(--fd-warning)]/50 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+            Simülasyon Modu (Canlı Veri Alınamıyor)
+          </div>
+        </div>
+      )}
 
       {/* Taktiksel Harita Lejantı Panel */}
       <div className="hidden sm:block absolute right-4 bottom-6 z-10 bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 w-60 shadow-[var(--fd-shadow-lg)] transition-all duration-300 text-xs text-[var(--fd-text2)]">

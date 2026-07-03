@@ -126,6 +126,7 @@ function HaritaContent() {
   const [externalMissions, setExternalMissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showPersonnelLayer, setShowPersonnelLayer] = useState(true)
+  const [isSimulation, setIsSimulation] = useState(false)
 
   // Search Engine State
   const [searchQuery, setSearchQuery] = useState("")
@@ -281,6 +282,7 @@ function HaritaContent() {
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
+            setIsSimulation(dataVeh.mode === 'simulation')
             setVehicles(prevVehicles => {
               const liveMap: Record<string, any> = {}
               dataVeh.vehicles.forEach((v: any) => {
@@ -334,6 +336,7 @@ function HaritaContent() {
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
+            setIsSimulation(dataVeh.mode === 'simulation')
             const liveMap: Record<string, any> = {}
             dataVeh.vehicles.forEach((v: any) => {
               if (v.plate) {
@@ -1074,6 +1077,7 @@ function HaritaContent() {
             showPersonnelLayer={showPersonnelLayer}
             onTogglePersonnelLayer={setShowPersonnelLayer}
             onCompleteExternalMission={handleCompleteExternalMission}
+            isSimulation={isSimulation}
           />
           
         </CardContent>
