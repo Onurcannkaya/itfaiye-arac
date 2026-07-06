@@ -114,7 +114,7 @@ export function InventoryAddEditModal({
   const isEdit = !!initialItem
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-[var(--fd-surface)] border border-[var(--fd-border-strong)] w-full max-w-md rounded-[var(--fd-r-lg)] shadow-[var(--fd-shadow-lg)] animate-in slide-in-from-bottom-4 zoom-in-95 overflow-hidden">
         
         {/* Cyber Neon Glow Header */}
