@@ -1990,11 +1990,11 @@ export default function EgitimlerPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[var(--fd-text3)] font-bold block">Vergi No / T.C. Kimlik <span className="text-red-500">*</span></label>
+                      <label className="text-[var(--fd-text3)] font-bold block">Telefon Numarası <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-xs focus:outline-none focus:border-[var(--fd-accent)] font-medium"
-                        placeholder="10 veya 11 haneli numara"
+                        placeholder="Örn: 0555 555 5555"
                         value={blacklistForm.telefon}
                         onChange={(e) => setBlacklistForm(prev => ({ ...prev, telefon: e.target.value }))}
                       />
