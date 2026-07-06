@@ -1933,7 +1933,7 @@ export default function EgitimlerPage() {
                   className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs h-10 px-5 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
                   onClick={handleQueryBlacklist}
                 >
-                  Riski Sorgula
+                  Sorgula
                 </Button>
               </div>
 
@@ -1941,37 +1941,37 @@ export default function EgitimlerPage() {
                 <div className="mt-5 animate-in fade-in duration-200">
                   {queryResult ? (
                     queryResult.aktif_durum ? (
-                      <div className="border border-red-500 bg-red-950/20 text-red-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
-                        <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <div className="border border-red-500 bg-red-50 dark:bg-red-950/20 text-red-800 dark:text-red-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="font-bold text-sm text-red-400">⚠️ DİKKAT: KURUM KIRMIZI BÜLTEN KATEGORİSİNDEDİR!</h4>
-                          <p className="text-xs text-red-300/80 mt-1">
+                          <h4 className="font-bold text-sm text-red-700 dark:text-red-400">⚠️ DİKKAT: KURUM KIRMIZI BÜLTEN KATEGORİSİNDEDİR!</h4>
+                          <p className="text-xs text-red-700/80 dark:text-red-300/80 mt-1">
                             {queryResult.kurum_adi} (Telefon: {queryResult.telefon}) kurumu, son dakika iptalleri veya kurallara uymaması nedeniyle engellenmiştir.
                           </p>
-                          <p className="text-xs font-mono text-red-400 mt-2">
+                          <p className="text-xs font-mono text-red-700 dark:text-red-400 mt-2">
                             <strong>Kısıtlama Gerekçesi:</strong> {queryResult.gerekce || "Gerekçe belirtilmemiş."}
                           </p>
-                          <p className="text-[10px] text-red-500 mt-1">Yasaklama Tarihi: {new Date(queryResult.yasaklama_tarihi).toLocaleDateString('tr-TR')}</p>
+                          <p className="text-[10px] text-red-600 dark:text-red-500 mt-1">Yasaklama Tarihi: {new Date(queryResult.yasaklama_tarihi).toLocaleDateString('tr-TR')}</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="border border-amber-500 bg-amber-950/20 text-amber-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3">
-                        <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="border border-amber-500 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3">
+                        <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="font-bold text-sm text-amber-400">Uyarılı Kurum (Aktif Engel Yok)</h4>
-                          <p className="text-xs mt-1">
+                          <h4 className="font-bold text-sm text-amber-700 dark:text-amber-400">Uyarılı Kurum (Aktif Engel Yok)</h4>
+                          <p className="text-xs mt-1 text-amber-700/80 dark:text-amber-300/80">
                             {queryResult.kurum_adi} kurumu geçmişte listeye eklenmiş ancak şu an aktif engeli bulunmamaktadır.
                           </p>
                         </div>
                       </div>
                     )
                   ) : (
-                    <div className="border border-emerald-500 bg-emerald-950/20 text-emerald-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <div className="border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200 p-4 rounded-[var(--fd-r-sm)] flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-500 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-bold text-sm text-emerald-500">Temiz Sicil (Herhangi Bir Engel Yok)</h4>
-                        <p className="text-xs mt-1">
-                          Verilen T.C./Vergi numarası ile eşleşen aktif bir idari engel bulunamamıştır. Eğitim faaliyet planı oluşturulabilir.
+                        <h4 className="font-bold text-sm text-emerald-700 dark:text-emerald-400">Temiz Sicil (Herhangi Bir Engel Yok)</h4>
+                        <p className="text-xs mt-1 text-emerald-700/80 dark:text-emerald-300">
+                          Verilen arama terimi ile eşleşen aktif bir idari engel bulunamamıştır. Eğitim faaliyet planı oluşturulabilir.
                         </p>
                       </div>
                     </div>
