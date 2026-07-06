@@ -64,6 +64,14 @@ export default function PersonelProfilPage() {
   const [editEmergencyPhone, setEditEmergencyPhone] = useState("")
   const [savingDetails, setSavingDetails] = useState(false)
 
+  // Yeni İzin/Görev Talebi Ekleme State'leri
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false)
+  const [leaveType, setLeaveType] = useState("İzinli")
+  const [leaveStartDate, setLeaveStartDate] = useState(new Date().toLocaleDateString('en-CA'))
+  const [leaveEndDate, setLeaveEndDate] = useState(new Date().toLocaleDateString('en-CA'))
+  const [leaveDescription, setLeaveDescription] = useState("")
+  const [savingLeave, setSavingLeave] = useState(false)
+
   const leaveStats = useMemo(() => {
     let totalIzin = 0;
     let totalRapor = 0;
@@ -128,6 +136,61 @@ export default function PersonelProfilPage() {
       alert("Bilgiler güncellenirken hata oluştu: " + err.message)
     } finally {
       setSavingDetails(false)
+    }
+  }
+  const handleSaveLeave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!leaveStartDate || !leaveEndDate) {
+      alert("Lütfen tarihleri doldurun.")
+      return
+    }
+    setSavingLeave(true)
+    try {
+      const { data, error } = await api.insert('personnel_leaves', {
+        sicil_no: sicil_no,
+        izin_turu: leaveType,
+        baslangic_tarihi: leaveStartDate,
+        bitis_tarihi: leaveEndDate,
+        aciklama: leaveDescription || `${leaveType} kaydı oluşturuldu.`,
+        durum: 'Onaylandı'
+      })
+      if (error) throw error
+
+      // Chronological record insert in personnel_records (Hizmet Dökümü)
+      await api.insert('personnel_records', {
+        sicil_no: sicil_no,
+        kayit_turu: 'Manuel Giriş',
+        tarih: new Date().toLocaleDateString('en-CA'),
+        aciklama: `${leaveType} kaydı el ile eklendi: ${leaveStartDate} - ${leaveEndDate}. Açıklama: ${leaveDescription || 'Belirtilmemiş'}`
+      }).catch(err => console.error("Records log failed:", err))
+
+      // Refresh Leaves list
+      const { data: lData } = await api.from('personnel_leaves').select('*').eq('sicil_no', sicil_no).order('created_at', { ascending: false })
+      if (lData) setLeaves(lData)
+
+      // Audit Log insertion
+      fetch('/api/audit-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action_type: 'leave_request_manual',
+          actor_sicil_no: user?.sicilNo || 'unknown',
+          actor_name: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+          target: sicil_no,
+          details: { izin_turu: leaveType, baslangic: leaveStartDate, bitis: leaveEndDate },
+        }),
+      }).catch(err => console.error('[AuditLog] Izin ekleme logu gonderilemedi:', err))
+
+      setIsLeaveModalOpen(false)
+      setLeaveType("İzinli")
+      setLeaveStartDate(new Date().toLocaleDateString('en-CA'))
+      setLeaveEndDate(new Date().toLocaleDateString('en-CA'))
+      setLeaveDescription("")
+    } catch (err: any) {
+      console.error("İzin ekleme hatası:", err)
+      alert(`İzin eklenemedi: ${err.message || err}`)
+    } finally {
+      setSavingLeave(false)
     }
   }
 
@@ -805,7 +868,7 @@ export default function PersonelProfilPage() {
                 <h2 className="text-xs font-bold text-[var(--fd-text)] uppercase">İzin ve Görev Kayıtları</h2>
                 <p className="text-[10px] text-[var(--fd-text3)] mt-0.5">Personelin bugüne kadar kullandığı tüm izin ve görevlerin dökümü.</p>
               </div>
-              <Button>Yeni İzin Talebi</Button>
+              <Button onClick={() => setIsLeaveModalOpen(true)}>Yeni İzin Talebi</Button>
             </div>
 
             {/* İstatistik Özeti */}
@@ -1052,6 +1115,81 @@ export default function PersonelProfilPage() {
                   <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="h-9 text-xs border border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-4">İptal</Button>
                   <Button type="submit" disabled={savingDetails} className="bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-bold text-xs h-9 rounded-[var(--fd-r-sm)] px-5">
                     {savingDetails ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Kaydet
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* YENİ İZİN TALEBİ / EKLEME MODALI */}
+        {isLeaveModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <Card className="w-full max-w-md bg-[var(--fd-surface)] border border-[var(--fd-border-strong)] shadow-[var(--fd-shadow-lg)] p-5 rounded-[var(--fd-r-lg)] animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-base font-bold text-[var(--fd-text)] flex items-center gap-1.5 uppercase">
+                  <Calendar className="w-5 h-5 text-[var(--fd-accent)]" /> Yeni İzin veya Görev Kaydı Ekle
+                </h3>
+                <button 
+                  onClick={() => setIsLeaveModalOpen(false)} 
+                  className="p-1 text-[var(--fd-text3)] hover:text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] transition-all cursor-pointer"
+                  title="Kapat"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveLeave} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Kayıt Türü</label>
+                  <select 
+                    value={leaveType}
+                    onChange={e => setLeaveType(e.target.value)}
+                    className="w-full h-9 px-3 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-xs text-[var(--fd-text)] focus:border-[var(--fd-accent)] focus:outline-none"
+                  >
+                    <option value="İzinli">İzinli</option>
+                    <option value="Raporlu">Raporlu</option>
+                    <option value="Geçici Şube Görevi">Geçici Şube Görevi</option>
+                    <option value="Dış Görev">Dış Görev</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-[var(--fd-text3)]">Başlangıç Tarihi</label>
+                    <Input 
+                      type="date" 
+                      value={leaveStartDate} 
+                      onChange={e => setLeaveStartDate(e.target.value)} 
+                      className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] focus:border-[var(--fd-accent)] h-9 text-xs" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-[var(--fd-text3)]">Bitiş Tarihi</label>
+                    <Input 
+                      type="date" 
+                      value={leaveEndDate} 
+                      onChange={e => setLeaveEndDate(e.target.value)} 
+                      className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] focus:border-[var(--fd-accent)] h-9 text-xs" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--fd-text3)]">Açıklama / Detay</label>
+                  <textarea 
+                    value={leaveDescription} 
+                    onChange={e => setLeaveDescription(e.target.value)} 
+                    placeholder="İzin gerekçesi, rapor detayı, şube ismi veya dış görev konumu..." 
+                    rows={3}
+                    className="w-full rounded-[var(--fd-r-sm)] border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-2 text-xs text-[var(--fd-text)] placeholder-[var(--fd-text3)] focus:border-[var(--fd-accent)] focus:outline-none" 
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setIsLeaveModalOpen(false)} className="h-9 text-xs border border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] text-[var(--fd-text2)] rounded-[var(--fd-r-sm)] px-4">İptal</Button>
+                  <Button type="submit" disabled={savingLeave} className="bg-[var(--fd-accent)] hover:opacity-90 text-[#ffffff] font-bold text-xs h-9 rounded-[var(--fd-r-sm)] px-5">
+                    {savingLeave ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Ekle
                   </Button>
                 </div>
               </form>
