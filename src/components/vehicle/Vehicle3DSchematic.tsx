@@ -49,6 +49,12 @@ const matchHotspotToKey = (hotspot: string, keys: string[]): string | null => {
   const normCleanHotspot = cleanHotspot.toLowerCase().replace(/[^a-z0-9]/g, '');
   
   for (const k of keys) {
+    // Prevent cross-matching between completely different compartment types
+    const hk = hotspot.toLowerCase();
+    const kk = k.toLowerCase();
+    if ((hk.includes("ici") && kk.includes("ustu")) || (hk.includes("ustu") && kk.includes("ici"))) continue;
+    if ((hk.includes("bolme") && kk.includes("kapak")) || (hk.includes("kapak") && kk.includes("bolme"))) continue;
+
     const normCleanK = k.toLowerCase().replace('_kapak', '').replace('_ici', '').replace('_bolme', '').replace(/[^a-z0-9]/g, '');
     if (normCleanK.includes(normCleanHotspot) || normCleanHotspot.includes(normCleanK)) {
       return k;
