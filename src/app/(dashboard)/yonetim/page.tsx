@@ -767,56 +767,7 @@ export default function DashboardPage() {
         })
       )
 
-      const { data: recentMaint } = await api
-        .from("vehicle_maintenances")
-        .select("id,plaka,islem_turu,created_at")
-        .order("created_at", { ascending: false })
-        .limit(5)
 
-      recentMaint?.forEach((r: VehicleMaintenance) =>
-        feed.push({
-          id: `mnt-${r.id}`,
-          type: "maintenance",
-          title: `${r.plaka} — ${r.islem_turu}`,
-          detail: "Araç bakım kaydı oluşturuldu",
-          time: formatRelativeTime(r.created_at),
-          rawTime: r.created_at,
-        })
-      )
-
-      const { data: recentHyd } = await api
-        .from("fire_hydrants")
-        .select("id,no,durum,created_at")
-        .order("created_at", { ascending: false })
-        .limit(5)
-
-      recentHyd?.forEach((r: FireHydrant) =>
-        feed.push({
-          id: `hyd-${r.id}`,
-          type: "hydrant",
-          title: `Hidrant #${r.no || "?"}`,
-          detail: `Durum: ${r.durum}`,
-          time: formatRelativeTime(r.created_at),
-          rawTime: r.created_at,
-        })
-      )
-
-      const { data: recentTrain } = await api
-        .from("activities_and_trainings")
-        .select("id,faaliyet_turu,faaliyet_konusu,created_at")
-        .order("created_at", { ascending: false })
-        .limit(5)
-
-      recentTrain?.forEach((r: ActivityAndTraining) =>
-        feed.push({
-          id: `trn-${r.id}`,
-          type: "training",
-          title: `${r.faaliyet_turu}: ${r.faaliyet_konusu}`,
-          detail: "Eğitim/Faaliyet planlandı",
-          time: formatRelativeTime(r.created_at),
-          rawTime: r.created_at,
-        })
-      )
 
       // Sort by raw time descending, take top 8
       feed.sort((a, b) => new Date(b.rawTime).getTime() - new Date(a.rawTime).getTime())
