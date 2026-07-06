@@ -174,19 +174,23 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
     }
     const todayStr = shiftDate.toLocaleDateString("en-CA");
     
-    // 1. Log in personnel_leaves if the status is leave or sick
-    if (statusBase === 'İzinli' || statusBase === 'Raporlu') {
+    // 1. Log in personnel_leaves if the status is leave, sick, temporary duty, or external duty
+    const isTrackableStatus = statusBase === 'İzinli' || statusBase === 'Raporlu' || 
+      statusBase === 'Geçici Şube Görevi' || statusBase.startsWith('Dış Görev');
+    
+    if (isTrackableStatus) {
       try {
+        const izinTuru = statusBase.startsWith('Dış Görev') ? 'Dış Görev' : statusBase;
         const { data: existingLeaves } = await api.from('personnel_leaves')
           .select('id')
           .eq('sicil_no', sicilNo)
           .eq('baslangic_tarihi', todayStr)
-          .eq('izin_turu', statusBase);
+          .eq('izin_turu', izinTuru);
 
         if (!existingLeaves || existingLeaves.length === 0) {
           await api.insert('personnel_leaves', {
             sicil_no: sicilNo,
-            izin_turu: statusBase,
+            izin_turu: izinTuru,
             baslangic_tarihi: todayStr,
             bitis_tarihi: todayStr,
             aciklama: explanation || `${statusBase} durumu seçildi.`,

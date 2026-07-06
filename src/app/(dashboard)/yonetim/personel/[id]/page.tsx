@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import jsPDF from "jspdf"
 import { QRCodeCanvas } from "qrcode.react"
@@ -63,6 +63,39 @@ export default function PersonelProfilPage() {
   const [editEmergencyName, setEditEmergencyName] = useState("")
   const [editEmergencyPhone, setEditEmergencyPhone] = useState("")
   const [savingDetails, setSavingDetails] = useState(false)
+
+  const leaveStats = useMemo(() => {
+    let totalIzin = 0;
+    let totalRapor = 0;
+    let totalGeciciGorev = 0;
+    let totalDisGorev = 0;
+
+    leaves.forEach(l => {
+      if (l.baslangic_tarihi && l.bitis_tarihi) {
+        const start = new Date(l.baslangic_tarihi);
+        const end = new Date(l.bitis_tarihi);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        if (l.izin_turu === 'İzinli') {
+          totalIzin += diffDays;
+        } else if (l.izin_turu === 'Raporlu') {
+          totalRapor += diffDays;
+        } else if (l.izin_turu === 'Geçici Şube Görevi') {
+          totalGeciciGorev += diffDays;
+        } else if (l.izin_turu === 'Dış Görev') {
+          totalDisGorev += diffDays;
+        }
+      }
+    });
+
+    return {
+      izin: totalIzin,
+      rapor: totalRapor,
+      gecici: totalGeciciGorev,
+      dis: totalDisGorev
+    };
+  }, [leaves]);
 
   const canEdit = user && (user.sicilNo === sicil_no || user.rol === "Admin")
 
@@ -551,7 +584,7 @@ export default function PersonelProfilPage() {
         {/* ÖZET SEKMESİ */}
         {activeTab === 'ozet' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-xs font-bold text-[var(--fd-text)] uppercase">Genel Bilgiler</CardTitle>
@@ -615,6 +648,57 @@ export default function PersonelProfilPage() {
                       <span>Barkod Basabilir</span>
                     </div>
                     <Badge variant={personel.can_print ? "success" : "outline"}>{personel.can_print ? 'Evet' : 'Hayır'}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] shadow-[var(--fd-shadow-sm)] rounded-[var(--fd-r)]">
+                <CardHeader>
+                  <CardTitle className="text-xs font-bold text-[var(--fd-text)] uppercase flex items-center gap-1.5">
+                    📊 İzin & Görev Durumu Özeti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3.5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/40 flex flex-col justify-between">
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--fd-text3)] font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                        İzinli Gün
+                      </div>
+                      <p className="text-base font-black text-[var(--fd-text)] mt-1.5">
+                        {leaveStats.izin} <span className="text-[10px] font-normal text-[var(--fd-text3)]">gün</span>
+                      </p>
+                    </div>
+
+                    <div className="p-3 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/40 flex flex-col justify-between">
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--fd-text3)] font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-danger" />
+                        Raporlu Gün
+                      </div>
+                      <p className="text-base font-black text-[var(--fd-text)] mt-1.5">
+                        {leaveStats.rapor} <span className="text-[10px] font-normal text-[var(--fd-text3)]">gün</span>
+                      </p>
+                    </div>
+
+                    <div className="p-3 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/40 flex flex-col justify-between">
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--fd-text3)] font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-info" />
+                        Geçici Görev
+                      </div>
+                      <p className="text-base font-black text-[var(--fd-text)] mt-1.5">
+                        {leaveStats.gecici} <span className="text-[10px] font-normal text-[var(--fd-text3)]">gün</span>
+                      </p>
+                    </div>
+
+                    <div className="p-3 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/40 flex flex-col justify-between">
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--fd-text3)] font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        Dış Görev
+                      </div>
+                      <p className="text-base font-black text-[var(--fd-text)] mt-1.5">
+                        {leaveStats.dis} <span className="text-[10px] font-normal text-[var(--fd-text3)]">gün</span>
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -717,37 +801,70 @@ export default function PersonelProfilPage() {
         {activeTab === 'izinler' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[var(--fd-text)] uppercase">İzin Kayıtları</h2>
+              <div>
+                <h2 className="text-xs font-bold text-[var(--fd-text)] uppercase">İzin ve Görev Kayıtları</h2>
+                <p className="text-[10px] text-[var(--fd-text3)] mt-0.5">Personelin bugüne kadar kullandığı tüm izin ve görevlerin dökümü.</p>
+              </div>
               <Button>Yeni İzin Talebi</Button>
+            </div>
+
+            {/* İstatistik Özeti */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[var(--fd-surface2)]/50 p-4 border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)]">
+              <div className="text-center sm:text-left border-r border-[var(--fd-border)]/50 last:border-0 pr-2">
+                <span className="text-[10px] font-semibold text-[var(--fd-text3)] block uppercase tracking-wider">İzinli Toplam</span>
+                <span className="text-base font-black text-[var(--fd-text)] mt-1 block">{leaveStats.izin} gün</span>
+              </div>
+              <div className="text-center sm:text-left border-r border-[var(--fd-border)]/50 last:border-0 pr-2">
+                <span className="text-[10px] font-semibold text-[var(--fd-text3)] block uppercase tracking-wider">Raporlu Toplam</span>
+                <span className="text-base font-black text-[var(--fd-text)] mt-1 block">{leaveStats.rapor} gün</span>
+              </div>
+              <div className="text-center sm:text-left border-r border-[var(--fd-border)]/50 last:border-0 pr-2">
+                <span className="text-[10px] font-semibold text-[var(--fd-text3)] block uppercase tracking-wider">Geçici Görev</span>
+                <span className="text-base font-black text-[var(--fd-text)] mt-1 block">{leaveStats.gecici} gün</span>
+              </div>
+              <div className="text-center sm:text-left last:border-0">
+                <span className="text-[10px] font-semibold text-[var(--fd-text3)] block uppercase tracking-wider">Dış Görev</span>
+                <span className="text-base font-black text-[var(--fd-text)] mt-1 block">{leaveStats.dis} gün</span>
+              </div>
             </div>
             
             {leaves.length === 0 ? (
               <div className="text-center p-8 border border-dashed rounded-xl text-muted-foreground">
-                Kayıtlı izin bulunmamaktadır.
+                Kayıtlı izin veya özel görev kaydı bulunmamaktadır.
               </div>
             ) : (
               <div className="space-y-4">
-                {leaves.map(leave => (
-                  <div key={leave.id} className="p-2.5 px-3 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/60 flex flex-row items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant={leave.durum === 'Onaylandı' ? 'success' : leave.durum === 'Reddedildi' ? 'danger' : 'warning'}>
-                          {leave.durum}
-                        </Badge>
-                        <span className="font-bold text-xs text-[var(--fd-text)]">{leave.izin_turu}</span>
+                {leaves.map(leave => {
+                  const start = new Date(leave.baslangic_tarihi)
+                  const end = new Date(leave.bitis_tarihi)
+                  const diffTime = Math.abs(end.getTime() - start.getTime())
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+                  
+                  return (
+                    <div key={leave.id} className="p-3 px-4 border border-[var(--fd-border)] rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)]/60 flex flex-row items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={leave.durum === 'Onaylandı' ? 'success' : leave.durum === 'Reddedildi' ? 'danger' : 'warning'}>
+                            {leave.durum}
+                          </Badge>
+                          <span className="font-bold text-xs text-[var(--fd-text)]">{leave.izin_turu}</span>
+                          <span className="text-[11px] font-bold text-[var(--fd-text2)] bg-[var(--fd-surface3)] px-1.5 py-0.5 rounded-[var(--fd-r-sm)] border border-[var(--fd-border)]">
+                            {diffDays} Gün
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-[var(--fd-text3)] mt-2">
+                          {start.toLocaleDateString('tr-TR')} - {end.toLocaleDateString('tr-TR')}
+                        </div>
+                        <p className="text-xs text-[var(--fd-text2)] mt-0.5">{leave.aciklama}</p>
                       </div>
-                      <div className="text-[10px] text-[var(--fd-text3)] mt-2">
-                        {new Date(leave.baslangic_tarihi).toLocaleDateString('tr-TR')} - {new Date(leave.bitis_tarihi).toLocaleDateString('tr-TR')}
-                      </div>
-                      <p className="text-xs text-[var(--fd-text2)] mt-0.5">{leave.aciklama}</p>
+                      {leave.belge_url && (
+                        <a href={leave.belge_url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
+                          <FileText className="w-4 h-4" /> Rapor / Belge Eki
+                        </a>
+                      )}
                     </div>
-                    {leave.belge_url && (
-                      <a href={leave.belge_url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
-                        <FileText className="w-4 h-4" /> Rapor / Belge Eki
-                      </a>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
