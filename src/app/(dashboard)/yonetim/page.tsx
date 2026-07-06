@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/api"
+import { api, getAuthHeaders } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import {
@@ -147,6 +147,7 @@ interface VehicleInfo {
   plaka: string
   arac_tipi: string
   istasyon?: string
+  durum?: string
   status?: string
   current_branch?: string
   sorumlu_sofor_id?: string | null
@@ -424,6 +425,7 @@ export default function DashboardPage() {
     total: 0,
     list: []
   })
+  const [avgResponseTime, setAvgResponseTime] = useState<number>(6.4)
 
   const [justiceStats, setJusticeStats] = useState<any[]>([])
   const [justiceLoading, setJusticeLoading] = useState(true)
@@ -776,7 +778,7 @@ export default function DashboardPage() {
       // ── 7. Filo & Aktif Görevler Sorgulaması ───────────────
       const { data: vehiclesData } = await api
         .from<any>("vehicles")
-        .select("plaka,arac_tipi,istasyon,status,current_branch,sorumlu_sofor_id,sorumlu_er_id,sigortaBitis,muayeneBitis")
+        .select("plaka,arac_tipi,istasyon,durum,status,current_branch,sorumlu_sofor_id,sorumlu_er_id,sigortaBitis,muayeneBitis")
       if (Array.isArray(vehiclesData)) {
         setVehicles(vehiclesData.filter(v => v.plaka !== 'GARAJ'))
       }
@@ -827,6 +829,15 @@ export default function DashboardPage() {
         .select("*")
       if (Array.isArray(certsData)) {
         setStaffCertifications(certsData)
+      }
+
+      // ── 11. Rapor İstatistiklerinden Ort. Varış Süresini Çek ───────────────────
+      const statsRes = await fetch('/api/reports/stats', {
+        headers: getAuthHeaders()
+      })
+      const statsData = await statsRes.json()
+      if (statsData?.success && statsData?.stats) {
+        setAvgResponseTime(statsData.stats.avg_response_time || 0)
       }
     } catch (err) {
       console.error("Dashboard veri hatası:", err)
@@ -953,7 +964,8 @@ export default function DashboardPage() {
 
       defaultStats.stations[normalizedStation].total++;
       
-      if (v.status === "maintenance" || v.status === "arızalı" || v.status === "Arızalı") {
+      const isArizali = v.durum === "arizali" || v.durum === "arızalı" || v.status === "maintenance" || v.status === "arızalı" || v.status === "Arızalı";
+      if (isArizali) {
         maintenance++;
       } else {
         const isMission = activeMissions.some(am => am.plaka === v.plaka);
@@ -1290,9 +1302,11 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">6.4 <span className="text-sm text-[var(--fd-text3)] font-sans font-medium">dk</span></div>
+              <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">
+                {avgResponseTime > 0 ? avgResponseTime.toFixed(1) : "6.4"} <span className="text-sm text-[var(--fd-text3)] font-sans font-medium">dk</span>
+              </div>
               <div className="text-[10px] text-[var(--fd-success)] font-semibold mt-1 flex items-center gap-1">
-                -0.7 hedef 8 dk
+                {avgResponseTime > 0 ? (avgResponseTime - 8.0).toFixed(1) : "-1.6"} hedef 8 dk
               </div>
             </div>
           </div>
