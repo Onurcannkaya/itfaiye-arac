@@ -472,13 +472,7 @@ export default function AracBakimPage() {
       return isProblem && !isResolved
     })
 
-    // Custom tactical unresolved alerts for immediate UI feedback
-    const defaultAlerts = [
-      { id: 9991, plaka: '58 AEL 289', aciklama: 'Vites bağlantı halatları gevşek - Şanzıman geçişi sert.', tarih: new Date().toISOString().split('T')[0], tip: 'tamir' as const, maliyet: 0, durum: 'Onaylandı' },
-      { id: 9992, plaka: '58 TH 256', aciklama: 'Hidrolik kaçağı var - Sol arka payanda silindir keçesi sızdırıyor.', tarih: new Date().toISOString().split('T')[0], tip: 'tamir' as const, durum: 'Onaylandı', maliyet: 0 }
-    ]
-
-    return [...defaultAlerts, ...dbAlerts]
+    return dbAlerts
   }, [allLogs])
 
   // 4. Motor Yağı & Antifriz Sarf Malzeme Takip İstatistikleri
@@ -787,27 +781,48 @@ export default function AracBakimPage() {
             </CardContent>
           </Card>
 
-          {/* Skorbord 3: Toplam Bütçe & Yakıt İstatistiği */}
-          <Card className="bg-[var(--fd-surface)] border border-[var(--fd-border)] border-t-4 border-t-[var(--fd-accent)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] relative overflow-hidden group hover:border-[var(--fd-border-strong)] transition duration-300">
-            <div className="absolute -right-4 -bottom-4 opacity-5 text-[var(--fd-accent)] group-hover:scale-110 transition duration-500">
-              <TrendingUp className="w-24 h-24" />
+          {/* Skorbord 3: Müdür Onayı Bekleyen Talepler */}
+          <Card 
+            onClick={() => setActiveTab('onay')}
+            className="bg-[var(--fd-surface)] border border-[var(--fd-border)] border-t-4 border-t-[var(--fd-info)] p-[calc(var(--fd-sp)*1.5)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-sm)] relative overflow-hidden group hover:border-[var(--fd-border-strong)] transition duration-300 cursor-pointer"
+          >
+            <div className="absolute -right-4 -bottom-4 opacity-5 text-[var(--fd-info)] group-hover:scale-110 transition duration-500">
+              <CheckCircle className="w-24 h-24" />
             </div>
             <CardContent className="p-0 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--fd-accent)] font-semibold tracking-wider uppercase">FİLO MALİYET MÜHRÜ</span>
-                <div className="p-2 bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] text-[var(--fd-accent)] rounded-xl">
-                  <TrendingUp className="w-5 h-5" />
+                <span className="text-xs text-[var(--fd-info)] font-semibold tracking-wider uppercase">ONAY BEKLEYEN TALEPLER</span>
+                <div className="p-2 bg-blue-500/10 border border-blue-500/20 text-[var(--fd-info)] rounded-xl">
+                  <CheckCircle className="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-[var(--fd-accent)]">₺{(totalBakimMaliyet + totalYakitMaliyet).toLocaleString('tr-TR')}</h3>
-                <p className="text-[10px] text-[var(--fd-text3)] mt-1">Bakım (₺{totalBakimMaliyet.toLocaleString('tr-TR')}) + Yakıt (₺{totalYakitMaliyet.toLocaleString('tr-TR')})</p>
+                <h3 className="text-3xl font-bold text-[var(--fd-info)]">{pendingApprovals.length} İstek</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] mt-1">Müdür veya admin yetkilendirmesi bekleyen arıza/bakım kayıtları</p>
               </div>
 
-              <div className="flex justify-between text-[11px] text-[var(--fd-text2)] pt-2 border-t border-[var(--fd-border)]">
-                <span>{totalBakimCount} Onaylı Tamir</span>
-                <span>{totalYakitCount} Yakıt Kaydı</span>
-              </div>
+              {pendingApprovals.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {pendingApprovals.slice(0, 3).map(item => (
+                    <span
+                      key={item.id}
+                      className="bg-blue-500/10 text-[var(--fd-info)] border border-blue-500/20 px-2 py-0.5 rounded-[var(--fd-r-sm)] text-xs font-bold font-mono"
+                      title={item.aciklama}
+                    >
+                      {item.plaka}
+                    </span>
+                  ))}
+                  {pendingApprovals.length > 3 && (
+                    <span className="text-[10px] text-[var(--fd-text3)] font-mono self-center font-bold">
+                      +{pendingApprovals.length - 3} daha
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="text-[11px] text-[var(--fd-success)] font-bold pt-2 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" /> Tüm talepler onaylanmış durumda
+                </div>
+              )}
             </CardContent>
           </Card>
 
