@@ -1762,10 +1762,10 @@ export default function EgitimlerPage() {
                                 setIsProgramModalOpen(true)
                               }}
                               className={`p-2.5 rounded-lg border cursor-pointer hover:scale-[1.01] transition text-left space-y-1 ${
-                                isBlacklisted ? 'bg-red-950/45 border-red-500/40 text-red-200' :
-                                edu.durum === 'Tamamlandı' ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-500' :
-                                edu.durum === 'Onaylandı' ? 'bg-blue-950/30 border-blue-500/25 text-blue-400' :
-                                'bg-amber-950/30 border-amber-500/20 text-amber-400'
+                                isBlacklisted ? 'bg-red-100 dark:bg-red-950/45 border-red-500/40 text-red-900 dark:text-red-200' :
+                                edu.durum === 'Tamamlandı' ? 'bg-emerald-100 dark:bg-emerald-950/20 border-emerald-500/20 text-emerald-900 dark:text-emerald-500' :
+                                edu.durum === 'Onaylandı' ? 'bg-blue-100 dark:bg-blue-950/30 border-blue-500/25 text-blue-900 dark:text-blue-400' :
+                                'bg-amber-100 dark:bg-amber-950/30 border-amber-500/20 text-amber-900 dark:text-amber-400'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1.5 flex-wrap">
@@ -1852,10 +1852,10 @@ export default function EgitimlerPage() {
                                         setIsProgramModalOpen(true)
                                       }}
                                       className={`p-2 rounded-[var(--fd-r-sm)] border cursor-pointer hover:scale-[1.02] hover:shadow-md transition text-left space-y-1 ${
-                                        isBlacklisted ? 'bg-red-950/45 border-red-500/40 text-red-200' :
-                                        edu.durum === 'Tamamlandı' ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-500' :
-                                        edu.durum === 'Onaylandı' ? 'bg-blue-950/30 border-blue-500/25 text-blue-400' :
-                                        'bg-amber-950/20 border-amber-500/20 text-amber-400'
+                                        isBlacklisted ? 'bg-red-100 dark:bg-red-950/45 border-red-500/40 text-red-900 dark:text-red-200' :
+                                        edu.durum === 'Tamamlandı' ? 'bg-emerald-100 dark:bg-emerald-950/20 border-emerald-500/20 text-emerald-900 dark:text-emerald-500' :
+                                        edu.durum === 'Onaylandı' ? 'bg-blue-100 dark:bg-blue-950/30 border-blue-500/25 text-blue-900 dark:text-blue-400' :
+                                        'bg-amber-100 dark:bg-amber-950/20 border-amber-500/20 text-amber-900 dark:text-amber-400'
                                       }`}
                                     >
                                       <div className="font-bold flex items-center justify-between gap-1">
