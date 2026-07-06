@@ -300,8 +300,8 @@ function Scene({
 
       {/* Rear License Plate */}
       {plaka && (
-        <Html position={[0, 0.45, -3.02]} transform rotation={[0, Math.PI, 0]} scale={0.25}>
-          <div className="bg-white border border-slate-400 px-2 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[4px] border-l-blue-600 font-sans min-w-[70px] h-[16px]">
+        <Html position={[0.46, 0.64, -3.01]} transform rotation={[0, Math.PI, 0]} scale={0.22}>
+          <div className="bg-white border border-slate-400 px-1 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none">
             <span>{plaka}</span>
           </div>
         </Html>
