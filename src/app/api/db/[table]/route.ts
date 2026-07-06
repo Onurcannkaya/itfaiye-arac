@@ -477,6 +477,7 @@ async function ensureExternalEducationsTableExists() {
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS tatbikat_sure_dk INTEGER DEFAULT 0;`);
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS pratik_sure_dk INTEGER DEFAULT 0;`);
     await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS toplam_sure_saat NUMERIC(5,2) DEFAULT 0;`);
+    await query(`ALTER TABLE public.external_educations ADD COLUMN IF NOT EXISTS telefon VARCHAR(50);`);
   } catch (err) {
     console.error('ensureExternalEducationsTableExists hatası:', err);
   }

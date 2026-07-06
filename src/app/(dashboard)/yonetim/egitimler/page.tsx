@@ -87,6 +87,7 @@ interface ExternalEducation {
   id: string;
   kurum_id?: string | null;
   kurum_adi?: string;
+  telefon?: string;
   kurum_tipi?: string;
   egitim_turu?: string;
   kisi_sayisi?: number;
@@ -326,6 +327,7 @@ export default function EgitimlerPage() {
     id: '',
     kurum_id: '',
     kurum_adi: '',
+    telefon: '',
     kurum_tipi: 'Isyeri',
     egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
     kisi_sayisi: '20',
@@ -952,6 +954,7 @@ export default function EgitimlerPage() {
       const payload = {
         kurum_id: eduForm.kurum_id || null,
         kurum_adi: eduForm.kurum_adi,
+        telefon: eduForm.telefon,
         kurum_tipi: eduForm.kurum_tipi,
         egitim_turu: eduForm.egitim_turu,
         kisi_sayisi: Number(eduForm.kisi_sayisi) || 20,
@@ -1378,7 +1381,8 @@ export default function EgitimlerPage() {
                   id: '',
                   kurum_id: '',
                   kurum_adi: '',
-                  kurum_tipi: 'Isyeri',
+                                telefon: '',
+                                kurum_tipi: 'Isyeri',
                   egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
                   kisi_sayisi: '20',
                   planlanan_tarih: getYYYYMMDD(new Date()),
@@ -1630,7 +1634,8 @@ export default function EgitimlerPage() {
                       id: '',
                       kurum_id: '',
                       kurum_adi: '',
-                      kurum_tipi: 'Isyeri',
+                                telefon: '',
+                                kurum_tipi: 'Isyeri',
                       egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
                       kisi_sayisi: '20',
                       planlanan_tarih: getYYYYMMDD(new Date()),
@@ -1706,7 +1711,8 @@ export default function EgitimlerPage() {
                                   id: '',
                                   kurum_id: '',
                                   kurum_adi: '',
-                                  kurum_tipi: 'Isyeri',
+                                telefon: '',
+                                kurum_tipi: 'Isyeri',
                                   egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
                                   kisi_sayisi: '20',
                                   planlanan_tarih: dateStr,
@@ -1739,7 +1745,8 @@ export default function EgitimlerPage() {
                                   id: edu.id,
                                   kurum_id: edu.kurum_id || '',
                                   kurum_adi: edu.kurum_adi || '',
-                                  kurum_tipi: edu.kurum_tipi || 'Isyeri',
+                                telefon: edu.telefon || '',
+                                kurum_tipi: edu.kurum_tipi || 'Isyeri',
                                   egitim_turu: edu.egitim_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
                                   kisi_sayisi: String(edu.kisi_sayisi || 20),
                                   planlanan_tarih: getYYYYMMDD(new Date(edu.planlanan_tarih)),
@@ -1828,7 +1835,8 @@ export default function EgitimlerPage() {
                                           id: edu.id,
                                           kurum_id: edu.kurum_id || '',
                                           kurum_adi: edu.kurum_adi || '',
-                                          kurum_tipi: edu.kurum_tipi || 'Isyeri',
+                                telefon: edu.telefon || '',
+                                kurum_tipi: edu.kurum_tipi || 'Isyeri',
                                           egitim_turu: edu.egitim_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
                                           kisi_sayisi: String(edu.kisi_sayisi || 20),
                                           planlanan_tarih: getYYYYMMDD(new Date(edu.planlanan_tarih)),
@@ -1870,7 +1878,8 @@ export default function EgitimlerPage() {
                                         id: '',
                                         kurum_id: '',
                                         kurum_adi: '',
-                                        kurum_tipi: 'Isyeri',
+                                telefon: '',
+                                kurum_tipi: 'Isyeri',
                                         egitim_turu: 'Yangın Önleme ve Temel Yangın Eğitimi',
                                         kisi_sayisi: '20',
                                         planlanan_tarih: dateStr,
@@ -2753,6 +2762,7 @@ export default function EgitimlerPage() {
                           id: '',
                           kurum_id: matchBlacklist ? matchBlacklist.id : '',
                           kurum_adi: selectedRequest.basvuran_ad_soyad,
+                          telefon: selectedRequest.irtibat_tel || '',
                           kurum_tipi: 'Isyeri',
                           egitim_turu: selectedRequest.isyeri_detaylari?.egitim_turu || 'Yangın Önleme ve Temel Yangın Eğitimi',
                           kisi_sayisi: String(selectedRequest.isyeri_detaylari?.kisi_sayisi || 30),
@@ -2888,6 +2898,19 @@ export default function EgitimlerPage() {
                           ))}
                         </select>
                       </div>
+                    </div>
+
+                    {/* Telefon Numarası */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-[var(--fd-text3)] font-bold block">İletişim / Telefon Numarası</label>
+                      <input
+                        disabled={!isMudur}
+                        type="text"
+                        className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 focus:outline-none focus:border-[var(--fd-accent)] font-semibold disabled:opacity-50"
+                        placeholder="Örn: 0555 555 5555"
+                        value={eduForm.telefon || ''}
+                        onChange={(e) => setEduForm(prev => ({ ...prev, telefon: e.target.value }))}
+                      />
                     </div>
 
                     {/* Kurum Tipi */}
