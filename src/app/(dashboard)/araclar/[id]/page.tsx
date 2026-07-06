@@ -366,7 +366,9 @@ export default function VehicleDetailPage() {
         user?.unvan?.toLowerCase() === 'müdür' ||
         user?.unvan?.toLowerCase() === 'amir';
 
+      const logId = crypto.randomUUID();
       const payload = {
+        id: logId,
         plaka: vehicle.plaka,
         islem_turu: maintenanceForm.islem_turu,
         tarih: maintenanceForm.tarih,
@@ -379,6 +381,23 @@ export default function VehicleDetailPage() {
 
       const { error } = await api.insert('vehicle_maintenances', payload)
       if (error) throw error
+
+      // Simultaneously insert into maintenance_logs!
+      const mLogPayload = {
+        id: logId,
+        vehicle_id: vehicle.id,
+        plaka: vehicle.plaka,
+        tip: vehicle.arac_tipi || vehicle.aracTipi || 'İtfaiye Aracı',
+        aciklama: maintenanceForm.aciklama.trim(),
+        tarih: maintenanceForm.tarih,
+        yapanKisi: user ? `${user.ad} ${user.soyad}` : 'Bilinmeyen',
+        ariza_seviyesi: 'Orta',
+        durum: isAuthorizedToApprove ? 'Taburcu Edildi' : 'Bakımda',
+        eski_sube: vehicle.current_branch || 'Merkez',
+        bildiren_personel_id: null,
+        created_at: new Date().toISOString()
+      }
+      await api.insert('maintenance_logs', mLogPayload).catch(err => console.error('[Sync] Error syncing manual maintenance to maintenance_logs:', err));
 
       // Audit log: Bakım kaydı ekleme logu
       fetch('/api/audit-log', {

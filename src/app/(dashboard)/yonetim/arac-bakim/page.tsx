@@ -118,7 +118,7 @@ export default function AracBakimPage() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [updatingId, setUpdatingId] = useState<number | null>(null)
+  const [updatingId, setUpdatingId] = useState<number | string | null>(null)
 
   // ─── Inline Edit State for Vehicle Inspection ─────────────────
   const [editingPlaka, setEditingPlaka] = useState<string | null>(null)
@@ -218,12 +218,33 @@ export default function AracBakimPage() {
   }
 
   // ─── Approve Maintenance ─────────────────────────────────────
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (id: number | string) => {
     setUpdatingId(id)
     try {
       const { error } = await api.update('vehicle_maintenances', { durum: 'Onaylandı' }, { id })
       if (error) throw error
       setAllLogs(prev => prev.map(m => m.id === id ? { ...m, durum: 'Onaylandı' } : m))
+
+      // Simultaneously update corresponding maintenance_logs record if it exists!
+      await api.update(
+        'maintenance_logs',
+        { durum: 'Taburcu Edildi' },
+        { id }
+      ).catch(err => console.error('[Sync] Error updating maintenance_logs durum on approve:', err))
+      
+      // Update vehicle status to 'aktif' and its current_branch to its original branch
+      const matchedLog = allLogs.find(m => m.id === id)
+      if (matchedLog) {
+        const { data: mLogs } = await api.from('maintenance_logs').eq('id', id)
+        const mLog = mLogs?.[0]
+        const targetBranch = mLog?.eski_sube || 'Merkez'
+        
+        await api.update(
+          'vehicles',
+          { current_branch: targetBranch, durum: 'aktif' },
+          { plaka: matchedLog.plaka }
+        ).catch(err => console.error('[Sync] Error updating vehicle status on approve:', err))
+      }
     } catch (err) {
       console.error("Bakım onay hatası:", err)
       alert("Bakım onaylanırken bir hata oluştu.")

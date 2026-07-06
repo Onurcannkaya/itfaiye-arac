@@ -270,7 +270,9 @@ export default function VehiclesPage() {
       }
 
       // 1. Insert into maintenance_logs
+      const logId = crypto.randomUUID();
       const logData = {
+        id: logId,
         vehicle_id: targetVehicle.id,
         plaka: targetVehicle.plaka,
         tip: targetVehicle.arac_tipi || targetVehicle.aracTipi || 'İtfaiye Aracı',
@@ -286,6 +288,21 @@ export default function VehiclesPage() {
       
       const resLog = await api.insert('maintenance_logs', logData);
       if (resLog.error) throw new Error(resLog.error);
+
+      // 1b. Simultaneously insert into vehicle_maintenances
+      const vehicleMaintenanceData = {
+        id: logId,
+        plaka: targetVehicle.plaka,
+        tarih: new Date().toISOString().split('T')[0],
+        islem_turu: 'Arıza/Tamir',
+        aciklama: `Arıza/Tamir: ${arizaAciklama.trim()} (Seviye: ${arizaSeviyesi})`,
+        maliyet: 0,
+        durum: 'Bekliyor', // pending manager approval in the maintenance module
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      const resVehMaint = await api.insert('vehicle_maintenances', vehicleMaintenanceData);
+      if (resVehMaint.error) throw new Error(resVehMaint.error);
 
       // 2. Update vehicle's current_branch and status
       const resVeh = await api.update(
@@ -360,6 +377,16 @@ export default function VehiclesPage() {
           { id: log.id }
         );
         if (resLog.error) throw new Error(resLog.error);
+
+        // Simultaneously update corresponding vehicle_maintenances record!
+        await api.update(
+          'vehicle_maintenances',
+          { 
+            durum: 'Onaylandı', 
+            aciklama: log.aciklama + (returnNotes.trim() ? `\n\n[Bakım Notu]: ${returnNotes.trim()}` : '') 
+          },
+          { id: log.id }
+        ).catch(err => console.error('[Sync] Error updating vehicle_maintenances on return:', err));
       }
 
       // Audit Log
@@ -443,6 +470,17 @@ export default function VehiclesPage() {
           }
         }
       }
+
+      // Simultaneously update corresponding vehicle_maintenances record!
+      const statusMaint = editDurum === 'Taburcu Edildi' ? 'Onaylandı' : 'Bekliyor';
+      await api.update(
+        'vehicle_maintenances',
+        {
+          aciklama: `Arıza/Tamir: ${editAciklama.trim()} (Seviye: ${editArizaSeviyesi})` + (editBakimNotu.trim() ? `\n\n[Bakım Notu]: ${editBakimNotu.trim()}` : ''),
+          durum: statusMaint
+        },
+        { id: editingLog.id }
+      ).catch(err => console.error('[Sync] Error updating vehicle_maintenances on edit:', err));
       
       alert("Arıza kaydı başarıyla güncellendi.");
       setEditLogModalOpen(false);
@@ -475,6 +513,11 @@ export default function VehiclesPage() {
           );
           if (resVeh.error) throw new Error(resVeh.error);
         }
+      }
+
+      // Simultaneously delete from vehicle_maintenances
+      if (log.id) {
+        await api.remove('vehicle_maintenances', { id: log.id }).catch(err => console.error('[Sync] Error deleting vehicle_maintenances on log delete:', err));
       }
       
       alert("Arıza kaydı başarıyla silindi.");
