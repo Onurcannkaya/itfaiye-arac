@@ -67,7 +67,7 @@ async function ensureTablesExist() {
       CREATE TABLE IF NOT EXISTS public.blacklist_institutions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         kurum_adi VARCHAR NOT NULL,
-        vergi_no_or_tc VARCHAR UNIQUE NOT NULL,
+        telefon VARCHAR UNIQUE NOT NULL,
         gerekce TEXT,
         yasaklama_tarihi DATE NOT NULL DEFAULT CURRENT_DATE,
         aktif_durum BOOLEAN DEFAULT TRUE,
@@ -200,8 +200,8 @@ export async function POST(request: NextRequest) {
       // Kara Liste (Blacklist) Kontrolü
       const blacklisted = await queryOne(`
         SELECT id FROM public.blacklist_institutions 
-        WHERE vergi_no_or_tc = $1 AND aktif_durum = true
-      `, [tc.trim()]);
+        WHERE telefon = $1 AND aktif_durum = true
+      `, [telefon.trim()]);
 
       if (blacklisted) {
         return NextResponse.json({ error: "Kurumunuz idari gerekçelerle kara listededir. Başvuru yapamazsınız." }, { status: 400 });

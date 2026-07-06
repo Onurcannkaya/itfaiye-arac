@@ -76,7 +76,7 @@ interface CitizenRequest {
 interface BlacklistInstitution {
   id: string;
   kurum_adi: string;
-  vergi_no_or_tc: string;
+  telefon: string;
   gerekce?: string;
   yasaklama_tarihi: string;
   aktif_durum: boolean;
@@ -343,10 +343,10 @@ export default function EgitimlerPage() {
   const [isSavingBlacklist, setIsSavingBlacklist] = useState(false)
   const [blacklistForm, setBlacklistForm] = useState({
     kurum_adi: '',
-    vergi_no_or_tc: '',
+    telefon: '',
     gerekce: ''
   })
-  const [queryTcTax, setQueryTcTax] = useState("")
+  const [queryTelefon, setQueryTelefon] = useState("")
   const [queryResult, setQueryResult] = useState<BlacklistInstitution | null>(null)
   const [hasQueried, setHasQueried] = useState(false)
 
@@ -1008,7 +1008,7 @@ export default function EgitimlerPage() {
   // --- Blacklist Handlers ---
   const handleAddBlacklist = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!blacklistForm.kurum_adi || !blacklistForm.vergi_no_or_tc) {
+    if (!blacklistForm.kurum_adi || !blacklistForm.telefon) {
       alert("Kurum Adı ve Vergi No/TC alanları zorunludur.")
       return
     }
@@ -1017,14 +1017,14 @@ export default function EgitimlerPage() {
     try {
       const payload = {
         kurum_adi: blacklistForm.kurum_adi,
-        vergi_no_or_tc: blacklistForm.vergi_no_or_tc,
+        telefon: blacklistForm.telefon,
         gerekce: blacklistForm.gerekce || '',
         yasaklama_tarihi: new Date().toISOString().split('T')[0],
         aktif_durum: true
       }
       const res = await api.insert('blacklist_institutions', [payload])
       if (res && !res.error) {
-        setBlacklistForm({ kurum_adi: '', vergi_no_or_tc: '', gerekce: '' })
+        setBlacklistForm({ kurum_adi: '', telefon: '', gerekce: '' })
         await fetchAll()
         alert("Kurum başarıyla kırmızı bayraklı listeye eklendi.")
       } else {
@@ -1061,11 +1061,16 @@ export default function EgitimlerPage() {
   }
 
   const handleQueryBlacklist = () => {
-    if (!queryTcTax.trim()) {
-      alert("Lütfen T.C. veya Vergi Numarası girin.")
+    if (!queryTelefon.trim()) {
+      alert("Lütfen arama terimi girin.")
       return
     }
-    const found = blacklistList.find(x => x.vergi_no_or_tc.trim() === queryTcTax.trim())
+    const term = queryTelefon.trim().toLowerCase();
+    const found = blacklistList.find(x => 
+      (x.telefon && x.telefon.trim().toLowerCase().includes(term)) || 
+      (x.kurum_adi && x.kurum_adi.trim().toLowerCase().includes(term)) ||
+      (x.gerekce && x.gerekce.toLowerCase().includes(term))
+    )
     setQueryResult(found || null)
     setHasQueried(true)
   }
@@ -1911,9 +1916,9 @@ export default function EgitimlerPage() {
                 <input
                   type="text"
                   className="bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-4 py-2 text-sm focus:outline-none focus:border-[var(--fd-accent)] flex-1 font-semibold"
-                  placeholder="Sorgulamak istediğiniz kurumun T.C. veya Vergi Numarasını girin..."
-                  value={queryTcTax}
-                  onChange={(e) => setQueryTcTax(e.target.value)}
+                  placeholder="Kurum Adı, Telefon veya Açıklama ile sorgulayın..."
+                  value={queryTelefon}
+                  onChange={(e) => setQueryTelefon(e.target.value)}
                 />
                 <Button
                   className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs h-10 px-5 rounded-[var(--fd-r-sm)] flex items-center gap-1.5"
@@ -1932,7 +1937,7 @@ export default function EgitimlerPage() {
                         <div>
                           <h4 className="font-bold text-sm text-red-400">⚠️ DİKKAT: KURUM KIRMIZI BÜLTEN KATEGORİSİNDEDİR!</h4>
                           <p className="text-xs text-red-300/80 mt-1">
-                            {queryResult.kurum_adi} (Vergi/TC: {queryResult.vergi_no_or_tc}) kurumu, son dakika iptalleri veya kurallara uymaması nedeniyle engellenmiştir.
+                            {queryResult.kurum_adi} (Telefon: {queryResult.telefon}) kurumu, son dakika iptalleri veya kurallara uymaması nedeniyle engellenmiştir.
                           </p>
                           <p className="text-xs font-mono text-red-400 mt-2">
                             <strong>Kısıtlama Gerekçesi:</strong> {queryResult.gerekce || "Gerekçe belirtilmemiş."}
@@ -1990,8 +1995,8 @@ export default function EgitimlerPage() {
                         type="text"
                         className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] rounded-[var(--fd-r-sm)] px-3 py-2 text-xs focus:outline-none focus:border-[var(--fd-accent)] font-medium"
                         placeholder="10 veya 11 haneli numara"
-                        value={blacklistForm.vergi_no_or_tc}
-                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, vergi_no_or_tc: e.target.value }))}
+                        value={blacklistForm.telefon}
+                        onChange={(e) => setBlacklistForm(prev => ({ ...prev, telefon: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-1">
@@ -2039,7 +2044,7 @@ export default function EgitimlerPage() {
                                   {bl.aktif_durum ? 'AKTİF ENGEL' : 'Kaldırıldı'}
                                 </span>
                               </div>
-                              <div className="text-[var(--fd-text3)] font-mono text-[10px]">T.C./Vergi No: {bl.vergi_no_or_tc} &nbsp;|&nbsp; Tarih: {new Date(bl.yasaklama_tarihi).toLocaleDateString('tr-TR')}</div>
+                              <div className="text-[var(--fd-text3)] font-mono text-[10px]">Telefon Numarası: {bl.telefon} &nbsp;|&nbsp; Tarih: {new Date(bl.yasaklama_tarihi).toLocaleDateString('tr-TR')}</div>
                               {bl.gerekce && <div className="text-[var(--fd-text3)] font-semibold bg-[var(--fd-surface2)]/50 p-2 rounded-[var(--fd-r-sm)] mt-1 border border-zinc-900">{bl.gerekce}</div>}
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-center">
@@ -2742,7 +2747,7 @@ export default function EgitimlerPage() {
                       className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold px-4 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1"
                       onClick={() => {
                         const tc = selectedRequest.basvuran_tc;
-                        const matchBlacklist = blacklistList.find(x => x.vergi_no_or_tc === tc);
+                        const matchBlacklist = blacklistList.find(x => x.telefon === tc);
                         
                         setEduForm({
                           id: '',

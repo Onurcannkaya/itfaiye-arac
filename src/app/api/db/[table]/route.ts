@@ -440,7 +440,7 @@ async function ensureBlacklistInstitutionsTableExists() {
       CREATE TABLE IF NOT EXISTS public.blacklist_institutions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         kurum_adi VARCHAR NOT NULL,
-        vergi_no_or_tc VARCHAR UNIQUE NOT NULL,
+        telefon VARCHAR UNIQUE NOT NULL,
         gerekce TEXT,
         yasaklama_tarihi DATE NOT NULL DEFAULT CURRENT_DATE,
         aktif_durum BOOLEAN DEFAULT TRUE,
