@@ -33,6 +33,7 @@ export interface Vehicle3DGarageProps {
   suKapasite?: number
   kopukKapasite?: number
   isModalOpen?: boolean
+  plaka?: string
 }
 
 // ——— Compartment Hotspot positions (world-space after model is centered & scaled to exactly 6m length) ———
@@ -236,7 +237,8 @@ function Scene({
   onSelect,
   showLabels,
   autoRotate,
-  isModalOpen
+  isModalOpen,
+  plaka
 }: {
   compartmentKeys: string[]
   activeCompartment: string | null
@@ -244,6 +246,7 @@ function Scene({
   showLabels: boolean
   autoRotate: boolean
   isModalOpen?: boolean
+  plaka?: string
 }) {
   const controlsRef = useRef<any>(null)
 
@@ -294,6 +297,24 @@ function Scene({
 
       {/* Fire truck model — centered and scaled in FireTruckModel component */}
       <FireTruckModel url="/3dmodels/scene.gltf" />
+
+      {/* Rear License Plate */}
+      {plaka && (
+        <Html position={[0, 0.45, -3.02]} transform rotation={[0, Math.PI, 0]} scale={0.25}>
+          <div className="bg-white border border-slate-400 px-2 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[4px] border-l-blue-600 font-sans min-w-[70px] h-[16px]">
+            <span>{plaka}</span>
+          </div>
+        </Html>
+      )}
+
+      {/* Front License Plate */}
+      {plaka && (
+        <Html position={[0, 0.48, 3.11]} transform scale={0.25}>
+          <div className="bg-white border border-slate-400 px-2 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[4px] border-l-blue-600 font-sans min-w-[70px] h-[16px]">
+            <span>{plaka}</span>
+          </div>
+        </Html>
+      )}
 
       {/* Compartment hotspots */}
       {hotspots.map((hotspot) => (
@@ -356,7 +377,8 @@ export function Vehicle3DGarage({
   className,
   suKapasite,
   kopukKapasite,
-  isModalOpen
+  isModalOpen,
+  plaka
 }: Vehicle3DGarageProps) {
   const [showLabels, setShowLabels] = useState(true)
   const [autoRotate, setAutoRotate] = useState(true)
@@ -391,8 +413,13 @@ export function Vehicle3DGarage({
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-            <span className="text-[10px] font-mono font-bold text-emerald-300 uppercase tracking-widest">
+            <span className="text-[10px] font-mono font-bold text-emerald-300 uppercase tracking-widest flex items-center gap-2">
               3D GARAJ — {vehicleType || "İtfaiye Aracı"}
+              {plaka && (
+                <span className="ml-2 bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[8px] tracking-wider select-none inline-flex items-center justify-center border-l-[2.5px] border-l-blue-600 font-sans h-[12px] leading-none">
+                  {plaka}
+                </span>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-1.5 pointer-events-auto">
@@ -455,6 +482,7 @@ export function Vehicle3DGarage({
               showLabels={showLabels}
               autoRotate={autoRotate}
               isModalOpen={isModalOpen}
+              plaka={plaka}
             />
           </Suspense>
         </Canvas>

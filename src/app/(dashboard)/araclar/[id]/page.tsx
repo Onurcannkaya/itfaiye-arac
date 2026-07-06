@@ -1087,6 +1087,7 @@ export default function VehicleDetailPage() {
               suKapasite={vehicle.su_kapasite}
               kopukKapasite={vehicle.kopuk_kapasite}
               isModalOpen={isInventoryModalOpen}
+              plaka={vehicle.plaka}
             />
           ) : (
             <Vehicle3DSchematic
@@ -1096,6 +1097,7 @@ export default function VehicleDetailPage() {
               vehicleType={vehicle.aracTipi}
               suKapasite={vehicle.su_kapasite}
               kopukKapasite={vehicle.kopuk_kapasite}
+              plaka={vehicle.plaka}
             />
           )}
         </CardContent>

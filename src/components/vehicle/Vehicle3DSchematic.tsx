@@ -33,6 +33,7 @@ export interface ThreeSceneProps {
   className?: string;
   suKapasite?: number;
   kopukKapasite?: number;
+  plaka?: string;
 }
 
 // Helper to match custom user-configured compartment names/keys with 3D model hotspots
@@ -89,7 +90,8 @@ export function Vehicle3DSchematic({
   vehicleType,
   className,
   suKapasite,
-  kopukKapasite
+  kopukKapasite,
+  plaka
 }: ThreeSceneProps) {
   // Sol/Sağ profile selection
   const [profile, setProfile] = useState<"sol" | "sag">("sol")
@@ -506,7 +508,7 @@ export function Vehicle3DSchematic({
 
             {/* Decorative decals on cabin door */}
             <text x="560" y="165" fill="var(--fd-text2)" fontSize="7" fontFamily="monospace" fontWeight="bold" letterSpacing="1">SİVAS İTFAİYESİ</text>
-            <text x="560" y="174" fill="var(--fd-text3)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">FILO NO: 58-AC</text>
+            <text x="560" y="174" fill="var(--fd-text3)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">PLAKA: {plaka || "58-AC"}</text>
 
             {/* 2.5 INTERACTIVE HOTSPOT OVERLAYS (COMPARTMENTS) */}
             
