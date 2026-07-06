@@ -1079,41 +1079,65 @@ export default function EgitimlerPage() {
   }
 
   // --- jsPDF Official Document Generation (Aksiyon A & Aksiyon B) ---
-  const handlePrintYanginEgitimRaporu = (edu: any) => {
+  const fetchImageAsBase64 = async (url: string): Promise<string> => {
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      return new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+    } catch (e) {
+      return ''
+    }
+  }
+
+  const handlePrintYanginEgitimRaporu = async (edu: any) => {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const clean = (txt: string) => cleanTurkishChars(txt || "")
+    const clean = (txt: string) => txt || "" 
+
+    try {
+      const fontBase64 = await fetchGeistFontBase64()
+      doc.addFileToVFS('Geist-Regular.ttf', fontBase64)
+      doc.addFont('Geist-Regular.ttf', 'Geist', 'normal')
+      doc.setFont('Geist', 'normal')
+    } catch (err) {
+      console.error("Geist font load error, using Helvetica", err)
+      doc.setFont("Helvetica", "normal")
+    }
 
     // A4 border outlines
     doc.rect(5, 5, 200, 287)
     doc.rect(6, 6, 198, 285)
 
+    // Logolar
+    const logoBelediye = await fetchImageAsBase64('/logo-belediye.png')
+    const logoItfaiye = await fetchImageAsBase64('/logo-itfaiye.png')
+    if (logoBelediye) doc.addImage(logoBelediye, 'PNG', 15, 12, 22, 22)
+    if (logoItfaiye) doc.addImage(logoItfaiye, 'PNG', 173, 12, 22, 22)
+
     // Antetli Başlık
-    doc.setFont("Helvetica", "bold")
     doc.setFontSize(14)
-    doc.text(clean("T.C. SIVAS BELEDIYESI"), 105, 20, { align: "center" })
+    doc.text(clean("T.C. SİVAS BELEDİYESİ"), 105, 20, { align: "center" })
     doc.setFontSize(12)
-    doc.text(clean("ITFAIYE MUDURLUGU"), 105, 26, { align: "center" })
-    doc.setFont("Helvetica", "normal")
+    doc.text(clean("İTFAİYE MÜDÜRLÜĞÜ"), 105, 26, { align: "center" })
     doc.setFontSize(11)
-    doc.text(clean("YANGIN EGITIMI VE TATBIKAT SONUC RAPORU"), 105, 32, { align: "center" })
+    doc.text(clean("YANGIN EĞİTİMİ VE TATBİKAT SONUÇ RAPORU"), 105, 32, { align: "center" })
 
     doc.line(15, 38, 195, 38)
 
     // Detay Tablosu
     doc.setFontSize(10)
-    doc.setFont("Helvetica", "bold")
-    doc.text(clean("EGITIM ALAN KURUM / ISYERI BILERI:"), 15, 48)
+    doc.text(clean("EĞİTİM ALAN KURUM / İŞYERİ BİLGİLERİ:"), 15, 48)
     
-    doc.setFont("Helvetica", "normal")
-    doc.text(clean("Kurum Adi:"), 15, 56)
-    doc.setFont("Helvetica", "bold")
+    doc.text(clean("Kurum Adı:"), 15, 56)
     doc.text(clean(edu.kurum_adi), 55, 56)
 
-    doc.setFont("Helvetica", "normal")
     doc.text(clean("Kurum Tipi:"), 15, 62)
     doc.text(clean(edu.kurum_tipi), 55, 62)
 
-    doc.text(clean("Egitim Bolgesi / Mahalle:"), 15, 68)
+    doc.text(clean("Eğitim Bölgesi / Mahalle:"), 15, 68)
     doc.text(clean(edu.mahalle || "Merkez"), 55, 68)
 
     doc.text(clean("Planlanan Tarih:"), 15, 74)
@@ -1122,32 +1146,30 @@ export default function EgitimlerPage() {
     doc.text(clean("Saat Dilimi:"), 15, 80)
     doc.text(clean(edu.saat_slot), 55, 80)
 
-    doc.text(clean("Katilimci Sayisi:"), 15, 86)
-    doc.text(clean(`${edu.kisi_sayisi || 0} Kisi`), 55, 86)
+    doc.text(clean("Katılımcı Sayısı:"), 15, 86)
+    doc.text(clean(`${edu.kisi_sayisi || 0} Kişi`), 55, 86)
 
-    doc.text(clean("Teorik Sure (Dakika):"), 15, 92)
+    doc.text(clean("Teorik Süre (Dakika):"), 15, 92)
     doc.text(clean(`${edu.teorik_sure_dk || 0} dk`), 55, 92)
 
-    doc.text(clean("Pratik Sure (Dakika):"), 15, 98)
+    doc.text(clean("Pratik Süre (Dakika):"), 15, 98)
     doc.text(clean(`${edu.pratik_sure_dk || 0} dk`), 55, 98)
 
-    doc.text(clean("Toplam Sure:"), 15, 104)
+    doc.text(clean("Toplam Süre:"), 15, 104)
     doc.text(clean(`${(((Number(edu.teorik_sure_dk || 0) + Number(edu.pratik_sure_dk || 0)) / 60)).toFixed(2)} Saat`), 55, 104)
 
     doc.line(15, 110, 195, 110)
 
     // Ders Planı checklist
-    doc.setFont("Helvetica", "bold")
-    doc.text(clean("DERS PLANI VE EGITIM MADDELERI:"), 15, 120)
+    doc.text(clean("DERS PLANI VE EĞİTİM MADDELERİ:"), 15, 120)
     
-    doc.setFont("Helvetica", "normal")
     const curriculum = [
-      "[X] 1. Yanma nedir, Yangin kimyasi ve safhalari.",
-      "[X] 2. Yangin siniflari (A, B, C, D, F) ve sondurme metotlari.",
-      "[X] 3. Kimyasal, kopuklu ve sulu tasinabilir sonduruculerin tanitimi.",
-      "[X] 4. YSC kullanim yontemi (PASS: Pim cek, Ateste tut, Sik, Supur).",
-      "[X] 5. Acil durumlarda binadan tahliye, kriz yonetimi ve kacis yollari.",
-      "[X] 6. Uygulamali acik alan yangin sondurme tatbikatinin icrasi."
+      "[X] 1. Yanma nedir, Yangın kimyası ve safhaları.",
+      "[X] 2. Yangın sınıfları (A, B, C, D, F) ve söndürme metotları.",
+      "[X] 3. Kimyasal, köpüklü ve sulu taşınabilir söndürücülerin tanıtımı.",
+      "[X] 4. YSC kullanım yöntemi (PASS: Pim çek, Ateşte tut, Sık, Süpür).",
+      "[X] 5. Acil durumlarda binadan tahliye, kriz yönetimi ve kaçış yolları.",
+      "[X] 6. Uygulamalı açık alan yangın söndürme tatbikatının icrası."
     ]
     
     let y = 128
@@ -1159,22 +1181,22 @@ export default function EgitimlerPage() {
     doc.line(15, y + 4, 195, y + 4)
 
     // İmzalar
-    doc.setFont("Helvetica", "bold")
-    doc.text(clean("GOREVLI EGITIMCI PERSONELLER:"), 15, y + 14)
-    doc.setFont("Helvetica", "normal")
+    doc.text(clean("GÖREVLİ EĞİTİMCİ PERSONELLER:"), 15, y + 14)
     const trainersStr = edu.egitimci_personel_ids && edu.egitimci_personel_ids.length > 0
       ? edu.egitimci_personel_ids.map((id: string) => {
           const p = personnelList.find(x => x.id === id || x.sicil_no === id)
-          return p ? `${p.ad} ${p.soyad} (${p.unvan || 'Itfaiye Eri'})` : 'Gorevli Personel'
+          return p ? `${p.ad} ${p.soyad} (${p.unvan || 'İtfaiye Eri'})` : 'Görevli Personel'
         }).join(', ')
-      : 'Gorevli Personel Atanmadi'
-    doc.text(clean(trainersStr), 15, y + 22)
+      : 'Görevli Personel Atanmadı'
+    
+    const splitTrainers = doc.splitTextToSize(clean(trainersStr), 90);
+    doc.text(splitTrainers, 15, y + 22)
 
-    doc.setFont("Helvetica", "bold")
-    doc.text(clean("ONAYLAYAN NOBETCI AMIRI / MUDUR:"), 120, y + 14)
-    doc.setFont("Helvetica", "normal")
-    doc.text(clean(user ? `${user.ad} ${user.soyad}` : "Itfaiye Yetkilisi"), 120, y + 22)
-    doc.text(clean("Sivas Belediyesi Itfaiyesi"), 120, y + 27)
+    doc.text(clean("NÖBETÇİ AMİR"), 120, y + 14)
+    doc.text(clean("Seyfi Ali GÜL"), 120, y + 22)
+
+    doc.text(clean("MÜDÜR"), 165, y + 14)
+    doc.text(clean("İbrahim ALAÇAM"), 165, y + 22)
 
     doc.save(`Yangin_Egitim_Sonuc_Raporu_${clean(edu.kurum_adi).replace(/\s+/g, '_')}.pdf`)
   }
