@@ -204,10 +204,10 @@ export default function VehicleDetailPage() {
     if (bolmeParam && (keys.includes(bolmeParam) || vehicle.bolmeler?.[bolmeParam])) {
       setActiveCompartment(bolmeParam)
       setIsInventoryModalOpen(true)
-    } else if (keys.length > 0) {
+    } else if (keys.length > 0 && !activeCompartment) {
       setActiveCompartment(keys[0])
     }
-  }, [searchParams, vehicle])
+  }, [searchParams, vehicle, activeCompartment])
 
   const handleSaveEquipment = async (item: InventoryItem, targetCompartment: string) => {
     if (!vehicle) return
