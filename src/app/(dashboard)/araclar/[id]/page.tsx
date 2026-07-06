@@ -699,7 +699,7 @@ export default function VehicleDetailPage() {
     // ----------------------------------------------------
     const dryMaintLog = maintenanceLogs.find(l => {
       const desc = l.aciklama.toUpperCase();
-      return desc.includes("ŞAFT") || desc.includes("YAĞLAMA") || desc.includes("YAĞLANDI") || desc.includes("ALT TAKIM") || desc.includes("KURU YAĞLAMA") || desc.includes("GRES");
+      return desc.includes("ŞAFT") || desc.includes("YAĞLAMA") || desc.includes("YAĞLANDI") || desc.includes("ALT TAKIM") || desc.includes("KURU YAĞLAMA") || desc.includes("GRES") || desc.includes("YAĞ") || desc.includes("YAG") || desc.includes("FİLTRE") || desc.includes("FILTRE");
     });
     
     const period = 180; // 6 months

@@ -404,7 +404,7 @@ export default function AracBakimPage() {
       const vLogs = allLogs.filter(l => l.plaka === v.plaka)
       const dryLog = vLogs.find(l => {
         const desc = l.aciklama.toUpperCase()
-        return desc.includes("ŞAFT") || desc.includes("YAĞLAMA") || desc.includes("YAĞLANDI") || desc.includes("ALT TAKIM") || desc.includes("KURU YAĞLAMA") || desc.includes("GRES")
+        return desc.includes("ŞAFT") || desc.includes("YAĞLAMA") || desc.includes("YAĞLANDI") || desc.includes("ALT TAKIM") || desc.includes("KURU YAĞLAMA") || desc.includes("GRES") || desc.includes("YAĞ") || desc.includes("YAG") || desc.includes("FİLTRE") || desc.includes("FILTRE")
       })
 
       const period = 180
