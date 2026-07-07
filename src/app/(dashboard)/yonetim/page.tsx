@@ -807,8 +807,34 @@ export default function DashboardPage() {
         .from<Personnel>("personnel")
         .select("*")
         .eq("aktif", true)
+        
       if (Array.isArray(persData)) {
-        setPersonnelList(persData)
+        // Personel izinlerini çek ve bugünkü durumlarıyla eşleştir
+        const todayStr = new Date().toISOString().split('T')[0]
+        const { data: activeLeaves } = await api
+          .from('personnel_leaves')
+          .select('*')
+          .lte('baslangic_tarihi', todayStr)
+          .gte('bitis_tarihi', todayStr)
+          
+        if (activeLeaves && activeLeaves.length > 0) {
+          const leaveMap = new Map()
+          activeLeaves.forEach((l: any) => {
+            leaveMap.set(l.sicil_no, l)
+          })
+          
+          const mergedPersData = persData.map(p => {
+            if (leaveMap.has(p.sicil_no)) {
+              const leave = leaveMap.get(p.sicil_no)
+              const newStatus = leave.aciklama ? `${leave.izin_turu} - ${leave.aciklama}` : leave.izin_turu
+              return { ...p, durum: newStatus }
+            }
+            return p
+          })
+          setPersonnelList(mergedPersData)
+        } else {
+          setPersonnelList(persData)
+        }
       }
 
       // ── 9. Gecikmiş Geçici Zimmet Sorgulaması ───────────────────

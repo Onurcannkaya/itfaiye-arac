@@ -38,6 +38,7 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
   const [selectedPersonnelIds, setSelectedPersonnelIds] = useState<Set<string>>(new Set())
   const [bulkActionType, setBulkActionType] = useState<string>("")
   const [bulkActionNote, setBulkActionNote] = useState<string>("")
+  const [leaveDays, setLeaveDays] = useState<number>(1)
   const [saving, setSaving] = useState(false)
 
   // When date changes, calculate which shift is active and fetch leaves
@@ -57,7 +58,8 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
         // 2. Fetch leaves for this date
         const { data: leavesData } = await api.from('personnel_leaves')
           .select('*')
-          .eq('baslangic_tarihi', selectedDate)
+          .lte('baslangic_tarihi', selectedDate)
+          .gte('bitis_tarihi', selectedDate)
 
         const leaveMap: Record<string, any> = {}
         if (leavesData) {
@@ -100,10 +102,15 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
             await api.remove('personnel_leaves', { id: existingLeave.id })
           }
         } else {
+          const endDate = new Date(selectedDate)
+          endDate.setDate(endDate.getDate() + (leaveDays - 1))
+          const bitisStr = endDate.toISOString().split('T')[0]
+
           // Add or update leave
           if (existingLeave) {
             await api.update('personnel_leaves', {
               izin_turu: bulkActionType,
+              bitis_tarihi: bitisStr,
               aciklama: bulkActionNote || `${bulkActionType} eklendi.`
             }, { id: existingLeave.id })
           } else {
@@ -111,7 +118,7 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
               sicil_no: sicilNo,
               izin_turu: bulkActionType,
               baslangic_tarihi: selectedDate,
-              bitis_tarihi: selectedDate,
+              bitis_tarihi: bitisStr,
               aciklama: bulkActionNote || `${bulkActionType} eklendi.`,
               durum: 'Onaylandı'
             })
@@ -130,7 +137,8 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
       // Trigger a re-render of leaves
       const { data: leavesData } = await api.from('personnel_leaves')
         .select('*')
-        .eq('baslangic_tarihi', selectedDate)
+        .lte('baslangic_tarihi', selectedDate)
+        .gte('bitis_tarihi', selectedDate)
 
       const leaveMap: Record<string, any> = {}
       if (leavesData) {
@@ -195,13 +203,25 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
                   <option value="İptal" className="text-rose-500 font-bold">❌ İzni İptal Et (Hazır)</option>
                 </select>
 
-                <Input 
-                  placeholder="Açıklama (Opsiyonel)" 
-                  value={bulkActionNote}
-                  onChange={(e) => setBulkActionNote(e.target.value)}
-                  className="text-sm"
-                  disabled={bulkActionType === "İptal" || !canEdit}
-                />
+                <div className="flex gap-2">
+                  <Input 
+                    type="number"
+                    min="1"
+                    placeholder="Gün"
+                    value={leaveDays}
+                    onChange={(e) => setLeaveDays(parseInt(e.target.value) || 1)}
+                    className="w-20 text-sm"
+                    disabled={bulkActionType === "İptal" || !canEdit}
+                    title="İzin Gün Sayısı"
+                  />
+                  <Input 
+                    placeholder="Açıklama (Opsiyonel)" 
+                    value={bulkActionNote}
+                    onChange={(e) => setBulkActionNote(e.target.value)}
+                    className="flex-1 text-sm"
+                    disabled={bulkActionType === "İptal" || !canEdit}
+                  />
+                </div>
 
                 <Button 
                   className="w-full text-sm" 

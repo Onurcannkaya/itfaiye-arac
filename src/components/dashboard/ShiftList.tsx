@@ -191,7 +191,8 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
         const { data: existingLeaves } = await api.from('personnel_leaves')
           .select('id')
           .eq('sicil_no', sicilNo)
-          .eq('baslangic_tarihi', todayStr)
+          .lte('baslangic_tarihi', todayStr)
+          .gte('bitis_tarihi', todayStr)
           .eq('izin_turu', izinTuru);
 
         if (!existingLeaves || existingLeaves.length === 0) {
