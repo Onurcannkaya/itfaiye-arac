@@ -7,7 +7,8 @@ import { api } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
-import { Calendar, Loader2, Users, AlertTriangle } from "lucide-react"
+import { Calendar, Loader2, Users, AlertTriangle, Lock } from "lucide-react"
+import { useAuthStore } from "@/lib/authStore"
 
 interface FutureShiftCalendarProps {
   personnelList: Personnel[]
@@ -23,6 +24,8 @@ const LEAVE_TYPES = [
 ]
 
 export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps) {
+  const { user } = useAuthStore()
+  const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -170,7 +173,10 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
         <div className="lg:col-span-1 space-y-4">
           <Card className="border-[var(--fd-border)] shadow-sm">
             <CardContent className="p-4 space-y-4">
-              <h4 className="font-bold border-b border-[var(--fd-border)] pb-2 text-[var(--fd-text2)] text-sm">Toplu İşlem Menüsü</h4>
+              <h4 className="font-bold border-b border-[var(--fd-border)] pb-2 text-[var(--fd-text2)] text-sm flex items-center justify-between">
+                Toplu İşlem Menüsü
+                {!canEdit && <span title="Sadece Yöneticiler Düzenleyebilir"><Lock className="w-3.5 h-3.5 text-[var(--fd-text3)]" /></span>}
+              </h4>
               <div className="space-y-3">
                 <div className="text-xs text-[var(--fd-text3)]">
                   Seçili Personel: <strong className="text-[var(--fd-text)]">{selectedPersonnelIds.size}</strong>
@@ -179,7 +185,8 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
                 <select 
                   value={bulkActionType} 
                   onChange={(e) => setBulkActionType(e.target.value)}
-                  className="w-full text-sm h-10 px-3 rounded-md border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] outline-none focus:ring-1 focus:ring-[var(--fd-accent)]"
+                  disabled={!canEdit}
+                  className="w-full text-sm h-10 px-3 rounded-md border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] outline-none focus:ring-1 focus:ring-[var(--fd-accent)] disabled:opacity-50"
                 >
                   <option value="" disabled>İzin Türü Seçin</option>
                   {LEAVE_TYPES.map(t => (
@@ -193,12 +200,12 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
                   value={bulkActionNote}
                   onChange={(e) => setBulkActionNote(e.target.value)}
                   className="text-sm"
-                  disabled={bulkActionType === "İptal"}
+                  disabled={bulkActionType === "İptal" || !canEdit}
                 />
 
                 <Button 
                   className="w-full text-sm" 
-                  disabled={selectedPersonnelIds.size === 0 || !bulkActionType || saving}
+                  disabled={selectedPersonnelIds.size === 0 || !bulkActionType || saving || !canEdit}
                   onClick={handleBulkAction}
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -218,7 +225,8 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
                     <th className="px-4 py-3 w-10">
                       <input 
                         type="checkbox"
-                        className="w-4 h-4 cursor-pointer accent-[var(--fd-accent)]"
+                        disabled={!canEdit}
+                        className="w-4 h-4 cursor-pointer accent-[var(--fd-accent)] disabled:opacity-50 disabled:cursor-not-allowed"
                         checked={selectedPersonnelIds.size === activePersonnel.length && activePersonnel.length > 0}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           if (e.target.checked) setSelectedPersonnelIds(new Set(activePersonnel.map(p => p.sicil_no)))
@@ -257,7 +265,8 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
                           <td className="px-4 py-3">
                             <input 
                               type="checkbox"
-                              className="w-4 h-4 cursor-pointer accent-[var(--fd-accent)]"
+                              disabled={!canEdit}
+                              className="w-4 h-4 cursor-pointer accent-[var(--fd-accent)] disabled:opacity-50 disabled:cursor-not-allowed"
                               checked={isSelected}
                               onChange={() => togglePersonnelSelection(person.sicil_no)}
                             />

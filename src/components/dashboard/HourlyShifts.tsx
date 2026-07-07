@@ -36,17 +36,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
   // Matrix data state: { [hourRange]: { [place]: { id, sicil } } }
   const [matrix, setMatrix] = useState<Record<string, Record<string, { id?: number; sicil: string }>>>({})
 
-  const isAuthorized = user && (
-    user.rol === 'Admin' || 
-    user.rol === 'Editor' ||
-    (user.unvan || '').toLowerCase().includes('müdür') ||
-    (user.unvan || '').toLowerCase().includes('amir') || 
-    (user.unvan || '').toLowerCase().includes('çavuş') ||
-    (user.unvan || '').toLowerCase().includes('çvş')
-  ) && !(
-    (user.unvan || '').toLowerCase() === 'er' || 
-    (user.unvan || '').toLowerCase() === 'itfaiye eri'
-  )
+  const isAuthorized = user?.rol === 'Admin' || user?.rol === 'Editor'
 
   const todayStr = useMemo(() => {
     const shiftDate = new Date();

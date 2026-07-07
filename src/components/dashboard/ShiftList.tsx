@@ -87,6 +87,7 @@ const STATION_GROUPS: StationGroup[] = [
 
 export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], activePosta: number }) {
   const { user } = useAuthStore()
+  const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   const [list, setList] = useState<Personnel[]>(personnel)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [explanations, setExplanations] = useState<Record<string, string>>({})
@@ -397,7 +398,7 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                                   <>
                                     <select
                                       value={selectValue}
-                                      disabled={isCellUpdating}
+                                      disabled={!canEdit || isCellUpdating}
                                       onChange={(e) => handleStatusChange(p.sicil_no, e.target.value)}
                                       className={getSelectClass(selectValue)}
                                     >
@@ -412,7 +413,7 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
                                       <input
                                         type="text"
                                         value={explanations[p.sicil_no] ?? ''}
-                                        disabled={isCellUpdating}
+                                        disabled={!canEdit || isCellUpdating}
                                         onChange={(e) => {
                                           const val = e.target.value;
                                           setExplanations(prev => ({ ...prev, [p.sicil_no]: val }));
