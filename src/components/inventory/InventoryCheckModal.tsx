@@ -26,17 +26,8 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
   const [saveError, setSaveError] = useState("")
   const { user } = useAuthStore()
 
-  const [currentUserUuid, setCurrentUserUuid] = useState<string | null>(null)
-  const [vehicleResponsibles, setVehicleResponsibles] = useState<{ sorumlu_sofor_id: string | null, sorumlu_er_id: string | null }>({
-    sorumlu_sofor_id: null,
-    sorumlu_er_id: null
-  })
-
-  const isAuthorized = user && (
-    user.rol === 'Admin' || 
-    user.rol === 'Shift_Leader' || 
-    (currentUserUuid && (currentUserUuid === vehicleResponsibles.sorumlu_sofor_id || currentUserUuid === vehicleResponsibles.sorumlu_er_id))
-  )
+  // Tüm oturum açmış personel envanter sayımı yapabilir
+  const isAuthorized = !!user
   
   // Load items and responsibles when opened
   useEffect(() => {
@@ -44,15 +35,10 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
       if (isOpen && vehiclePlaka && compartmentKey) {
         setSaveError("")
         
-        // 1. Fetch vehicle's compartments and responsibles
-        const { data: vehicle } = await api.from('vehicles').select('bolmeler, sorumlu_sofor_id, sorumlu_er_id').eq('plaka', vehiclePlaka).single()
+        // 1. Fetch vehicle's compartments
+        const { data: vehicle } = await api.from('vehicles').select('bolmeler').eq('plaka', vehiclePlaka).single()
         
         if (vehicle) {
-          setVehicleResponsibles({
-            sorumlu_sofor_id: vehicle.sorumlu_sofor_id || null,
-            sorumlu_er_id: vehicle.sorumlu_er_id || null
-          })
-
           if (vehicle.bolmeler && vehicle.bolmeler[compartmentKey]) {
             const initialItems = vehicle.bolmeler[compartmentKey].map((item: any) => ({
               ...item,
@@ -62,18 +48,10 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
             setItems(initialItems)
           }
         }
-
-        // 2. Fetch logged-in user's UUID id
-        if (user?.sicilNo) {
-          const { data: pData } = await api.from('personnel').select('id').eq('sicil_no', user.sicilNo).single()
-          if (pData) {
-            setCurrentUserUuid(pData.id)
-          }
-        }
       }
     }
     fetchInventoryAndUser()
-  }, [isOpen, vehiclePlaka, compartmentKey, user?.sicilNo])
+  }, [isOpen, vehiclePlaka, compartmentKey])
 
   const [lastCheckGroup, setLastCheckGroup] = useState<any[]>([])
   const [loadingLast, setLoadingLast] = useState(true)
@@ -216,12 +194,7 @@ export function InventoryCheckModal({ isOpen, vehiclePlaka, compartmentKey, onCl
               </AlertDescription>
             </Alert>
           )}
-          {/* Yetki Kilidi Uyarısı */}
-          {!isAuthorized && (
-            <div className="bg-red-500/10 border border-red-500/35 text-red-400 p-3.5 rounded-xl font-semibold text-xs flex items-center gap-2 mb-4 shadow-[0_0_15px_rgba(239,68,68,0.08)] animate-pulse">
-              <span>🔒 YETKİ KİLİDİ: Bu aracın envanter kontrol yetkisi sadece tanımlı Sorumlu Şoförüne ve Sorumlu Erine aittir!</span>
-            </div>
-          )}
+
 
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-muted-foreground font-medium">{items.length} Malzeme Listelendi</span>

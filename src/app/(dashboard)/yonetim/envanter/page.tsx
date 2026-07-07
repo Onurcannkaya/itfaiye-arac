@@ -535,6 +535,7 @@ function VehicleInventoryTab() {
 
   // Add new row handler
   const handleAddNewItem = () => {
+    if (!canEdit) return;
     const defaultComp = selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi";
     setTableRows(prev => [
       ...prev,
@@ -554,6 +555,7 @@ function VehicleInventoryTab() {
   };
 
   const handleAddNewItemInCompartment = (comp: string) => {
+    if (!canEdit) return;
     setTableRows(prev => [
       ...prev,
       {
@@ -580,11 +582,16 @@ function VehicleInventoryTab() {
 
   // Delete row handler
   const handleDeleteItem = (internalId: string) => {
+    if (!canEdit) return;
     setTableRows(prev => prev.filter(row => row.internalId !== internalId));
   };
 
   // Save changes to database
   const saveInventoryToDB = async () => {
+    if (!canEdit) {
+      alert('Envanter düzenleme yetkiniz bulunmamaktadır. Bu işlem yalnızca Admin ve Editor rolleri tarafından yapılabilir.')
+      return
+    }
     setIsSaving(true)
     setSaveSuccess(false)
     
@@ -1005,15 +1012,17 @@ function VehicleInventoryTab() {
                         }
                       </span>
                     </CardTitle>
-                    <Button 
-                      onClick={handleAddNewItem} 
-                      size="sm" 
-                      variant="secondary" 
-                      className="font-bold border border-[var(--fd-border)] bg-slate-800/80 hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] text-xs rounded-lg px-3 py-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1 text-[var(--fd-accent)]"/>
-                      Yeni Satır
-                    </Button>
+                    {canEdit && (
+                      <Button 
+                        onClick={handleAddNewItem} 
+                        size="sm" 
+                        variant="secondary" 
+                        className="font-bold border border-[var(--fd-border)] bg-slate-800/80 hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] text-xs rounded-lg px-3 py-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1 text-[var(--fd-accent)]"/>
+                        Yeni Satır
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent className="p-0">
                     
@@ -1058,18 +1067,20 @@ function VehicleInventoryTab() {
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleAddNewItemInCompartment(comp)
-                                    }}
-                                    size="sm"
-                                    variant="secondary"
-                                    className="h-7 px-2.5 font-bold border border-[var(--fd-border)] bg-slate-800/80 hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] text-[10px] rounded-lg"
-                                  >
-                                    + Yeni Ekle
-                                  </Button>
+                                  {canEdit && (
+                                    <Button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleAddNewItemInCompartment(comp)
+                                      }}
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 px-2.5 font-bold border border-[var(--fd-border)] bg-slate-800/80 hover:bg-[var(--fd-surface3)] text-[var(--fd-text2)] text-[10px] rounded-lg"
+                                    >
+                                      + Yeni Ekle
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
 
@@ -1110,7 +1121,7 @@ function VehicleInventoryTab() {
                                                   value={row.bolme_kapak}
                                                   onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
                                                   className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono"
-                                                  disabled={isTempAssigned}
+                                                  disabled={isTempAssigned || !canEdit}
                                                 >
                                                   {CLEAN_COMPARTMENT_OPTIONS.map(option => (
                                                     <option key={option} value={option}>{option}</option>
@@ -1126,7 +1137,7 @@ function VehicleInventoryTab() {
                                                     value={row.malzeme_adi}
                                                     onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
                                                     className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9 w-full"
-                                                    disabled={isTempAssigned}
+                                                    disabled={isTempAssigned || !canEdit}
                                                   />
                                                   {isTempAssigned && (
                                                     <span className="text-[10px] font-semibold text-amber-500 flex items-center gap-1 select-none">
@@ -1144,7 +1155,7 @@ function VehicleInventoryTab() {
                                                   value={row.adet}
                                                   onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
                                                   className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9 w-20 text-center"
-                                                  disabled={isTempAssigned}
+                                                  disabled={isTempAssigned || !canEdit}
                                                 />
                                               </td>
 
@@ -1154,7 +1165,7 @@ function VehicleInventoryTab() {
                                                   value={row.durum}
                                                   onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
                                                   className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono font-bold"
-                                                  disabled={isTempAssigned}
+                                                  disabled={isTempAssigned || !canEdit}
                                                 >
                                                   {DURUM_OPTIONS.map(opt => (
                                                     <option key={opt.value} value={opt.value} className={opt.colorClass}>
@@ -1166,25 +1177,29 @@ function VehicleInventoryTab() {
 
                                               {/* Actions cell */}
                                               <td className="px-5 py-2 text-center align-middle flex items-center justify-center gap-1.5">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleOpenAssignmentModal(row)}
-                                                  disabled={!row.malzeme_adi || isTempAssigned}
-                                                  className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
-                                                  title={isTempAssigned ? "Zimmetli malzeme tekrar zimmetlenemez" : "Geçici Zimmetle"}
-                                                >
-                                                  <span>🔄</span>
-                                                  <span className="hidden sm:inline">Zimmetle</span>
-                                                </button>
-                                                <button 
-                                                  type="button"
-                                                  onClick={() => handleDeleteItem(row.internalId)}
-                                                  disabled={isTempAssigned}
-                                                  className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--fd-text3)] disabled:cursor-not-allowed"
-                                                  title={isTempAssigned ? "Zimmetli malzeme silinemez" : "Satırı Kaldır"}
-                                                >
-                                                  <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                {canEdit && (
+                                                  <>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleOpenAssignmentModal(row)}
+                                                      disabled={!row.malzeme_adi || isTempAssigned}
+                                                      className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
+                                                      title={isTempAssigned ? "Zimmetli malzeme tekrar zimmetlenemez" : "Geçici Zimmetle"}
+                                                    >
+                                                      <span>🔄</span>
+                                                      <span className="hidden sm:inline">Zimmetle</span>
+                                                    </button>
+                                                    <button 
+                                                      type="button"
+                                                      onClick={() => handleDeleteItem(row.internalId)}
+                                                      disabled={isTempAssigned}
+                                                      className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--fd-text3)] disabled:cursor-not-allowed"
+                                                      title={isTempAssigned ? "Zimmetli malzeme silinemez" : "Satırı Kaldır"}
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                  </>
+                                                )}
                                               </td>
                                             </tr>
                                           );
@@ -1202,31 +1217,33 @@ function VehicleInventoryTab() {
                   </CardContent>
                   
                   {/* Save bar */}
-                  <div className="p-4 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
-                    {saveSuccess && (
-                      <span className="text-xs font-mono font-bold text-emerald-400 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25 justify-center">
-                        ✓ VERİTABANINA YAZILDI VE MÜHÜRLENDİ
-                      </span>
-                    )}
-                    <Button 
-                      onClick={saveInventoryToDB} 
-                      disabled={isSaving || loadingRows} 
-                      className="font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_-3px_rgba(225,29,72,0.4)] border border-rose-500/30 px-6 min-h-[44px] transition-all duration-200 active:scale-[0.97]"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Kaydediliyor...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2"/>
-                          Kaydet
-                        </>
+                  {canEdit && (
+                    <div className="p-4 border-t border-[var(--fd-border)] bg-[var(--fd-surface2)] backdrop-blur-md flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
+                      {saveSuccess && (
+                        <span className="text-xs font-mono font-bold text-emerald-400 mr-2 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/25 justify-center">
+                          ✓ VERİTABANINA YAZILDI VE MÜHÜRLENDİ
+                        </span>
                       )}
-                    </Button>
-                    <InfoTooltip content="Bu butona basarak girdiğiniz sayım veya değişiklik bilgilerini anında sisteme kaydedebilirsiniz." />
-                  </div>
+                      <Button 
+                        onClick={saveInventoryToDB} 
+                        disabled={isSaving || loadingRows} 
+                        className="font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_15px_-3px_rgba(225,29,72,0.4)] border border-rose-500/30 px-6 min-h-[44px] transition-all duration-200 active:scale-[0.97]"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Kaydediliyor...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4 mr-2"/>
+                            Kaydet
+                          </>
+                        )}
+                      </Button>
+                      <InfoTooltip content="Bu butona basarak girdiğiniz sayım veya değişiklik bilgilerini anında sisteme kaydedebilirsiniz." />
+                    </div>
+                  )}
                 </Card>
               )}
             </div>

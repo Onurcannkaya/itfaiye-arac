@@ -101,6 +101,7 @@ export default function VehicleDetailPage() {
   const idStr = params.id as string
   const { user } = useAuthStore()
   const isEr = user?.rol === 'User'
+  const canEditInventory = user?.rol === 'Admin' || user?.rol === 'Editor'
 
   const getCompartmentLabel = (key: string): string => {
     if (!key) return ""
@@ -211,6 +212,10 @@ export default function VehicleDetailPage() {
 
   const handleSaveEquipment = async (item: InventoryItem, targetCompartment: string) => {
     if (!vehicle) return
+    if (!canEditInventory) {
+      alert('Envanter düzenleme yetkiniz bulunmamaktadır. Bu işlem yalnızca Admin ve Editor rolleri tarafından yapılabilir.')
+      return
+    }
 
     const updatedBolmeler = JSON.parse(JSON.stringify(vehicle.bolmeler || {}))
 
@@ -298,6 +303,10 @@ export default function VehicleDetailPage() {
 
   const handleDeleteEquipment = async (item: InventoryItem) => {
     if (!vehicle || !activeCompartment) return
+    if (!canEditInventory) {
+      alert('Envanter düzenleme yetkiniz bulunmamaktadır. Bu işlem yalnızca Admin ve Editor rolleri tarafından yapılabilir.')
+      return
+    }
 
     if (!window.confirm(`"${item.malzeme}" malzemesini envanterden silmek istediğinize emin misiniz?`)) {
       return
@@ -1387,7 +1396,7 @@ export default function VehicleDetailPage() {
                   </CardTitle>
                   {activeCompartment && (
                     <div className="flex items-center gap-2">
-                      {!isEr && (
+                      {canEditInventory && (
                         <>
                           <button
                             onClick={handleOpenAddModal}
@@ -1786,7 +1795,7 @@ export default function VehicleDetailPage() {
                 Toplam <span className="font-mono font-bold text-[var(--fd-accent)]">{activeItems.length}</span> kalem ekipman listeleniyor.
               </div>
               <div className="flex items-center gap-2">
-                {!isEr && (
+                {canEditInventory && (
                   <>
                     <button
                       onClick={handleOpenAddModal}
