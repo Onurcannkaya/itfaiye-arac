@@ -10,6 +10,7 @@ export interface AuthUser {
   rol: string
   posta: string
   initials: string
+  mustChangePassword?: boolean
 }
 
 // ─── Auth Log Helper ─────────────────────────────────
@@ -74,7 +75,8 @@ export const useAuthStore = create<AuthState>()(
             unvan: data.user.unvan,
             rol: data.user.rol,
             posta: data.user.posta || '',
-            initials: `${data.user.ad.charAt(0)}${data.user.soyad.charAt(0)}`.toUpperCase()
+            initials: `${data.user.ad.charAt(0)}${data.user.soyad.charAt(0)}`.toUpperCase(),
+            mustChangePassword: data.user.mustChangePassword
           }
 
           set({ user: userObj, token: data.token, isAuthenticated: true })

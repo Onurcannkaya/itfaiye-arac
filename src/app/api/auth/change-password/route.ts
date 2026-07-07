@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
-import { hashPassword, verifyPassword, getSessionFromRequest, AuthError } from '@/lib/auth';
+import { hashPassword, verifyPassword, getSessionFromRequest, AuthError, signToken, COOKIE_CONFIG } from '@/lib/auth';
 
 /**
  * POST /api/auth/change-password
@@ -89,7 +89,39 @@ export async function POST(request: NextRequest) {
       [session.sicilNo, 'password_changed', `${session.ad} ${session.soyad} parolasını değiştirdi`]
     );
 
-    return NextResponse.json({ success: true, message: 'Parola başarıyla değiştirildi.' });
+    // Sign a new token since mustChangePassword is now false
+    const token = signToken({
+      sicilNo: session.sicilNo,
+      ad: session.ad,
+      soyad: session.soyad,
+      rol: session.rol,
+      unvan: session.unvan,
+      mustChangePassword: false,
+    });
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Parola başarıyla değiştirildi.',
+      token: token,
+      user: {
+        sicilNo: session.sicilNo,
+        ad: session.ad,
+        soyad: session.soyad,
+        unvan: session.unvan,
+        rol: session.rol,
+        mustChangePassword: false,
+      }
+    });
+
+    response.cookies.set(COOKIE_CONFIG.name, token, {
+      httpOnly: COOKIE_CONFIG.httpOnly,
+      secure: COOKIE_CONFIG.secure,
+      sameSite: COOKIE_CONFIG.sameSite,
+      path: COOKIE_CONFIG.path,
+      maxAge: COOKIE_CONFIG.maxAge,
+    });
+
+    return response;
   } catch (error: any) {
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

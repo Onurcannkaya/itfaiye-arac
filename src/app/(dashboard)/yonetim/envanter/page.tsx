@@ -35,6 +35,7 @@ import { QRCodeSVG } from "qrcode.react"
 import { useAuthStore } from "@/lib/authStore"
 import { COMPARTMENT_NAMES, APP_BASE_URL } from "@/lib/constants"
 import jsPDF from "jspdf"
+import { cn } from "@/lib/utils"
 
 
 const normalizeTextForSearch = (str: string): string => {
@@ -196,7 +197,8 @@ function VehicleInventoryTab() {
         birim_adi: recipientName,
         teslim_tarihi: new Date().toISOString(),
         tahmini_iade_tarihi: new Date(estimatedReturnDate).toISOString(),
-        durum: 'AKTIF'
+        durum: 'AKTIF',
+        kaynak_plaka: selectedPlaka
       };
 
       const res = await api.insert('temporary_assignments', assignmentData);
@@ -1092,80 +1094,101 @@ function VehicleInventoryTab() {
                                           </td>
                                         </tr>
                                       ) : (
-                                        rowsInComp.map((row) => (
-                                          <tr key={row.internalId} className="hover:bg-white/5 transition-colors duration-150">
-                                            {/* Compartment select */}
-                                            <td className="px-5 py-2 align-middle">
-                                              <select
-                                                value={row.bolme_kapak}
-                                                onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
-                                                className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono"
-                                              >
-                                                {CLEAN_COMPARTMENT_OPTIONS.map(option => (
-                                                  <option key={option} value={option}>{option}</option>
-                                                ))}
-                                              </select>
-                                            </td>
+                                        rowsInComp.map((row) => {
+                                          const isTempAssigned = row.durum === '🔄 GEÇİCİ ZİMMETTE';
+                                          return (
+                                            <tr 
+                                              key={row.internalId} 
+                                              className={cn(
+                                                "hover:bg-white/5 transition-colors duration-150",
+                                                isTempAssigned && "bg-amber-500/[0.02] opacity-75"
+                                              )}
+                                            >
+                                              {/* Compartment select */}
+                                              <td className="px-5 py-2 align-middle">
+                                                <select
+                                                  value={row.bolme_kapak}
+                                                  onChange={(e) => handleFieldChange(row.internalId, "bolme_kapak", e.target.value)}
+                                                  className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono"
+                                                  disabled={isTempAssigned}
+                                                >
+                                                  {CLEAN_COMPARTMENT_OPTIONS.map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                  ))}
+                                                </select>
+                                              </td>
 
-                                            {/* Material Name input */}
-                                            <td className="px-5 py-2 align-middle">
-                                              <Input 
-                                                placeholder="Malzeme ismi..."
-                                                value={row.malzeme_adi}
-                                                onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
-                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9 w-full"
-                                              />
-                                            </td>
+                                              {/* Material Name input */}
+                                              <td className="px-5 py-2 align-middle">
+                                                <div className="flex flex-col gap-1 w-full">
+                                                  <Input 
+                                                    placeholder="Malzeme ismi..."
+                                                    value={row.malzeme_adi}
+                                                    onChange={(e) => handleFieldChange(row.internalId, "malzeme_adi", e.target.value)}
+                                                    className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] text-xs focus:border-[var(--fd-accent)] h-9 w-full"
+                                                    disabled={isTempAssigned}
+                                                  />
+                                                  {isTempAssigned && (
+                                                    <span className="text-[10px] font-semibold text-amber-500 flex items-center gap-1 select-none">
+                                                      ⚠️ Bu malzeme geçici zimmet verilmiştir. Geçici zimmet takibi ekranında kontrol edin.
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </td>
 
-                                            {/* Quantity input */}
-                                            <td className="px-5 py-2 align-middle">
-                                              <Input 
-                                                type="number"
-                                                min="1"
-                                                value={row.adet}
-                                                onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
-                                                className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9 w-20 text-center"
-                                              />
-                                            </td>
+                                              {/* Quantity input */}
+                                              <td className="px-5 py-2 align-middle">
+                                                <Input 
+                                                  type="number"
+                                                  min="1"
+                                                  value={row.adet}
+                                                  onChange={(e) => handleFieldChange(row.internalId, "adet", Number(e.target.value))}
+                                                  className="bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text2)] font-mono text-xs focus:border-[var(--fd-accent)] h-9 w-20 text-center"
+                                                  disabled={isTempAssigned}
+                                                />
+                                              </td>
 
-                                            {/* Status select */}
-                                            <td className="px-5 py-2 align-middle">
-                                              <select
-                                                value={row.durum}
-                                                onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
-                                                className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono font-bold"
-                                              >
-                                                {DURUM_OPTIONS.map(opt => (
-                                                  <option key={opt.value} value={opt.value} className={opt.colorClass}>
-                                                    {opt.label}
-                                                  </option>
-                                                ))}
-                                              </select>
-                                            </td>
+                                              {/* Status select */}
+                                              <td className="px-5 py-2 align-middle">
+                                                <select
+                                                  value={row.durum}
+                                                  onChange={(e) => handleFieldChange(row.internalId, "durum", e.target.value)}
+                                                  className="h-9 w-full rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] px-2.5 py-1 text-xs focus:border-[var(--fd-accent)] focus:ring-1 focus:border-[var(--fd-accent)] outline-none font-mono font-bold"
+                                                  disabled={isTempAssigned}
+                                                >
+                                                  {DURUM_OPTIONS.map(opt => (
+                                                    <option key={opt.value} value={opt.value} className={opt.colorClass}>
+                                                      {opt.label}
+                                                    </option>
+                                                  ))}
+                                                </select>
+                                              </td>
 
-                                            {/* Actions cell */}
-                                            <td className="px-5 py-2 text-center align-middle flex items-center justify-center gap-1.5">
-                                              <button
-                                                type="button"
-                                                onClick={() => handleOpenAssignmentModal(row)}
-                                                disabled={!row.malzeme_adi}
-                                                className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
-                                                title="Geçici Zimmetle"
-                                              >
-                                                <span>🔄</span>
-                                                <span className="hidden sm:inline">Zimmetle</span>
-                                              </button>
-                                              <button 
-                                                type="button"
-                                                onClick={() => handleDeleteItem(row.internalId)}
-                                                className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px]"
-                                                title="Satırı Kaldır"
-                                              >
-                                                <Trash2 className="w-4 h-4" />
-                                              </button>
-                                            </td>
-                                          </tr>
-                                        ))
+                                              {/* Actions cell */}
+                                              <td className="px-5 py-2 text-center align-middle flex items-center justify-center gap-1.5">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleOpenAssignmentModal(row)}
+                                                  disabled={!row.malzeme_adi || isTempAssigned}
+                                                  className="h-9 px-2 flex items-center justify-center text-[var(--fd-accent)] hover:bg-[var(--fd-accent-soft2)] rounded-lg transition-colors border border-transparent hover:border-[var(--fd-accent-soft2)] text-xs font-bold gap-1 disabled:opacity-40 disabled:cursor-not-allowed min-h-[38px]"
+                                                  title={isTempAssigned ? "Zimmetli malzeme tekrar zimmetlenemez" : "Geçici Zimmetle"}
+                                                >
+                                                  <span>🔄</span>
+                                                  <span className="hidden sm:inline">Zimmetle</span>
+                                                </button>
+                                                <button 
+                                                  type="button"
+                                                  onClick={() => handleDeleteItem(row.internalId)}
+                                                  disabled={isTempAssigned}
+                                                  className="h-9 w-9 flex items-center justify-center text-[var(--fd-text3)] hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-rose-500/20 min-h-[38px] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--fd-text3)] disabled:cursor-not-allowed"
+                                                  title={isTempAssigned ? "Zimmetli malzeme silinemez" : "Satırı Kaldır"}
+                                                >
+                                                  <Trash2 className="w-4 h-4" />
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })
                                       )}
                                     </tbody>
                                   </table>
@@ -1759,6 +1782,7 @@ interface AssignmentItem {
   materialName?: string
   telefon?: string
   ucret?: string
+  kaynak_plaka?: string
 }
 
 export default function EnvanterPage() {
@@ -1770,6 +1794,19 @@ export default function EnvanterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(false)
   const [activePrintAssignment, setActivePrintAssignment] = useState<any | null>(null)
+  const [vehicles, setVehicles] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadVehicles() {
+      try {
+        const { data } = await api.from('vehicles').select('plaka,filo_no,aciklama')
+        if (data) setVehicles(data)
+      } catch (err) {
+        console.error("Vehicles loading error:", err)
+      }
+    }
+    loadVehicles()
+  }, [])
 
   // Load assignments
   const loadAssignments = async () => {
@@ -2047,6 +2084,7 @@ export default function EnvanterPage() {
                       <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-white/5 font-mono">
                         <tr>
                           <th className="px-5 py-3.5 text-left font-semibold">MALZEME ADI</th>
+                          <th className="px-5 py-3.5 text-left font-semibold">ASIL ARACI (KAYNAK)</th>
                           <th className="px-5 py-3.5 text-left font-semibold">ZİMMETLENEN YER (ALICI)</th>
                           <th className="px-5 py-3.5 text-center font-semibold w-36">TESLİM TARİHİ</th>
                           <th className="px-5 py-3.5 text-center font-semibold w-36">İADE TARİHİ</th>
@@ -2057,7 +2095,7 @@ export default function EnvanterPage() {
                       <tbody className="divide-y divide-white/5 font-medium">
                         {filteredAssignments.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="py-12 text-center text-[var(--fd-text3)] italic font-mono text-xs">
+                            <td colSpan={7} className="py-12 text-center text-[var(--fd-text3)] italic font-mono text-xs">
                               Gösterilecek geçici zimmet kaydı bulunmamaktadır.
                             </td>
                           </tr>
@@ -2080,6 +2118,19 @@ export default function EnvanterPage() {
                                     )}
                                     <span>{item.materialName}</span>
                                   </div>
+                                </td>
+
+                                {/* Asıl Aracı (Kaynak) */}
+                                <td className="px-5 py-4 text-xs font-semibold text-[var(--fd-text2)]">
+                                  {(() => {
+                                    if (!item.kaynak_plaka) return '—';
+                                    if (item.kaynak_plaka === 'GARAJ') return 'Garaj Deposu';
+                                    const veh = vehicles.find((v: any) => v.plaka === item.kaynak_plaka);
+                                    if (veh) {
+                                      return `${veh.filo_no} NOLU (${item.kaynak_plaka})`;
+                                    }
+                                    return item.kaynak_plaka;
+                                  })()}
                                 </td>
 
                                 {/* Zimmetlenen Yer */}

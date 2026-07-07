@@ -13,6 +13,7 @@ export interface JWTPayload {
   soyad: string;
   rol: string;
   unvan: string;
+  mustChangePassword?: boolean;
 }
 
 /**

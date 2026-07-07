@@ -5,10 +5,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/lib/authStore'
-import { Key, Eye, EyeOff, Loader2, CheckCircle2, ShieldAlert, User } from 'lucide-react'
+import { Key, Eye, EyeOff, Loader2, CheckCircle2, ShieldAlert, User, LogOut } from 'lucide-react'
 
 export default function SifreDegistirPage() {
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -65,6 +65,24 @@ export default function SifreDegistirPage() {
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
+
+      // Update state in Zustand store
+      if (json.token && json.user) {
+        localStorage.setItem('auth_token', json.token);
+        useAuthStore.setState({
+          token: json.token,
+          user: {
+            sicilNo: json.user.sicilNo,
+            ad: json.user.ad,
+            soyad: json.user.soyad,
+            unvan: json.user.unvan,
+            rol: json.user.rol,
+            posta: user?.posta || '',
+            initials: user?.initials || '',
+            mustChangePassword: false,
+          }
+        });
+      }
     } catch (err: any) {
       setError("Sunucuyla bağlantı kurulamadı.")
     } finally {
@@ -205,6 +223,20 @@ export default function SifreDegistirPage() {
           </form>
         </CardContent>
       </Card>
+
+      {user?.mustChangePassword && (
+        <div className="flex justify-center pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={logout}
+            className="text-xs font-semibold gap-1.5 border-[var(--fd-border)] hover:bg-[var(--fd-surface2)] hover:text-red-500 rounded-xl h-9 px-4 cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Giriş Ekranına Dön / Çıkış Yap
+          </Button>
+        </div>
+      )}
 
       {/* Safe area padding */}
       <div className="pb-[calc(4rem+env(safe-area-inset-bottom))]" />

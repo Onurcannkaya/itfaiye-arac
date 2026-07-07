@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check if the user is logging in with a temporary password
+    const tempPass = await queryOne(
+      'SELECT id FROM temp_passwords WHERE sicil_no = $1 AND used = false',
+      [person.sicil_no]
+    );
+    const mustChangePassword = !!tempPass;
+
     // JWT token üret
     const token = signToken({
       sicilNo: person.sicil_no,
@@ -107,6 +114,7 @@ export async function POST(request: NextRequest) {
       soyad: person.soyad,
       rol: person.rol,
       unvan: person.unvan,
+      mustChangePassword: mustChangePassword,
     });
 
     // Auth log — başarılı
@@ -130,6 +138,7 @@ export async function POST(request: NextRequest) {
         unvan: person.unvan,
         rol: person.rol,
         posta: person.posta || '',
+        mustChangePassword: mustChangePassword,
       }
     });
 

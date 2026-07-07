@@ -306,6 +306,7 @@ async function ensureTemporaryAssignmentsTableExists() {
     `);
     await query(`ALTER TABLE public.temporary_assignments ADD COLUMN IF NOT EXISTS uuid UUID DEFAULT gen_random_uuid();`);
     await query(`UPDATE public.temporary_assignments SET uuid = gen_random_uuid() WHERE uuid IS NULL;`);
+    await query(`ALTER TABLE public.temporary_assignments ADD COLUMN IF NOT EXISTS kaynak_plaka VARCHAR;`);
   } catch (err) {
     console.error('ensureTemporaryAssignmentsTableExists hatası:', err);
   }

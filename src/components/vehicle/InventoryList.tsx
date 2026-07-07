@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react"
 import { InventoryItem } from "@/types"
 import { Badge } from "@/components/ui/Badge"
 import { AlertCircle, CheckCircle2, Wrench, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 function getEquipmentIcon(malzeme: string) {
   const name = (malzeme || "").toLowerCase();
@@ -114,15 +115,34 @@ export function InventoryList({
       <ul className="divide-y divide-[var(--fd-border)] bg-[var(--fd-surface)] rounded-[var(--fd-r)] overflow-hidden border border-[var(--fd-border)] pb-[72px] md:pb-0">
         {paginatedItems.map((item, idx) => {
           const isOk = item.durum === 'Tam'
+          const isTempAssigned = item.durum === '🔄 GEÇİCİ ZİMMETTE'
           return (
-            <li key={item.id || idx} className="flex items-center justify-between py-3 px-4 hover:bg-[var(--fd-surface2)] transition-colors duration-200">
+            <li 
+              key={item.id || idx} 
+              className={cn(
+                "flex items-center justify-between py-3 px-4 hover:bg-[var(--fd-surface2)] transition-colors duration-200",
+                isTempAssigned && "bg-[var(--fd-surface2)]/40 opacity-75"
+              )}
+            >
               <div className="flex items-center space-x-3.5 min-w-0 flex-1">
                 <div className="p-1 rounded bg-[var(--fd-surface2)] border border-[var(--fd-border)] flex items-center justify-center">
                   {getEquipmentIcon(item.malzeme)}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-[var(--fd-text)] tracking-tight truncate">{item.malzeme}</p>
-                  <p className="text-[10px] font-mono text-[var(--fd-text2)] mt-0.5">MİKTAR: <span className="font-bold text-[var(--fd-text)]">{item.adet}</span></p>
+                  <p className={cn(
+                    "text-xs font-bold tracking-tight truncate",
+                    isTempAssigned ? "text-[var(--fd-text3)]" : "text-[var(--fd-text)]"
+                  )}>
+                    {item.malzeme}
+                  </p>
+                  <p className="text-[10px] font-mono text-[var(--fd-text2)] mt-0.5">
+                    MİKTAR: <span className="font-bold text-[var(--fd-text)]">{item.adet}</span>
+                  </p>
+                  {isTempAssigned && (
+                    <p className="text-[10px] font-semibold text-amber-500 mt-1 flex items-center gap-1">
+                      ⚠️ Bu malzeme geçici zimmet verilmiştir. Geçici zimmet takibi ekranında kontrol edin.
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center space-x-3 shrink-0 ml-4">
@@ -130,6 +150,8 @@ export function InventoryList({
                   <Badge variant="success">TAM</Badge>
                 ) : item.durum === 'Kayıp/Yok' ? (
                   <Badge variant="danger">KAYIP</Badge>
+                ) : isTempAssigned ? (
+                  <Badge variant="info">ZİMMETTE</Badge>
                 ) : (
                   <Badge variant="warning">EKSİK</Badge>
                 )}
@@ -138,15 +160,17 @@ export function InventoryList({
                   <div className="flex items-center gap-1.5 border-l border-[var(--fd-border-strong)] pl-3">
                     <button
                       onClick={() => onEditItem?.(item)}
-                      className="p-1.5 rounded bg-amber-500/10 text-[var(--fd-amber)] border border-amber-500/20 hover:bg-amber-500/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Düzenle"
+                      disabled={isTempAssigned}
+                      className="p-1.5 rounded bg-amber-500/10 text-[var(--fd-amber)] border border-amber-500/20 hover:bg-amber-500/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={isTempAssigned ? "Zimmetli malzeme düzenlenemez" : "Düzenle"}
                     >
                       <Wrench className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteItem?.(item)}
-                      className="p-1.5 rounded bg-rose-500/10 text-[var(--fd-danger)] border border-rose-500/20 hover:bg-rose-500/25 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Sil"
+                      disabled={isTempAssigned}
+                      className="p-1.5 rounded bg-rose-500/10 text-[var(--fd-danger)] border border-rose-500/20 hover:bg-rose-500/25 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={isTempAssigned ? "Zimmetli malzeme silinemez" : "Sil"}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
