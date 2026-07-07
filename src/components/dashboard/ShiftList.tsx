@@ -5,6 +5,7 @@ import { FileText, Table as TableIcon, Building2, MapPin, Loader2 } from 'lucide
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { exportShiftListToPDF, exportShiftListToExcel } from "@/lib/exportUtils"
+import { STATION_SHIFT_TIMES, normalizeStationName } from "@/lib/shiftUtils"
 import { Personnel } from "@/types"
 import { useAuthStore } from "@/lib/authStore"
 import { api } from "@/lib/api"
@@ -167,9 +168,14 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
   };
 
   const logPersonnelMovement = async (sicilNo: string, statusBase: string, explanation: string) => {
+    const person = list.find(p => p.sicil_no === sicilNo);
+    const stationName = person?.istasyon;
+    const stationKey = normalizeStationName(stationName);
+    const shiftTime = STATION_SHIFT_TIMES[stationKey];
+
     const shiftDate = new Date();
-    // Nöbet değişimi 08:00'dedir. Saat 08:00'den önce ise önceki güne aittir.
-    if (shiftDate.getHours() < 8) {
+    if (shiftDate.getHours() < shiftTime.hours || 
+       (shiftDate.getHours() === shiftTime.hours && shiftDate.getMinutes() < shiftTime.minutes)) {
       shiftDate.setDate(shiftDate.getDate() - 1);
     }
     const todayStr = shiftDate.toLocaleDateString("en-CA");

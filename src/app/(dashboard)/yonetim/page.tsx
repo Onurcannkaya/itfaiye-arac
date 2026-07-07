@@ -32,9 +32,12 @@ import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
 import { ShiftList } from "@/components/dashboard/ShiftList"
 import { HourlyShifts } from "@/components/dashboard/HourlyShifts"
+import { ShiftCountdown } from "@/components/dashboard/ShiftCountdown"
+import { FutureShiftCalendar } from "@/components/personnel/FutureShiftCalendar"
 import { Personnel } from "@/types"
 import { Input } from "@/components/ui/Input"
 import { useAuthStore } from "@/lib/authStore"
+import { getActivePostaForStation } from "@/lib/shiftUtils"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -415,7 +418,7 @@ export default function DashboardPage() {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
   const [activeAlertsTab, setActiveAlertsTab] = useState<'vehicles' | 'licenses' | 'assignments'>('vehicles')
-  const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly'>('daily')
+  const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly' | 'calendar'>('daily')
   const [overdueAssignments, setOverdueAssignments] = useState<any[]>([])
   const [monthlyTrendData, setMonthlyTrendData] = useState<{ date: string; label: string; count: number }[]>([])
   const [distributionData, setDistributionData] = useState<{
@@ -987,32 +990,14 @@ export default function DashboardPage() {
     }
   }, [vehicles, activeMissions]);
 
-  // ─── Nöbetçi posta: 3'lü posta döngüsü (Faz 28.23.8) ───
-  // Referans: 04.06.2026 tarihinde 2. Posta nöbette. Döngü sırasıyla: 2 -> 3 -> 1 -> 2 -> 3 -> 1
-  const activePostaNumber = useMemo(() => {
-    const referenceDate = new Date("2026-06-04");
-    referenceDate.setHours(0, 0, 0, 0);
-
-    const today = new Date();
-    // Nöbet değişimi 08:00'dedir. Saat 08:00'den önce ise önceki güne aittir.
-    if (today.getHours() < 8) {
-      today.setDate(today.getDate() - 1);
-    }
-    today.setHours(0, 0, 0, 0);
-
-    const diffTime = today.getTime() - referenceDate.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    // diffDays % 3 can be negative or positive, make sure it maps correctly:
-    const index = ((1 + (diffDays % 3) + 3) % 3) + 1;
-    return index;
-  }, []);
-
   const sortedPersonnel = useMemo<Personnel[]>(() => {
     if (personnelList.length === 0) return []
-    // Filter to active posta only — ShiftList handles station grouping and hierarchical sorting internally
-    return personnelList.filter(p => p.posta_no === activePostaNumber)
-  }, [personnelList, activePostaNumber])
+    // Filter to active posta only, based on station-specific shift times
+    return personnelList.filter(p => {
+      const activePosta = getActivePostaForStation(p.istasyon, new Date());
+      return p.posta_no === activePosta;
+    });
+  }, [personnelList])
 
   const criticalAlerts = useMemo(() => {
     const alerts: {
@@ -1286,7 +1271,7 @@ export default function DashboardPage() {
             <div className="mt-2">
               <div className="text-3xl font-bold font-mono text-[var(--fd-text)]">{sortedPersonnel.length || personnelList.length || 47}</div>
               <div className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1 flex items-center gap-1">
-                tam {activePostaNumber}. vardiyası
+                Bugün itibariyle göreve hazır personel sayısı.
               </div>
             </div>
           </div>
@@ -1622,9 +1607,10 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-xl font-bold text-[var(--fd-text)] flex items-center gap-2">
                   <Users size={20} className="text-[var(--fd-info)]" />
-                  Nöbetçi Vardiya Personel Listesi ({activePostaNumber}. Posta)
+                  Nöbetçi Vardiya Personel Listesi
                 </h2>
                 <p className="text-sm text-[var(--fd-text3)] mt-1">İstasyon bazlı günlük nöbetçiler ve saatlik karargah nöbet çizelgesi.</p>
+                <ShiftCountdown />
               </div>
               <button onClick={() => setIsPersonnelModalOpen(false)} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors p-1 bg-transparent border-none cursor-pointer">
                 <X size={20} />
@@ -1645,13 +1631,21 @@ export default function DashboardPage() {
               >
                 Saatlik Karargah Nöbet Çizelgesi
               </button>
+              <button 
+                onClick={() => setActiveShiftTab('calendar')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeShiftTab === 'calendar' ? 'border-[var(--fd-accent)] text-[var(--fd-accent)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Takvim
+              </button>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1">
               {activeShiftTab === 'daily' ? (
-                <ShiftList personnel={sortedPersonnel} activePosta={activePostaNumber} />
+                <ShiftList personnel={sortedPersonnel} activePosta={0} />
+              ) : activeShiftTab === 'hourly' ? (
+                <HourlyShifts personnel={sortedPersonnel} activePosta={0} />
               ) : (
-                <HourlyShifts personnel={sortedPersonnel} activePosta={activePostaNumber} />
+                <FutureShiftCalendar personnelList={personnelList} />
               )}
             </div>
 
