@@ -34,6 +34,7 @@ import { ShiftList } from "@/components/dashboard/ShiftList"
 import { HourlyShifts } from "@/components/dashboard/HourlyShifts"
 import { ShiftCountdown } from "@/components/dashboard/ShiftCountdown"
 import { FutureShiftCalendar } from "@/components/personnel/FutureShiftCalendar"
+import { DailyWorkSchedule } from "@/components/dashboard/DailyWorkSchedule"
 import { Personnel } from "@/types"
 import { Input } from "@/components/ui/Input"
 import { useAuthStore } from "@/lib/authStore"
@@ -418,7 +419,7 @@ export default function DashboardPage() {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false)
   const [activeAlertsTab, setActiveAlertsTab] = useState<'vehicles' | 'licenses' | 'assignments'>('vehicles')
-  const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly' | 'calendar'>('daily')
+  const [activeShiftTab, setActiveShiftTab] = useState<'daily' | 'hourly' | 'schedule' | 'calendar'>('daily')
   const [overdueAssignments, setOverdueAssignments] = useState<any[]>([])
   const [monthlyTrendData, setMonthlyTrendData] = useState<{ date: string; label: string; count: number }[]>([])
   const [distributionData, setDistributionData] = useState<{
@@ -1658,6 +1659,12 @@ export default function DashboardPage() {
                 Saatlik Karargah Nöbet Çizelgesi
               </button>
               <button 
+                onClick={() => setActiveShiftTab('schedule')} 
+                className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeShiftTab === 'schedule' ? 'border-[var(--fd-accent)] text-[var(--fd-accent)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
+              >
+                Mesai Çizelgesi
+              </button>
+              <button 
                 onClick={() => setActiveShiftTab('calendar')} 
                 className={`pb-2 pt-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer bg-transparent border-none ${activeShiftTab === 'calendar' ? 'border-[var(--fd-accent)] text-[var(--fd-accent)]' : 'border-transparent text-[var(--fd-text3)] hover:text-[var(--fd-text)]'}`}
               >
@@ -1670,6 +1677,8 @@ export default function DashboardPage() {
                 <ShiftList personnel={sortedPersonnel} activePosta={0} />
               ) : activeShiftTab === 'hourly' ? (
                 <HourlyShifts personnel={sortedPersonnel} allPersonnel={personnelList} activePosta={0} />
+              ) : activeShiftTab === 'schedule' ? (
+                <DailyWorkSchedule personnel={sortedPersonnel} allPersonnel={personnelList} />
               ) : (
                 <FutureShiftCalendar personnelList={personnelList} />
               )}
