@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryMany } from "@/lib/db";
 import { getSessionFromRequest } from "@/lib/auth";
+import { getN2MobilToken } from "@/lib/n2mobil-auth";
 
 export const dynamic = "force-dynamic";
 
-const N2_TOKEN = process.env.N2MOBIL_TOKEN;
 const FLEET_ID = "6044";
 
 export async function GET(request: NextRequest) {
@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Oturum açmanız gerekiyor." }, { status: 401 });
     }
+
+    const N2_TOKEN = await getN2MobilToken();
 
     // 1. Araç listesini çek (bu her zaman çalışıyor)
     let vehicleMap = new Map<number, string>(); // value -> plate

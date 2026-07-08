@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
+import { getN2MobilToken } from "@/lib/n2mobil-auth";
 
 export const dynamic = "force-dynamic";
-
-const N2_TOKEN = process.env.N2MOBIL_TOKEN;
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +17,8 @@ export async function GET(request: NextRequest) {
     if (!vehicle_id) {
       return NextResponse.json({ error: "vehicle_id gerekli." }, { status: 400 });
     }
+
+    const N2_TOKEN = await getN2MobilToken();
 
     try {
       const res = await fetch(`https://ats2.n2mobil.com/api/camera/?vehicle_id=${vehicle_id}`, {
