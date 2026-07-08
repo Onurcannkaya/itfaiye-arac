@@ -105,6 +105,30 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
         })
       }
 
+      // Sercan Karaca Auto-Fill Logic (Hafta İçi 08:00 - 17:00 Nizamiye)
+      const [year, month, day] = todayStr.split('-');
+      const shiftDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const isWeekday = shiftDateObj.getDay() >= 1 && shiftDateObj.getDay() <= 5;
+      
+      const sercan = personnel.find(p => p.ad?.trim().toLowerCase() === 'sercan' && p.soyad?.trim().toLowerCase() === 'karaca');
+      const isSercanAvailable = sercan && !sercan.durum?.toLowerCase().includes('izin') && !sercan.durum?.toLowerCase().includes('rapor');
+
+      if (isWeekday && isSercanAvailable) {
+        const targetHours = [
+          "08:00 - 10:00",
+          "10:00 - 12:00",
+          "12:00 - 14:00",
+          "14:00 - 16:00",
+          "16:00 - 18:00"
+        ];
+        
+        targetHours.forEach(h => {
+          if (newMatrix[h] && newMatrix[h]["NIZAMIYE"] && !newMatrix[h]["NIZAMIYE"].sicil) {
+             newMatrix[h]["NIZAMIYE"].sicil = sercan.sicil_no;
+          }
+        });
+      }
+
       setMatrix(newMatrix)
     } catch (err) {
       console.error("Hourly shifts fetch error:", err)
