@@ -22,15 +22,23 @@ export async function POST(req: Request) {
 
       if (action === 'incident') {
         const { missionTitle, missionAddress, missionType, detail } = body;
+        const activePosta = getActivePostaForStation('Merkez', new Date());
         query = `
           SELECT p.ad, p.soyad, COALESCE(p.telefon, pd.telefon) as phone
           FROM public.personnel p
           LEFT JOIN public.personnel_details pd ON p.sicil_no = pd.sicil_no
-          WHERE (p.durum = 'Görevde' OR p.unvan IN ('Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'))
+          WHERE (
+            p.posta_no = $1 
+            OR p.posta_no IS NULL 
+            OR p.posta_no = 0 
+            OR p.durum = 'Görevde' 
+            OR p.unvan IN ('Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu')
+          )
             AND COALESCE(p.telefon, pd.telefon) IS NOT NULL
             AND COALESCE(p.telefon, pd.telefon) != ''
             AND p.aktif = true
         `;
+        queryParams = [activePosta];
         smsContent = `[YENİ OLAY - ${missionType}]\nKonu: ${missionTitle}\nAdres: ${missionAddress}\nDetay: ${detail || '-'}\nLütfen olay yerine intikal ediniz.`;
       } 
       else if (action === 'training') {
