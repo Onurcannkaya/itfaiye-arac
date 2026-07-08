@@ -48,6 +48,7 @@ export interface Personnel {
   soyad: string;
   unvan: string;
   rol: "Admin" | "Editor" | "Shift_Leader" | "User" | string;
+  telefon?: string;
   posta?: string;
   posta_no?: number;
   istasyon?: string;

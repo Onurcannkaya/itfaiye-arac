@@ -46,10 +46,20 @@ export default function DeepLinkCompartmentPage() {
     fetchVehicle()
   }, [plakaSlug])
 
-  const handleSave = (results: any[]) => {
+  const handleSave = async (results: any[]) => {
     setModalOpen(false)
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 4000)
+
+    try {
+      await fetch('/api/sms/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'inventory', plaka: vehicle?.plaka })
+      });
+    } catch (smsErr) {
+      console.error("Envanter SMS gönderilemedi:", smsErr);
+    }
   }
 
   const compartmentName = COMPARTMENT_NAMES[bolmeKey] || bolmeKey

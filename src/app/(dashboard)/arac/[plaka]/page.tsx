@@ -57,9 +57,19 @@ export default function VehicleDeepLinkPage() {
     setMode("inventory")
   }
 
-  const handleInventorySaved = () => {
+  const handleInventorySaved = async () => {
     setSuccessMsg(`${vehicle?.plaka} — ${COMPARTMENT_NAMES[compartmentKey] || compartmentKey} sayımı kaydedildi!`)
     setMode("success")
+
+    try {
+      await fetch('/api/sms/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'inventory', plaka: vehicle?.plaka })
+      });
+    } catch (smsErr) {
+      console.error("Envanter SMS gönderilemedi:", smsErr);
+    }
   }
 
   const handleDailySaved = () => {

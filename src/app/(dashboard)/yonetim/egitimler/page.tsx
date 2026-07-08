@@ -532,6 +532,19 @@ export default function EgitimlerPage() {
         await api.update('egitim_mufredati', payload, { id: mufredatEditRow.id })
       } else {
         await api.insert('egitim_mufredati', [payload])
+        try {
+          await fetch('/api/sms/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'training',
+              date: payload.tarih,
+              topic: payload.egitim_konusu
+            })
+          });
+        } catch (smsErr) {
+          console.error("Eğitim SMS gönderilemedi:", smsErr);
+        }
       }
       setMufredatForm({ tarih: '', posta: 'A', egitim_konusu: '' })
       setMufredatEditRow(null)

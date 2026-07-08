@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Loader2, Map as MapIcon, Flame, Droplets, Target, Search, Plus, MapPin, X, Sparkles } from "lucide-react"
 import { useAuthStore } from "@/lib/authStore"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
 
 const Map = dynamic(() => import("@/components/map/Map"), { 
   ssr: false,
@@ -168,6 +169,13 @@ function HaritaContent() {
   const [checkedExternalPersonnel, setCheckedExternalPersonnel] = useState<string[]>([])
   const [externalPersonnelSearch, setExternalPersonnelSearch] = useState("")
 
+  // Camera Integration State
+  const [cameraModalOpen, setCameraModalOpen] = useState(false)
+  const [cameraVehicle, setCameraVehicle] = useState<{ id: string, plate: string } | null>(null)
+  const [cameraIps, setCameraIps] = useState<string[]>([])
+  const [loadingCamera, setLoadingCamera] = useState(false)
+  const [activeChannelIndex, setActiveChannelIndex] = useState(0)
+
   // ─── İnteraktif Adres Arama (Geocoding) State ─────────
   const [incidentSearchQuery, setIncidentSearchQuery] = useState("")
   const [incidentSearchResults, setIncidentSearchResults] = useState<NominatimResult[]>([])
@@ -279,7 +287,7 @@ function HaritaContent() {
       }
 
       try {
-        const resVeh = await fetch(`/api/mobiliz/live?t=${Date.now()}`)
+        const resVeh = await fetch(`/api/n2mobil/live?t=${Date.now()}`)
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
@@ -307,7 +315,8 @@ function HaritaContent() {
                     kontak: live.ignition,
                     yon: live.direction,
                     sonGuncelleme: live.dataTime,
-                    address: live.address
+                    address: live.address,
+                    vehicle_id: live.vehicle_id
                   }
                 }
                 return v
@@ -334,7 +343,7 @@ function HaritaContent() {
 
       let initialVehicles = vehData || []
       try {
-        const resVeh = await fetch(`/api/mobiliz/live?t=${Date.now()}`)
+        const resVeh = await fetch(`/api/n2mobil/live?t=${Date.now()}`)
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
@@ -361,7 +370,8 @@ function HaritaContent() {
                   kontak: live.ignition,
                   yon: live.direction,
                   sonGuncelleme: live.dataTime,
-                  address: live.address
+                  address: live.address,
+                  vehicle_id: live.vehicle_id
                 }
               }
               return v
@@ -801,6 +811,27 @@ function HaritaContent() {
     }
   }
 
+  const handleOpenCamera = async (vehicleId: string, plate: string) => {
+    setCameraVehicle({ id: vehicleId, plate })
+    setCameraIps([])
+    setActiveChannelIndex(0)
+    setLoadingCamera(true)
+    setCameraModalOpen(true)
+    try {
+      const res = await fetch(`/api/n2mobil/camera?vehicle_id=${vehicleId}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.status && data.devIp) {
+          setCameraIps(data.devIp)
+        }
+      }
+    } catch (err) {
+      console.error("Camera fetch error:", err)
+    } finally {
+      setLoadingCamera(false)
+    }
+  }
+
   const handleDeleteIncident = (id: string) => {
     setIncidents(prev => prev.filter(inc => String(inc.id) !== String(id)))
   }
@@ -1082,6 +1113,7 @@ function HaritaContent() {
             onCompleteExternalMission={handleCompleteExternalMission}
             isSimulation={isSimulation}
             simulationReason={simulationReason}
+            onOpenCamera={handleOpenCamera}
           />
           
         </CardContent>
@@ -1730,6 +1762,87 @@ function HaritaContent() {
         </div>
       )}
 
+      {/* --- CAMERA MODAL --- */}
+      <Dialog open={cameraModalOpen} onOpenChange={setCameraModalOpen}>
+        <DialogContent className="sm:max-w-2xl bg-[var(--fd-surface)] border-[var(--fd-border)]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-[var(--fd-text)]">
+              <span className="text-blue-500">📹</span> {cameraVehicle?.plate} - Canlı Kamera
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {loadingCamera ? (
+              <div className="flex flex-col items-center justify-center py-12 text-[var(--fd-text3)]">
+                <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
+                <p>N2 Mobil kamera bağlantısı kuruluyor...</p>
+              </div>
+            ) : cameraIps.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex gap-2 mb-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {cameraIps.map((ip, i) => (
+                    <Button 
+                      key={i} 
+                      variant={activeChannelIndex === i ? 'default' : 'outline'}
+                      onClick={() => setActiveChannelIndex(i)}
+                      className={activeChannelIndex === i ? 'bg-blue-600 hover:bg-blue-700 shadow-md' : 'text-[var(--fd-text2)]'}
+                      size="sm"
+                    >
+                      Kamera Kanalı {i + 1}
+                    </Button>
+                  ))}
+                </div>
+                
+                <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-[var(--fd-border)] flex items-center justify-center">
+                   {/* Loader Background */}
+                   <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
+                     <Loader2 className="w-8 h-8 animate-spin mb-2 opacity-50" />
+                     <p className="text-xs">Yayın Yükleniyor...</p>
+                   </div>
+                   
+                   <img 
+                     key={cameraIps[activeChannelIndex]}
+                     src={`/api/n2mobil/stream?url=${encodeURIComponent(cameraIps[activeChannelIndex])}`}
+                     alt="Canlı Kamera Yayını"
+                     className="relative z-10 w-full h-full object-contain"
+                     onError={(e) => {
+                       e.currentTarget.style.display = 'none';
+                       const errDiv = document.getElementById('cam-error');
+                       if (errDiv) errDiv.style.display = 'flex';
+                     }}
+                     onLoad={(e) => {
+                       const errDiv = document.getElementById('cam-error');
+                       if (errDiv) errDiv.style.display = 'none';
+                     }}
+                   />
+                   
+                   <div id="cam-error" className="absolute inset-0 z-20 hidden flex-col items-center justify-center text-red-400 bg-black/90">
+                      <X className="w-12 h-12 mb-2 opacity-80" />
+                      <p className="font-semibold">Kamera yayınına ulaşılamadı.</p>
+                      <p className="text-xs mt-1 text-gray-400">Araç kapalı olabilir veya bağlantı zayıf.</p>
+                   </div>
+                   
+                   <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
+                     <div className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1.5 rounded border border-white/10 flex items-center gap-2 shadow-lg tracking-wider">
+                       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                       CANLI - {cameraVehicle?.plate}
+                     </div>
+                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-10 text-[var(--fd-text3)] border border-dashed border-[var(--fd-border)] rounded-xl bg-[var(--fd-surface2)]">
+                <span className="text-3xl mb-2 block opacity-50">📷</span>
+                Bu araç için N2 Mobil sisteminde aktif kamera yayını bulunamadı.
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCameraModalOpen(false)}>Kapat</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </PageGuard>
   )

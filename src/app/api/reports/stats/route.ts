@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         COUNT(*) FILTER (WHERE olay_turu ILIKE '%Yangın%' OR olay_turu ILIKE '%Yangin%') as fires_count,
         COUNT(*) FILTER (WHERE olay_turu ILIKE '%Kurtarma%') as rescue_operations_count,
+        COUNT(*) FILTER (WHERE yoldan_donuldu = true) as yoldan_donuldu_count,
         COALESCE(AVG(EXTRACT(EPOCH FROM (varis_saati - cikis_saati)) / 60) FILTER (WHERE varis_saati > cikis_saati), 0) as avg_response_time
       FROM public.incidents
     `);
@@ -109,6 +110,7 @@ export async function GET(request: NextRequest) {
         total_people_reached: Number(trainingStats?.total_people_reached || 0),
         fires_count: Number(incidentStats?.fires_count || 0),
         rescue_operations_count: Number(incidentStats?.rescue_operations_count || 0),
+        yoldan_donuldu_count: Number(incidentStats?.yoldan_donuldu_count || 0),
         active_personnel_count: Number(activePersonnel?.active_count || 0),
         avg_response_time: Number(incidentStats?.avg_response_time || 0)
       },

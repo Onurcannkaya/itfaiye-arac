@@ -282,7 +282,7 @@ export default function LogsReportsPage() {
         force_override: force
       }
       
-      const res = await api.insert('daily_summary_reports', zData)
+      const res = await api.upsert('daily_summary_reports', zData, 'rapor_tarihi')
       if (res.error) {
         if (res.error === 'LOGISTICS_LOCKED' || (res.message && res.message.includes('LOGISTICS_LOCKED')) || res.assignments || res.maintenance) {
           setOverrideData({
@@ -311,375 +311,234 @@ export default function LogsReportsPage() {
 
   // jsPDF Custom Matbu Shift Handover Report Generator
   const handleExportZReportPDF = async (report: any) => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const pageW = 210
-    const pageH = 297
-    const mL = 12  // margin left
-    const mR = 12  // margin right
-    const contentW = pageW - mL - mR
-    const colDivX = mL + contentW * 0.48 // left column ~48%
-    const rColX = colDivX + 3  // right column start
+    try {
+      setZSubmitting(true)
+      
+      const dateStr = new Date(report.rapor_tarihi).toLocaleDateString("tr-TR")
 
-    const tr = (str: string) => {
-      if (!str) return ""
-      const map: Record<string, string> = {
-        'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g', 'İ': 'I', 'ı': 'i',
-        'Ö': 'O', 'ö': 'o', 'Ü': 'U', 'ü': 'u', 'Ç': 'C', 'ç': 'c'
+      let shiftLogsData: any[] = []
+      let rotasData: any[] = []
+      try {
+        const { data: shifts } = await api.from('personnel_shifts_log').select('*')
+        shiftLogsData = (shifts || []).filter((s: any) => {
+          const sDate = new Date(s.giris_tarihi).toISOString().split('T')[0]
+          return sDate === report.rapor_tarihi
+        })
+        const { data: rotas } = await api.from('hourly_shifts').select('*').eq('tarih', report.rapor_tarihi)
+        rotasData = rotas || []
+      } catch (e) {
+        console.error("PDF data fetch error:", e)
       }
-      return str.replace(/[ŞşĞğİıÖöÜüÇç]/g, ch => map[ch] || ch)
-    }
 
-    const dateStr = new Date(report.rapor_tarihi).toLocaleDateString("tr-TR")
-    const amirName = personnelMap[report.devreden_amir_id] || "Bilinmeyen Amir"
+      let incidentsData: any[] = []
+      try {
+        const { data: incs } = await api.from('incidents').select('*')
+        incidentsData = (incs || []).filter((inc: any) => {
+          const incDate = new Date(inc.created_at || inc.ihbar_saati || Date.now()).toISOString().split('T')[0]
+          return incDate === report.rapor_tarihi
+        })
+      } catch (e) {
+        console.error("PDF incidents fetch error:", e)
+      }
 
-    // ═══════════════════════════════════════════════
-    // SAYFA ÇERÇEVESİ (Dış border)
-    // ═══════════════════════════════════════════════
-    doc.setDrawColor(30)
-    doc.setLineWidth(0.8)
-    doc.rect(mL - 2, 6, contentW + 4, pageH - 14)
-
-    // ═══════════════════════════════════════════════
-    // ANTET BAŞLIĞI
-    // ═══════════════════════════════════════════════
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(15)
-    doc.setTextColor(0)
-    doc.text("T.C.  S I V A S  B E L E D I Y E  B A S K A N L I G I", pageW / 2, 16, { align: "center" })
-    doc.setFontSize(12)
-    doc.text("ITFAIYE MUDURLUGU GUNLUK NOBET VE VUKUAT DEFTERI", pageW / 2, 23, { align: "center" })
-
-    // Antet altı çizgi (çift çizgi)
-    doc.setLineWidth(0.6)
-    doc.line(mL, 26, pageW - mR, 26)
-    doc.setLineWidth(0.2)
-    doc.line(mL, 27.2, pageW - mR, 27.2)
-
-    // ═══════════════════════════════════════════════
-    // META BİLGİ SATIRI
-    // ═══════════════════════════════════════════════
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(10)
-    doc.text(`Rapor Tarihi: ${dateStr}`, mL + 2, 33)
-    doc.text(`Devreden Amir: ${tr(amirName)}`, mL + 2, 38)
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9)
-    doc.text(`Sayfa No: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, pageW - mR - 2, 33, { align: "right" })
-
-    // Meta altı çizgi
-    doc.setLineWidth(0.4)
-    doc.setDrawColor(60)
-    doc.line(mL, 41, pageW - mR, 41)
-
-    // ═══════════════════════════════════════════════
-    // SÜTUN BÖLME ÇİZGİSİ
-    // ═══════════════════════════════════════════════
-    const colTopY = 41
-    const colBotY = 225
-    doc.setDrawColor(80)
-    doc.setLineWidth(0.3)
-    doc.line(colDivX, colTopY, colDivX, colBotY)
-
-    // ═══════════════════════════════════════════════
-    // SOL SÜTUN: POSTA MEVCUDU VE NÖBET ÇİZELGESİ
-    // ═══════════════════════════════════════════════
-    const lColMaxW = colDivX - mL - 4
-
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(11)
-    doc.setTextColor(0)
-    doc.text("POSTA MEVCUDU VE NOBET CIZELGESI", mL + 2, 48)
-
-    // Bölüm başlığı altı ince çizgi
-    doc.setDrawColor(120)
-    doc.setLineWidth(0.2)
-    doc.line(mL + 2, 49.5, colDivX - 2, 49.5)
-
-    // Shift log verisi çek
-    let shiftLogsData: any[] = []
-    let rotasData: any[] = []
-    try {
-      const { data: shifts } = await api.from('personnel_shifts_log').select('*')
-      shiftLogsData = (shifts || []).filter((s: any) => {
-        const sDate = new Date(s.giris_tarihi).toISOString().split('T')[0]
-        return sDate === report.rapor_tarihi
+      // Nöbetçi Posta Sorumlu Çavuşu Bul
+      const bascavusShift = shiftLogsData.find((s: any) => {
+        const p = personnelListForZ.find(p => p.sicil_no === s.sicil_no)
+        return p && (p.unvan === 'Başçavuş' || p.unvan === 'Baş.Çvş.')
       })
-      const { data: rotas } = await api.from('hourly_shifts').select('*').eq('tarih', report.rapor_tarihi)
-      rotasData = rotas || []
-    } catch (e) {
-      console.error("PDF data fetch error:", e)
+      const bascavusName = bascavusShift ? bascavusShift.personel_ad_soyad : "Belirtilmemiş"
+
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        alert("Pop-up engelleyiciyi kapatın ve tekrar deneyin.")
+        return
+      }
+
+      const todayStr = new Date().toLocaleDateString("tr-TR")
+      
+      let shiftListHtml = shiftLogsData.length === 0 
+        ? '<div class="empty-state">Bu tarihte aktif nöbetçi kaydı bulunmuyor.</div>'
+        : shiftLogsData.map((s: any) => {
+            const time = new Date(s.giris_tarihi).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
+            return `<div class="list-item">&bull; <strong>${time}</strong> | ${s.personel_ad_soyad} (${s.posta}. Posta)</div>`
+          }).join('')
+
+      const nobetYerler = Array.from(new Set(rotasData.map((r: any) => r.yer_adi)))
+      let rotasHtml = rotasData.length === 0
+        ? '<div class="empty-state">Saatlik nöbet yeri rotasyonu bulunmuyor.</div>'
+        : nobetYerler.map((yer: any) => {
+            const items = rotasData.filter((r: any) => r.yer_adi === yer)
+            const lines = items.map((r: any) => `<div class="list-item" style="padding-left:10px;">${r.saat_araligi}: ${r.personel_ad_soyad}</div>`).join('')
+            return `<div style="margin-top:5px; font-weight:600;">- ${String(yer).toUpperCase()}:</div>${lines}`
+          }).join('')
+
+      const yTotal = report.yangin_sayisi?.total || 0
+      const kTotal = report.kurtarma_sayisi?.total || 0
+      
+      const arizaliAraclarText = (!report.arizali_araclar || report.arizali_araclar.length === 0)
+        ? '<div class="empty-state">Aktif arızalı/bakımda olan taktik araç bulunmamaktadır.</div>'
+        : `<strong>Araçlar:</strong> ${report.arizali_araclar.join(', ')}`
+
+      let incidentsHtml = incidentsData.length === 0
+        ? '<div class="empty-state">Bu tarihte herhangi bir vukuat kaydı bulunmamaktadır.</div>'
+        : incidentsData.slice(0,15).map((inc: any, idx: number) => {
+            const time = new Date(inc.ihbar_saati || inc.created_at).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
+            return `<div class="list-item">${idx + 1}) [${time}] ${inc.olay_turu || 'Belirsiz'} - ${inc.mahalle || ''} Mah.</div>`
+          }).join('')
+
+      printWindow.document.write(`
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Z Raporu - ${dateStr}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    @page { margin: 10mm; size: A4 portrait; }
+    body { font-family: 'Inter', sans-serif; color: #111; margin: 0; padding: 0; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page-border { border: 2px solid #222; padding: 15px; min-height: 270mm; position: relative; box-sizing: border-box; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 3px double #222; padding-bottom: 10px; }
+    .header img { height: 75px; width: auto; object-fit: contain; }
+    .header-text { text-align: center; flex-grow: 1; }
+    .header-text h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
+    .header-text h2 { margin: 4px 0 0 0; font-size: 14px; font-weight: 600; }
+    .meta { display: flex; justify-content: space-between; border-bottom: 1px solid #666; padding-bottom: 5px; margin-bottom: 15px; font-size: 11px; }
+    .content-grid { display: grid; grid-template-columns: 48% 1fr; gap: 20px; }
+    .col-title { font-size: 12px; font-weight: 700; border-bottom: 1px solid #999; padding-bottom: 3px; margin-bottom: 10px; margin-top: 0; text-transform: uppercase; }
+    .left-col { border-right: 1px solid #ccc; padding-right: 20px; }
+    .right-col { padding-left: 0; }
+    .section { margin-bottom: 15px; }
+    .section-title { font-weight: 700; font-size: 11px; margin-bottom: 4px; color: #000; }
+    .list-item { margin-bottom: 4px; line-height: 1.3; }
+    .info-box { border: 1px solid #aaa; padding: 10px; margin-top: 15px; background: #fafafa; }
+    .info-box h3 { margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px;}
+    .sig-section { position: absolute; bottom: 15px; left: 15px; right: 15px; border-top: 2px solid #222; padding-top: 15px; }
+    .signatures { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .sig-box { text-align: center; width: 30%; position: relative; }
+    .sig-title { font-weight: 700; font-size: 11px; margin-bottom: 3px;}
+    .sig-sub { font-size: 9px; color: #555; }
+    .sig-line { border-top: 1px dashed #666; width: 80%; margin: 35px auto 5px auto; }
+    .goruldu { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: #1e3a8a; font-weight: 700; font-style: italic; font-size: 14px; opacity: 0.9; }
+    .goruldu-date { font-size: 8px; color: #1e3a8a; margin-top: 2px; font-style: normal; }
+    .footer-meta { display: flex; justify-content: space-between; border-top: 1px solid #ccc; padding-top: 5px; font-size: 8px; color: #666; }
+    .empty-state { color: #666; font-style: italic; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="page-border">
+    <div class="header">
+      <img src="/logo-belediye.png" alt="Belediye Logo" onerror="this.style.display='none'">
+      <div class="header-text">
+        <h1>T.C. SİVAS BELEDİYE BAŞKANLIĞI</h1>
+        <h2>İTFAİYE MÜDÜRLÜĞÜ GÜNLÜK NÖBET VE VUKUAT DEFTERİ</h2>
+      </div>
+      <img src="/logo-itfaiye.png" alt="İtfaiye Logo" onerror="this.style.display='none'">
+    </div>
+
+    <div class="meta">
+      <div>
+        <div>Rapor Tarihi: <strong>${dateStr}</strong></div>
+        <div style="margin-top:4px;">Nöbetçi Posta Sorumlu Çavuşu: <strong>${bascavusName}</strong></div>
+      </div>
+      <div style="text-align: right; font-weight: 700;">Sayfa No: SVS-Z-${report.id.substring(0, 8).toUpperCase()}</div>
+    </div>
+
+    <div class="content-grid">
+      <div class="left-col">
+        <h3 class="col-title">POSTA MEVCUDU VE NÖBET ÇİZELGESİ</h3>
+        
+        <div class="section">
+          <div class="section-title">Nöbetçi Personel Listesi (PDKS):</div>
+          ${shiftListHtml}
+        </div>
+
+        <div class="section">
+          <div class="section-title">Saatlik Nöbet Yeri Çizelgesi:</div>
+          ${rotasHtml}
+        </div>
+
+        <div class="info-box">
+          <h3>POSTA GENEL MEVCUDU RAPORU</h3>
+          <div class="list-item">Hazır Mevcut (Postadaki Personel): <strong>${shiftLogsData.length} personel</strong></div>
+          <div class="list-item">Dış Görev / Zimmet Sayısı: <strong>${report.dis_gorev_sayisi || 0} görev</strong></div>
+          <div class="list-item" style="margin-top: 8px; font-weight: 700; font-size: 12px;">Toplam Yekün: ${shiftLogsData.length + (report.dis_gorev_sayisi || 0)} personel</div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <h3 class="col-title">VUKUAT VE FAALİYET LİSTESİ (SON 24 SAAT)</h3>
+        
+        <div class="section">
+          <div class="section-title">Vukuat Olay Özetleri:</div>
+          <div class="list-item"><strong>Yangın:</strong> ${yTotal} adet <span style="color:#555">(Ev: ${report.yangin_sayisi?.ev || 0}, İşyeri: ${report.yangin_sayisi?.isyeri || 0}, Arazi: ${report.yangin_sayisi?.arazi || 0}, Diğer: ${report.yangin_sayisi?.diger || 0})</span></div>
+          <div class="list-item"><strong>Kurtarma:</strong> ${kTotal} adet <span style="color:#555">(Kaza: ${report.kurtarma_sayisi?.trafik_kazasi || 0}, Su: ${report.kurtarma_sayisi?.su_baskini || 0}, Hayvan: ${report.kurtarma_sayisi?.hayvan_kurtarma || 0}, Diğer: ${report.kurtarma_sayisi?.diger || 0})</span></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Arızalı / Bakımdaki Taktik Araçlar:</div>
+          ${arizaliAraclarText}
+        </div>
+
+        <div class="section">
+          <div class="section-title">Faaliyet Kayıtları Detaylı Listesi:</div>
+          ${incidentsHtml}
+        </div>
+
+        <div class="section" style="margin-top: 15px;">
+          <div class="section-title">Başçavuş / Nöbetçi Amir Notu:</div>
+          <div class="${report.serh_notu ? '' : 'empty-state'}">${report.serh_notu || 'Herhangi bir devir notu eklenmemiştir.'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sig-section">
+      <div class="signatures">
+        <div class="sig-box">
+          <div class="sig-title">Nöbetçi Başçavuş</div>
+          <div class="sig-sub">(Hazırlayan)</div>
+          <div class="sig-line"></div>
+          <div class="sig-sub">İmza / Sicil / Unvan</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-title">Nöbetçi Amir</div>
+          <div class="sig-sub">&nbsp;</div>
+          <div class="goruldu">
+            <div>GÖRÜLDÜ</div>
+            <div class="goruldu-date">Sistem Onayı - ${todayStr}</div>
+          </div>
+          <div class="sig-line"></div>
+          <div class="sig-sub">İmza / Sicil / Unvan</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-title">İtfaiye Müdürü</div>
+          <div class="sig-sub">&nbsp;</div>
+          <div class="goruldu">
+            <div>GÖRÜLDÜ</div>
+            <div class="goruldu-date">Sistem Onayı - ${todayStr}</div>
+          </div>
+          <div class="sig-line"></div>
+          <div class="sig-sub">İmza / Onay / Tarih</div>
+        </div>
+      </div>
+      <div class="footer-meta">
+        <div>Bu belge Sivas Belediyesi İtfaiye Müdürlüğü dijital arşiv sistemi tarafından üretilmiştir.</div>
+        <div>Dijital Doğrulama Kodu: SVS-Z-${report.id.substring(0, 8).toUpperCase()}</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
+  </script>
+</body>
+</html>
+      `)
+      printWindow.document.close()
+    } catch (err: any) {
+      console.error(err)
+      alert("Rapor yazdırılırken hata oluştu: " + err.message)
+    } finally {
+      setZSubmitting(false)
     }
-
-    let leftY = 55
-
-    // --- Nöbetçi Personel Listesi ---
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("Nobetci Personel Listesi (PDKS):", mL + 3, leftY)
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(8.5)
-    leftY += 5.5
-
-    if (shiftLogsData.length === 0) {
-      doc.setTextColor(100)
-      doc.text("Bu tarihte aktif nobetci kaydi bulunmuyor.", mL + 5, leftY)
-      doc.setTextColor(0)
-      leftY += 5.5
-    } else {
-      shiftLogsData.slice(0, 18).forEach((s: any) => {
-        if (leftY < 155) {
-          const checkInTime = new Date(s.giris_tarihi).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
-          const txt = tr(`${checkInTime} | ${s.personel_ad_soyad} (${s.posta}. Posta)`)
-          doc.setFont("Helvetica", "bold")
-          doc.text("\u2022", mL + 4, leftY)
-          doc.setFont("Helvetica", "normal")
-          doc.text(txt, mL + 8, leftY)
-          leftY += 4.5
-        }
-      })
-    }
-
-    leftY += 3
-
-    // --- Saatlik Nöbet Yeri Çizelgesi ---
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("Saatlik Nobet Yeri Cizelgesi:", mL + 3, leftY)
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(8.5)
-    leftY += 5.5
-
-    if (rotasData.length === 0) {
-      doc.setTextColor(100)
-      doc.text("Saatlik nobet yerlesim kaydi bulunmuyor.", mL + 5, leftY)
-      doc.setTextColor(0)
-      leftY += 5.5
-    } else {
-      const groupedRotas: Record<string, string[]> = {}
-      rotasData.forEach((r: any) => {
-        if (!groupedRotas[r.gorev_yeri]) groupedRotas[r.gorev_yeri] = []
-        groupedRotas[r.gorev_yeri].push(`${r.saat_araligi}: ${r.personel_sicil}`)
-      })
-
-      Object.entries(groupedRotas).slice(0, 5).forEach(([yeri, list]) => {
-        if (leftY < 170) {
-          doc.setFont("Helvetica", "bold")
-          doc.setFontSize(8.5)
-          doc.text(`- ${tr(yeri.toUpperCase())}:`, mL + 5, leftY)
-          doc.setFont("Helvetica", "normal")
-          leftY += 4.5
-          list.slice(0, 5).forEach((txt: string) => {
-            if (leftY < 170) {
-              doc.text(`    ${tr(txt)}`, mL + 7, leftY)
-              leftY += 4
-            }
-          })
-          leftY += 1
-        }
-      })
-    }
-
-    // --- Posta Genel Mevcudu Raporu Kutusu ---
-    const boxY = Math.max(leftY + 5, 175)
-    const boxH = 30
-    doc.setDrawColor(40)
-    doc.setLineWidth(0.5)
-    doc.rect(mL + 1, boxY, lColMaxW + 2, boxH)
-
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("POSTA GENEL MEVCUDU RAPORU", mL + 4, boxY + 6)
-
-    doc.setDrawColor(150)
-    doc.setLineWidth(0.15)
-    doc.line(mL + 4, boxY + 7.5, mL + lColMaxW - 2, boxY + 7.5)
-
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(9)
-    doc.text(`Hazir Mevcut (Postadaki Personel): ${shiftLogsData.length} personel`, mL + 4, boxY + 13)
-    doc.text(`Dis Gorev / Zimmet Sayisi: ${report.dis_gorev_sayisi} gorev`, mL + 4, boxY + 19)
-    doc.setFont("Helvetica", "bold")
-    doc.text(`Toplam Yekun: ${shiftLogsData.length + report.dis_gorev_sayisi} personel`, mL + 4, boxY + 25)
-    doc.setFont("Helvetica", "normal")
-
-    // ═══════════════════════════════════════════════
-    // SAĞ SÜTUN: VUKUAT VE FAALİYET LİSTESİ
-    // ═══════════════════════════════════════════════
-    const rColMaxW = pageW - mR - rColX - 2
-
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(11)
-    doc.setTextColor(0)
-    doc.text("VUKUAT VE FAALIYET LISTESI (SON 24 SAAT)", rColX, 48)
-
-    doc.setDrawColor(120)
-    doc.setLineWidth(0.2)
-    doc.line(rColX, 49.5, pageW - mR - 2, 49.5)
-
-    let rightY = 55
-
-    // --- Vukuat Olay Özeti ---
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("Vukuat Olay Ozetleri:", rColX + 1, rightY)
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(9)
-    rightY += 6
-
-    // Yangın satırı
-    doc.setFont("Helvetica", "bold")
-    doc.text("Yangin:", rColX + 3, rightY)
-    doc.setFont("Helvetica", "normal")
-    const yTotal = report.yangin_sayisi?.total || 0
-    doc.text(`${yTotal} adet  (Ev: ${report.yangin_sayisi?.ev || 0}, Isyeri: ${report.yangin_sayisi?.isyeri || 0}, Arazi: ${report.yangin_sayisi?.arazi || 0}, Diger: ${report.yangin_sayisi?.diger || 0})`, rColX + 19, rightY)
-    rightY += 5.5
-
-    // Kurtarma satırı
-    doc.setFont("Helvetica", "bold")
-    doc.text("Kurtarma:", rColX + 3, rightY)
-    doc.setFont("Helvetica", "normal")
-    const kTotal = report.kurtarma_sayisi?.total || 0
-    doc.text(`${kTotal} adet  (Kaza: ${report.kurtarma_sayisi?.trafik_kazasi || 0}, Su: ${report.kurtarma_sayisi?.su_baskini || 0}, Hayvan: ${report.kurtarma_sayisi?.hayvan_kurtarma || 0}, Diger: ${report.kurtarma_sayisi?.diger || 0})`, rColX + 24, rightY)
-    rightY += 7
-
-    // --- Arızalı Araçlar ---
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("Arizali / Bakimdaki Taktik Araclar:", rColX + 1, rightY)
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(9)
-    rightY += 5.5
-
-    if (!report.arizali_araclar || report.arizali_araclar.length === 0) {
-      doc.setTextColor(100)
-      doc.text("Aktif arizali/bakimda olan taktik arac bulunmamaktadir.", rColX + 3, rightY)
-      doc.setTextColor(0)
-    } else {
-      const aracText = doc.splitTextToSize(`Araclar: ${report.arizali_araclar.join(', ')}`, rColMaxW - 4)
-      doc.text(aracText, rColX + 3, rightY)
-    }
-    rightY += 7
-
-    // --- Faaliyet Kayıtları Detaylı Listesi ---
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("Faaliyet Kayitlari Detayli Listesi:", rColX + 1, rightY)
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(8.5)
-    rightY += 5.5
-
-    let incidentsData: any[] = []
-    try {
-      const { data: incs } = await api.from('incidents').select('*')
-      incidentsData = (incs || []).filter((inc: any) => {
-        const incDate = new Date(inc.created_at || inc.ihbar_saati || Date.now()).toISOString().split('T')[0]
-        return incDate === report.rapor_tarihi
-      })
-    } catch (e) {
-      console.error("PDF incidents fetch error:", e)
-    }
-
-    if (incidentsData.length === 0) {
-      doc.setTextColor(100)
-      doc.text("Bu tarihte herhangi bir vukuat kaydi bulunmamaktadir.", rColX + 3, rightY)
-      doc.setTextColor(0)
-      rightY += 6
-    } else {
-      incidentsData.slice(0, 12).forEach((inc: any, idx: number) => {
-        if (rightY < 170) {
-          const time = new Date(inc.ihbar_saati || inc.created_at).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })
-          const line = tr(`${idx + 1}) [${time}] ${inc.olay_turu || 'Belirsiz'} - ${inc.mahalle || ''} Mah.`)
-          doc.text(line, rColX + 3, rightY)
-          rightY += 4.5
-        }
-      })
-      rightY += 2
-    }
-
-    // --- Başçavuş / Nöbetçi Amir Notu ---
-    const noteY = Math.max(rightY + 3, 170)
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(9.5)
-    doc.text("Bascavus / Nobetci Amir Notu:", rColX + 1, noteY)
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(9)
-
-    const notText = report.bascavus_notu || "Herhangi bir devir notu eklenmemistir."
-    const splitNot = doc.splitTextToSize(tr(notText), rColMaxW - 4)
-    doc.text(splitNot, rColX + 3, noteY + 5.5)
-
-    if (report.serh_notu) {
-      const serhY = noteY + 5.5 + splitNot.length * 4.5 + 4
-      doc.setFont("Helvetica", "bold")
-      doc.setFontSize(9.5)
-      doc.setTextColor(180, 83, 9)
-      doc.text("Resmi Devir Serh ve Lojistik Notlari:", rColX + 1, serhY)
-      doc.setFont("Helvetica", "normal")
-      doc.setFontSize(8.5)
-      doc.setTextColor(0)
-      const splitSerh = doc.splitTextToSize(tr(report.serh_notu), rColMaxW - 4)
-      doc.text(splitSerh, rColX + 3, serhY + 5.5)
-    }
-
-    // ═══════════════════════════════════════════════
-    // ALT BÖLME ÇİZGİSİ
-    // ═══════════════════════════════════════════════
-    doc.setDrawColor(30)
-    doc.setLineWidth(0.6)
-    doc.line(mL, colBotY, pageW - mR, colBotY)
-
-    // ═══════════════════════════════════════════════
-    // İMZA BLOKLARI
-    // ═══════════════════════════════════════════════
-    const sigTopY = colBotY + 6
-    const sigLineY = sigTopY + 22
-    const sigCenters = [
-      mL + contentW * 0.17,   // Nöbetçi Çavuş
-      pageW / 2,               // Nöbetçi Amir
-      pageW - mR - contentW * 0.17  // İtfaiye Müdürü
-    ]
-    const sigLabels = ["Nobetci Cavus", "Nobetci Amir", "Itfaiye Muduru"]
-    const sigSubs = ["Imza / Sicil / Unvan", "Imza / Sicil / Unvan", "Imza / Onay / Tarih"]
-
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(10)
-    sigLabels.forEach((label, i) => {
-      doc.text(label, sigCenters[i], sigTopY, { align: "center" })
-    })
-
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(8)
-    sigSubs.forEach((sub, i) => {
-      doc.text(sub, sigCenters[i], sigTopY + 5, { align: "center" })
-    })
-
-    // İmza çizgileri (kesik çizgi)
-    doc.setDrawColor(140)
-    doc.setLineWidth(0.3)
-    doc.setLineDashPattern([1.5, 1], 0)
-    sigCenters.forEach((cx) => {
-      doc.line(cx - 22, sigLineY, cx + 22, sigLineY)
-    })
-    doc.setLineDashPattern([], 0)
-
-    // ═══════════════════════════════════════════════
-    // DİJİTAL DOĞRULAMA KODU (FOOTER)
-    // ═══════════════════════════════════════════════
-    doc.setDrawColor(30)
-    doc.setLineWidth(0.2)
-    doc.line(mL, pageH - 18, pageW - mR, pageH - 18)
-
-    doc.setFont("Helvetica", "bold")
-    doc.setFontSize(8)
-    doc.setTextColor(80)
-    doc.text(`Dijital Dogrulama Kodu: SVS-Z-${report.id.substring(0, 8).toUpperCase()}`, pageW - mR - 2, pageH - 13, { align: "right" })
-    doc.setFont("Helvetica", "normal")
-    doc.setFontSize(7)
-    doc.setTextColor(130)
-    doc.text("Bu belge Sivas Belediyesi Itfaiye Mudurlugu dijital arsiv sistemi tarafindan uretilmistir.", mL + 2, pageH - 13)
-    doc.setTextColor(0)
-
-    doc.save(`Itfaiye_Z_Raporu_${report.rapor_tarihi}.pdf`)
   }
 
   const [logs, setLogs] = useState<UnifiedLog[]>([])
@@ -693,6 +552,7 @@ export default function LogsReportsPage() {
     total_people_reached: number
     fires_count: number
     rescue_operations_count: number
+    yoldan_donuldu_count: number
     active_personnel_count: number
     avg_response_time: number
   } | null>(null)
@@ -989,7 +849,9 @@ export default function LogsReportsPage() {
 
   // Group and filter logs
   const displayItems = useMemo(() => {
-    const grouped = groupInventoryLogs(logs)
+    // Nöbet loglarını Kontrol Geçmişinden gizle (Aşağıdaki Nöbet Çizelgesinde listeleniyor)
+    const vehicleLogs = logs.filter(log => !log.islem_tipi?.toLowerCase().includes("nöbet") && !log.islem_tipi?.toLowerCase().includes("nobet"))
+    const grouped = groupInventoryLogs(vehicleLogs)
     
     if (statusFilter === "all") return grouped
     
@@ -1022,7 +884,7 @@ export default function LogsReportsPage() {
           ))}
         </div>
       ) : statsData && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Card 1: Toplam Eğitim */}
           <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 shadow-[var(--fd-shadow-sm)] flex flex-col justify-between hover:border-[var(--fd-info)]/30 transition-all duration-300">
             <div className="flex items-center justify-between">
@@ -1096,6 +958,24 @@ export default function LogsReportsPage() {
             </div>
             <p className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1">
               Çıkış Saati - Varılan Süre Farkı
+            </p>
+          </div>
+
+          {/* Card 5: Asılsız İhbar / Yoldan Dönülen */}
+          <div className="bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] p-4 shadow-[var(--fd-shadow-sm)] flex flex-col justify-between hover:border-orange-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-orange-500 uppercase tracking-[.04em] flex items-center gap-1.5">
+                <X className="w-4 h-4" />
+                Asılsız / Yoldan D.
+              </span>
+              <span className="text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold">İptal</span>
+            </div>
+            <div className="mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-orange-500 font-[var(--fd-fontmono)]">{statsData.yoldan_donuldu_count}</span>
+              <span className="text-[var(--fd-text3)] text-xs ml-1.5 font-medium">Vaka</span>
+            </div>
+            <p className="text-[10px] text-[var(--fd-text3)] font-semibold mt-1">
+              Ekipler varmadan iptal edilen vakalar
             </p>
           </div>
         </div>

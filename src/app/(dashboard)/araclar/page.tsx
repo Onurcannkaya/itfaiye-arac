@@ -20,7 +20,9 @@ import {
   Trash2,
   Building2,
   MapPin,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle2,
+  Circle
 } from "lucide-react"
 import { Vehicle, Personnel } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
@@ -48,6 +50,7 @@ export default function VehiclesPage() {
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingLogs, setLoadingLogs] = useState(false)
+  const [inspectedVehicles, setInspectedVehicles] = useState<Set<string>>(new Set())
   const { user } = useAuthStore()
 
   // Faz 28.51: Müfreze Filtresi
@@ -156,10 +159,36 @@ export default function VehiclesPage() {
     }
   }
 
+  const fetchInspections = async () => {
+    try {
+      // İtfaiye Nöbet Döngüsü (Sabah 08:00 - Ertesi Sabah 08:00)
+      const shiftStart = new Date()
+      if (shiftStart.getHours() < 8) {
+        shiftStart.setDate(shiftStart.getDate() - 1)
+      }
+      shiftStart.setHours(8, 0, 0, 0)
+      
+      const { data } = await api.from('unified_system_logs')
+        .select('plaka')
+        .gte('tarih', shiftStart.toISOString())
+      
+      if (data) {
+        const plates = new Set<string>()
+        data.forEach((log: any) => {
+          if (log.plaka) plates.add(log.plaka)
+        })
+        setInspectedVehicles(plates)
+      }
+    } catch (err) {
+      console.error("Sayım logları yüklenirken hata:", err)
+    }
+  }
+
   useEffect(() => {
     fetchVehicles()
     fetchMaintenanceLogs()
     fetchPersonnel()
+    fetchInspections()
   }, [])
 
   const drivers = useMemo(() => {
@@ -787,6 +816,17 @@ export default function VehiclesPage() {
                   <span className="font-semibold text-[var(--fd-text)] hidden sm:inline">{v.marka || v.model || ''}</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  {inspectedVehicles.has(v.plaka) ? (
+                    <div className="flex items-center gap-1 text-[var(--fd-success)] bg-[var(--fd-success)]/10 px-2 py-0.5 rounded-full border border-[var(--fd-success)]/20" title="Bu posta döngüsünde sayımı yapıldı">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span className="text-[9px] font-bold tracking-wide uppercase hidden md:inline">Sayım Tamam</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-[var(--fd-amber)] bg-[var(--fd-amber)]/10 px-2 py-0.5 rounded-full border border-[var(--fd-amber)]/20" title="Bu posta döngüsünde henüz sayılmadı">
+                      <Circle className="w-3 h-3" />
+                      <span className="text-[9px] font-bold tracking-wide uppercase hidden md:inline">Sayım Bekliyor</span>
+                    </div>
+                  )}
                   <Badge variant="outline" className="text-[10px] font-semibold text-[var(--fd-text3)] uppercase">
                     {v.arac_tipi || v.aracTipi}
                   </Badge>

@@ -78,6 +78,7 @@ export function IncidentWizard({
     yarali_itfaiye: String(initialData?.yarali_itfaiye || "0"),
     kurtarilan_hayvan: String(initialData?.kurtarilan_hayvan || "0"),
     olen_hayvan: String(initialData?.olen_hayvan || "0"),
+    yoldan_donuldu: initialData?.yoldan_donuldu || false,
     location_lat: initLat,
     location_lng: initLng
   })
@@ -145,6 +146,7 @@ export function IncidentWizard({
         yarali_itfaiye: Number(formData.yarali_itfaiye) || 0,
         kurtarilan_hayvan: Number(formData.kurtarilan_hayvan) || 0,
         olen_hayvan: Number(formData.olen_hayvan) || 0,
+        yoldan_donuldu: formData.yoldan_donuldu,
         location: `POINT(${location_lng} ${location_lat})`,
         
         // Kapanış ekstra alanları
@@ -557,7 +559,7 @@ export function IncidentWizard({
               </tr>
               <tr>
                 <td class="label-cell">Müdahale şekli</td>
-                <td class="value-cell">${formData.olay_turu} müdahale prosedürleri uygulanarak olaya müdahale edilmiş ve soğutma çalışması ile kontrol altına alınmıştır.</td>
+                <td class="value-cell">${formData.yoldan_donuldu ? 'Asılsız ihbar / Yoldan dönüldü' : formData.olay_turu + ' müdahale prosedürleri uygulanarak olaya müdahale edilmiş ve soğutma çalışması ile kontrol altına alınmıştır.'}</td>
               </tr>
               <tr>
                 <td class="label-cell">Yardımcı birimler, araç, personel sayısı</td>
@@ -1057,6 +1059,25 @@ export function IncidentWizard({
             {step === 4 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                 
+                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="yoldanDonuldu" 
+                      name="yoldan_donuldu"
+                      checked={formData.yoldan_donuldu}
+                      onChange={(e) => setFormData({ ...formData, yoldan_donuldu: e.target.checked })}
+                      className="w-4 h-4 rounded text-orange-500 bg-surface/50 border-orange-500/30"
+                    />
+                    <label htmlFor="yoldanDonuldu" className="text-sm font-bold text-orange-500 cursor-pointer select-none">
+                      Asılsız İhbar / Yoldan Dönüldü
+                    </label>
+                  </div>
+                  <p className="text-xs text-orange-500/70 ml-2 border-l border-orange-500/20 pl-3">
+                    Ekipler olay yerine ulaşmadan görev iptal edildiyse veya ihbar asılsız çıktıysa işaretleyin.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold">Çıkış Sebebi</label>

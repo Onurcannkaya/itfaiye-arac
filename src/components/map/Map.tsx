@@ -59,6 +59,7 @@ interface MapProps {
   onCompleteExternalMission?: (id: string) => void
   isSimulation?: boolean
   simulationReason?: string
+  onOpenCamera?: (vehicleId: string, plate: string) => void
 }
 
 const parseWKBPoint = (wkbHex: string): [number, number] | null => {
@@ -259,7 +260,8 @@ export default function Map({
   onTogglePersonnelLayer,
   onCompleteExternalMission,
   isSimulation = false,
-  simulationReason
+  simulationReason,
+  onOpenCamera
 }: MapProps) {
   const { resolvedTheme } = useTheme()
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -670,6 +672,16 @@ export default function Map({
         if (id && current && onUpdateHydrantStatus) {
           const newStatus = (current === 'MEVCUT' || current === 'Aktif') ? 'DEVRE_DIŞI' : 'MEVCUT'
           onUpdateHydrantStatus(id, newStatus)
+        }
+        return
+      }
+
+      const camBtn = target.closest('.open-camera-btn') as HTMLButtonElement
+      if (camBtn) {
+        const vId = camBtn.getAttribute('data-id')
+        const vPlate = camBtn.getAttribute('data-plate')
+        if (vId && vPlate && onOpenCamera) {
+          onOpenCamera(vId, vPlate)
         }
       }
     }
@@ -1916,6 +1928,14 @@ export default function Map({
                 <span>🚒</span> &nbsp;Detaylı Envanter / Bölmeler
               </a>
             </div>
+            
+            ${vAny.vehicle_id ? `
+            <div style="margin-top:6px;">
+              <button type="button" class="open-camera-btn" data-id="${vAny.vehicle_id}" data-plate="${veh.plaka}" style="display:flex;align-items:center;justify-content:center;width:100%;background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;text-align:center;box-sizing:border-box;">
+                <span>📹</span> &nbsp;Canlı Kamerayı İzle
+              </button>
+            </div>
+            ` : ''}
           </div>
         `)
 

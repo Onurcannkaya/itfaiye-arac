@@ -387,7 +387,23 @@ export default function UnifiedGorevlerPage() {
       const { error } = await api.insert('external_missions', payload)
       if (error) throw error
 
-      alert("Dış görev başarıyla başlatıldı.")
+      // Tetikle SMS API
+      try {
+        await fetch('/api/sms/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            missionTitle: payload.baslik,
+            missionAddress: (payload.mahalle || '') + ' ' + (payload.adres || ''),
+            missionType: payload.gorev_turu,
+            detail: payload.detay
+          })
+        });
+      } catch (smsErr) {
+        console.error("SMS Gönderim Hatası:", smsErr);
+      }
+
+      alert("Dış görev başarıyla başlatıldı ve personele SMS gönderimi tetiklendi.")
       setShowAddMissionForm(false)
       setAddMissionForm({
         gorev_turu: "Sosyal Görev",
