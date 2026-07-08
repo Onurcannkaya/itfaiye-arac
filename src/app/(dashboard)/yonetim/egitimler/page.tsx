@@ -993,6 +993,22 @@ export default function EgitimlerPage() {
       }
 
       if (res && !res.error) {
+        if (eduForm.durum === 'Onaylandı') {
+          try {
+            await fetch('/api/sms/notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'training',
+                date: payload.planlanan_tarih.split('T')[0],
+                topic: payload.egitim_turu + " (" + payload.kurum_adi + ")",
+                personnelIds: payload.egitimci_personel_ids
+              })
+            });
+          } catch (smsErr) {
+            console.error("Dış Eğitim SMS gönderilemedi:", smsErr);
+          }
+        }
         setIsProgramModalOpen(false)
         await fetchAll()
       } else {

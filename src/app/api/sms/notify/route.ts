@@ -34,18 +34,25 @@ export async function POST(req: Request) {
         smsContent = `[YENİ OLAY - ${missionType}]\nKonu: ${missionTitle}\nAdres: ${missionAddress}\nDetay: ${detail || '-'}\nLütfen olay yerine intikal ediniz.`;
       } 
       else if (action === 'training') {
-        const { date, topic } = body;
+        const { date, topic, personnelIds } = body;
         const activePosta = getActivePostaForStation('Merkez', new Date(date));
         query = `
           SELECT p.ad, p.soyad, COALESCE(p.telefon, pd.telefon) as phone
           FROM public.personnel p
           LEFT JOIN public.personnel_details pd ON p.sicil_no = pd.sicil_no
-          WHERE (p.posta_no = $1 OR p.posta_no IS NULL OR p.posta_no = 0 OR p.unvan IN ('Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'))
+          WHERE (
+            p.posta_no = $1 
+            OR p.posta_no IS NULL 
+            OR p.posta_no = 0 
+            OR p.unvan IN ('Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu')
+            OR p.id::text = ANY($2::text[])
+            OR p.sicil_no = ANY($2::text[])
+          )
             AND COALESCE(p.telefon, pd.telefon) IS NOT NULL
             AND COALESCE(p.telefon, pd.telefon) != ''
             AND p.aktif = true
         `;
-        queryParams = [activePosta];
+        queryParams = [activePosta, personnelIds || []];
         smsContent = `[EĞİTİM PLANLAMASI]\nTarih: ${date}\nKonu: ${topic}\nİlgili posta ve idari kadroya duyurulur. Lütfen katılım sağlayınız.`;
       } 
       else if (action === 'inventory') {
