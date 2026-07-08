@@ -105,7 +105,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
         })
       }
 
-      // Sercan Karaca Auto-Fill Logic (Hafta İçi 08:00 - 17:00 Nizamiye)
+      // SABIT_NIZAMIYE (Sercan Karaca 08:00-17:00) Auto-Fill Logic
       const [year, month, day] = todayStr.split('-');
       const shiftDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const isWeekday = shiftDateObj.getDay() >= 1 && shiftDateObj.getDay() <= 5;
@@ -113,20 +113,14 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       const sercan = personnel.find(p => p.ad?.trim().toLowerCase() === 'sercan' && p.soyad?.trim().toLowerCase() === 'karaca');
       const isSercanAvailable = sercan && !sercan.durum?.toLowerCase().includes('izin') && !sercan.durum?.toLowerCase().includes('rapor');
 
+      if (!newMatrix["TÜM GÜN"]["SABIT_NIZAMIYE"]) {
+        newMatrix["TÜM GÜN"]["SABIT_NIZAMIYE"] = { sicil: "" };
+      }
+
       if (isWeekday && isSercanAvailable) {
-        const targetHours = [
-          "08:00 - 10:00",
-          "10:00 - 12:00",
-          "12:00 - 14:00",
-          "14:00 - 16:00",
-          "16:00 - 18:00"
-        ];
-        
-        targetHours.forEach(h => {
-          if (newMatrix[h] && newMatrix[h]["NIZAMIYE"] && !newMatrix[h]["NIZAMIYE"].sicil) {
-             newMatrix[h]["NIZAMIYE"].sicil = sercan.sicil_no;
-          }
-        });
+        if (!newMatrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil) {
+           newMatrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil = sercan.sicil_no;
+        }
       }
 
       setMatrix(newMatrix)
@@ -153,6 +147,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
 
     const santralNames = santralKeys.map(key => formatPersonnel(matrix["TÜM GÜN"]?.[key]?.sicil || "")).join("<br/>");
     const representativeNames = representativeKeys.map(key => formatPersonnel(matrix["TÜM GÜN"]?.[key]?.sicil || "")).join("<br/>");
+    const sabitNizamiyeName = formatPersonnel(matrix["TÜM GÜN"]?.["SABIT_NIZAMIYE"]?.sicil || "");
 
     const hoursRows = HOURS.map(hour => {
       const nizamiye = formatPersonnel(matrix[hour]?.["NIZAMIYE"]?.sicil || "");
@@ -221,18 +216,20 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
     </tr>
   </table>
 
-  <div class="section-title">24 Saatlik Sabit Karargah Görevleri</div>
+  <div class="section-title">Sabit Görevler</div>
   <table class="duty-table">
     <thead>
       <tr>
-        <th style="width: 50%;">Nöbetçi Santral Operatörleri</th>
-        <th style="width: 50%;">Nöbetçi 112 Temsilcileri</th>
+        <th style="width: 33%;">Santral Operatörleri (24s)</th>
+        <th style="width: 33%;">112 Temsilcileri (24s)</th>
+        <th style="width: 33%;">Sabit Nizamiye (08:00-17:00)</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td style="padding: 12px; font-weight: bold; line-height: 1.6;">${santralNames || "-"}</td>
-        <td style="padding: 12px; font-weight: bold; line-height: 1.6;">${representativeNames || "-"}</td>
+        <td style="padding: 12px; font-weight: bold; line-height: 1.6; text-align: center;">${santralNames || "-"}</td>
+        <td style="padding: 12px; font-weight: bold; line-height: 1.6; text-align: center;">${representativeNames || "-"}</td>
+        <td style="padding: 12px; font-weight: bold; line-height: 1.6; text-align: center;">${sabitNizamiyeName || "-"}</td>
       </tr>
     </tbody>
   </table>
@@ -467,8 +464,8 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
         </div>
       </div>
 
-      {/* 24 Hour Fixed Duties Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)]">
+      {/* Fixed Duties Panel */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-5 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)]">
         {/* Santral Operators */}
         <div className="space-y-3">
           <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)] flex items-center gap-2">
@@ -617,6 +614,52 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
               + Ekstra 112 Temsilcisi Ekle
             </button>
           )}
+        </div>
+
+        {/* Sabit Nizamiye (08:00 - 17:00) */}
+        <div className="space-y-3">
+          <label className="text-xs font-bold uppercase tracking-wider text-[var(--fd-text3)] flex items-center gap-2">
+            <Shield className="w-3.5 h-3.5 text-[var(--fd-warning)]" />
+            <span>Sabit Nizamiye Nöbetçisi (08:00-17:00)</span>
+          </label>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                {isAuthorized ? (
+                  <select
+                    value={matrix["TÜM GÜN"]?.["SABIT_NIZAMIYE"]?.sicil || ""}
+                    disabled={savingCell === `TÜM GÜN-SABIT_NIZAMIYE`}
+                    onChange={(e) => handleCellChange("TÜM GÜN", "SABIT_NIZAMIYE", e.target.value)}
+                    className="w-full h-10 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1.5 text-xs text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]/30 font-semibold cursor-pointer"
+                  >
+                    <option value="">Nöbetçi Seçiniz</option>
+                    {personnel.map(p => (
+                      <option key={p.sicil_no} value={p.sicil_no}>
+                        {p.ad} {p.soyad} ({p.unvan || 'Er'})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="h-10 flex items-center px-4 rounded-lg border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-xs font-semibold text-[var(--fd-text3)]">
+                    {matrix["TÜM GÜN"]?.["SABIT_NIZAMIYE"]?.sicil ? (
+                      (() => {
+                        const p = personnel.find(per => per.sicil_no === matrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil)
+                        return p ? `${p.ad} ${p.soyad} (${p.unvan})` : matrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil
+                      })()
+                    ) : (
+                      "Atama Yok"
+                    )}
+                  </div>
+                )}
+                {savingCell === `TÜM GÜN-SABIT_NIZAMIYE` && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[var(--fd-accent)]" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
