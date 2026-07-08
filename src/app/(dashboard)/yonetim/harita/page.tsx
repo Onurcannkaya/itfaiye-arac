@@ -213,7 +213,10 @@ function HaritaContent() {
   }, []);
 
   const activePostaPersonnel = useMemo(() => {
-    return personnelList.filter(p => p.posta_no === activePostaNumber && p.aktif !== false);
+    return personnelList.filter(p => {
+      const isIdari = ['Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'].includes(p.unvan || '');
+      return p.posta_no === activePostaNumber && p.aktif !== false && !isIdari;
+    });
   }, [personnelList, activePostaNumber]);
 
   const sortedMufrezePersonnel = useMemo(() => {
@@ -692,7 +695,10 @@ function HaritaContent() {
               // Filter personnel of the same station
               const station = activeVeh.istasyon || ""
               const defChecked = personnelList
-                .filter(p => p.posta_no === activePostaNumber && p.aktif !== false)
+                .filter(p => {
+                  const isIdari = ['Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'].includes(p.unvan || '');
+                  return p.posta_no === activePostaNumber && p.aktif !== false && !isIdari;
+                })
                 .filter(p => {
                   if (!station) return true
                   const vStationWord = station.toLowerCase().split(' ')[0]

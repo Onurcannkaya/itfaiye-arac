@@ -52,7 +52,8 @@ export function FutureShiftCalendar({ personnelList, onLeaveUpdated }: FutureShi
         // 1. Calculate who is on duty for the selected date
         const filtered = personnelList.filter(p => {
           const activePosta = getActivePostaForStation(p.istasyon, targetDate)
-          return p.posta_no === activePosta
+          const isIdari = ['Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'].includes(p.unvan || '')
+          return p.posta_no === activePosta && !isIdari
         })
         setActivePersonnel(filtered)
 

@@ -1022,7 +1022,8 @@ export default function DashboardPage() {
     // Filter to active posta only, based on station-specific shift times
     return personnelList.filter(p => {
       const activePosta = getActivePostaForStation(p.istasyon, new Date());
-      return p.posta_no === activePosta;
+      const isIdari = ['Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'].includes(p.unvan || '');
+      return p.posta_no === activePosta && !isIdari;
     });
   }, [personnelList])
 
