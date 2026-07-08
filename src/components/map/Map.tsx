@@ -592,7 +592,12 @@ export default function Map({
     if (onlyActiveIncidents || !showFilo) {
       return [];
     }
-    let list = vehicles || [];
+    // Haritada gizlenecek araçlar (Müdür Makam Aracı vb.)
+    const HIDDEN_PLATES = ['58 TD 315'];
+    let list = (vehicles || []).filter((v: any) => {
+      const plaka = (v.plaka || '').replace(/\s+/g, '').toUpperCase();
+      return !HIDDEN_PLATES.some(hp => hp.replace(/\s+/g, '').toUpperCase() === plaka);
+    });
     if (onlyRunningVehicles) {
       list = list.filter((v: any) => {
         // Stale check (dataTime older than 5 mins)
