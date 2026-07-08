@@ -1026,6 +1026,10 @@ export default function DashboardPage() {
     });
   }, [personnelList])
 
+  const handlePersonnelUpdate = (sicilNo: string, finalStatus: string) => {
+    setPersonnelList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: finalStatus } : p))
+  }
+
   const criticalAlerts = useMemo(() => {
     const alerts: {
       vehicles: Array<{ plaka: string; type: 'Muayene' | 'Sigorta'; date: string; remainingDays: number }>;
@@ -1674,13 +1678,13 @@ export default function DashboardPage() {
 
             <div className="p-6 overflow-y-auto flex-1">
               {activeShiftTab === 'daily' ? (
-                <ShiftList personnel={sortedPersonnel} activePosta={0} />
+                <ShiftList personnel={sortedPersonnel} activePosta={0} onPersonnelUpdate={handlePersonnelUpdate} />
               ) : activeShiftTab === 'hourly' ? (
                 <HourlyShifts personnel={sortedPersonnel} allPersonnel={personnelList} activePosta={0} />
               ) : activeShiftTab === 'schedule' ? (
                 <DailyWorkSchedule personnel={sortedPersonnel} allPersonnel={personnelList} />
               ) : (
-                <FutureShiftCalendar personnelList={personnelList} />
+                <FutureShiftCalendar personnelList={personnelList} onLeaveUpdated={fetchDashboardData} />
               )}
             </div>
 

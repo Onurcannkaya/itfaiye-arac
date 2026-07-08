@@ -85,7 +85,7 @@ const STATION_GROUPS: StationGroup[] = [
   },
 ]
 
-export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], activePosta: number }) {
+export function ShiftList({ personnel, activePosta, onPersonnelUpdate }: { personnel: Personnel[], activePosta: number, onPersonnelUpdate?: (sicilNo: string, finalStatus: string) => void }) {
   const { user } = useAuthStore()
   const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   const [list, setList] = useState<Personnel[]>(personnel)
@@ -252,6 +252,9 @@ export function ShiftList({ personnel, activePosta }: { personnel: Personnel[], 
       
       setList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: finalStatus } : p))
       await logPersonnelMovement(sicilNo, newStatusBase, currentExp.trim());
+      if (onPersonnelUpdate) {
+        onPersonnelUpdate(sicilNo, finalStatus)
+      }
     } catch (err: any) {
       console.error("Status update error:", err)
       alert(`Durum güncellenemedi: ${err.message || err}`)

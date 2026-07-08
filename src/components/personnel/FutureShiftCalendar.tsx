@@ -12,6 +12,7 @@ import { useAuthStore } from "@/lib/authStore"
 
 interface FutureShiftCalendarProps {
   personnelList: Personnel[]
+  onLeaveUpdated?: () => void
 }
 
 const LEAVE_TYPES = [
@@ -23,7 +24,7 @@ const LEAVE_TYPES = [
   "Dış Görev"
 ]
 
-export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps) {
+export function FutureShiftCalendar({ personnelList, onLeaveUpdated }: FutureShiftCalendarProps) {
   const { user } = useAuthStore()
   const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   const [selectedDate, setSelectedDate] = useState<string>(() => {
@@ -128,6 +129,9 @@ export function FutureShiftCalendar({ personnelList }: FutureShiftCalendarProps)
 
       await Promise.all(promises)
       alert("İşlemler başarıyla kaydedildi.")
+      if (onLeaveUpdated) {
+        onLeaveUpdated()
+      }
       
       // Refresh
       setSelectedPersonnelIds(new Set())
