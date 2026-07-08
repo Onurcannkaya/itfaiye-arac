@@ -6,13 +6,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer, X } from "lucide-react"
+import { Search, Plus, UserPlus, Shield, ShieldAlert, Key, Loader2, Star, CheckCircle2, SlidersHorizontal, Settings2, AlertTriangle, RefreshCcw, ShieldCheck, Truck, HeartPulse, Wind, Activity, Copy, Printer, X, Calendar } from "lucide-react"
 import { api } from "@/lib/api"
 import { type Personnel } from "@/types"
 import { cn, calculateRemainingDays } from "@/lib/utils"
 import { useAuthStore } from "@/lib/authStore"
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog"
+import { LeaveManagementModal } from "@/components/personnel/LeaveManagementModal"
 
 interface SwitchProps {
   checked: boolean
@@ -149,6 +150,9 @@ export default function PersonelYonetimPage() {
   const [selectedAnalysisPerson, setSelectedAnalysisPerson] = useState<any | null>(null)
   const [selectedPersonDetails, setSelectedPersonDetails] = useState<any | null>(null)
   const [detailsLoading, setDetailsLoading] = useState(false)
+
+  // Leave Management Modal
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false)
 
   const currentUserCanPrint = currentUser ? (permissions[currentUser.sicilNo]?.can_print ?? (currentUser.rol === 'Admin' || currentUser.rol === 'Editor')) : false
 
@@ -895,6 +899,18 @@ export default function PersonelYonetimPage() {
             <Truck className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden sm:inline">Ehliyet Durumları</span>
           </Button>
+          {(currentUser?.rol === 'Admin' || currentUser?.rol === 'Editor') && (
+            <Button 
+              onClick={() => setIsLeaveModalOpen(true)} 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 border-[var(--fd-border)] bg-[var(--fd-surface2)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface3)] hover:text-[var(--fd-text)] h-9 text-xs rounded-[var(--fd-r-sm)] border"
+              title="İzin Yönetimi"
+            >
+              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">İzin Yönetimi</span>
+            </Button>
+          )}
           {currentUser?.rol === 'Admin' && (
             <Link href="/yonetim/personel/gecici-sifreler">
               <Button 
@@ -2016,6 +2032,14 @@ export default function PersonelYonetimPage() {
         </DialogContent>
       </Dialog>
     </div>
+
+      {/* Leave Management Modal */}
+      <LeaveManagementModal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        personnel={personnel}
+        onLeaveUpdated={fetchPersonnel}
+      />
     </PageGuard>
   )
 }
