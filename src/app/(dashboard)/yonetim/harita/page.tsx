@@ -116,6 +116,16 @@ function toTurkishUpperCase(str: string): string {
   return str.split('').map(char => map[char] || char.toUpperCase()).join('');
 }
 
+// Plaka normalizasyonu (İ/I uyuşmazlıklarını çözer)
+export const normalizePlate = (p: string) => {
+  if (!p) return ''
+  return p.replace(/\s+/g, '')
+    .replace(/İ/g, 'I')
+    .replace(/i/g, 'I')
+    .replace(/ı/g, 'I')
+    .toUpperCase()
+}
+
 function HaritaContent() {
   const { user } = useAuthStore()
   const searchParams = useSearchParams()
@@ -356,15 +366,6 @@ function HaritaContent() {
       const { data: extData } = await api.from('external_missions').select('*')
 
       let initialVehicles = vehData || []
-      // Plaka normalizasyonu (İ/I uyuşmazlıklarını çözer)
-      const normalizePlate = (p: string) => {
-        if (!p) return ''
-        return p.replace(/\s+/g, '')
-          .replace(/İ/g, 'I')
-          .replace(/i/g, 'I')
-          .replace(/ı/g, 'I')
-          .toUpperCase()
-      }
 
       try {
         const [resVeh, resCamVeh] = await Promise.all([
