@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { api } from "@/lib/api"
+import { useAuthStore } from "@/lib/authStore"
 import { COMPARTMENT_NAMES } from "@/lib/constants"
 import { Scanner } from "@yudiel/react-qr-scanner"
 
@@ -44,11 +45,20 @@ class ScannerErrorBoundary extends React.Component<
 
 export default function TarayiciPage() {
   const router = useRouter()
+  const { user } = useAuthStore()
   const [mode, setMode] = useState<ScanMode>("scanning")
   const [errorMsg, setErrorMsg] = useState("")
   const [manualPlaka, setManualPlaka] = useState("")
   const [manualLoading, setManualLoading] = useState(false)
   const [cameraError, setCameraError] = useState(false)
+
+  // Only managers can use manual plate entry
+  // Er and Şoför (role=User) must scan QR codes
+  const canManualEntry = user && (
+    user.rol === 'Admin' || 
+    user.rol === 'Editor' || 
+    user.rol === 'Shift_Leader'
+  )
 
   // Custom alert modal state
   const [alertModalOpen, setAlertModalOpen] = useState(false)
@@ -391,32 +401,39 @@ export default function TarayiciPage() {
             </CardContent>
           </Card>
 
-          {/* Manual Input */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-px flex-1 bg-[var(--fd-border)]" />
-              <span className="text-[10px] text-[var(--fd-text3)] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                <Keyboard className="w-3 h-3 text-[var(--fd-text3)]" /> veya Manuel Giriş
-              </span>
-              <div className="h-px flex-1 bg-[var(--fd-border)]" />
+          {/* Manual Input - Only for managers */}
+          {canManualEntry ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <div className="h-px flex-1 bg-[var(--fd-border)]" />
+                <span className="text-[10px] text-[var(--fd-text3)] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                  <Keyboard className="w-3 h-3 text-[var(--fd-text3)]" /> veya Manuel Giriş
+                </span>
+                <div className="h-px flex-1 bg-[var(--fd-border)]" />
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Plaka girin (Örn: 58 ACT 367)"
+                  value={manualPlaka}
+                  onChange={e => setManualPlaka(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleManualSearch()}
+                  className="font-mono tracking-wider bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)] h-10"
+                />
+                <Button 
+                  onClick={handleManualSearch} 
+                  disabled={manualLoading || !manualPlaka.trim()}
+                  className="shrink-0 rounded-[var(--fd-r-sm)] font-bold bg-[var(--fd-accent)] hover:opacity-90 text-white h-10 w-12"
+                >
+                  {manualLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Plaka girin (Örn: 58 ACT 367)"
-                value={manualPlaka}
-                onChange={e => setManualPlaka(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleManualSearch()}
-                className="font-mono tracking-wider bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)] h-10"
-              />
-              <Button 
-                onClick={handleManualSearch} 
-                disabled={manualLoading || !manualPlaka.trim()}
-                className="shrink-0 rounded-[var(--fd-r-sm)] font-bold bg-[var(--fd-accent)] hover:opacity-90 text-white h-10 w-12"
-              >
-                {manualLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              </Button>
+          ) : (
+            <div className="mt-3 p-3 rounded-[var(--fd-r-sm)] border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/30 text-center">
+              <p className="text-[11px] text-[var(--fd-text3)] font-semibold">Manuel plaka girişi yalnızca yöneticiler için aktiftir.</p>
+              <p className="text-[10px] text-[var(--fd-text3)] mt-1">Lütfen QR kod tarayarak devam edin.</p>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -436,26 +453,32 @@ export default function TarayiciPage() {
                 </Button>
               </div>
 
-              {/* Manual entry fallback */}
-              <div className="pt-4 border-t border-[var(--fd-border)]">
-                <p className="text-xs font-bold text-[var(--fd-text3)] mb-2 uppercase tracking-wider">Hızlı Plaka Arama:</p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="58 ACT 367"
-                    value={manualPlaka}
-                    onChange={e => setManualPlaka(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleManualSearch()}
-                    className="font-mono bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)] h-10"
-                  />
-                  <Button 
-                    onClick={handleManualSearch} 
-                    disabled={manualLoading || !manualPlaka.trim()}
-                    className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold rounded-[var(--fd-r-sm)] h-10 w-12"
-                  >
-                    {manualLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                  </Button>
+              {/* Manual entry fallback - only for managers */}
+              {canManualEntry ? (
+                <div className="pt-4 border-t border-[var(--fd-border)]">
+                  <p className="text-xs font-bold text-[var(--fd-text3)] mb-2 uppercase tracking-wider">Hızlı Plaka Arama:</p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="58 ACT 367"
+                      value={manualPlaka}
+                      onChange={e => setManualPlaka(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleManualSearch()}
+                      className="font-mono bg-[var(--fd-surface2)] border-[var(--fd-border)] text-[var(--fd-text)] focus:border-[var(--fd-accent)] rounded-[var(--fd-r-sm)] h-10"
+                    />
+                    <Button 
+                      onClick={handleManualSearch} 
+                      disabled={manualLoading || !manualPlaka.trim()}
+                      className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold rounded-[var(--fd-r-sm)] h-10 w-12"
+                    >
+                      {manualLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="pt-4 border-t border-[var(--fd-border)]">
+                  <p className="text-[11px] text-[var(--fd-text3)] font-semibold text-center">Manuel plaka girişi yalnızca yöneticiler için aktiftir.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
