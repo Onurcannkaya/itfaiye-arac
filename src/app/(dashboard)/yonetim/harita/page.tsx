@@ -300,11 +300,14 @@ function HaritaContent() {
       }
 
       try {
+        const resVeh = await fetch(`/api/mobiliz/live?t=${Date.now()}`);
+        let camMap: Record<string, any> = {}; 
+        
+        /* N2 Mobil şimdilik iptal edildi
         const [resVeh, resCamVeh] = await Promise.all([
           fetch(`/api/mobiliz/live?t=${Date.now()}`),
           fetch(`/api/n2mobil/live?t=${Date.now()}`)
         ]);
-        let camMap: Record<string, any> = {};
         if (resCamVeh.ok) {
           const dataCam = await resCamVeh.json();
           if (dataCam?.vehicles) {
@@ -313,6 +316,7 @@ function HaritaContent() {
             });
           }
         }
+        */
 
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
@@ -371,11 +375,14 @@ function HaritaContent() {
       let initialVehicles = vehData || []
 
       try {
+        const resVeh = await fetch(`/api/mobiliz/live?t=${Date.now()}`);
+        let camMap: Record<string, any> = {};
+
+        /* N2 Mobil şimdilik iptal edildi
         const [resVeh, resCamVeh] = await Promise.all([
           fetch(`/api/mobiliz/live?t=${Date.now()}`),
           fetch(`/api/n2mobil/live?t=${Date.now()}`)
         ]);
-        let camMap: Record<string, any> = {};
         if (resCamVeh.ok) {
           const dataCam = await resCamVeh.json();
           if (dataCam?.vehicles) {
@@ -384,6 +391,7 @@ function HaritaContent() {
             });
           }
         }
+        */
 
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
