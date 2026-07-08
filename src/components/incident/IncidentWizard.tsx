@@ -222,6 +222,23 @@ export function IncidentWizard({
           const vPayload = selectedVehicles.map(plaka => ({ incident_id: incidentId, plaka, gorev_turu: "Müdahale Aracı" }))
           await api.insert('incident_vehicles', vPayload)
         }
+
+        // SMS Tetikleme (Sadece yeni kayıtta)
+        try {
+          await fetch('/api/sms/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'incident',
+              missionType: payload.olay_turu,
+              missionTitle: payload.olay_turu,
+              missionAddress: payload.adres,
+              detail: formData.aciklama
+            })
+          })
+        } catch (smsErr) {
+          console.error("Olay SMS gonderilemedi:", smsErr)
+        }
       }
 
       // Upload Media Files

@@ -853,6 +853,23 @@ function HaritaContent() {
       const { error } = await api.insert('incidents', payload)
       if (error) throw error
 
+      // Hızlı ihbarda SMS Tetikleme
+      try {
+        await fetch('/api/sms/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'incident',
+            missionType: payload.olay_turu,
+            missionTitle: payload.olay_turu,
+            missionAddress: payload.adres,
+            detail: "Hızlı Olay/İhbar"
+          })
+        })
+      } catch (smsErr) {
+        console.error("Hızlı Olay SMS gonderilemedi:", smsErr)
+      }
+
       setShowModal('none')
       setIncidentForm({ olay_turu: "Ev Yangını", mahalle: "", adres: "" })
       fetchData() // Refresh map

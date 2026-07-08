@@ -40,7 +40,7 @@ export async function POST(req: Request) {
           SELECT p.ad, p.soyad, COALESCE(p.telefon, pd.telefon) as phone
           FROM public.personnel p
           LEFT JOIN public.personnel_details pd ON p.sicil_no = pd.sicil_no
-          WHERE (p.posta_no = $1 OR p.posta_no IS NULL OR p.posta_no = 0)
+          WHERE (p.posta_no = $1 OR p.posta_no IS NULL OR p.posta_no = 0 OR p.unvan IN ('Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'))
             AND COALESCE(p.telefon, pd.telefon) IS NOT NULL
             AND COALESCE(p.telefon, pd.telefon) != ''
             AND p.aktif = true
