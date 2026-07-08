@@ -114,7 +114,8 @@ const CLEAN_COMPARTMENT_OPTIONS = [
   "Sol Orta Kapak",
   "Sol Arka Kapak",
   "Yüksek Açı Kurtarma Çantası",
-  "Garaj"
+  "Garaj",
+  "Ana Depo"
 ];
 
 const DURUM_OPTIONS = [
@@ -298,7 +299,7 @@ function VehicleInventoryTab() {
   }, [selectedPlaka, vehicles])
 
   const handleUpdateVehicleMeta = async () => {
-    if (!selectedPlaka || selectedPlaka === "GARAJ") return;
+    if (!selectedPlaka || selectedPlaka === "GARAJ" || selectedPlaka === "ANA_DEPO") return;
     try {
       const updates = {
         filo_no: editFiloNo ? parseInt(editFiloNo, 10) : null,
@@ -334,6 +335,7 @@ function VehicleInventoryTab() {
   const [masterInventory, setMasterInventory] = useState<MasterInventoryItem[]>([])
   const [allVehicleInventory, setAllVehicleInventory] = useState<VehicleInventoryItem[]>([])
   const [garajInventory, setGarajInventory] = useState<GarajInventoryItem[]>([])
+  const [anaDepoInventory, setAnaDepoInventory] = useState<GarajInventoryItem[]>([])
   const [searchQuery, setSearchQuery] = useState<string>("")
   
   // Render plate as a beautiful realistic Turkish license plate badge
@@ -459,6 +461,22 @@ function VehicleInventoryTab() {
         setGarajInventory(mapped);
       }
 
+      // 4b. Fetch Ana Depo list
+      const { data: anaDepoRows } = await api.from('vehicle_inventory').select('*').eq('plaka', 'ANA_DEPO')
+      if (anaDepoRows && masterInv) {
+        const mapped = anaDepoRows.map((item: any) => {
+          const matchingInv = masterInv.find((i: any) => i.id === item.inventory_id);
+          return {
+            id: item.id,
+            malzeme_adi: matchingInv ? matchingInv.malzeme_adi : `Bilinmeyen Malzeme (ID: ${item.inventory_id})`,
+            bolme_kapak: item.bolme_kapak || "Ana Depo",
+            adet: item.adet || 0
+          };
+        });
+        mapped.sort((a: any, b: any) => a.malzeme_adi.localeCompare(b.malzeme_adi, 'tr'));
+        setAnaDepoInventory(mapped);
+      }
+
       // 5. Select first vehicle by default for CRUD editor
       if (vehs && vehs.length > 0 && !selectedPlaka) {
         setSelectedPlaka(vehs[0].plaka);
@@ -536,7 +554,7 @@ function VehicleInventoryTab() {
   // Add new row handler
   const handleAddNewItem = () => {
     if (!canEdit) return;
-    const defaultComp = selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi";
+    const defaultComp = selectedPlaka === "GARAJ" ? "Garaj" : selectedPlaka === "ANA_DEPO" ? "Ana Depo" : "Araç İçi";
     setTableRows(prev => [
       ...prev,
       {
@@ -627,7 +645,7 @@ function VehicleInventoryTab() {
             inventory_id: cache[matUpper],
             adet: Number(row.adet),
             durum: row.durum || "Tam",
-            bolme_kapak: row.bolme_kapak || (selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi")
+            bolme_kapak: row.bolme_kapak || (selectedPlaka === "GARAJ" ? "Garaj" : selectedPlaka === "ANA_DEPO" ? "Ana Depo" : "Araç İçi")
           };
         });
 
@@ -725,11 +743,11 @@ function VehicleInventoryTab() {
   }, [vehicles]);
 
 
-  // S.T.O.K Sheet vehicle columns extract (Excluding GARAJ to put in separate section)
+  // S.T.O.K Sheet vehicle columns extract (Excluding GARAJ and ANA_DEPO to put in separate section)
   const vehicleColumns = useMemo(() => {
     const set = new Set(allVehicleInventory.map(item => item.plaka));
     return Array.from(set)
-      .filter(plaka => plaka !== "GARAJ" && !maintenancePlakas.has(plaka))
+      .filter(plaka => plaka !== "GARAJ" && plaka !== "ANA_DEPO" && !maintenancePlakas.has(plaka))
       .sort((a, b) => a.localeCompare(b, 'tr'));
   }, [allVehicleInventory, maintenancePlakas]);
 
@@ -754,7 +772,7 @@ function VehicleInventoryTab() {
       });
 
       const vehicleSum = Object.entries(vehicleCountMap)
-        .filter(([plaka]) => plaka !== "GARAJ" && !maintenancePlakas.has(plaka))
+        .filter(([plaka]) => plaka !== "GARAJ" && plaka !== "ANA_DEPO" && !maintenancePlakas.has(plaka))
         .reduce((sum, [_, val]) => sum + val, 0);
 
       const liveTotal = (item.merkez || 0) + (item.esentepe || 0) + (item.organize || 0) + (item.depo || 0) + vehicleSum;
@@ -803,7 +821,7 @@ function VehicleInventoryTab() {
       }
     })
     if (list.length === 0) {
-      list.push(selectedPlaka === "GARAJ" ? "Garaj" : "Araç İçi")
+      list.push(selectedPlaka === "GARAJ" ? "Garaj" : selectedPlaka === "ANA_DEPO" ? "Ana Depo" : "Araç İçi")
     }
     return list
   }, [tableRows, selectedPlaka]);
@@ -926,6 +944,7 @@ function VehicleInventoryTab() {
                         className="w-full h-12 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3.5 font-mono font-bold text-[var(--fd-text)] text-sm md:text-base focus:outline-none focus:ring-2 focus:border-[var(--fd-accent)] cursor-pointer"
                       >
                         <option value="">-- Araç / Depo Seçin --</option>
+                        <option value="ANA_DEPO">🏢 ANA DEPO (Genel Lojistik)</option>
                         {vehicles.map(v => (
                           <option key={v.plaka} value={v.plaka}>
                             {v.plaka === "GARAJ" 
@@ -957,7 +976,7 @@ function VehicleInventoryTab() {
               </Card>
 
               {/* Admin/Editor Vehicle Details Edit Tools */}
-              {canEdit && selectedPlaka && selectedPlaka !== "GARAJ" && (
+              {canEdit && selectedPlaka && selectedPlaka !== "GARAJ" && selectedPlaka !== "ANA_DEPO" && (
                 <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl print:hidden">
                   <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-end">
                     <div className="w-full sm:w-32">
@@ -1003,7 +1022,9 @@ function VehicleInventoryTab() {
                       <span>
                         {selectedPlaka === "GARAJ" 
                           ? "Garaj Deposu Envanter Editörü" 
-                          : (() => {
+                          : selectedPlaka === "ANA_DEPO"
+                            ? "Ana Depo Envanter Editörü"
+                            : (() => {
                               const currentVeh = vehicles.find(v => v.plaka === selectedPlaka);
                               return currentVeh?.filo_no 
                                 ? `${currentVeh.filo_no} NOLU ${currentVeh.aciklama || ''} (${selectedPlaka})` 
@@ -1314,13 +1335,13 @@ function VehicleInventoryTab() {
                               {/* Vehicles distribution */}
                               <div className="space-y-2">
                                 <span className="text-[9px] font-bold text-[var(--fd-text3)] uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                  <Truck className="w-3.5 h-3.5 text-[var(--fd-accent)]" /> Taktik Araç Zimmet Dağılımı (Garaj Hariç)
+                                  <Truck className="w-3.5 h-3.5 text-[var(--fd-accent)]" /> Taktik Araç Zimmet Dağılımı (Garaj ve Ana Depo Hariç)
                                 </span>
-                                {dists.filter(d => d.plaka !== "GARAJ").length === 0 ? (
+                                {dists.filter(d => d.plaka !== "GARAJ" && d.plaka !== "ANA_DEPO").length === 0 ? (
                                   <p className="text-[11px] text-[var(--fd-text3)] italic font-mono pl-1">Araç üzerinde aktif zimmet bulunmamaktadır.</p>
                                 ) : (
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    {dists.filter(d => d.plaka !== "GARAJ").map(d => (
+                                    {dists.filter(d => d.plaka !== "GARAJ" && d.plaka !== "ANA_DEPO").map(d => (
                                       <div key={d.plaka} className="bg-[var(--fd-surface2)] px-3 py-1.5 rounded-lg border border-white/5 flex items-center justify-between">
                                         <span className="font-mono text-xs text-[var(--fd-text3)] font-bold">{d.plaka}</span>
                                         <span className="font-mono text-xs text-[var(--fd-accent)] font-extrabold bg-[var(--fd-accent-soft)] px-2 py-0.5 rounded border border-[var(--fd-accent-soft2)]">{d.adet}</span>
@@ -1387,9 +1408,9 @@ function VehicleInventoryTab() {
                               vehicleCountMap[a.plaka] = a.adet;
                             });
 
-                            // Quantities sum of active vehicle columns (excluding GARAJ)
+                            // Quantities sum of active vehicle columns (excluding GARAJ and ANA_DEPO)
                             const activeVehicleSum = Object.entries(vehicleCountMap)
-                              .filter(([plaka]) => plaka !== "GARAJ" && !maintenancePlakas.has(plaka))
+                              .filter(([plaka]) => plaka !== "GARAJ" && plaka !== "ANA_DEPO" && !maintenancePlakas.has(plaka))
                               .reduce((sum, [_, val]) => sum + val, 0);
 
                             // Calculate dynamically verified absolute total
@@ -1509,6 +1530,51 @@ function VehicleInventoryTab() {
                               <td className="px-5 py-3 text-[var(--fd-text2)] font-bold">{item.malzeme_adi}</td>
                               <td className="px-5 py-3 text-[var(--fd-text3)] font-mono text-xs">{item.bolme_kapak}</td>
                               <td className="px-5 py-3 text-right text-amber-400 font-mono font-bold text-sm">{item.adet}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* standalone ANA_DEPO list (Müstakil Rapor) */}
+              <Card className="bg-[var(--fd-surface2)]/75 backdrop-blur-lg border border-[var(--fd-border)] shadow-[0_4px_30px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden mt-6">
+                <CardHeader className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-5 flex justify-between items-center flex-row">
+                  <CardTitle className="text-base font-bold text-[var(--fd-text2)] flex items-center gap-2 tracking-tight">
+                    <Warehouse className="w-5 h-5 text-indigo-500" />
+                    <span>🏢 Ana Depo Lojistik Listesi (Müstakil Rapor)</span>
+                  </CardTitle>
+                  <span className="font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/25 px-3 py-1 rounded-lg text-xs font-bold">
+                    Toplam Çeşitlilik: {anaDepoInventory.length} Kalem
+                  </span>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto max-h-[40vh] scrollbar-thin scrollbar-thumb-slate-800">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[var(--fd-surface2)] text-[10px] text-[var(--fd-text3)] uppercase tracking-wider border-b border-white/5 font-mono sticky top-0 z-10 backdrop-blur-md">
+                        <tr>
+                          <th className="px-5 py-3.5 text-left font-semibold w-16">Sıra No</th>
+                          <th className="px-5 py-3.5 text-left font-semibold">Malzeme Cinsi</th>
+                          <th className="px-5 py-3.5 text-left font-semibold w-48">Bulunduğu Bölme / Detay</th>
+                          <th className="px-5 py-3.5 text-right font-semibold w-32">Miktar (Adet)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-medium">
+                        {anaDepoInventory.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-12 text-center text-[var(--fd-text3)] italic font-mono text-xs">
+                              Ana depoda herhangi bir malzeme bulunmamaktadır.
+                            </td>
+                          </tr>
+                        ) : (
+                          anaDepoInventory.map((item, idx) => (
+                            <tr key={item.id} className="hover:bg-white/5 transition-colors duration-150">
+                              <td className="px-5 py-3 text-[var(--fd-text3)] font-mono text-xs">{idx + 1}</td>
+                              <td className="px-5 py-3 text-[var(--fd-text2)] font-bold">{item.malzeme_adi}</td>
+                              <td className="px-5 py-3 text-[var(--fd-text3)] font-mono text-xs">{item.bolme_kapak}</td>
+                              <td className="px-5 py-3 text-right text-indigo-400 font-mono font-bold text-sm">{item.adet}</td>
                             </tr>
                           ))
                         )}
@@ -2142,6 +2208,7 @@ export default function EnvanterPage() {
                                   {(() => {
                                     if (!item.kaynak_plaka) return '—';
                                     if (item.kaynak_plaka === 'GARAJ') return 'Garaj Deposu';
+                                    if (item.kaynak_plaka === 'ANA_DEPO') return 'Ana Depo';
                                     const veh = vehicles.find((v: any) => v.plaka === item.kaynak_plaka);
                                     if (veh) {
                                       return `${veh.filo_no} NOLU (${item.kaynak_plaka})`;
