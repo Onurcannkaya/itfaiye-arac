@@ -287,7 +287,20 @@ function HaritaContent() {
       }
 
       try {
-        const resVeh = await fetch(`/api/n2mobil/live?t=${Date.now()}`)
+        const [resVeh, resCamVeh] = await Promise.all([
+          fetch(`/api/mobiliz/live?t=${Date.now()}`),
+          fetch(`/api/n2mobil/live?t=${Date.now()}`)
+        ]);
+        let camMap: Record<string, any> = {};
+        if (resCamVeh.ok) {
+          const dataCam = await resCamVeh.json();
+          if (dataCam?.vehicles) {
+            dataCam.vehicles.forEach((v: any) => {
+              if (v.plate && v.vehicle_id) camMap[v.plate.replace(/\s+/g, '').toUpperCase()] = v.vehicle_id;
+            });
+          }
+        }
+
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
@@ -304,6 +317,7 @@ function HaritaContent() {
               return prevVehicles.map((v: any) => {
                 const normKey = (v.plaka || '').replace(/\s+/g, '').toUpperCase()
                 const live = liveMap[normKey]
+                const camId = camMap[normKey] || v.vehicle_id
                 if (live) {
                   return {
                     ...v,
@@ -316,10 +330,10 @@ function HaritaContent() {
                     yon: live.direction,
                     sonGuncelleme: live.dataTime,
                     address: live.address,
-                    vehicle_id: live.vehicle_id
+                    vehicle_id: camId
                   }
                 }
-                return v
+                return { ...v, vehicle_id: camId }
               })
             })
           }
@@ -343,7 +357,20 @@ function HaritaContent() {
 
       let initialVehicles = vehData || []
       try {
-        const resVeh = await fetch(`/api/n2mobil/live?t=${Date.now()}`)
+        const [resVeh, resCamVeh] = await Promise.all([
+          fetch(`/api/mobiliz/live?t=${Date.now()}`),
+          fetch(`/api/n2mobil/live?t=${Date.now()}`)
+        ]);
+        let camMap: Record<string, any> = {};
+        if (resCamVeh.ok) {
+          const dataCam = await resCamVeh.json();
+          if (dataCam?.vehicles) {
+            dataCam.vehicles.forEach((v: any) => {
+              if (v.plate && v.vehicle_id) camMap[v.plate.replace(/\s+/g, '').toUpperCase()] = v.vehicle_id;
+            });
+          }
+        }
+
         if (resVeh.ok) {
           const dataVeh = await resVeh.json()
           if (dataVeh && dataVeh.success && Array.isArray(dataVeh.vehicles)) {
@@ -359,6 +386,7 @@ function HaritaContent() {
             initialVehicles = initialVehicles.map((v: any) => {
               const normKey = (v.plaka || '').replace(/\s+/g, '').toUpperCase()
               const live = liveMap[normKey]
+              const camId = camMap[normKey] || v.vehicle_id
               if (live) {
                 return {
                   ...v,
@@ -371,10 +399,10 @@ function HaritaContent() {
                   yon: live.direction,
                   sonGuncelleme: live.dataTime,
                   address: live.address,
-                  vehicle_id: live.vehicle_id
+                  vehicle_id: camId
                 }
               }
-              return v
+              return { ...v, vehicle_id: camId }
             })
           }
         }
