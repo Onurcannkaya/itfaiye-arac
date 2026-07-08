@@ -296,7 +296,7 @@ function HaritaContent() {
           const dataCam = await resCamVeh.json();
           if (dataCam?.vehicles) {
             dataCam.vehicles.forEach((v: any) => {
-              if (v.plate && v.vehicle_id) camMap[v.plate.replace(/\s+/g, '').toUpperCase()] = v.vehicle_id;
+              if (v.plate && v.vehicle_id) camMap[normalizePlate(v.plate)] = v.vehicle_id;
             });
           }
         }
@@ -310,12 +310,12 @@ function HaritaContent() {
               const liveMap: Record<string, any> = {}
               dataVeh.vehicles.forEach((v: any) => {
                 if (v.plate) {
-                  const normKey = v.plate.replace(/\s+/g, '').toUpperCase()
+                  const normKey = normalizePlate(v.plate)
                   liveMap[normKey] = v
                 }
               })
               return prevVehicles.map((v: any) => {
-                const normKey = (v.plaka || '').replace(/\s+/g, '').toUpperCase()
+                const normKey = normalizePlate(v.plaka)
                 const live = liveMap[normKey]
                 const camId = camMap[normKey] || v.vehicle_id
                 if (live) {
@@ -356,6 +356,16 @@ function HaritaContent() {
       const { data: extData } = await api.from('external_missions').select('*')
 
       let initialVehicles = vehData || []
+      // Plaka normalizasyonu (İ/I uyuşmazlıklarını çözer)
+      const normalizePlate = (p: string) => {
+        if (!p) return ''
+        return p.replace(/\s+/g, '')
+          .replace(/İ/g, 'I')
+          .replace(/i/g, 'I')
+          .replace(/ı/g, 'I')
+          .toUpperCase()
+      }
+
       try {
         const [resVeh, resCamVeh] = await Promise.all([
           fetch(`/api/mobiliz/live?t=${Date.now()}`),
@@ -366,7 +376,7 @@ function HaritaContent() {
           const dataCam = await resCamVeh.json();
           if (dataCam?.vehicles) {
             dataCam.vehicles.forEach((v: any) => {
-              if (v.plate && v.vehicle_id) camMap[v.plate.replace(/\s+/g, '').toUpperCase()] = v.vehicle_id;
+              if (v.plate && v.vehicle_id) camMap[normalizePlate(v.plate)] = v.vehicle_id;
             });
           }
         }
@@ -379,12 +389,12 @@ function HaritaContent() {
             const liveMap: Record<string, any> = {}
             dataVeh.vehicles.forEach((v: any) => {
               if (v.plate) {
-                const normKey = v.plate.replace(/\s+/g, '').toUpperCase()
+                const normKey = normalizePlate(v.plate)
                 liveMap[normKey] = v
               }
             })
             initialVehicles = initialVehicles.map((v: any) => {
-              const normKey = (v.plaka || '').replace(/\s+/g, '').toUpperCase()
+              const normKey = normalizePlate(v.plaka)
               const live = liveMap[normKey]
               const camId = camMap[normKey] || v.vehicle_id
               if (live) {
