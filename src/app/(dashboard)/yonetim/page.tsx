@@ -1669,7 +1669,7 @@ export default function DashboardPage() {
               {activeShiftTab === 'daily' ? (
                 <ShiftList personnel={sortedPersonnel} activePosta={0} />
               ) : activeShiftTab === 'hourly' ? (
-                <HourlyShifts personnel={sortedPersonnel} activePosta={0} />
+                <HourlyShifts personnel={sortedPersonnel} allPersonnel={personnelList} activePosta={0} />
               ) : (
                 <FutureShiftCalendar personnelList={personnelList} />
               )}

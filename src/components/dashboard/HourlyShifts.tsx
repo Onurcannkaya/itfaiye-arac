@@ -8,6 +8,7 @@ import { Loader2, ShieldCheck, Clock, MapPin, Building, ShieldAlert, Shield, Pri
 
 interface HourlyShiftsProps {
   personnel: Personnel[]
+  allPersonnel?: Personnel[]
   activePosta: number
 }
 
@@ -28,7 +29,7 @@ const HOURS = [
 
 const PLACES = ["NIZAMIYE"]
 
-export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
+export function HourlyShifts({ personnel, allPersonnel, activePosta }: HourlyShiftsProps) {
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [savingCell, setSavingCell] = useState<string | null>(null)
@@ -110,7 +111,8 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
       const shiftDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const isWeekday = shiftDateObj.getDay() >= 1 && shiftDateObj.getDay() <= 5;
       
-      const sercan = personnel.find(p => p.ad?.trim().toLowerCase() === 'sercan' && p.soyad?.trim().toLowerCase() === 'karaca');
+      const sourcePersonnel = allPersonnel || personnel;
+      const sercan = sourcePersonnel.find(p => p.ad?.trim().toLowerCase() === 'sercan' && p.soyad?.trim().toLowerCase() === 'karaca');
       const isSercanAvailable = sercan && !sercan.durum?.toLowerCase().includes('izin') && !sercan.durum?.toLowerCase().includes('rapor');
 
       if (!newMatrix["TÜM GÜN"]["SABIT_NIZAMIYE"]) {
@@ -135,7 +137,8 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
   const handlePrint = () => {
     const formatPersonnel = (sicil: string) => {
       if (!sicil) return "-";
-      const p = personnel.find(per => per.sicil_no === sicil);
+      const sourcePersonnel = allPersonnel || personnel;
+      const p = sourcePersonnel.find(per => per.sicil_no === sicil);
       return p ? `${p.ad} ${p.soyad} (${p.unvan || 'Er'})` : sicil;
     };
 
@@ -634,7 +637,7 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                     className="w-full h-10 rounded-lg border border-[var(--fd-border)] bg-[var(--fd-surface2)] px-3 py-1.5 text-xs text-[var(--fd-text)] focus:outline-none focus:ring-1 focus:ring-[var(--fd-accent)]/30 font-semibold cursor-pointer"
                   >
                     <option value="">Nöbetçi Seçiniz</option>
-                    {personnel.map(p => (
+                    {(allPersonnel || personnel).map(p => (
                       <option key={p.sicil_no} value={p.sicil_no}>
                         {p.ad} {p.soyad} ({p.unvan || 'Er'})
                       </option>
@@ -644,7 +647,8 @@ export function HourlyShifts({ personnel, activePosta }: HourlyShiftsProps) {
                   <div className="h-10 flex items-center px-4 rounded-lg border border-dashed border-[var(--fd-border)] bg-[var(--fd-surface2)]/20 text-xs font-semibold text-[var(--fd-text3)]">
                     {matrix["TÜM GÜN"]?.["SABIT_NIZAMIYE"]?.sicil ? (
                       (() => {
-                        const p = personnel.find(per => per.sicil_no === matrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil)
+                        const sourcePersonnel = allPersonnel || personnel;
+                        const p = sourcePersonnel.find(per => per.sicil_no === matrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil)
                         return p ? `${p.ad} ${p.soyad} (${p.unvan})` : matrix["TÜM GÜN"]["SABIT_NIZAMIYE"].sicil
                       })()
                     ) : (
