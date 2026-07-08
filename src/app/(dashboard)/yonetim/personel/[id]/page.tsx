@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Input } from "@/components/ui/Input"
-import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity, Shield, ActivitySquare, LogOut, CheckCircle2, Clock, AlertTriangle, Pencil, X, Save, Loader2 } from "lucide-react"
+import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity, Shield, ActivitySquare, LogOut, CheckCircle2, Clock, AlertTriangle, Pencil, X, Save, Loader2, Trash2 } from "lucide-react"
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts"
 import { useAuthStore } from "@/lib/authStore"
 import { cn } from "@/lib/utils"
@@ -85,13 +85,14 @@ export default function PersonelProfilPage() {
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-        if (l.izin_turu === 'İzinli') {
+        const tLower = (l.izin_turu || '').toLowerCase();
+        if (tLower.includes('izin')) {
           totalIzin += diffDays;
-        } else if (l.izin_turu === 'Raporlu') {
+        } else if (tLower.includes('rapor')) {
           totalRapor += diffDays;
-        } else if (l.izin_turu === 'Geçici Şube Görevi') {
+        } else if (tLower.includes('geçici') || tLower.includes('gecici')) {
           totalGeciciGorev += diffDays;
-        } else if (l.izin_turu === 'Dış Görev') {
+        } else if (tLower.includes('dış') || tLower.includes('dis')) {
           totalDisGorev += diffDays;
         }
       }
@@ -920,11 +921,31 @@ export default function PersonelProfilPage() {
                         </div>
                         <p className="text-xs text-[var(--fd-text2)] mt-0.5">{leave.aciklama}</p>
                       </div>
-                      {leave.belge_url && (
-                        <a href={leave.belge_url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
-                          <FileText className="w-4 h-4" /> Rapor / Belge Eki
-                        </a>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {leave.belge_url && (
+                          <a href={leave.belge_url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
+                            <FileText className="w-4 h-4" /> Belge
+                          </a>
+                        )}
+                        {canEdit && (
+                          <button
+                            onClick={async () => {
+                              if (confirm('Bu izni silmek istediğinize emin misiniz?')) {
+                                try {
+                                  await api.remove('personnel_leaves', { id: leave.id });
+                                  setLeaves(prev => prev.filter(l => l.id !== leave.id));
+                                } catch (e) {
+                                  alert('Silme işlemi başarısız oldu.');
+                                }
+                              }
+                            }}
+                            className="text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-md transition-colors"
+                            title="İzni Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
