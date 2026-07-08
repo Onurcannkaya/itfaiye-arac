@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/Badge"
 import { 
   CheckCircle2, Loader2, Search, Flame, Droplets, 
   Activity, ArrowRight, UserPlus, Phone, Home as HomeIcon,
-  HeartPulse, Shield, Crosshair, UploadCloud, FileText, Printer, MapPin
+  HeartPulse, Shield, Crosshair, UploadCloud, FileText, Printer, MapPin, AlertTriangle
 } from "lucide-react"
 import dynamic from "next/dynamic"
 
@@ -33,6 +33,7 @@ export function IncidentWizard({
 }: IncidentWizardProps) {
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
+  const [timeErrors, setTimeErrors] = useState<Record<string, string>>({})
   const printRef = useRef<HTMLDivElement>(null)
 
   const isClosed = mode === 'readonly'
@@ -94,9 +95,41 @@ export function IncidentWizard({
   const [vehicleSearch, setVehicleSearch] = useState("")
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
 
+  // ─── Kronolojik Saat Doğrulaması ─────────────────────────
+  // Mantıksal sıra: İhbar ≤ Çıkış ≤ Varış ≤ Dönüş
+  const validateTimes = (data: typeof formData): Record<string, string> => {
+    const errors: Record<string, string> = {}
+    const ihbar = data.ihbar_saati ? new Date(data.ihbar_saati).getTime() : 0
+    const cikis = data.cikis_saati ? new Date(data.cikis_saati).getTime() : 0
+    const varis = data.varis_saati ? new Date(data.varis_saati).getTime() : 0
+    const donus = data.donus_saati ? new Date(data.donus_saati).getTime() : 0
+
+    if (ihbar && cikis && cikis < ihbar) {
+      errors.cikis_saati = 'İstasyondan çıkış, ihbar saatinden önce olamaz.'
+    }
+    if (cikis && varis && varis < cikis) {
+      errors.varis_saati = 'Olay yerine varış, istasyon çıkışından önce olamaz.'
+    }
+    if (ihbar && varis && varis < ihbar) {
+      errors.varis_saati = 'Olay yerine varış, ihbar saatinden önce olamaz.'
+    }
+    if (varis && donus && donus < varis) {
+      errors.donus_saati = 'İstasyona dönüş, olay yerine varıştan önce olamaz.'
+    }
+    if (cikis && donus && donus < cikis) {
+      errors.donus_saati = 'İstasyona dönüş, istasyon çıkışından önce olamaz.'
+    }
+    return errors
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (isClosed) return
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const updated = { ...formData, [e.target.name]: e.target.value }
+    setFormData(updated)
+    // Saat alanları değiştiğinde doğrulama yap
+    if (['ihbar_saati', 'cikis_saati', 'varis_saati', 'donus_saati'].includes(e.target.name)) {
+      setTimeErrors(validateTimes(updated))
+    }
   }
 
   const toggleKurum = (kurum: string) => {
@@ -129,6 +162,14 @@ export function IncidentWizard({
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (isClosed) return
+
+    // Son doğrulama kontrolü
+    const errors = validateTimes(formData)
+    setTimeErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      setStep(1) // Hatalı adıma geri dön
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -869,19 +910,23 @@ export function IncidentWizard({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-xl bg-surface/30">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground">İhbar Saati</label>
-                    <Input type="datetime-local" name="ihbar_saati" value={formData.ihbar_saati} onChange={handleInputChange} required />
+                    <Input type="datetime-local" name="ihbar_saati" value={formData.ihbar_saati} onChange={handleInputChange} required className={timeErrors.ihbar_saati ? 'border-red-500 ring-1 ring-red-500/30' : ''} />
+                    {timeErrors.ihbar_saati && <p className="text-[11px] text-red-500 flex items-center gap-1 mt-1"><AlertTriangle className="w-3 h-3" />{timeErrors.ihbar_saati}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground">İstasyondan Çıkış</label>
-                    <Input type="datetime-local" name="cikis_saati" value={formData.cikis_saati} onChange={handleInputChange} required />
+                    <Input type="datetime-local" name="cikis_saati" value={formData.cikis_saati} onChange={handleInputChange} required className={timeErrors.cikis_saati ? 'border-red-500 ring-1 ring-red-500/30' : ''} />
+                    {timeErrors.cikis_saati && <p className="text-[11px] text-red-500 flex items-center gap-1 mt-1"><AlertTriangle className="w-3 h-3" />{timeErrors.cikis_saati}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground">Olay Yerine Varış</label>
-                    <Input type="datetime-local" name="varis_saati" value={formData.varis_saati} onChange={handleInputChange} required />
+                    <Input type="datetime-local" name="varis_saati" value={formData.varis_saati} onChange={handleInputChange} required className={timeErrors.varis_saati ? 'border-red-500 ring-1 ring-red-500/30' : ''} />
+                    {timeErrors.varis_saati && <p className="text-[11px] text-red-500 flex items-center gap-1 mt-1"><AlertTriangle className="w-3 h-3" />{timeErrors.varis_saati}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground">İstasyona Dönüş</label>
-                    <Input type="datetime-local" name="donus_saati" value={formData.donus_saati} onChange={handleInputChange} required />
+                    <Input type="datetime-local" name="donus_saati" value={formData.donus_saati} onChange={handleInputChange} required className={timeErrors.donus_saati ? 'border-red-500 ring-1 ring-red-500/30' : ''} />
+                    {timeErrors.donus_saati && <p className="text-[11px] text-red-500 flex items-center gap-1 mt-1"><AlertTriangle className="w-3 h-3" />{timeErrors.donus_saati}</p>}
                   </div>
                 </div>
               </div>
@@ -1166,7 +1211,15 @@ export function IncidentWizard({
             </Button>
             
             {step < 4 ? (
-              <Button type="button" onClick={() => setStep(step + 1)}>
+              <Button type="button" onClick={() => {
+                // Adım 1'den çıkarken saat doğrulaması yap
+                if (step === 1) {
+                  const errors = validateTimes(formData)
+                  setTimeErrors(errors)
+                  if (Object.keys(errors).length > 0) return
+                }
+                setStep(step + 1)
+              }}>
                 Sonraki Adım <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : isClosed ? (
