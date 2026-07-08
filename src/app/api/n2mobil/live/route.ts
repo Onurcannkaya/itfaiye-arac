@@ -4,7 +4,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const N2_TOKEN = process.env.N2MOBIL_TOKEN || "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzNTMzNjMxLCJpYXQiOjE3ODM0OTc2MzEsImp0aSI6IjRmMGVmODgyODYxNzQ5MjhiZmQ0ZTkzMTQ4ODE5ODJlIiwidXNlcl9pZCI6IjFlZjcxYmY0LThjN2YtNDUzMC04YTdlLTRkY2NlYzZjNGM2NyIsInVzZXJuYW1lIjoic2l2YXMuaXRmYWl5ZSIsInN0YXR1cyI6dHJ1ZX0.UcS0H3XRIYDhv5qorGt_pO_XQtjoUKbec8NKBUybrAs";
+const N2_TOKEN = process.env.N2MOBIL_TOKEN;
 const FLEET_ID = "6044";
 
 export async function GET(request: NextRequest) {
