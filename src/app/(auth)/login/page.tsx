@@ -73,8 +73,14 @@ function LoginForm() {
       } else {
         setLoginError(result.error || "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
       }
-    } catch (err: unknown) {
-      setLoginError("Sunucuyla bağlantı kurulamadı.")
+    } catch (err: any) {
+      console.error("Login try-catch error:", err)
+      const errorMsg = err?.message || ""
+      if (errorMsg.includes("setItem") || errorMsg.includes("Storage") || errorMsg.includes("quota") || errorMsg.includes("localStorage")) {
+        setLoginError("Tarayıcınız çerezlere veya yerel depolamaya izin vermiyor. Lütfen 'Gizli Sekme' kullanmadığınızdan emin olun veya tarayıcı ayarlarından çerezlere izin verin.")
+      } else {
+        setLoginError(`Kritik Hata: ${errorMsg || "Sunucuyla bağlantı kurulamadı."}`)
+      }
     } finally {
       setLoginLoading(false)
     }
