@@ -84,10 +84,10 @@ const matchHotspotToKey = (hotspot: string, keys: string[]): string | null => {
 const VEHICLE_MODEL_CONFIGS: Record<string, {
   targetLength: number
   envMapIntensity: number
-  rotationY?: number
+  yOffset?: number
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
-  fiat_doblo: { targetLength: 4.2, envMapIntensity: 1.8, rotationY: 0 },
+  fiat_doblo: { targetLength: 4.5, envMapIntensity: 1.8, yOffset: 0.02 },
 }
 
 function getModelConfig(vehicleModel?: string) {
@@ -98,58 +98,83 @@ function getModelConfig(vehicleModel?: string) {
   return VEHICLE_MODEL_CONFIGS.default
 }
 
+function isDobloModel(vehicleModel?: string): boolean {
+  return !!vehicleModel && vehicleModel.toLowerCase().includes('doblo')
+}
+
 // ——— Doblo Hotspots (smaller utility vehicle) ———
 const DOBLO_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  arac_ici:       { position: [0.0,   0.8,  1.0],  label: "Araç İçi" },
-  kabin_ici:      { position: [0.0,   0.7,  1.4],  label: "Kabin İçi" },
-  bagaj_ici:      { position: [0.0,   0.6,  -1.6], label: "Bagaj İçi" },
-  arka_kapak:     { position: [0.0,   0.7,  -2.1], label: "Arka Kapak" },
-  kasa_ici:       { position: [0.0,   0.5,  -0.5], label: "Kasa İçi" },
-  sol_dolap:      { position: [0.7,   0.5,  -0.8], label: "Sol Dolap" },
-  sag_dolap:      { position: [-0.7,  0.5,  -0.8], label: "Sağ Dolap" },
-  arac_ustu:      { position: [0.0,   1.3,  0.0],  label: "Araç Üstü" },
+  arac_ici:       { position: [0.0,   0.7,  0.5],  label: "Araç İçi" },
+  kabin_ici:      { position: [0.0,   0.65, 1.2],  label: "Kabin İçi" },
+  bagaj_ici:      { position: [0.0,   0.5,  -1.4], label: "Bagaj İçi" },
+  arka_kapak:     { position: [0.0,   0.6,  -1.9], label: "Arka Kapak" },
+  kasa_ici:       { position: [0.0,   0.45, -0.3], label: "Kasa İçi" },
+  sol_dolap:      { position: [0.6,   0.45, -0.6], label: "Sol Dolap" },
+  sag_dolap:      { position: [-0.6,  0.45, -0.6], label: "Sağ Dolap" },
+  arac_ustu:      { position: [0.0,   1.2,  0.0],  label: "Araç Üstü" },
 }
 
 // ——— Fire Truck Model sub-component ———
 function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: string }) {
   const { scene } = useGLTF(url)
   const config = getModelConfig(vehicleModel)
+  const doblo = isDobloModel(vehicleModel)
 
   useEffect(() => {
     if (scene) {
-      // Reset transforms
-      scene.position.set(0, 0, 0)
-      scene.scale.setScalar(1)
-      scene.rotation.set(0, 0, 0)
+      if (doblo) {
+        // --- Doblo-specific logic ---
+        // The GLTF has a root matrix with a -90° X rotation (Collada→Three.js Y-up conversion).
+        // We must NOT reset rotation or we'll break the model's internal orientation.
+        // Instead: reset only position, apply uniform scale, then reposition.
+        scene.position.set(0, 0, 0)
+        scene.scale.setScalar(1)
+        // Do NOT reset rotation — keep the GLTF's internal -90° X rotation matrix intact.
 
-      // Get precise raw bounds
-      const box = new THREE.Box3().setFromObject(scene)
-      const size = box.getSize(new THREE.Vector3())
-      const center = box.getCenter(new THREE.Vector3())
-      
-      // Find the longest axis for scaling
-      const maxAxis = Math.max(size.x, size.y, size.z)
-      const scaleFactor = config.targetLength / maxAxis
-      
-      scene.scale.setScalar(scaleFactor)
+        // Compute bounds with original transforms intact
+        const box = new THREE.Box3().setFromObject(scene)
+        const size = box.getSize(new THREE.Vector3())
+        const center = box.getCenter(new THREE.Vector3())
 
-      // Recalculate after scale
-      const scaledBox = new THREE.Box3().setFromObject(scene)
-      const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
-      
-      // Center in X and Z, and place the bottom of the wheels (box.min.y) to Y = 0
-      scene.position.set(
-        -scaledCenter.x,
-        -scaledBox.min.y,
-        -scaledCenter.z
-      )
+        // Scale based on the longest axis (Z = length after GLTF rotation)
+        const longestAxis = Math.max(size.x, size.y, size.z)
+        const scaleFactor = config.targetLength / longestAxis
+        
+        scene.scale.multiplyScalar(scaleFactor)
 
-      // Apply model-specific rotation
-      if (config.rotationY !== undefined) {
-        scene.rotation.y = config.rotationY
+        // Recompute bounds after scaling
+        const scaledBox = new THREE.Box3().setFromObject(scene)
+        const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
+
+        // Center in X and Z, place bottom at Y=0
+        scene.position.set(
+          scene.position.x - scaledCenter.x,
+          scene.position.y - scaledBox.min.y + (config.yOffset || 0),
+          scene.position.z - scaledCenter.z
+        )
+      } else {
+        // --- Default (Fire Truck) logic ---
+        scene.position.set(0, 0, 0)
+        scene.scale.setScalar(1)
+        scene.rotation.set(0, 0, 0)
+
+        const box = new THREE.Box3().setFromObject(scene)
+        const size = box.getSize(new THREE.Vector3())
+        const center = box.getCenter(new THREE.Vector3())
+
+        const targetLength = config.targetLength
+        const scaleFactor = targetLength / size.z
+
+        scene.scale.setScalar(scaleFactor)
+
+        scene.position.set(
+          -center.x * scaleFactor,
+          -box.min.y * scaleFactor,
+          -center.z * scaleFactor
+        )
       }
 
-      // Enhance materials for realistic rendering
+      // Enhance materials for realistic rendering (both models)
       scene.traverse((child: any) => {
         if (child.isMesh) {
           child.castShadow = true
@@ -161,7 +186,7 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         }
       })
     }
-  }, [scene, config])
+  }, [scene, config, doblo])
 
   return <primitive object={scene} />
 }
@@ -367,14 +392,14 @@ function Scene({
       )}
       {plaka && isDoblo && (
         <>
-          {/* Rear License Plate (Doblo) */}
-          <Html position={[0.0, 0.48, -2.1]} transform rotation={[0, Math.PI, 0]} scale={0.18}>
+          {/* Rear License Plate (Doblo) — trunk area */}
+          <Html position={[0.0, 0.55, -1.85]} transform rotation={[0, Math.PI, 0]} scale={0.16}>
             <div className="bg-white border border-slate-400 px-1 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[60px] h-[13px] leading-none">
               <span>{plaka}</span>
             </div>
           </Html>
-          {/* Front License Plate (Doblo) */}
-          <Html position={[0, 0.35, 2.1]} transform scale={0.18}>
+          {/* Front License Plate (Doblo) — front bumper */}
+          <Html position={[0, 0.35, 2.2]} transform scale={0.16}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[60px] h-[13px]">
               <span>{plaka}</span>
             </div>
