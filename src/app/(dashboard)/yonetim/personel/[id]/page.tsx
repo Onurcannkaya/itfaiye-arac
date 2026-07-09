@@ -13,6 +13,7 @@ import { ArrowLeft, User, Phone, MapPin, Calendar, Briefcase, FileText, Activity
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts"
 import { useAuthStore } from "@/lib/authStore"
 import { cn } from "@/lib/utils"
+import { CertificatesTab } from "@/components/personnel/CertificatesTab"
 
 // Types
 type Personel = any; // TODO: Better typing
@@ -527,6 +528,7 @@ export default function PersonelProfilPage() {
     { id: 'zimmet', label: 'Zimmet (Ekipman)', icon: Shield },
     { id: 'hizmet', label: 'Hizmet Dökümü', icon: Briefcase },
     { id: 'faaliyet', label: 'Faaliyetler', icon: ActivitySquare },
+    { id: 'sertifikalar', label: 'Sertifikalar / Belgeler', icon: FileText },
   ]
 
   return (
@@ -1218,6 +1220,13 @@ export default function PersonelProfilPage() {
           </div>
         )}
       </div>
+
+      {/* Sertifikalar Sekmesi */}
+      {activeTab === "sertifikalar" && (
+        <div className="space-y-6">
+          <CertificatesTab sicilNo={sicil_no} />
+        </div>
+      )}
     </div>
   )
 }
