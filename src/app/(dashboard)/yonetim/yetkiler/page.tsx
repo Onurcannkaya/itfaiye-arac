@@ -31,11 +31,12 @@ const PAGE_METADATA = [
 ];
 
 const ROLES = [
-  { id: 'Müdür', title: 'Müdür / Yönetici', desc: 'SB5801 İbrahim Alaçam seviyesi en üst komuta' },
-  { id: 'Amir', title: 'Grup Amiri / Başamir', desc: 'İstasyon ve operasyon grup amirleri' },
-  { id: 'Çavuş', title: 'Vardiya Amiri / Çavuş', desc: 'Saha sevk sorumlusu ve ekip çavuşları' },
-  { id: 'Santral', title: 'Santral / İhbar Memuru', desc: 'Kriz masası ve olay veri girişi operatörü' },
-  { id: 'Er', title: 'Müdahale Eri / Personel', desc: 'Saha operasyon ekibi ve araç müdahale kadrosu' },
+  { id: 'Müdür', title: 'Müdür ve Sistem Yöneticisi', desc: 'İbrahim Alaçam, Onurcan KAYA, Seyfi Ali Gül' },
+  { id: 'Amir', title: 'Amirler', desc: 'İstasyon ve operasyon amirleri' },
+  { id: 'Başçavuş', title: 'Başçavuşlar ve Başşoför', desc: 'Başçavuş ve Başşoför rütbesindeki personel' },
+  { id: 'Çavuş', title: 'Çavuşlar ve Posta Başşoförleri', desc: 'Saha sevk sorumlusu ve ekip çavuşları' },
+  { id: 'Er', title: 'Müdahale Eri ve Şoför', desc: 'Saha operasyon ekibi ve araç müdahale kadrosu' },
+  { id: 'Santral', title: 'Santral', desc: 'Kriz masası ve olay veri girişi operatörü' },
 ];
 
 export default function YetkilerPage() {
@@ -76,12 +77,24 @@ export default function YetkilerPage() {
     const newVal = !currentVal;
 
     try {
-      const { data, error } = await api.update('role_permissions', { izinli: newVal }, { rol, sayfa_id });
+      const existing = permissions.find(p => p.rol === rol && p.sayfa_id === sayfa_id);
+      let error;
+      if (existing) {
+        const res = await api.update('role_permissions', { izinli: newVal }, { rol, sayfa_id });
+        error = res.error;
+      } else {
+        const res = await api.insert('role_permissions', [{ rol, sayfa_id, izinli: newVal }]);
+        error = res.error;
+      }
       if (error) throw error;
 
-      setPermissions(prev => prev.map(p =>
-        (p.rol === rol && p.sayfa_id === sayfa_id) ? { ...p, izinli: newVal } : p
-      ));
+      if (existing) {
+        setPermissions(prev => prev.map(p =>
+          (p.rol === rol && p.sayfa_id === sayfa_id) ? { ...p, izinli: newVal } : p
+        ));
+      } else {
+        setPermissions(prev => [...prev, { rol, sayfa_id, izinli: newVal }]);
+      }
 
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 2000);

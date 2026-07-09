@@ -9,30 +9,40 @@ import { useRouter } from 'next/navigation';
 export function mapUserToPermissionRole(user: any): string {
   if (!user) return 'Er';
   const rol = user.rol || '';
-  const unvan = user.unvan || '';
+  const unvan = (user.unvan || '').toLowerCase();
   
-  if (unvan === 'Müdür' || rol === 'Admin') {
+  if (unvan.includes('müdür') || rol === 'Admin') {
     return 'Müdür';
   }
-  if (unvan === 'Amir' || rol === 'Editor') {
+  if (unvan.includes('amir') || rol === 'Editor') {
     return 'Amir';
   }
   if (
-    unvan === 'Başçavuş' || 
-    unvan === 'Çavuş' || 
+    unvan.includes('başçavuş') || 
+    unvan === 'baş şoför' || 
+    unvan === 'baş şöför' ||
+    unvan === 'başşoför' ||
+    unvan === 'başşöför'
+  ) {
+    return 'Başçavuş';
+  }
+  if (
+    unvan.includes('çavuş') || 
+    unvan.includes('posta başşoför') || 
+    unvan.includes('posta başşöför') || 
     rol === 'Shift_Leader'
   ) {
     return 'Çavuş';
   }
   if (
-    unvan.includes('Santral') || 
-    unvan.includes('İhbar') || 
-    unvan.includes('Memur') || 
+    unvan.includes('santral') || 
+    unvan.includes('ihbar') || 
+    unvan.includes('memur') || 
     rol === 'Santral'
   ) {
     return 'Santral';
   }
-  return 'Er';
+  return 'Er'; // Müdahale Eri ve Şoför
 }
 
 interface PageGuardProps {
