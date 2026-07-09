@@ -48,6 +48,8 @@ export function FutureShiftCalendar({ personnelList, onLeaveUpdated }: FutureShi
       setLoading(true)
       try {
         const targetDate = new Date(selectedDate)
+        // Set time to noon to avoid UTC midnight (03:00 local time) falling into the previous day's shift
+        targetDate.setHours(12, 0, 0, 0)
         
         // 1. Calculate who is on duty for the selected date
         const filtered = personnelList.filter(p => {
