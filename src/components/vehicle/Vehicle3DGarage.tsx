@@ -126,17 +126,74 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         // --- Doblo-specific logic ---
         // The GLTF has a root matrix with a -90° X rotation (Collada→Three.js Y-up conversion).
         // We must NOT reset rotation or we'll break the model's internal orientation.
-        // Instead: reset only position, apply uniform scale, then reposition.
         scene.position.set(0, 0, 0)
         scene.scale.setScalar(1)
         // Do NOT reset rotation — keep the GLTF's internal -90° X rotation matrix intact.
 
-        // Compute bounds with original transforms intact
+        // The Doblo GLTF has only ONE wheel mesh (right-front, node "wheel").
+        // We must clone it to the other 3 wheel positions.
+        // Wheel center in Collada coords: X=0.738, Y=1.315, Z=0.451
+        // The 4 positions (Collada coords, Y=front/back, X=left/right):
+        //   Right-Front: ( 0.738,  1.315, 0.451) — original
+        //   Left-Front:  (-0.738,  1.315, 0.451) — mirror X
+        //   Right-Rear:  ( 0.738, -1.315, 0.451) — mirror Y
+        //   Left-Rear:   (-0.738, -1.315, 0.451) — mirror X+Y
+
+        // Find the "Collada visual scene group" (child of root) to add cloned wheels
+        let colladaGroup: THREE.Object3D | null = null
+        let wheelGroup: THREE.Object3D | null = null
+        
+        scene.traverse((child: any) => {
+          if (child.name === 'Collada visual scene group') colladaGroup = child
+          if (child.name === 'wheel' && !wheelGroup) wheelGroup = child
+        })
+
+        if (wheelGroup && colladaGroup) {
+          const cGroup = colladaGroup as THREE.Object3D
+          const wGroup = wheelGroup as THREE.Object3D
+
+          // Remove existing "cloned_wheel" from previous renders (hot reload)
+          const toRemove: THREE.Object3D[] = []
+          cGroup.children.forEach((c: any) => {
+            if (c.userData?.isClonedWheel) toRemove.push(c)
+          })
+          toRemove.forEach(c => cGroup.remove(c))
+
+          // Wheel center in Collada local coords
+          const wCenterX = 0.738
+          const wCenterY = 1.315
+
+          // Clone for Left-Front (mirror X)
+          const wheelLF = wGroup.clone(true)
+          wheelLF.name = 'wheel_LF'
+          wheelLF.userData.isClonedWheel = true
+          wheelLF.position.set(-2 * wCenterX, 0, 0)
+          wheelLF.scale.x = -1
+          cGroup.add(wheelLF)
+
+          // Clone for Right-Rear (mirror Y)
+          const wheelRR = wGroup.clone(true)
+          wheelRR.name = 'wheel_RR'
+          wheelRR.userData.isClonedWheel = true
+          wheelRR.position.set(0, -2 * wCenterY, 0)
+          wheelRR.scale.y = -1
+          cGroup.add(wheelRR)
+
+          // Clone for Left-Rear (mirror X+Y)
+          const wheelLR = wGroup.clone(true)
+          wheelLR.name = 'wheel_LR'
+          wheelLR.userData.isClonedWheel = true
+          wheelLR.position.set(-2 * wCenterX, -2 * wCenterY, 0)
+          wheelLR.scale.x = -1
+          wheelLR.scale.y = -1
+          cGroup.add(wheelLR)
+        }
+
+        // Compute bounds with wheels included
         const box = new THREE.Box3().setFromObject(scene)
         const size = box.getSize(new THREE.Vector3())
-        const center = box.getCenter(new THREE.Vector3())
 
-        // Scale based on the longest axis (Z = length after GLTF rotation)
+        // Scale based on the longest axis
         const longestAxis = Math.max(size.x, size.y, size.z)
         const scaleFactor = config.targetLength / longestAxis
         
