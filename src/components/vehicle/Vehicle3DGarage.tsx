@@ -34,6 +34,8 @@ export interface Vehicle3DGarageProps {
   kopukKapasite?: number
   isModalOpen?: boolean
   plaka?: string
+  modelUrl?: string
+  vehicleModel?: string
 }
 
 // ——— Compartment Hotspot positions (world-space after model is centered & scaled to exactly 6m length) ———
@@ -78,9 +80,40 @@ const matchHotspotToKey = (hotspot: string, keys: string[]): string | null => {
   return null
 }
 
+// ——— Vehicle Model Configs ———
+const VEHICLE_MODEL_CONFIGS: Record<string, {
+  targetLength: number
+  envMapIntensity: number
+  rotationY?: number
+}> = {
+  default: { targetLength: 6.0, envMapIntensity: 1.5 },
+  fiat_doblo: { targetLength: 4.2, envMapIntensity: 1.8, rotationY: 0 },
+}
+
+function getModelConfig(vehicleModel?: string) {
+  if (vehicleModel) {
+    const key = vehicleModel.toLowerCase().replace(/[\s-]+/g, '_')
+    if (key.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
+  }
+  return VEHICLE_MODEL_CONFIGS.default
+}
+
+// ——— Doblo Hotspots (smaller utility vehicle) ———
+const DOBLO_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
+  arac_ici:       { position: [0.0,   0.8,  1.0],  label: "Araç İçi" },
+  kabin_ici:      { position: [0.0,   0.7,  1.4],  label: "Kabin İçi" },
+  bagaj_ici:      { position: [0.0,   0.6,  -1.6], label: "Bagaj İçi" },
+  arka_kapak:     { position: [0.0,   0.7,  -2.1], label: "Arka Kapak" },
+  kasa_ici:       { position: [0.0,   0.5,  -0.5], label: "Kasa İçi" },
+  sol_dolap:      { position: [0.7,   0.5,  -0.8], label: "Sol Dolap" },
+  sag_dolap:      { position: [-0.7,  0.5,  -0.8], label: "Sağ Dolap" },
+  arac_ustu:      { position: [0.0,   1.3,  0.0],  label: "Araç Üstü" },
+}
+
 // ——— Fire Truck Model sub-component ———
-function FireTruckModel({ url }: { url: string }) {
+function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: string }) {
   const { scene } = useGLTF(url)
+  const config = getModelConfig(vehicleModel)
 
   useEffect(() => {
     if (scene) {
@@ -94,18 +127,27 @@ function FireTruckModel({ url }: { url: string }) {
       const size = box.getSize(new THREE.Vector3())
       const center = box.getCenter(new THREE.Vector3())
       
-      // Target length of the truck along Z axis should be exactly 6.0 units
-      const targetLength = 6.0
-      const scaleFactor = targetLength / size.z
+      // Find the longest axis for scaling
+      const maxAxis = Math.max(size.x, size.y, size.z)
+      const scaleFactor = config.targetLength / maxAxis
       
       scene.scale.setScalar(scaleFactor)
+
+      // Recalculate after scale
+      const scaledBox = new THREE.Box3().setFromObject(scene)
+      const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
       
       // Center in X and Z, and place the bottom of the wheels (box.min.y) to Y = 0
       scene.position.set(
-        -center.x * scaleFactor,
-        -box.min.y * scaleFactor,
-        -center.z * scaleFactor
+        -scaledCenter.x,
+        -scaledBox.min.y,
+        -scaledCenter.z
       )
+
+      // Apply model-specific rotation
+      if (config.rotationY !== undefined) {
+        scene.rotation.y = config.rotationY
+      }
 
       // Enhance materials for realistic rendering
       scene.traverse((child: any) => {
@@ -113,13 +155,13 @@ function FireTruckModel({ url }: { url: string }) {
           child.castShadow = true
           child.receiveShadow = true
           if (child.material) {
-            child.material.envMapIntensity = 1.5
+            child.material.envMapIntensity = config.envMapIntensity
             child.material.needsUpdate = true
           }
         }
       })
     }
-  }, [scene])
+  }, [scene, config])
 
   return <primitive object={scene} />
 }
@@ -238,7 +280,9 @@ function Scene({
   showLabels,
   autoRotate,
   isModalOpen,
-  plaka
+  plaka,
+  modelUrl,
+  vehicleModel
 }: {
   compartmentKeys: string[]
   activeCompartment: string | null
@@ -247,10 +291,16 @@ function Scene({
   autoRotate: boolean
   isModalOpen?: boolean
   plaka?: string
+  modelUrl?: string
+  vehicleModel?: string
 }) {
   const controlsRef = useRef<any>(null)
 
-  const hotspots = Object.entries(COMPARTMENT_HOTSPOTS).map(([key, data]) => {
+  // Determine which hotspot set to use based on vehicle model
+  const isDoblo = vehicleModel && vehicleModel.toLowerCase().includes('doblo')
+  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : COMPARTMENT_HOTSPOTS
+
+  const hotspots = Object.entries(hotspotSource).map(([key, data]) => {
     const matchedKey = matchHotspotToKey(key, compartmentKeys)
     return {
       key,
@@ -295,25 +345,41 @@ function Scene({
         far={1.5}
       />
 
-      {/* Fire truck model — centered and scaled in FireTruckModel component */}
-      <FireTruckModel url="/3dmodels/scene.gltf" />
+      {/* Vehicle model — centered and scaled in FireTruckModel component */}
+      <FireTruckModel url={modelUrl || "/3dmodels/scene.gltf"} vehicleModel={vehicleModel} />
 
-      {/* Rear License Plate */}
-      {plaka && (
-        <Html position={[0.46, 0.64, -3.01]} transform rotation={[0, Math.PI, 0]} scale={0.22}>
-          <div className="bg-white border border-slate-400 px-1 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none">
-            <span>{plaka}</span>
-          </div>
-        </Html>
+      {/* License Plates — positioned differently based on vehicle type */}
+      {plaka && !isDoblo && (
+        <>
+          {/* Rear License Plate (Fire Truck) */}
+          <Html position={[0.46, 0.64, -3.01]} transform rotation={[0, Math.PI, 0]} scale={0.22}>
+            <div className="bg-white border border-slate-400 px-1 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+          {/* Front License Plate (Fire Truck) */}
+          <Html position={[0, 0.48, 3.11]} transform scale={0.25}>
+            <div className="bg-white border border-slate-400 px-2 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[4px] border-l-blue-600 font-sans min-w-[70px] h-[16px]">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+        </>
       )}
-
-      {/* Front License Plate */}
-      {plaka && (
-        <Html position={[0, 0.48, 3.11]} transform scale={0.25}>
-          <div className="bg-white border border-slate-400 px-2 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[4px] border-l-blue-600 font-sans min-w-[70px] h-[16px]">
-            <span>{plaka}</span>
-          </div>
-        </Html>
+      {plaka && isDoblo && (
+        <>
+          {/* Rear License Plate (Doblo) */}
+          <Html position={[0.0, 0.48, -2.1]} transform rotation={[0, Math.PI, 0]} scale={0.18}>
+            <div className="bg-white border border-slate-400 px-1 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[60px] h-[13px] leading-none">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+          {/* Front License Plate (Doblo) */}
+          <Html position={[0, 0.35, 2.1]} transform scale={0.18}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[60px] h-[13px]">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+        </>
       )}
 
       {/* Compartment hotspots */}
@@ -341,13 +407,13 @@ function Scene({
         autoRotateSpeed={0.5}
         enableDamping
         dampingFactor={0.05}
-        minDistance={4.0}
-        maxDistance={15.0}
+        minDistance={isDoblo ? 3.0 : 4.0}
+        maxDistance={isDoblo ? 12.0 : 15.0}
         minPolarAngle={Math.PI / 12}
         maxPolarAngle={Math.PI / 2.15}
         enablePan={true}
         panSpeed={0.6}
-        target={[0, 1.0, 0]}
+        target={[0, isDoblo ? 0.7 : 1.0, 0]}
       />
     </>
   )
@@ -378,7 +444,9 @@ export function Vehicle3DGarage({
   suKapasite,
   kopukKapasite,
   isModalOpen,
-  plaka
+  plaka,
+  modelUrl,
+  vehicleModel
 }: Vehicle3DGarageProps) {
   const [showLabels, setShowLabels] = useState(true)
   const [autoRotate, setAutoRotate] = useState(true)
@@ -483,6 +551,8 @@ export function Vehicle3DGarage({
               autoRotate={autoRotate}
               isModalOpen={isModalOpen}
               plaka={plaka}
+              modelUrl={modelUrl}
+              vehicleModel={vehicleModel}
             />
           </Suspense>
         </Canvas>

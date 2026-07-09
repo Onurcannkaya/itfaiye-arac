@@ -657,6 +657,14 @@ export default function VehicleDetailPage() {
   const isKurtarma = rawTipi.includes("KURTARMA")
   const isMerdivenli = rawTipi.includes("MERDİVEN") || rawTipi.includes("METRE")
 
+  // 3D Model URL resolution based on vehicle brand/model
+  const resolve3DModelUrl = (): string | undefined => {
+    const model = (vehicle.model || "").toLowerCase()
+    if (model.includes("doblo")) return "/3dmodels/fiat_doblo_mk1_2000-2021/scene.gltf"
+    return undefined // Falls back to default fire truck model
+  }
+  const model3DUrl = resolve3DModelUrl()
+
   const renderTelemetryCards = () => {
     const kmStr = `${(vehicle.km || 0).toLocaleString("tr-TR")} km`
     const ptoStr = `${(vehicle.motorSaatiPTO || 0).toLocaleString("tr-TR")} sa`
@@ -1116,6 +1124,8 @@ export default function VehicleDetailPage() {
               kopukKapasite={vehicle.kopuk_kapasite}
               isModalOpen={isInventoryModalOpen}
               plaka={vehicle.plaka}
+              modelUrl={model3DUrl}
+              vehicleModel={vehicle.model}
             />
           ) : (
             <Vehicle3DSchematic
