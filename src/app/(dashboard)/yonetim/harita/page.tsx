@@ -817,6 +817,23 @@ function HaritaContent() {
         await api.insert('incident_personnel', pPayload)
       }
 
+      // SMS Tetikleme (Müfreze Çıkışı başlatıldığında)
+      try {
+        await fetch('/api/sms/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'incident',
+            missionType: payload.olay_turu,
+            missionTitle: payload.olay_turu,
+            missionAddress: payload.adres,
+            detail: "Müfreze Çıkışı Başlatıldı"
+          })
+        })
+      } catch (smsErr) {
+        console.error("Müfreze Çıkışı SMS gonderilemedi:", smsErr)
+      }
+
       setShowModal('none')
       setActiveIncidentId(null)
       setPersonnelSearch("")
