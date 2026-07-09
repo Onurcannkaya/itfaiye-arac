@@ -136,7 +136,7 @@ export default function YetkilerPage() {
   }
 
   return (
-    <div className="space-y-5 w-full max-w-full px-1.5 md:px-3 pb-12 animate-in fade-in duration-300">
+    <div className="space-y-5 w-full max-w-full px-2 md:px-4 pb-[max(4rem,env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] animate-in fade-in duration-300">
 
       {/* ═══ Header ═══ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[var(--fd-border)] pb-4 gap-4">
@@ -199,18 +199,18 @@ export default function YetkilerPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-sm">
+        <div className="overflow-x-auto pb-4 scrollbar-thin">
+          <table className="w-full min-w-[1100px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-[var(--fd-border)] bg-[var(--fd-surface2)]/20">
-                <th className="p-4 text-left font-bold text-[10px] uppercase tracking-[.04em] text-[var(--fd-text3)] w-[280px]">
+                <th className="p-4 text-left font-bold text-[10px] uppercase tracking-[.04em] text-[var(--fd-text3)] w-[260px]">
                   KONTROL PANELLERİ
                 </th>
                 {ROLES.map(role => (
-                  <th key={role.id} className="p-4 text-center font-bold text-[10px] uppercase tracking-[.04em] text-[var(--fd-text3)]">
-                    <div className="space-y-0.5">
-                      <div className="text-[var(--fd-text2)] font-black text-[11px]">{role.title}</div>
-                      <div className="text-[9px] text-[var(--fd-text3)] font-medium normal-case tracking-normal max-w-[140px] mx-auto line-clamp-1">
+                  <th key={role.id} className="p-4 text-center font-bold text-[10px] uppercase tracking-[.04em] text-[var(--fd-text3)] align-top">
+                    <div className="space-y-1">
+                      <div className="text-[var(--fd-text2)] font-black text-[11px] leading-tight text-balance">{role.title}</div>
+                      <div className="text-[9px] text-[var(--fd-text3)] font-medium normal-case tracking-normal max-w-[150px] mx-auto text-balance leading-snug">
                         {role.desc}
                       </div>
                     </div>
@@ -281,12 +281,12 @@ export default function YetkilerPage() {
           >
             {/* Rütbe Başlığı */}
             <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] px-4 py-3 flex items-center gap-3">
-              <div className="p-2 rounded-[var(--fd-r-sm)] bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)]">
+              <div className="p-2 rounded-[var(--fd-r-sm)] bg-[var(--fd-accent-soft)] border border-[var(--fd-accent-soft2)] shrink-0">
                 <Shield className="w-4 h-4 text-[var(--fd-accent)]" />
               </div>
-              <div className="min-w-0">
-                <h3 className="font-black text-sm text-[var(--fd-text)] uppercase tracking-wide">{role.title}</h3>
-                <p className="text-[10px] text-[var(--fd-text3)] font-medium leading-tight">{role.desc}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-black text-sm text-[var(--fd-text)] uppercase tracking-wide leading-tight break-words">{role.title}</h3>
+                <p className="text-[10px] text-[var(--fd-text3)] font-medium leading-tight mt-0.5 break-words">{role.desc}</p>
               </div>
             </div>
 
