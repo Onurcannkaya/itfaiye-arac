@@ -9,7 +9,8 @@ import {
   AlertCircle, FileText, Clock, Loader2, Plus, X, Trash2
 } from "lucide-react"
 import { IncidentWizard } from "@/components/incident/IncidentWizard"
-import { Incident, Personnel, Vehicle } from "@/types"
+import { ImportPdfModal } from "@/components/incident/ImportPdfModal"
+import { Incident, Personnel, Vehicle, IncidentMedia } from "@/types"
 import { getTriageInfo } from "@/lib/utils"
 
 export default function OlaylarPage() {
@@ -19,7 +20,9 @@ export default function OlaylarPage() {
   
   const [loading, setLoading] = useState(true)
   const [isAdding, setIsAdding] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const [ek16Incident, setEk16Incident] = useState<Incident | null>(null)
+  const [incidentMedia, setIncidentMedia] = useState<IncidentMedia[]>([])
 
   useEffect(() => {
     fetchData()
@@ -34,15 +37,17 @@ export default function OlaylarPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [incRes, perRes, vehRes] = await Promise.all([
+      const [incRes, perRes, vehRes, mediaRes] = await Promise.all([
         api.from('incidents').select('*').order('created_at', { ascending: false }),
         api.from('personnel').select('*').eq('aktif', true).order('ad', { ascending: true }),
-        api.from('vehicles').select('*').order('plaka', { ascending: true })
+        api.from('vehicles').select('*').order('plaka', { ascending: true }),
+        api.from('incident_media').select('*')
       ])
       
       if (incRes.data) setIncidents(incRes.data)
       if (perRes.data) setPersonnelList(perRes.data)
       if (vehRes.data) setVehicleList(vehRes.data)
+      if (mediaRes.data) setIncidentMedia(mediaRes.data as IncidentMedia[])
       
     } catch (error) {
       console.error(error)
@@ -53,6 +58,7 @@ export default function OlaylarPage() {
 
   const handleSuccess = () => {
     setIsAdding(false)
+    setIsImporting(false)
     setEk16Incident(null)
     fetchData()
   }
@@ -103,14 +109,30 @@ export default function OlaylarPage() {
           <p className="text-[var(--fd-text3)] text-xs mt-1">Resmi EK-12, EK-16 ve EK-7 İtfaiye Olay Raporu</p>
         </div>
         {!isAdding && !ek16Incident && (
-          <Button
-            onClick={() => setIsAdding(true)}
-            className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Yeni Vaka Ekle
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsImporting(true)}
+              variant="outline"
+              className="text-[var(--fd-text2)] font-semibold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 hover:scale-[1.02] transition duration-150 shrink-0 border-[var(--fd-border-strong)]"
+            >
+              <FileText className="w-4 h-4" /> İçe Aktar (PDF)
+            </Button>
+            <Button
+              onClick={() => setIsAdding(true)}
+              className="bg-[var(--fd-accent)] hover:opacity-90 text-white font-bold text-xs px-3.5 py-2 h-9 rounded-[var(--fd-r-sm)] flex items-center gap-1.5 shadow-[var(--fd-shadow-sm)] hover:scale-[1.02] transition duration-150 shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Yeni Vaka Ekle
+            </Button>
+          </div>
         )}
       </div>
+
+      {isImporting && (
+        <ImportPdfModal 
+          onClose={() => setIsImporting(false)} 
+          onSuccess={handleSuccess} 
+        />
+      )}
 
       {/* Yeni Vaka Ekleme Modal Dialog */}
       {isAdding && (
@@ -229,7 +251,7 @@ export default function OlaylarPage() {
                     {inc.status === 'closed' && (
                       <Badge variant="success" className="text-[10px] mb-1 w-full justify-center">KAPALI</Badge>
                     )}
-                    <div className="flex gap-2 w-full">
+                    <div className="flex gap-2 w-full flex-wrap justify-end">
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -240,9 +262,24 @@ export default function OlaylarPage() {
                         }`}
                         onClick={() => setEk16Incident(inc)}
                       >
-                        <FileText className="w-3.5 h-3.5 mr-1.5" />
-                        {inc.status === 'closed' ? 'EK-16 Raporu' : 'Raporu Gör'}
+                        <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                        {inc.status === 'closed' ? 'EK-16' : 'Rapor'}
                       </Button>
+                      
+                      {incidentMedia.some(m => m.incident_id === inc.id && m.tip === 'pdf') && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 text-xs transition-all duration-200 active:scale-[0.97] rounded-[var(--fd-r-sm)] border-[var(--fd-border)] text-blue-600 hover:bg-blue-50"
+                          onClick={() => {
+                            const pdfMedia = incidentMedia.find(m => m.incident_id === inc.id && m.tip === 'pdf');
+                            if (pdfMedia) window.open(pdfMedia.url, '_blank');
+                          }}
+                        >
+                          Taranmış Belge
+                        </Button>
+                      )}
+                      
                       <Button
                         variant="outline"
                         size="icon"
@@ -255,7 +292,6 @@ export default function OlaylarPage() {
                     </div>
                   </div>
 
-                  {/* Mobile Action Area */}
                   <div className="flex md:hidden flex-col gap-2.5 w-full border-t border-[var(--fd-border)]/50 pt-3 mt-2">
                     {inc.status === 'closed' ? (
                       <div className="flex flex-col gap-2.5 w-full">
@@ -272,25 +308,31 @@ export default function OlaylarPage() {
                           </Button>
                         </div>
                         
-                        {/* Upper Button: Raporu Gör */}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full text-xs border-[var(--fd-border)] text-[var(--fd-text2)] hover:bg-[var(--fd-surface2)] h-10 gap-1.5 rounded-[var(--fd-r-sm)] transition-all duration-200 active:scale-[0.97]"
-                          onClick={() => setEk16Incident(inc)}
-                        >
-                          <FileText className="w-4 h-4 text-[var(--fd-info)]" /> Raporu Gör
-                        </Button>
-                        
-                        {/* Lower Button: EK-16 Raporu */}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full text-xs text-[var(--fd-success)] border-[var(--fd-border)] hover:bg-[rgba(22,163,74,0.06)] h-10 gap-1.5 font-semibold bg-[rgba(22,163,74,0.04)] rounded-[var(--fd-r-sm)] transition-all duration-200 active:scale-[0.97]"
-                          onClick={() => setEk16Incident(inc)}
-                        >
-                          <FileText className="w-4 h-4" /> EK-16 Raporu
-                        </Button>
+                        <div className="flex gap-2 w-full">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 text-xs font-semibold h-10 transition-all duration-200 active:scale-[0.97] rounded-[var(--fd-r-sm)] border-[var(--fd-border)] text-[var(--fd-success)] hover:bg-[rgba(22,163,74,0.08)]"
+                            onClick={() => setEk16Incident(inc)}
+                          >
+                            <FileText className="w-4 h-4 mr-1.5 shrink-0" />
+                            EK-16 Raporu
+                          </Button>
+                          
+                          {incidentMedia.some(m => m.incident_id === inc.id && m.tip === 'pdf') && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 text-xs font-semibold h-10 transition-all duration-200 active:scale-[0.97] rounded-[var(--fd-r-sm)] border-[var(--fd-border)] text-[var(--fd-info)] hover:bg-[rgba(37,99,235,0.08)]"
+                              onClick={() => {
+                                const pdfMedia = incidentMedia.find(m => m.incident_id === inc.id && m.tip === 'pdf');
+                                if (pdfMedia) window.open(pdfMedia.url, '_blank');
+                              }}
+                            >
+                              Belgeyi Gör
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className="flex gap-2 w-full">
