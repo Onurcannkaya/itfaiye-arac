@@ -42,6 +42,67 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
     }, 1000)
   }
 
+  /* ── Shared inline styles for 7cm × 4cm label ── */
+  const labelStyle: React.CSSProperties = {
+    width: '7cm',
+    height: '4cm',
+    border: '1.5px solid #000',
+    borderRadius: '4px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    fontFamily: 'sans-serif',
+    background: '#fff',
+    color: '#000',
+    pageBreakInside: 'avoid',
+  }
+
+  const headerBarStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: '#000',
+    color: '#fff',
+    padding: '1.5mm 3mm',
+    fontSize: '8px',
+    fontWeight: 800,
+    letterSpacing: '0.05em',
+    lineHeight: 1.2,
+    flexShrink: 0,
+  }
+
+  const contentStyle: React.CSSProperties = {
+    display: 'flex',
+    flex: 1,
+    padding: '2mm 3mm',
+    gap: '3mm',
+    alignItems: 'center',
+    minHeight: 0,
+  }
+
+  const qrBoxStyle: React.CSSProperties = {
+    flexShrink: 0,
+    width: '2.4cm',
+    height: '2.4cm',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid #ccc',
+    borderRadius: '3px',
+    padding: '1mm',
+    background: '#fff',
+  }
+
+  const infoStyle: React.CSSProperties = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: '1mm',
+    overflow: 'hidden',
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[400px]">
@@ -50,59 +111,90 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
             <QrCode className="w-5 h-5 text-primary" />
             QR Etiket Önizleme
           </DialogTitle>
+          <p className="text-xs text-[var(--fd-text3)] mt-1">
+            Baskı boyutu: 7cm × 4cm
+          </p>
         </DialogHeader>
 
-        {/* Label Preview (also used for printing) */}
-        <div className="px-6 pb-4">
-          <div
-            ref={printRef}
-            className="bg-white text-black rounded-xl border-2 border-dashed border-border p-6 flex flex-col items-center justify-center space-y-4"
-            style={{ fontFamily: "'Inter', Arial, sans-serif" }}
-          >
-            {/* Header */}
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-              Sivas Belediyesi
-              </p>
-              <p className="text-sm font-black uppercase tracking-wider text-red-600 mt-0.5">
-                🚒 İTFAİYE MÜDÜRLÜĞÜ
-              </p>
+        {/* Label Preview — scaled for screen, exact cm for print */}
+        <div className="px-6 pb-4 flex justify-center">
+          <div ref={printRef}>
+            <div className="qr-label-card" style={labelStyle}>
+              {/* Üst Bar — Plaka + Kurum */}
+              <div style={headerBarStyle}>
+                <span style={{ fontFamily: 'monospace', fontSize: '9px' }}>{plaka}</span>
+                <span style={{ fontSize: '7px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
+              </div>
+
+              {/* İçerik — QR Sol, Bilgiler Sağ */}
+              <div style={contentStyle}>
+                {/* QR Kod */}
+                <div style={qrBoxStyle}>
+                  <QRCode
+                    value={qrValue}
+                    size={80}
+                    level="M"
+                    bgColor="#FFFFFF"
+                    fgColor="#000000"
+                  />
+                </div>
+
+                {/* Sağ — Araç Bilgisi */}
+                <div style={infoStyle}>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '14px',
+                    fontWeight: 900,
+                    lineHeight: 1.2,
+                    color: '#000',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {plaka}
+                  </p>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '9px',
+                    fontWeight: 600,
+                    color: '#444',
+                    lineHeight: 1.3,
+                  }}>
+                    {aracTipi}{marka ? ` — ${marka}` : ""}
+                  </p>
+                  {compartmentLabel && (
+                    <p style={{
+                      margin: 0,
+                      fontSize: '8px',
+                      fontWeight: 700,
+                      color: '#000',
+                      background: '#f0f0f0',
+                      padding: '0.5mm 2mm',
+                      borderRadius: '2px',
+                      display: 'inline-block',
+                      alignSelf: 'flex-start',
+                    }}>
+                      {compartmentLabel}
+                    </p>
+                  )}
+                  <div style={{
+                    borderTop: '1px solid #ddd',
+                    paddingTop: '1mm',
+                    marginTop: '0.5mm',
+                  }}>
+                    <p style={{
+                      margin: 0,
+                      fontSize: '6px',
+                      color: '#888',
+                      fontWeight: 600,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                    }}>
+                      Sivas İtfaiyesi Araç Kontrol Sistemi
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            {/* Divider */}
-            <div className="w-full h-px bg-gray-200" />
-
-            {/* QR Code */}
-            <div className="p-3 bg-white rounded-lg">
-              <QRCode
-                value={qrValue}
-                size={180}
-                level="H"
-                bgColor="#FFFFFF"
-                fgColor="#000000"
-              />
-            </div>
-
-            {/* Vehicle Info */}
-            <div className="text-center space-y-1">
-              <p className="text-2xl font-black tracking-widest text-black">
-                {plaka}
-              </p>
-              <p className="text-sm font-semibold text-gray-600">
-                {aracTipi}{marka ? ` — ${marka}` : ""}
-              </p>
-              {compartmentLabel && (
-                <p className="text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full inline-block mt-1">
-                  📦 {compartmentLabel}
-                </p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="w-full h-px bg-gray-200" />
-            <p className="text-[8px] text-gray-400 text-center">
-              Bu QR kodu tarayarak envanter kontrolü veya günlük araç kontrolü başlatabilirsiniz.
-            </p>
           </div>
         </div>
 
