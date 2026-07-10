@@ -264,21 +264,20 @@ img, video, svg { max-width: 100%; height: auto; }
   }
   .print-area-container * { visibility: visible !important; color: black !important; }
   /* Argox IX4-350 PPLA — Kağıt: 83mm × 40mm */
-  @page { size: 83mm 40mm; margin: 1.5mm; }
-  body { background: white !important; overflow: visible !important; margin: 0 !important; }
+  @page { size: 83mm 40mm; margin: 0 !important; }
+  body { background: white !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
 
   /* ── 8cm × 4cm Etiket Kartı (Argox IX4-350) ── */
   .qr-label-card {
-    width: 8cm !important;
-    height: 4cm !important;
-    min-height: 4cm !important;
-    max-height: 4cm !important;
+    width: 80mm !important;
+    height: 39mm !important;
+    min-height: 39mm !important;
+    max-height: 39mm !important;
     box-sizing: border-box !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
-    page-break-after: always !important;
     overflow: hidden !important;
-    margin: 0 auto !important;
+    margin: 0.5mm auto !important; /* Center inside the 83x40 page */
   }
   .qr-label-grid {
     display: flex !important;
