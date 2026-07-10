@@ -85,11 +85,13 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
   targetLength: number
   envMapIntensity: number
   yOffset?: number
+  rotationY?: number
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
   fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
   hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: 0.05 },
   sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: 0.01 },
+  merdiven: { targetLength: 10.0, envMapIntensity: 1.5, rotationY: -Math.PI / 2, yOffset: 0.01 },
 }
 
 function normalizeVehicleModel(str?: string): string {
@@ -103,6 +105,7 @@ function getModelConfig(vehicleModel?: string) {
     if (norm.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
     if (norm.includes('hyundai') || norm.includes('accent')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
     if (norm.includes('sprinter')) return VEHICLE_MODEL_CONFIGS.sprinter
+    if (norm.includes('aeh 221') || norm.includes('aeh221') || norm.includes('merdiven')) return VEHICLE_MODEL_CONFIGS.merdiven
   }
   return VEHICLE_MODEL_CONFIGS.default
 }
@@ -118,6 +121,11 @@ function isHyundaiModel(vehicleModel?: string): boolean {
 
 function isSprinterModel(vehicleModel?: string): boolean {
   return normalizeVehicleModel(vehicleModel).includes('sprinter')
+}
+
+function isMerdivenModel(vehicleModel?: string): boolean {
+  const norm = normalizeVehicleModel(vehicleModel)
+  return norm.includes('aeh 221') || norm.includes('aeh221') || norm.includes('merdiven')
 }
 
 // ——— Doblo Hotspots (smaller utility vehicle, scaled to ~4.5 unit length) ———
@@ -140,6 +148,20 @@ const HYUNDAI_HOTSPOTS: Record<string, { position: [number, number, number]; lab
   sol_kapi:       { position: [0.85,  0.7,  0.0],  label: "Sol Kapı" }
 }
 
+// ——— Merdiven Hotspots (10m ladder truck) ———
+const MERDIVEN_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
+  kabin_ici:      { position: [0.0,  1.5,  3.5],  label: "Kabin İçi" },
+  sol_on_bolme:   { position: [1.2,  0.6,  1.5],  label: "Sol Ön Bölme" },
+  sol_orta_bolme: { position: [1.2,  0.6,  0.0],  label: "Sol Orta Bölme" },
+  sol_arka_bolme: { position: [1.2,  0.6, -1.5],  label: "Sol Arka Bölme" },
+  sag_on_bolme:   { position: [-1.2, 0.6,  1.5],  label: "Sağ Ön Bölme" },
+  sag_orta_bolme: { position: [-1.2, 0.6,  0.0],  label: "Sağ Orta Bölme" },
+  sag_arka_bolme: { position: [-1.2, 0.6, -1.5],  label: "Sağ Arka Bölme" },
+  arka_kapak:     { position: [0.0,  0.8, -4.5],  label: "Arka Kontrol" },
+  merdiven:       { position: [0.0,  3.0, -1.0],  label: "Merdiven Grubu" },
+  ust_bolme:      { position: [0.0,  2.5,  0.0],  label: "Üst Bölme" }
+}
+
 
 // ——— Vehicle Model sub-component ———
 function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: string }) {
@@ -148,11 +170,12 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
   const doblo = isDobloModel(vehicleModel)
   const isHyundai = isHyundaiModel(vehicleModel)
   const isSprinter = isSprinterModel(vehicleModel)
+  const isMerdiven = isMerdivenModel(vehicleModel)
 
   useEffect(() => {
     if (scene) {
-      if (doblo || isHyundai || isSprinter) {
-        // --- Doblo/Hyundai/Sprinter-specific logic ---
+      if (doblo || isHyundai || isSprinter || isMerdiven) {
+        // --- Doblo/Hyundai/Sprinter/Merdiven-specific logic ---
         // The GLTF root node has a matrix with -90° X rotation (Collada/OBJ → Three.js Y-up).
         // We must NOT reset rotation or the model breaks.
         scene.position.set(0, 0, 0)
@@ -177,6 +200,11 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
                }
              }
           })
+         }
+
+        // Apply config rotation before computing bounds if specified
+        if ((config as any).rotationY !== undefined) {
+           scene.rotation.y = (config as any).rotationY
         }
 
         // Compute bounds with the GLTF's internal transforms intact
@@ -396,7 +424,9 @@ function Scene({
   const isDoblo = isDobloModel(vehicleModel)
   const isHyundai = isHyundaiModel(vehicleModel)
   const isSprinter = isSprinterModel(vehicleModel)
-  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : (isHyundai ? HYUNDAI_HOTSPOTS : (isSprinter ? SPRINTER_HOTSPOTS : COMPARTMENT_HOTSPOTS))
+  const isMerdiven = isMerdivenModel(vehicleModel)
+
+  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : (isHyundai ? HYUNDAI_HOTSPOTS : (isSprinter ? SPRINTER_HOTSPOTS : (isMerdiven ? MERDIVEN_HOTSPOTS : COMPARTMENT_HOTSPOTS)))
 
   const hotspots = Object.entries(hotspotSource).map(([key, data]) => {
     const matchedKey = matchHotspotToKey(key, compartmentKeys)
@@ -447,7 +477,7 @@ function Scene({
       <FireTruckModel url={modelUrl || "/3dmodels/scene.gltf"} vehicleModel={vehicleModel} />
 
       {/* License Plates — positioned differently based on vehicle type */}
-      {plaka && !isDoblo && !isHyundai && !isSprinter && (
+      {plaka && !isDoblo && !isHyundai && !isSprinter && !isMerdiven && (
         <>
           {/* Rear License Plate (Fire Truck) */}
           <Html position={[0.46, 0.64, -3.01]} transform rotation={[0, Math.PI, 0]} scale={0.22}>
@@ -523,6 +553,29 @@ function Scene({
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px]"
+            >
+              <span>{plaka}</span>
+            </div>
+          </Html>
+        </>
+      )}
+
+      {plaka && isMerdiven && (
+        <>
+          {/* Front License Plate (Merdiven) */}
+          <Html position={[0.0, 0.5, 4.5]} transform scale={0.25}>
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3.5px] border-l-blue-600 font-sans min-w-[70px] h-[16px] leading-none"
+            >
+              <span>{plaka}</span>
+            </div>
+          </Html>
+          {/* Rear License Plate (Merdiven) */}
+          <Html position={[0.0, 0.8, -4.8]} transform rotation={[0, Math.PI, 0]} scale={0.25}>
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[12px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3.5px] border-l-blue-600 font-sans min-w-[70px] h-[16px]"
             >
               <span>{plaka}</span>
             </div>

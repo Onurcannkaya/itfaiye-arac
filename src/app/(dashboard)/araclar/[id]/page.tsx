@@ -664,6 +664,7 @@ export default function VehicleDetailPage() {
     if (searchString.includes("doblo")) return "/3dmodels/2005-2007_fiat_doblo_mk1_uk-i4gas/scene.gltf"
     if (searchString.includes("hyundai") || searchString.includes("accent")) return "/3dmodels/hyundai_accent_tagaz_2004/scene.gltf"
     if (searchString.includes("sprinter")) return "/3dmodels/58-tl-737/scene.gltf"
+    if (searchString.includes("aeh 221") || searchString.includes("aeh221") || searchString.includes("merdiven")) return "/3dmodels/merdiven/scene.gltf"
     
     return undefined // Falls back to default fire truck model
   }
