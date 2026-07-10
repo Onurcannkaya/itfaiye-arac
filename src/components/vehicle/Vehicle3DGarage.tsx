@@ -467,13 +467,19 @@ function Scene({
         <>
           {/* Front License Plate (Doblo) — front bumper at +Z, bottom intake (red circle) */}
           <Html position={[0.0, 0.15, 2.28]} transform scale={0.14}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none"
+            >
               <span>{plaka}</span>
             </div>
           </Html>
           {/* Rear License Plate (Doblo) — trunk at -Z, left bumper recess (red circle) */}
           <Html position={[-0.32, 0.35, -2.25]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]"
+            >
               <span>{plaka}</span>
             </div>
           </Html>
@@ -483,13 +489,19 @@ function Scene({
         <>
           {/* Front License Plate (Hyundai) */}
           <Html position={[0.0, 0.22, 2.15]} transform scale={0.14}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none"
+            >
               <span>{plaka}</span>
             </div>
           </Html>
           {/* Rear License Plate (Hyundai) */}
           <Html position={[0.0, 0.35, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]"
+            >
               <span>{plaka}</span>
             </div>
           </Html>
@@ -498,14 +510,20 @@ function Scene({
       {plaka && isSprinter && (
         <>
           {/* Front License Plate (Sprinter) */}
-          <Html position={[0.0, 0.5, 2.9]} transform scale={0.18}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none">
+          <Html position={[0.0, 0.14, 3.03]} transform scale={0.15}>
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none"
+            >
               <span>{plaka}</span>
             </div>
           </Html>
           {/* Rear License Plate (Sprinter) */}
-          <Html position={[0.0, 0.65, -2.9]} transform rotation={[0, Math.PI, 0]} scale={0.18}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px]">
+          <Html position={[0.0, 0.75, -2.93]} transform rotation={[0, Math.PI, 0]} scale={0.15}>
+            <div 
+              style={{ backfaceVisibility: 'hidden' }}
+              className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px]"
+            >
               <span>{plaka}</span>
             </div>
           </Html>
