@@ -88,12 +88,14 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
   fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
+  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: 0.05 },
 }
 
 function getModelConfig(vehicleModel?: string) {
   if (vehicleModel) {
     const key = vehicleModel.toLowerCase().replace(/[\s-]+/g, '_')
     if (key.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
+    if (key.includes('hyundai') || key.includes('accent')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
   }
   return VEHICLE_MODEL_CONFIGS.default
 }
@@ -102,33 +104,59 @@ function isDobloModel(vehicleModel?: string): boolean {
   return !!vehicleModel && vehicleModel.toLowerCase().includes('doblo')
 }
 
+function isHyundaiModel(vehicleModel?: string): boolean {
+  return !!vehicleModel && (vehicleModel.toLowerCase().includes('hyundai') || vehicleModel.toLowerCase().includes('accent'))
+}
+
 // ——— Doblo Hotspots (smaller utility vehicle, scaled to ~4.5 unit length) ———
 const DOBLO_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
   arac_ici:       { position: [0.0,   0.9,  0.4],  label: "Araç İçi" },
   kabin_ici:      { position: [0.0,   0.85, 1.3],  label: "Kabin İçi" },
   bagaj_ici:      { position: [0.0,   0.6,  -1.5], label: "Bagaj İçi" },
   arka_kapak:     { position: [0.0,   0.7,  -2.0], label: "Arka Kapak" },
-  kasa_ici:       { position: [0.0,   0.5,  -0.3], label: "Kasa İçi" },
-  sol_dolap:      { position: [0.65,  0.5,  -0.7], label: "Sol Dolap" },
-  sag_dolap:      { position: [-0.65, 0.5,  -0.7], label: "Sağ Dolap" },
-  arac_ustu:      { position: [0.0,   1.5,  0.0],  label: "Araç Üstü" },
+  sag_kapi:       { position: [-0.9,  0.8,  0.4],  label: "Sağ Kapı" },
+  sol_kapi:       { position: [0.9,   0.8,  0.4],  label: "Sol Kapı" }
 }
+
+// ——— Hyundai Hotspots (sedan vehicle, scaled to ~4.3 unit length) ———
+const HYUNDAI_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
+  arac_ici:       { position: [0.0,   0.8,  0.0],  label: "Araç İçi" },
+  kabin_ici:      { position: [0.0,   0.8,  0.8],  label: "Kabin İçi" },
+  bagaj_ici:      { position: [0.0,   0.6,  -1.6], label: "Bagaj İçi" },
+  arka_kapak:     { position: [0.0,   0.7,  -2.1], label: "Arka Kapak" },
+  sag_kapi:       { position: [-0.85, 0.7,  0.0],  label: "Sağ Kapı" },
+  sol_kapi:       { position: [0.85,  0.7,  0.0],  label: "Sol Kapı" }
+}
+
 
 // ——— Vehicle Model sub-component ———
 function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: string }) {
   const { scene } = useGLTF(url)
   const config = getModelConfig(vehicleModel)
   const doblo = isDobloModel(vehicleModel)
+  const isHyundai = isHyundaiModel(vehicleModel)
 
   useEffect(() => {
     if (scene) {
-      if (doblo) {
-        // --- Doblo-specific logic ---
+      if (doblo || isHyundai) {
+        // --- Doblo/Hyundai-specific logic ---
         // The GLTF root node has a matrix with -90° X rotation (Collada/OBJ → Three.js Y-up).
         // We must NOT reset rotation or the model breaks.
         scene.position.set(0, 0, 0)
         scene.scale.setScalar(1)
         // Do NOT touch scene.rotation — the GLTF root matrix handles coordinate conversion.
+
+        // For Hyundai, hide the huge background plane before calculating bounds
+        if (isHyundai) {
+          scene.traverse((child: any) => {
+             if (child.isMesh && child.material && child.material.name === 'Plastik' && child.geometry) {
+               child.geometry.computeBoundingBox()
+               if (child.geometry.boundingBox && (child.geometry.boundingBox.max.x - child.geometry.boundingBox.min.x > 100)) {
+                 child.visible = false
+               }
+             }
+          })
+        }
 
         // Compute bounds with the GLTF's internal transforms intact
         const box = new THREE.Box3().setFromObject(scene)
@@ -334,7 +362,8 @@ function Scene({
 
   // Determine which hotspot set to use based on vehicle model
   const isDoblo = vehicleModel && vehicleModel.toLowerCase().includes('doblo')
-  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : COMPARTMENT_HOTSPOTS
+  const isHyundai = vehicleModel && (vehicleModel.toLowerCase().includes('hyundai') || vehicleModel.toLowerCase().includes('accent'))
+  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : (isHyundai ? HYUNDAI_HOTSPOTS : COMPARTMENT_HOTSPOTS)
 
   const hotspots = Object.entries(hotspotSource).map(([key, data]) => {
     const matchedKey = matchHotspotToKey(key, compartmentKeys)
@@ -385,7 +414,7 @@ function Scene({
       <FireTruckModel url={modelUrl || "/3dmodels/scene.gltf"} vehicleModel={vehicleModel} />
 
       {/* License Plates — positioned differently based on vehicle type */}
-      {plaka && !isDoblo && (
+      {plaka && !isDoblo && !isHyundai && (
         <>
           {/* Rear License Plate (Fire Truck) */}
           <Html position={[0.46, 0.64, -3.01]} transform rotation={[0, Math.PI, 0]} scale={0.22}>
@@ -411,6 +440,22 @@ function Scene({
           </Html>
           {/* Rear License Plate (Doblo) — trunk at -Z, left bumper recess (red circle) */}
           <Html position={[-0.32, 0.35, -2.25]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+        </>
+      )}
+      {plaka && isHyundai && (
+        <>
+          {/* Front License Plate (Hyundai) */}
+          <Html position={[0.0, 0.3, 2.1]} transform scale={0.14}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+          {/* Rear License Plate (Hyundai) */}
+          <Html position={[0.0, 0.45, -2.1]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
               <span>{plaka}</span>
             </div>
