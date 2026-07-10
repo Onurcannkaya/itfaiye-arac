@@ -497,7 +497,7 @@ function Scene({
       />
 
       {/* Vehicle model — centered and scaled in FireTruckModel component */}
-      <FireTruckModel url={modelUrl || "/3dmodels/scene.gltf"} vehicleModel={vehicleModel} />
+      <FireTruckModel url={modelUrl || "/3dmodels/scene_optimized.glb"} vehicleModel={vehicleModel} />
 
       {/* License Plates — positioned differently based on vehicle type */}
       {plaka && !isDoblo && !isHyundai && !isSprinter && !isMerdiven && (
@@ -827,4 +827,4 @@ export function Vehicle3DGarage({
 }
 
 // Preload model
-useGLTF.preload("/3dmodels/scene.gltf")
+useGLTF.preload("/3dmodels/scene_optimized.glb")
