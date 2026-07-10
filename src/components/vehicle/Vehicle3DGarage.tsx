@@ -336,7 +336,7 @@ function HotspotMarker({
 // ——— Garage Floor ———
 // ——— Sprinter Hotspots (van vehicle, scaled to ~5.8 unit length) ———
 const SPRINTER_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  arac_ici:       { position: [0.0,   1.2,  1.0],  label: "Araç İçi" },
+  arac_ici:       { position: [0.0,   1.0,  3.2],  label: "Araç İçi" },
   kabin_ici:      { position: [0.0,   1.1,  2.0],  label: "Kabin İçi" },
   bagaj_ici:      { position: [0.0,   1.0,  -2.5], label: "Bagaj İçi" },
   arka_kapak:     { position: [0.0,   1.0,  -3.0], label: "Arka Kapak" },
