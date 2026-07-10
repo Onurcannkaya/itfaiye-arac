@@ -657,9 +657,9 @@ export default function VehicleDetailPage() {
   const isKurtarma = rawTipi.includes("KURTARMA")
   const isMerdivenli = rawTipi.includes("MERDİVEN") || rawTipi.includes("METRE")
 
-  // 3D Model URL resolution based on vehicle brand/model
   const resolve3DModelUrl = (): string | undefined => {
-    const searchString = `${vehicle.model || ''} ${vehicle.aciklama || ''} ${vehicle.aracTipi || ''} ${vehicle.arac_tipi || ''} ${vehicle.marka || ''}`.toLowerCase()
+    const rawSearch = `${vehicle.model || ''} ${vehicle.aciklama || ''} ${vehicle.aracTipi || ''} ${vehicle.arac_tipi || ''} ${vehicle.marka || ''}`.toLowerCase()
+    const searchString = rawSearch.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     
     if (searchString.includes("doblo")) return "/3dmodels/2005-2007_fiat_doblo_mk1_uk-i4gas/scene.gltf"
     if (searchString.includes("hyundai") || searchString.includes("accent")) return "/3dmodels/hyundai_accent_tagaz_2004/scene.gltf"

@@ -92,26 +92,32 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
   sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: 0.01 },
 }
 
+function normalizeVehicleModel(str?: string): string {
+  if (!str) return ''
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
 function getModelConfig(vehicleModel?: string) {
-  if (vehicleModel) {
-    const key = vehicleModel.toLowerCase().replace(/[\s-]+/g, '_')
-    if (key.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
-    if (key.includes('hyundai') || key.includes('accent')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
-    if (key.includes('sprinter')) return VEHICLE_MODEL_CONFIGS.sprinter
+  const norm = normalizeVehicleModel(vehicleModel)
+  if (norm) {
+    if (norm.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
+    if (norm.includes('hyundai') || norm.includes('accent')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
+    if (norm.includes('sprinter')) return VEHICLE_MODEL_CONFIGS.sprinter
   }
   return VEHICLE_MODEL_CONFIGS.default
 }
 
 function isDobloModel(vehicleModel?: string): boolean {
-  return !!vehicleModel && vehicleModel.toLowerCase().includes('doblo')
+  return normalizeVehicleModel(vehicleModel).includes('doblo')
 }
 
 function isHyundaiModel(vehicleModel?: string): boolean {
-  return !!vehicleModel && (vehicleModel.toLowerCase().includes('hyundai') || vehicleModel.toLowerCase().includes('accent'))
+  const norm = normalizeVehicleModel(vehicleModel)
+  return norm.includes('hyundai') || norm.includes('accent')
 }
 
 function isSprinterModel(vehicleModel?: string): boolean {
-  return !!vehicleModel && vehicleModel.toLowerCase().includes('sprinter')
+  return normalizeVehicleModel(vehicleModel).includes('sprinter')
 }
 
 // ——— Doblo Hotspots (smaller utility vehicle, scaled to ~4.5 unit length) ———
