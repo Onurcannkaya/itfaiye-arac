@@ -393,9 +393,9 @@ function Scene({
   const controlsRef = useRef<any>(null)
 
   // Determine which hotspot set to use based on vehicle model
-  const isDoblo = vehicleModel && vehicleModel.toLowerCase().includes('doblo')
-  const isHyundai = vehicleModel && (vehicleModel.toLowerCase().includes('hyundai') || vehicleModel.toLowerCase().includes('accent'))
-  const isSprinter = vehicleModel && vehicleModel.toLowerCase().includes('sprinter')
+  const isDoblo = isDobloModel(vehicleModel)
+  const isHyundai = isHyundaiModel(vehicleModel)
+  const isSprinter = isSprinterModel(vehicleModel)
   const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : (isHyundai ? HYUNDAI_HOTSPOTS : (isSprinter ? SPRINTER_HOTSPOTS : COMPARTMENT_HOTSPOTS))
 
   const hotspots = Object.entries(hotspotSource).map(([key, data]) => {
