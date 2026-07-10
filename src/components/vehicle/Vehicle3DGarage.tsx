@@ -336,7 +336,7 @@ function HotspotMarker({
 // ——— Garage Floor ———
 // ——— Sprinter Hotspots (van vehicle, scaled to ~5.8 unit length) ———
 const SPRINTER_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  arac_ici:       { position: [0.0,   1.0,  3.2],  label: "Araç İçi" },
+  arac_ici:       { position: [-1.2,  0.9,  0.4],  label: "Araç İçi" },
   kabin_ici:      { position: [0.0,   1.1,  2.0],  label: "Kabin İçi" },
   bagaj_ici:      { position: [0.0,   1.0,  -2.5], label: "Bagaj İçi" },
   arka_kapak:     { position: [0.0,   1.0,  -3.0], label: "Arka Kapak" },
@@ -510,7 +510,7 @@ function Scene({
       {plaka && isSprinter && (
         <>
           {/* Front License Plate (Sprinter) */}
-          <Html position={[0.0, 0.11, 3.06]} transform scale={0.17}>
+          <Html position={[0.0, 0.11, 2.72]} transform scale={0.17}>
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none"
@@ -519,7 +519,7 @@ function Scene({
             </div>
           </Html>
           {/* Rear License Plate (Sprinter) */}
-          <Html position={[0.0, 0.75, -2.93]} transform rotation={[0, Math.PI, 0]} scale={0.15}>
+          <Html position={[0.0, 0.75, -1.97]} transform rotation={[0, Math.PI, 0]} scale={0.15}>
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px]"
