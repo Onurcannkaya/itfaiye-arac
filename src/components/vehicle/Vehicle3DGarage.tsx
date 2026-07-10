@@ -150,13 +150,13 @@ const HYUNDAI_HOTSPOTS: Record<string, { position: [number, number, number]; lab
 
 // ——— Merdiven Hotspots (10m ladder truck) ———
 const MERDIVEN_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  arac_ici:        { position: [0.0,   1.4,  3.2],  label: "Araç İçi (Kabin)" },
-  sol_on_kapak:    { position: [1.15,  0.7,  1.5],  label: "Sol Ön Kapak" },
-  sol_orta_kapak:  { position: [1.15,  0.7,  0.0],  label: "Sol Orta Kapak" },
-  küçük_kapak:     { position: [1.15,  0.7, -1.5],  label: "Sol Arka Kapak" },
-  sag_on_kapak:    { position: [-1.15, 0.7,  1.5],  label: "Sağ Ön Kapak" },
-  sag_orta_kapak:  { position: [-1.15, 0.7,  0.0],  label: "Sağ Orta Kapak" },
-  sag_arka_kapak:  { position: [-1.15, 0.7, -1.5],  label: "Sağ Arka Kapak" },
+  arac_ici:        { position: [0.0,   1.1,  4.2],  label: "Araç İçi (Kabin)" },
+  sol_on_kapak:    { position: [1.15,  0.7,  1.2],  label: "Sol Ön Kapak" },
+  sol_orta_kapak:  { position: [1.15,  0.7, -2.5],  label: "Sol Orta Kapak" },
+  küçük_kapak:     { position: [1.15,  0.7, -1.0],  label: "Sol Arka Kapak" },
+  sag_on_kapak:    { position: [-1.15, 0.7,  1.2],  label: "Sağ Ön Kapak" },
+  sag_orta_kapak:  { position: [-1.15, 0.7, -0.8],  label: "Sağ Orta Kapak" },
+  sag_arka_kapak:  { position: [-1.15, 0.7, -2.5],  label: "Sağ Arka Kapak" },
   arac_ustu:       { position: [0.0,   2.5, -0.5],  label: "Araç Üstü / Merdiven" }
 }
 
@@ -267,12 +267,22 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
               }
             }
 
+            // Merdiven: override body color to fire truck red
+            if (isMerdiven && child.material.name) {
+              const matName = child.material.name.toLowerCase()
+              if (matName === 'material_3') {
+                child.material.color = new THREE.Color(0xb91c1c) // Red
+                child.material.metalness = 0.2
+                child.material.roughness = 0.4
+              }
+            }
+
             child.material.needsUpdate = true
           }
         }
       })
     }
-  }, [scene, config, doblo])
+  }, [scene, config, doblo, isMerdiven])
 
   return <primitive object={scene} />
 }
