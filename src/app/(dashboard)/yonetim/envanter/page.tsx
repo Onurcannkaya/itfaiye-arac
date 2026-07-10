@@ -1588,36 +1588,124 @@ function VehicleInventoryTab() {
           )
         )}
 
-        {/* --- Hidden QR print element (window.print() clone source) --- */}
+        {/* --- Hidden QR print element — 7cm × 4cm Etiket Kartları --- */}
         {mounted && selectedPlaka && (
           <div id="print-area-qr" style={{ display: 'none' }}>
              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem', color: 'black', borderBottom: '6px solid black', paddingBottom: '0.5rem' }}>
-                  SİVAS BELEDİYESİ İTFAİYE MÜDÜRLÜĞÜ
-                </h1>
-                <p style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2rem', color: 'black' }}>
-                  Araç QR Kod & Envanter Dizin Etiketleri (Araç Plakası: {selectedPlaka})
-                </p>
+                <div className="print-header-section" style={{ marginBottom: '6mm', textAlign: 'center', borderBottom: '2px solid black', paddingBottom: '4mm' }}>
+                  <h1 style={{ fontSize: '18px', fontWeight: 900, margin: 0, fontFamily: 'sans-serif', color: 'black' }}>
+                    SİVAS BELEDİYESİ İTFAİYE MÜDÜRLÜĞÜ
+                  </h1>
+                  <p style={{ fontSize: '11px', fontWeight: 600, margin: '2px 0 0 0', fontFamily: 'sans-serif', color: 'black' }}>
+                    Araç QR Kod &amp; Envanter Dizin Etiketleri — {selectedPlaka}
+                  </p>
+                </div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+                <div className="qr-label-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '3mm', justifyContent: 'center' }}>
                   {printCompartments.map(comp => (
-                    <div key={comp} style={{ border: '6px solid black', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '2rem', textAlign: 'center', breakInside: 'avoid' as any, pageBreakInside: 'avoid' }}>
-                       <h2 style={{ fontSize: '2rem', fontWeight: 950, background: 'black', color: 'white', padding: '0.75rem 2rem', borderRadius: '9999px', marginBottom: '2rem', whiteSpace: 'nowrap' }}>
-                          {selectedPlaka}
-                       </h2>
-                       
-                       <div style={{ background: 'white', padding: '1rem', border: '3px solid black' }}>
-                         <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={240} level={"H"} />
-                       </div>
-                       
-                       <div style={{ marginTop: '2rem', borderTop: '4px solid black', width: '100%', paddingTop: '1rem' }}>
-                         <h3 style={{ fontSize: '1.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'black' }}>
-                           {comp}
-                         </h3>
-                         <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', fontFamily: 'monospace', marginTop: '0.75rem', letterSpacing: '0.2em', color: 'rgba(0,0,0,0.7)', fontWeight: 800 }}>
-                           Sivas İtfaiyesi Lojistik
-                         </p>
-                       </div>
+                    <div
+                      key={comp}
+                      className="qr-label-card"
+                      style={{
+                        width: '7cm',
+                        height: '4cm',
+                        border: '1.5px solid #000',
+                        borderRadius: '4px',
+                        boxSizing: 'border-box' as const,
+                        display: 'flex',
+                        flexDirection: 'column' as const,
+                        overflow: 'hidden',
+                        fontFamily: 'sans-serif',
+                        pageBreakInside: 'avoid',
+                      }}
+                    >
+                      {/* Üst Bar — Plaka + Kurum */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#000',
+                        color: '#fff',
+                        padding: '1.5mm 3mm',
+                        fontSize: '8px',
+                        fontWeight: 800,
+                        letterSpacing: '0.05em',
+                        lineHeight: 1.2,
+                        flexShrink: 0,
+                      }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '9px' }}>{selectedPlaka}</span>
+                        <span style={{ fontSize: '7px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
+                      </div>
+
+                      {/* İçerik — QR Sol, Bilgiler Sağ */}
+                      <div style={{
+                        display: 'flex',
+                        flex: 1,
+                        padding: '2mm 3mm',
+                        gap: '3mm',
+                        alignItems: 'center',
+                        minHeight: 0,
+                      }}>
+                        {/* QR Kod */}
+                        <div style={{
+                          flexShrink: 0,
+                          width: '2.4cm',
+                          height: '2.4cm',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid #ccc',
+                          borderRadius: '3px',
+                          padding: '1mm',
+                          background: '#fff',
+                        }}>
+                          <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={80} level={"M"} includeMargin={false} />
+                        </div>
+
+                        {/* Sağ — Bölme Bilgisi */}
+                        <div style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column' as const,
+                          justifyContent: 'center',
+                          gap: '1mm',
+                          overflow: 'hidden',
+                        }}>
+                          <p style={{
+                            margin: 0,
+                            fontSize: '12px',
+                            fontWeight: 900,
+                            lineHeight: 1.2,
+                            color: '#000',
+                          }}>
+                            {comp}
+                          </p>
+                          <p style={{
+                            margin: 0,
+                            fontSize: '8px',
+                            fontWeight: 600,
+                            color: '#555',
+                          }}>
+                            {tableRows.filter(r => r.bolme_kapak === comp).length} Malzeme
+                          </p>
+                          <div style={{
+                            borderTop: '1px solid #ddd',
+                            paddingTop: '1mm',
+                            marginTop: '1mm',
+                          }}>
+                            <p style={{
+                              margin: 0,
+                              fontSize: '6px',
+                              color: '#888',
+                              fontWeight: 600,
+                              letterSpacing: '0.08em',
+                              textTransform: 'uppercase' as const,
+                            }}>
+                              Sivas İtfaiyesi Envanter Sistemi
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

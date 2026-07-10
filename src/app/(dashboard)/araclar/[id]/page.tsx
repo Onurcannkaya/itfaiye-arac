@@ -1885,38 +1885,125 @@ export default function VehicleDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Print Area */}
+      {/* Hidden Print Area — 7cm × 4cm Etiket Kartları */}
       <div id="vehicle-print-area" className="hidden print:block print:w-full">
-        <div className="print-header mb-8 text-center border-b-2 border-black pb-4">
-          <h1 className="text-3xl font-black">{vehicle.plaka}</h1>
-          <p className="text-xl font-bold mt-1">Araç İçi Envanter ve Barkod Sistemi</p>
-          <p className="text-sm mt-2 text-gray-600">Bu QR kodları ilgili bölmelere yapıştırarak hızlı sayım yapabilirsiniz.</p>
+        <div className="print-header-section" style={{ marginBottom: '6mm', textAlign: 'center', borderBottom: '2px solid black', paddingBottom: '4mm' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 900, margin: 0, fontFamily: 'sans-serif' }}>{vehicle.plaka}</h1>
+          <p style={{ fontSize: '11px', fontWeight: 600, margin: '2px 0 0 0', fontFamily: 'sans-serif' }}>Araç İçi Envanter ve Barkod Sistemi</p>
         </div>
 
-        <div className="print-grid grid grid-cols-2 gap-8 gap-y-12 place-items-center">
+        <div className="qr-label-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '3mm', justifyContent: 'center' }}>
           {compartKeys.map((comp) => {
              const qrUrl = buildQrUrl(vehicle.plaka, comp)
              return (
-               <div key={comp} className="print-qr-item flex flex-col items-center border-2 border-black p-6 rounded-2xl w-[85%] relative break-inside-avoid shadow-sm">
-                 <div className="absolute -top-4 bg-white px-4">
-                   <h3 className="text-xl font-black tracking-tight">{vehicle.plaka}</h3>
+               <div
+                 key={comp}
+                 className="qr-label-card"
+                 style={{
+                   width: '7cm',
+                   height: '4cm',
+                   border: '1.5px solid #000',
+                   borderRadius: '4px',
+                   boxSizing: 'border-box',
+                   display: 'flex',
+                   flexDirection: 'column',
+                   overflow: 'hidden',
+                   fontFamily: 'sans-serif',
+                   pageBreakInside: 'avoid',
+                 }}
+               >
+                 {/* Üst Bar — Plaka + Kurum */}
+                 <div style={{
+                   display: 'flex',
+                   justifyContent: 'space-between',
+                   alignItems: 'center',
+                   background: '#000',
+                   color: '#fff',
+                   padding: '1.5mm 3mm',
+                   fontSize: '8px',
+                   fontWeight: 800,
+                   letterSpacing: '0.05em',
+                   lineHeight: 1.2,
+                   flexShrink: 0,
+                 }}>
+                   <span style={{ fontFamily: 'monospace', fontSize: '9px' }}>{vehicle.plaka}</span>
+                   <span style={{ fontSize: '7px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
                  </div>
-                 
-                 <div className="bg-white p-2 rounded-xl mb-4 border border-gray-200 shadow-inner">
-                   <QRCodeSVG 
-                     value={qrUrl} 
-                     size={220}
-                     level="M"
-                     includeMargin={false}
-                   />
+
+                 {/* İçerik — QR Sol, Bilgiler Sağ */}
+                 <div style={{
+                   display: 'flex',
+                   flex: 1,
+                   padding: '2mm 3mm',
+                   gap: '3mm',
+                   alignItems: 'center',
+                   minHeight: 0,
+                 }}>
+                   {/* QR Kod */}
+                   <div style={{
+                     flexShrink: 0,
+                     width: '2.4cm',
+                     height: '2.4cm',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     border: '1px solid #ccc',
+                     borderRadius: '3px',
+                     padding: '1mm',
+                     background: '#fff',
+                   }}>
+                     <QRCodeSVG
+                       value={qrUrl}
+                       size={80}
+                       level="M"
+                       includeMargin={false}
+                     />
+                   </div>
+
+                   {/* Sağ — Bölme Bilgisi */}
+                   <div style={{
+                     flex: 1,
+                     display: 'flex',
+                     flexDirection: 'column',
+                     justifyContent: 'center',
+                     gap: '1mm',
+                     overflow: 'hidden',
+                   }}>
+                     <p style={{
+                       margin: 0,
+                       fontSize: '12px',
+                       fontWeight: 900,
+                       lineHeight: 1.2,
+                       color: '#000',
+                     }}>
+                       {getCompartmentLabel(comp)}
+                     </p>
+                     <p style={{
+                       margin: 0,
+                       fontSize: '8px',
+                       fontWeight: 600,
+                       color: '#555',
+                     }}>
+                       {vehicle.bolmeler?.[comp]?.length || 0} Malzeme
+                     </p>
+                     <div style={{
+                       borderTop: '1px solid #ddd',
+                       paddingTop: '1mm',
+                       marginTop: '1mm',
+                     }}>
+                       <p style={{
+                         margin: 0,
+                         fontSize: '6px',
+                         color: '#888',
+                         fontWeight: 600,
+                         letterSpacing: '0.08em',
+                         textTransform: 'uppercase',
+                       }}>
+                         Sivas İtfaiyesi Envanter Sistemi
+                       </p>
+                     </div>
+                   </div>
                  </div>
-                 
-                 <div className="text-center w-full bg-gray-100 py-3 rounded-lg border border-gray-300">
-                   <p className="font-bold text-lg text-black">{getCompartmentLabel(comp)}</p>
-                   <p className="text-xs text-gray-600 mt-1">{vehicle.bolmeler?.[comp]?.length || 0} Malzeme</p>
-                 </div>
-                 
-                 <p className="text-[10px] text-gray-400 mt-4 text-center">Sivas İtfaiyesi Araç ve Envanter Yönetimi</p>
                </div>
              )
           })}

@@ -260,11 +260,32 @@ img, video, svg { max-width: 100%; height: auto; }
   body > .print-area-container, .print-area-container {
     display: block !important; position: relative !important; left: 0 !important; top: 0 !important;
     width: 100vw !important; background: white !important; z-index: 999999 !important;
-    padding: 15mm !important; color: black !important;
+    padding: 8mm !important; color: black !important;
   }
   .print-area-container * { visibility: visible !important; color: black !important; }
-  @page { size: A4; margin: 8mm; }
+  @page { size: A4; margin: 6mm; }
   body { background: white !important; overflow: visible !important; }
+
+  /* ── 7cm × 4cm Etiket Kartı ── */
+  .qr-label-card {
+    width: 7cm !important;
+    height: 4cm !important;
+    min-height: 4cm !important;
+    max-height: 4cm !important;
+    box-sizing: border-box !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+  }
+  .qr-label-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 3mm !important;
+    justify-content: center !important;
+  }
+  .qr-label-grid .print-header-section {
+    display: none !important;
+  }
 }
 
 ::selection { background: var(--fd-accent-soft2); color: inherit; }
