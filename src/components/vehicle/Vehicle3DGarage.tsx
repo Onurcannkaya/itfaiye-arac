@@ -146,12 +146,20 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         scene.scale.setScalar(1)
         // Do NOT touch scene.rotation — the GLTF root matrix handles coordinate conversion.
 
-        // For Hyundai, hide the huge background plane before calculating bounds
+        // For Hyundai, hide the huge background plane and original Russian plates before calculating bounds
         if (isHyundai) {
           scene.traverse((child: any) => {
-             if (child.isMesh && child.material && child.material.name === 'Plastik' && child.geometry) {
-               child.geometry.computeBoundingBox()
-               if (child.geometry.boundingBox && (child.geometry.boundingBox.max.x - child.geometry.boundingBox.min.x > 100)) {
+             if (child.isMesh && child.material) {
+               const matName = child.material.name || ''
+               // Hide huge ground plane
+               if (matName === 'Plastik' && child.geometry) {
+                 child.geometry.computeBoundingBox()
+                 if (child.geometry.boundingBox && (child.geometry.boundingBox.max.x - child.geometry.boundingBox.min.x > 100)) {
+                   child.visible = false
+                 }
+               }
+               // Hide original Russian plates
+               if (matName.includes('Gos_nomer')) {
                  child.visible = false
                }
              }
@@ -449,13 +457,13 @@ function Scene({
       {plaka && isHyundai && (
         <>
           {/* Front License Plate (Hyundai) */}
-          <Html position={[0.0, 0.3, 2.1]} transform scale={0.14}>
+          <Html position={[0.0, 0.22, 2.15]} transform scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
               <span>{plaka}</span>
             </div>
           </Html>
           {/* Rear License Plate (Hyundai) */}
-          <Html position={[0.0, 0.45, -2.1]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
+          <Html position={[0.0, 0.35, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
               <span>{plaka}</span>
             </div>
