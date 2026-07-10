@@ -510,7 +510,7 @@ function Scene({
       {plaka && isSprinter && (
         <>
           {/* Front License Plate (Sprinter) */}
-          <Html position={[0.0, 0.14, 3.03]} transform scale={0.15}>
+          <Html position={[0.0, 0.11, 3.06]} transform scale={0.17}>
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none"
