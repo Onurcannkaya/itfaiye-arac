@@ -88,9 +88,9 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
   rotationY?: number
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
-  fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
-  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.05 },
-  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.85 },
+  fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: -0.02 },
+  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.02 },
+  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.05 },
   merdiven: { targetLength: 10.0, envMapIntensity: 1.5, rotationY: -Math.PI / 2, yOffset: 0.01 },
 }
 
@@ -213,8 +213,39 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
            scene.rotation.y = (config as any).rotationY
         }
 
-        // Compute bounds with the GLTF's internal transforms intact
-        const box = new THREE.Box3().setFromObject(scene)
+        // Compute bounds manually by filtering out corrupted or huge helper meshes (like ground planes or stray vertices)
+        // A valid vehicle part mesh should not be larger than 10 units in any local dimension.
+        const computeValidBounds = (targetScene: THREE.Object3D) => {
+          const boundingBox = new THREE.Box3()
+          let hasValidMesh = false
+          
+          targetScene.traverse((child: any) => {
+            if (child.isMesh && child.visible) {
+              if (child.geometry) {
+                child.geometry.computeBoundingBox()
+                const localBox = child.geometry.boundingBox
+                if (localBox) {
+                  const sizeX = localBox.max.x - localBox.min.x
+                  const sizeY = localBox.max.y - localBox.min.y
+                  const sizeZ = localBox.max.z - localBox.min.z
+                  
+                  // Filter out huge ground planes or corrupted meshes
+                  if (sizeX < 10 && sizeY < 10 && sizeZ < 10) {
+                    boundingBox.expandByObject(child)
+                    hasValidMesh = true
+                  }
+                }
+              }
+            }
+          });
+          
+          if (!hasValidMesh) {
+            boundingBox.setFromObject(targetScene)
+          }
+          return boundingBox
+        }
+
+        const box = computeValidBounds(scene)
         const size = box.getSize(new THREE.Vector3())
 
         // Scale the longest axis to target length
@@ -223,8 +254,8 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         
         scene.scale.multiplyScalar(scaleFactor)
 
-        // Recompute bounds after scaling
-        const scaledBox = new THREE.Box3().setFromObject(scene)
+        // Recompute bounds after scaling using the same robust filter
+        const scaledBox = computeValidBounds(scene)
         const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
 
         // Center in X and Z, place bottom (wheels) at Y=0
