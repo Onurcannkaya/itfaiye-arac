@@ -403,8 +403,8 @@ function Scene({
       )}
       {plaka && isDoblo && (
         <>
-          {/* Front License Plate (Doblo) — front bumper at +Z, below the grille */}
-          <Html position={[0.0, 0.38, 2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
+          {/* Front License Plate (Doblo) — front bumper at +Z, below grille at bumper lip */}
+          <Html position={[0.0, 0.22, 2.12]} transform scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
               <span>{plaka}</span>
             </div>
