@@ -89,7 +89,7 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
   fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
-  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.35 },
+  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.05 },
   sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.85 },
   merdiven: { targetLength: 10.0, envMapIntensity: 1.5, rotationY: -Math.PI / 2, yOffset: 0.01 },
 }
@@ -184,19 +184,26 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         // For Hyundai, hide the huge background plane and original Russian plates before calculating bounds
         if (isHyundai) {
           scene.traverse((child: any) => {
-             if (child.isMesh && child.material) {
-               const matName = child.material.name || ''
-               // Hide huge ground plane
-               if (matName === 'Plastik' && child.geometry) {
-                 child.geometry.computeBoundingBox()
-                 if (child.geometry.boundingBox && (child.geometry.boundingBox.max.x - child.geometry.boundingBox.min.x > 100)) {
-                   child.visible = false
-                 }
-               }
-               // Hide original Russian plates
-               if (matName.includes('Gos_nomer')) {
-                 child.visible = false
-               }
+             if (child.isMesh) {
+                // Hide huge ground plane by checking geometry size (robust against material renaming)
+                if (child.geometry) {
+                  child.geometry.computeBoundingBox()
+                  if (child.geometry.boundingBox) {
+                    const sizeX = child.geometry.boundingBox.max.x - child.geometry.boundingBox.min.x
+                    const sizeZ = child.geometry.boundingBox.max.z - child.geometry.boundingBox.min.z
+                    // Ground plane is massive compared to the car
+                    if (sizeX > 15 || sizeZ > 15) {
+                      child.visible = false
+                    }
+                  }
+                }
+                
+                // Hide original Russian plates by checking mesh/material names
+                const meshName = child.name || ''
+                const matName = (child.material && (child.material as any).name) || ''
+                if (meshName.toLowerCase().includes('nomer') || matName.toLowerCase().includes('nomer')) {
+                  child.visible = false
+                }
              }
           })
          }
