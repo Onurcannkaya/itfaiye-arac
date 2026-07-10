@@ -1614,28 +1614,16 @@ function VehicleInventoryTab() {
                         boxSizing: 'border-box' as const,
                         display: 'flex',
                         flexDirection: 'column' as const,
+                        position: 'relative',
                         overflow: 'hidden',
                         fontFamily: 'sans-serif',
                         pageBreakInside: 'avoid',
                       }}
                     >
-                      {/* Üst Bar — Plaka + Kurum */}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: '#000',
-                        color: '#fff',
-                        padding: '1.5mm 3mm',
-                        fontSize: '9px',
-                        fontWeight: 800,
-                        letterSpacing: '0.05em',
-                        lineHeight: 1.2,
-                        flexShrink: 0,
-                      }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{selectedPlaka}</span>
-                        <span style={{ fontSize: '7.5px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
-                      </div>
+                      {/* Sağ Üst — Kurum Adı */}
+                      <span style={{ position: 'absolute', top: '1.5mm', right: '2.5mm', fontSize: '8px', fontWeight: 800, color: '#000', letterSpacing: '0.05em' }}>
+                        Sivas İtfaiye
+                      </span>
 
                       {/* İçerik — QR Sol, Bilgiler Sağ */}
                       <div style={{
