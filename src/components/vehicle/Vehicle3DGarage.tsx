@@ -519,7 +519,7 @@ function Scene({
             </div>
           </Html>
           {/* Rear License Plate (Sprinter) */}
-          <Html position={[-0.35, 0.45, -1.97]} transform rotation={[0, Math.PI, 0]} scale={0.15}>
+          <Html position={[0.38, 0.30, -1.97]} transform rotation={[0, Math.PI, 0]} scale={0.15}>
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px]"
