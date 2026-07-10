@@ -153,7 +153,7 @@ const MERDIVEN_HOTSPOTS: Record<string, { position: [number, number, number]; la
   arac_ici:        { position: [0.0,   1.1,  4.8],  label: "Araç İçi (Kabin)" },
   sol_on_kapak:    { position: [1.15,  0.7,  1.7],  label: "Sol Ön Kapak" },
   sol_orta_kapak:  { position: [1.15,  0.7, -0.8],  label: "Sol Orta Kapak" },
-  küçük_kapak:     { position: [1.15,  0.7, -2.9],  label: "Sol Arka Kapak" },
+  sol_arka_kapak:  { position: [1.15,  0.7, -2.9],  label: "Sol Arka Kapak" },
   sag_on_kapak:    { position: [-1.15, 0.7,  1.7],  label: "Sağ Ön Kapak" },
   sag_orta_kapak:  { position: [-1.15, 0.7, -0.8],  label: "Sağ Orta Kapak" },
   sag_arka_kapak:  { position: [-1.15, 0.7, -2.9],  label: "Sağ Arka Kapak" },
