@@ -179,6 +179,19 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
           child.receiveShadow = true
           if (child.material) {
             child.material.envMapIntensity = config.envMapIntensity
+
+            // Doblo: override blue body color to grey
+            if (doblo && child.material.name) {
+              const matName = child.material.name.toUpperCase()
+              if (matName.includes('FIAT_BLUE_PRIMARY') || matName.includes('PRIMARY_COLOR')) {
+                child.material.color = new THREE.Color(0x8a8f94) // Medium grey
+                child.material.metalness = 0.4
+                child.material.roughness = 0.45
+              } else if (matName.includes('FIAT_BLUE_BADGE')) {
+                child.material.color = new THREE.Color(0x6b7280) // Darker grey for badges
+              }
+            }
+
             child.material.needsUpdate = true
           }
         }
@@ -390,14 +403,14 @@ function Scene({
       )}
       {plaka && isDoblo && (
         <>
-          {/* Rear License Plate (Doblo) — trunk area */}
-          <Html position={[0.0, 0.85, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
+          {/* Front License Plate (Doblo) — front bumper at -Z */}
+          <Html position={[0.0, 0.77, -2.25]} transform scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
               <span>{plaka}</span>
             </div>
           </Html>
-          {/* Front License Plate (Doblo) — front bumper */}
-          <Html position={[0, 0.6, 2.25]} transform scale={0.14}>
+          {/* Rear License Plate (Doblo) — trunk at +Z, faces away */}
+          <Html position={[0.0, 0.95, 2.24]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
               <span>{plaka}</span>
             </div>
