@@ -150,16 +150,14 @@ const HYUNDAI_HOTSPOTS: Record<string, { position: [number, number, number]; lab
 
 // ——— Merdiven Hotspots (10m ladder truck) ———
 const MERDIVEN_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  kabin_ici:      { position: [0.0,  1.5,  3.5],  label: "Kabin İçi" },
-  sol_on_bolme:   { position: [1.2,  0.6,  1.5],  label: "Sol Ön Bölme" },
-  sol_orta_bolme: { position: [1.2,  0.6,  0.0],  label: "Sol Orta Bölme" },
-  sol_arka_bolme: { position: [1.2,  0.6, -1.5],  label: "Sol Arka Bölme" },
-  sag_on_bolme:   { position: [-1.2, 0.6,  1.5],  label: "Sağ Ön Bölme" },
-  sag_orta_bolme: { position: [-1.2, 0.6,  0.0],  label: "Sağ Orta Bölme" },
-  sag_arka_bolme: { position: [-1.2, 0.6, -1.5],  label: "Sağ Arka Bölme" },
-  arka_kapak:     { position: [0.0,  0.8, -4.5],  label: "Arka Kontrol" },
-  merdiven:       { position: [0.0,  3.0, -1.0],  label: "Merdiven Grubu" },
-  ust_bolme:      { position: [0.0,  2.5,  0.0],  label: "Üst Bölme" }
+  arac_ici:        { position: [0.0,   1.4,  3.2],  label: "Araç İçi (Kabin)" },
+  sol_on_kapak:    { position: [1.15,  0.7,  1.5],  label: "Sol Ön Kapak" },
+  sol_orta_kapak:  { position: [1.15,  0.7,  0.0],  label: "Sol Orta Kapak" },
+  küçük_kapak:     { position: [1.15,  0.7, -1.5],  label: "Sol Arka Kapak" },
+  sag_on_kapak:    { position: [-1.15, 0.7,  1.5],  label: "Sağ Ön Kapak" },
+  sag_orta_kapak:  { position: [-1.15, 0.7,  0.0],  label: "Sağ Orta Kapak" },
+  sag_arka_kapak:  { position: [-1.15, 0.7, -1.5],  label: "Sağ Arka Kapak" },
+  arac_ustu:       { position: [0.0,   2.5, -0.5],  label: "Araç Üstü / Merdiven" }
 }
 
 
