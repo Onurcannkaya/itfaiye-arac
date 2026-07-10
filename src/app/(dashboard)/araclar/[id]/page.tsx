@@ -662,6 +662,7 @@ export default function VehicleDetailPage() {
     const model = (vehicle.model || "").toLowerCase()
     if (model.includes("doblo")) return "/3dmodels/2005-2007_fiat_doblo_mk1_uk-i4gas/scene.gltf"
     if (model.includes("hyundai") || model.includes("accent")) return "/3dmodels/hyundai_accent_tagaz_2004/scene.gltf"
+    if (model.includes("sprinter")) return "/3dmodels/58-tl-737/scene.gltf"
     return undefined // Falls back to default fire truck model
   }
   const model3DUrl = resolve3DModelUrl()

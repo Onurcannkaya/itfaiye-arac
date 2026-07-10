@@ -89,6 +89,7 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
   fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
   hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: 0.05 },
+  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: 0.01 },
 }
 
 function getModelConfig(vehicleModel?: string) {
@@ -96,6 +97,7 @@ function getModelConfig(vehicleModel?: string) {
     const key = vehicleModel.toLowerCase().replace(/[\s-]+/g, '_')
     if (key.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
     if (key.includes('hyundai') || key.includes('accent')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
+    if (key.includes('sprinter')) return VEHICLE_MODEL_CONFIGS.sprinter
   }
   return VEHICLE_MODEL_CONFIGS.default
 }
@@ -106,6 +108,10 @@ function isDobloModel(vehicleModel?: string): boolean {
 
 function isHyundaiModel(vehicleModel?: string): boolean {
   return !!vehicleModel && (vehicleModel.toLowerCase().includes('hyundai') || vehicleModel.toLowerCase().includes('accent'))
+}
+
+function isSprinterModel(vehicleModel?: string): boolean {
+  return !!vehicleModel && vehicleModel.toLowerCase().includes('sprinter')
 }
 
 // ——— Doblo Hotspots (smaller utility vehicle, scaled to ~4.5 unit length) ———
@@ -135,11 +141,12 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
   const config = getModelConfig(vehicleModel)
   const doblo = isDobloModel(vehicleModel)
   const isHyundai = isHyundaiModel(vehicleModel)
+  const isSprinter = isSprinterModel(vehicleModel)
 
   useEffect(() => {
     if (scene) {
-      if (doblo || isHyundai) {
-        // --- Doblo/Hyundai-specific logic ---
+      if (doblo || isHyundai || isSprinter) {
+        // --- Doblo/Hyundai/Sprinter-specific logic ---
         // The GLTF root node has a matrix with -90° X rotation (Collada/OBJ → Three.js Y-up).
         // We must NOT reset rotation or the model breaks.
         scene.position.set(0, 0, 0)
@@ -321,6 +328,17 @@ function HotspotMarker({
 }
 
 // ——— Garage Floor ———
+// ——— Sprinter Hotspots (van vehicle, scaled to ~5.8 unit length) ———
+const SPRINTER_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
+  arac_ici:       { position: [0.0,   1.2,  1.0],  label: "Araç İçi" },
+  kabin_ici:      { position: [0.0,   1.1,  2.0],  label: "Kabin İçi" },
+  bagaj_ici:      { position: [0.0,   1.0,  -2.5], label: "Bagaj İçi" },
+  arka_kapak:     { position: [0.0,   1.0,  -3.0], label: "Arka Kapak" },
+  sag_kapi:       { position: [-1.1,  1.0,  0.5],  label: "Sağ Sürgülü Kapı" },
+  sol_kapi:       { position: [1.1,   1.0,  2.0],  label: "Sol Kapı" },
+  arac_ustu:      { position: [0.0,   2.5,  0.0],  label: "Araç Üstü" },
+}
+
 function GarageFloor() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
@@ -371,7 +389,8 @@ function Scene({
   // Determine which hotspot set to use based on vehicle model
   const isDoblo = vehicleModel && vehicleModel.toLowerCase().includes('doblo')
   const isHyundai = vehicleModel && (vehicleModel.toLowerCase().includes('hyundai') || vehicleModel.toLowerCase().includes('accent'))
-  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : (isHyundai ? HYUNDAI_HOTSPOTS : COMPARTMENT_HOTSPOTS)
+  const isSprinter = vehicleModel && vehicleModel.toLowerCase().includes('sprinter')
+  const hotspotSource = isDoblo ? DOBLO_HOTSPOTS : (isHyundai ? HYUNDAI_HOTSPOTS : (isSprinter ? SPRINTER_HOTSPOTS : COMPARTMENT_HOTSPOTS))
 
   const hotspots = Object.entries(hotspotSource).map(([key, data]) => {
     const matchedKey = matchHotspotToKey(key, compartmentKeys)
@@ -422,7 +441,7 @@ function Scene({
       <FireTruckModel url={modelUrl || "/3dmodels/scene.gltf"} vehicleModel={vehicleModel} />
 
       {/* License Plates — positioned differently based on vehicle type */}
-      {plaka && !isDoblo && !isHyundai && (
+      {plaka && !isDoblo && !isHyundai && !isSprinter && (
         <>
           {/* Rear License Plate (Fire Truck) */}
           <Html position={[0.46, 0.64, -3.01]} transform rotation={[0, Math.PI, 0]} scale={0.22}>
@@ -465,6 +484,22 @@ function Scene({
           {/* Rear License Plate (Hyundai) */}
           <Html position={[0.0, 0.35, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
             <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+        </>
+      )}
+      {plaka && isSprinter && (
+        <>
+          {/* Front License Plate (Sprinter) */}
+          <Html position={[0.0, 0.5, 2.9]} transform scale={0.18}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px] leading-none">
+              <span>{plaka}</span>
+            </div>
+          </Html>
+          {/* Rear License Plate (Sprinter) */}
+          <Html position={[0.0, 0.65, -2.9]} transform rotation={[0, Math.PI, 0]} scale={0.18}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[65px] h-[14px]">
               <span>{plaka}</span>
             </div>
           </Html>
