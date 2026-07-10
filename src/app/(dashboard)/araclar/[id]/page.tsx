@@ -660,7 +660,7 @@ export default function VehicleDetailPage() {
   // 3D Model URL resolution based on vehicle brand/model
   const resolve3DModelUrl = (): string | undefined => {
     const model = (vehicle.model || "").toLowerCase()
-    if (model.includes("doblo")) return "/3dmodels/fiat_doblo_mk1_2000-2021/scene.gltf"
+    if (model.includes("doblo")) return "/3dmodels/2005-2007_fiat_doblo_mk1_uk-i4gas/scene.gltf"
     return undefined // Falls back to default fire truck model
   }
   const model3DUrl = resolve3DModelUrl()

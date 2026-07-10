@@ -87,7 +87,7 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
   yOffset?: number
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
-  fiat_doblo: { targetLength: 4.5, envMapIntensity: 1.8, yOffset: 0.02 },
+  fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
 }
 
 function getModelConfig(vehicleModel?: string) {
@@ -102,19 +102,19 @@ function isDobloModel(vehicleModel?: string): boolean {
   return !!vehicleModel && vehicleModel.toLowerCase().includes('doblo')
 }
 
-// ——— Doblo Hotspots (smaller utility vehicle) ———
+// ——— Doblo Hotspots (smaller utility vehicle, scaled to ~4.5 unit length) ———
 const DOBLO_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  arac_ici:       { position: [0.0,   0.7,  0.5],  label: "Araç İçi" },
-  kabin_ici:      { position: [0.0,   0.65, 1.2],  label: "Kabin İçi" },
-  bagaj_ici:      { position: [0.0,   0.5,  -1.4], label: "Bagaj İçi" },
-  arka_kapak:     { position: [0.0,   0.6,  -1.9], label: "Arka Kapak" },
-  kasa_ici:       { position: [0.0,   0.45, -0.3], label: "Kasa İçi" },
-  sol_dolap:      { position: [0.6,   0.45, -0.6], label: "Sol Dolap" },
-  sag_dolap:      { position: [-0.6,  0.45, -0.6], label: "Sağ Dolap" },
-  arac_ustu:      { position: [0.0,   1.2,  0.0],  label: "Araç Üstü" },
+  arac_ici:       { position: [0.0,   0.9,  0.4],  label: "Araç İçi" },
+  kabin_ici:      { position: [0.0,   0.85, 1.3],  label: "Kabin İçi" },
+  bagaj_ici:      { position: [0.0,   0.6,  -1.5], label: "Bagaj İçi" },
+  arka_kapak:     { position: [0.0,   0.7,  -2.0], label: "Arka Kapak" },
+  kasa_ici:       { position: [0.0,   0.5,  -0.3], label: "Kasa İçi" },
+  sol_dolap:      { position: [0.65,  0.5,  -0.7], label: "Sol Dolap" },
+  sag_dolap:      { position: [-0.65, 0.5,  -0.7], label: "Sağ Dolap" },
+  arac_ustu:      { position: [0.0,   1.5,  0.0],  label: "Araç Üstü" },
 }
 
-// ——— Fire Truck Model sub-component ———
+// ——— Vehicle Model sub-component ———
 function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: string }) {
   const { scene } = useGLTF(url)
   const config = getModelConfig(vehicleModel)
@@ -124,76 +124,17 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
     if (scene) {
       if (doblo) {
         // --- Doblo-specific logic ---
-        // The GLTF has a root matrix with a -90° X rotation (Collada→Three.js Y-up conversion).
-        // We must NOT reset rotation or we'll break the model's internal orientation.
+        // The GLTF root node has a matrix with -90° X rotation (Collada/OBJ → Three.js Y-up).
+        // We must NOT reset rotation or the model breaks.
         scene.position.set(0, 0, 0)
         scene.scale.setScalar(1)
-        // Do NOT reset rotation — keep the GLTF's internal -90° X rotation matrix intact.
+        // Do NOT touch scene.rotation — the GLTF root matrix handles coordinate conversion.
 
-        // The Doblo GLTF has only ONE wheel mesh (right-front, node "wheel").
-        // We must clone it to the other 3 wheel positions.
-        // Wheel center in Collada coords: X=0.738, Y=1.315, Z=0.451
-        // The 4 positions (Collada coords, Y=front/back, X=left/right):
-        //   Right-Front: ( 0.738,  1.315, 0.451) — original
-        //   Left-Front:  (-0.738,  1.315, 0.451) — mirror X
-        //   Right-Rear:  ( 0.738, -1.315, 0.451) — mirror Y
-        //   Left-Rear:   (-0.738, -1.315, 0.451) — mirror X+Y
-
-        // Find the "Collada visual scene group" (child of root) to add cloned wheels
-        let colladaGroup: THREE.Object3D | null = null
-        let wheelGroup: THREE.Object3D | null = null
-        
-        scene.traverse((child: any) => {
-          if (child.name === 'Collada visual scene group') colladaGroup = child
-          if (child.name === 'wheel' && !wheelGroup) wheelGroup = child
-        })
-
-        if (wheelGroup && colladaGroup) {
-          const cGroup = colladaGroup as THREE.Object3D
-          const wGroup = wheelGroup as THREE.Object3D
-
-          // Remove existing "cloned_wheel" from previous renders (hot reload)
-          const toRemove: THREE.Object3D[] = []
-          cGroup.children.forEach((c: any) => {
-            if (c.userData?.isClonedWheel) toRemove.push(c)
-          })
-          toRemove.forEach(c => cGroup.remove(c))
-
-          // Wheel center in Collada local coords
-          const wCenterX = 0.738
-          const wCenterY = 1.315
-
-          // Clone for Left-Front (mirror X)
-          const wheelLF = wGroup.clone(true)
-          wheelLF.name = 'wheel_LF'
-          wheelLF.userData.isClonedWheel = true
-          wheelLF.position.set(-2 * wCenterX, 0, 0)
-          wheelLF.scale.x = -1
-          cGroup.add(wheelLF)
-
-          // Clone for Right-Rear (mirror Y)
-          const wheelRR = wGroup.clone(true)
-          wheelRR.name = 'wheel_RR'
-          wheelRR.userData.isClonedWheel = true
-          wheelRR.position.set(0, -2 * wCenterY, 0)
-          wheelRR.scale.y = -1
-          cGroup.add(wheelRR)
-
-          // Clone for Left-Rear (mirror X+Y)
-          const wheelLR = wGroup.clone(true)
-          wheelLR.name = 'wheel_LR'
-          wheelLR.userData.isClonedWheel = true
-          wheelLR.position.set(-2 * wCenterX, -2 * wCenterY, 0)
-          wheelLR.scale.x = -1
-          wheelLR.scale.y = -1
-          cGroup.add(wheelLR)
-        }
-
-        // Compute bounds with wheels included
+        // Compute bounds with the GLTF's internal transforms intact
         const box = new THREE.Box3().setFromObject(scene)
         const size = box.getSize(new THREE.Vector3())
 
-        // Scale based on the longest axis
+        // Scale the longest axis to target length
         const longestAxis = Math.max(size.x, size.y, size.z)
         const scaleFactor = config.targetLength / longestAxis
         
@@ -203,14 +144,14 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         const scaledBox = new THREE.Box3().setFromObject(scene)
         const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
 
-        // Center in X and Z, place bottom at Y=0
+        // Center in X and Z, place bottom (wheels) at Y=0
         scene.position.set(
           scene.position.x - scaledCenter.x,
           scene.position.y - scaledBox.min.y + (config.yOffset || 0),
           scene.position.z - scaledCenter.z
         )
       } else {
-        // --- Default (Fire Truck) logic ---
+        // --- Default (Fire Truck) logic — completely unchanged ---
         scene.position.set(0, 0, 0)
         scene.scale.setScalar(1)
         scene.rotation.set(0, 0, 0)
@@ -450,14 +391,14 @@ function Scene({
       {plaka && isDoblo && (
         <>
           {/* Rear License Plate (Doblo) — trunk area */}
-          <Html position={[0.0, 0.55, -1.85]} transform rotation={[0, Math.PI, 0]} scale={0.16}>
-            <div className="bg-white border border-slate-400 px-1 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[60px] h-[13px] leading-none">
+          <Html position={[0.0, 0.85, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none">
               <span>{plaka}</span>
             </div>
           </Html>
           {/* Front License Plate (Doblo) — front bumper */}
-          <Html position={[0, 0.35, 2.2]} transform scale={0.16}>
-            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[60px] h-[13px]">
+          <Html position={[0, 0.6, 2.25]} transform scale={0.14}>
+            <div className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]">
               <span>{plaka}</span>
             </div>
           </Html>

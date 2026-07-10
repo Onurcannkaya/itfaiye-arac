@@ -1,0 +1,11 @@
+Model Information:
+* title:	2005-2007 FIAT DOBLO MK1 (UK-I4GAS)
+* source:	https://sketchfab.com/3d-models/2005-2007-fiat-doblo-mk1-uk-i4gas-5405e055f9b64b2b9c5438bbbec8e430
+* author:	M GARAGE LTD. (https://sketchfab.com/mgarageltd.)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "2005-2007 FIAT DOBLO MK1 (UK-I4GAS)" (https://sketchfab.com/3d-models/2005-2007-fiat-doblo-mk1-uk-i4gas-5405e055f9b64b2b9c5438bbbec8e430) by M GARAGE LTD. (https://sketchfab.com/mgarageltd.) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
