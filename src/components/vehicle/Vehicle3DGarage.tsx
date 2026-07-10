@@ -150,13 +150,13 @@ const HYUNDAI_HOTSPOTS: Record<string, { position: [number, number, number]; lab
 
 // ——— Merdiven Hotspots (10m ladder truck) ———
 const MERDIVEN_HOTSPOTS: Record<string, { position: [number, number, number]; label: string }> = {
-  arac_ici:        { position: [0.0,   1.1,  4.2],  label: "Araç İçi (Kabin)" },
-  sol_on_kapak:    { position: [1.15,  0.7,  1.2],  label: "Sol Ön Kapak" },
-  sol_orta_kapak:  { position: [1.15,  0.7, -2.5],  label: "Sol Orta Kapak" },
-  küçük_kapak:     { position: [1.15,  0.7, -1.0],  label: "Sol Arka Kapak" },
-  sag_on_kapak:    { position: [-1.15, 0.7,  1.2],  label: "Sağ Ön Kapak" },
+  arac_ici:        { position: [0.0,   1.1,  4.8],  label: "Araç İçi (Kabin)" },
+  sol_on_kapak:    { position: [1.15,  0.7,  1.7],  label: "Sol Ön Kapak" },
+  sol_orta_kapak:  { position: [1.15,  0.7, -0.8],  label: "Sol Orta Kapak" },
+  küçük_kapak:     { position: [1.15,  0.7, -2.9],  label: "Sol Arka Kapak" },
+  sag_on_kapak:    { position: [-1.15, 0.7,  1.7],  label: "Sağ Ön Kapak" },
   sag_orta_kapak:  { position: [-1.15, 0.7, -0.8],  label: "Sağ Orta Kapak" },
-  sag_arka_kapak:  { position: [-1.15, 0.7, -2.5],  label: "Sağ Arka Kapak" },
+  sag_arka_kapak:  { position: [-1.15, 0.7, -2.9],  label: "Sağ Arka Kapak" },
   arac_ustu:       { position: [0.0,   2.5, -0.5],  label: "Araç Üstü / Merdiven" }
 }
 
@@ -271,9 +271,23 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
             if (isMerdiven && child.material.name) {
               const matName = child.material.name.toLowerCase()
               if (matName === 'material_3') {
-                child.material.color = new THREE.Color(0xb91c1c) // Red
-                child.material.metalness = 0.2
-                child.material.roughness = 0.4
+                child.material.color = new THREE.Color(0xb91c1c) // Red body
+                child.material.metalness = 0.25
+                child.material.roughness = 0.35
+              } else if (matName === 'material_10') {
+                child.material.color = new THREE.Color(0x8a9ba8) // Glass tint
+                child.material.transparent = true
+                child.material.opacity = 0.3
+                child.material.roughness = 0.05
+                child.material.metalness = 0.95
+              } else if (['material_0', 'material_1', 'material_2', 'material_11', 'material_12', 'material_13'].includes(matName)) {
+                child.material.color = new THREE.Color(0x181818) // Black wheels/tires
+                child.material.roughness = 0.85
+                child.material.metalness = 0.15
+              } else if (matName === 'material_4') {
+                child.material.color = new THREE.Color(0xa1a1aa) // Silver ladder
+                child.material.metalness = 0.85
+                child.material.roughness = 0.25
               }
             }
 
