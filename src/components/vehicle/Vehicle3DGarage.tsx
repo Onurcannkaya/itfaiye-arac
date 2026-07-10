@@ -89,8 +89,8 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
 }> = {
   default: { targetLength: 6.0, envMapIntensity: 1.5 },
   fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: 0.01 },
-  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.25 },
-  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.45 },
+  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.35 },
+  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.85 },
   merdiven: { targetLength: 10.0, envMapIntensity: 1.5, rotationY: -Math.PI / 2, yOffset: 0.01 },
 }
 
