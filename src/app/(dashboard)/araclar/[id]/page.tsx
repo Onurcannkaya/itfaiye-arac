@@ -659,10 +659,12 @@ export default function VehicleDetailPage() {
 
   // 3D Model URL resolution based on vehicle brand/model
   const resolve3DModelUrl = (): string | undefined => {
-    const model = (vehicle.model || "").toLowerCase()
-    if (model.includes("doblo")) return "/3dmodels/2005-2007_fiat_doblo_mk1_uk-i4gas/scene.gltf"
-    if (model.includes("hyundai") || model.includes("accent")) return "/3dmodels/hyundai_accent_tagaz_2004/scene.gltf"
-    if (model.includes("sprinter")) return "/3dmodels/58-tl-737/scene.gltf"
+    const searchString = `${vehicle.model || ''} ${vehicle.aciklama || ''} ${vehicle.aracTipi || ''} ${vehicle.arac_tipi || ''} ${vehicle.marka || ''}`.toLowerCase()
+    
+    if (searchString.includes("doblo")) return "/3dmodels/2005-2007_fiat_doblo_mk1_uk-i4gas/scene.gltf"
+    if (searchString.includes("hyundai") || searchString.includes("accent")) return "/3dmodels/hyundai_accent_tagaz_2004/scene.gltf"
+    if (searchString.includes("sprinter")) return "/3dmodels/58-tl-737/scene.gltf"
+    
     return undefined // Falls back to default fire truck model
   }
   const model3DUrl = resolve3DModelUrl()
@@ -1127,7 +1129,7 @@ export default function VehicleDetailPage() {
               isModalOpen={isInventoryModalOpen}
               plaka={vehicle.plaka}
               modelUrl={model3DUrl}
-              vehicleModel={vehicle.model}
+              vehicleModel={`${vehicle.model || ''} ${vehicle.aciklama || ''} ${vehicle.aracTipi || ''} ${vehicle.arac_tipi || ''} ${vehicle.marka || ''}`}
             />
           ) : (
             <Vehicle3DSchematic
