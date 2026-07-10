@@ -1,0 +1,11 @@
+Model Information:
+* title:	Fiat Doblo MK1 2000-2021
+* source:	https://sketchfab.com/3d-models/fiat-doblo-mk1-2000-2021-11103d960278407b9e612907d26fc63c
+* author:	szymonpasterczyk734 (https://sketchfab.com/szymonpasterczyk734)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Fiat Doblo MK1 2000-2021" (https://sketchfab.com/3d-models/fiat-doblo-mk1-2000-2021-11103d960278407b9e612907d26fc63c) by szymonpasterczyk734 (https://sketchfab.com/szymonpasterczyk734) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

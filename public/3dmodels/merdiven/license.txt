@@ -1,0 +1,11 @@
+Model Information:
+* title:	German Ladder Fire Truck(MAN TGA truck)
+* source:	https://sketchfab.com/3d-models/german-ladder-fire-truckman-tga-truck-403fbe45460041c2a97031d0635634cf
+* author:	chazmikhael (https://sketchfab.com/chazmikhael)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "German Ladder Fire Truck(MAN TGA truck)" (https://sketchfab.com/3d-models/german-ladder-fire-truckman-tga-truck-403fbe45460041c2a97031d0635634cf) by chazmikhael (https://sketchfab.com/chazmikhael) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
