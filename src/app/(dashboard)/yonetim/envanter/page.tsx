@@ -1588,7 +1588,7 @@ function VehicleInventoryTab() {
           )
         )}
 
-        {/* --- Hidden QR print element — 7cm × 4cm Etiket Kartları --- */}
+        {/* --- Hidden QR print element — 8cm × 4cm Etiket Kartları (Argox IX4-350) --- */}
         {mounted && selectedPlaka && (
           <div id="print-area-qr" style={{ display: 'none' }}>
              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -1607,10 +1607,10 @@ function VehicleInventoryTab() {
                       key={comp}
                       className="qr-label-card"
                       style={{
-                        width: '7cm',
+                        width: '8cm',
                         height: '4cm',
                         border: '1.5px solid #000',
-                        borderRadius: '4px',
+                        borderRadius: '3px',
                         boxSizing: 'border-box' as const,
                         display: 'flex',
                         flexDirection: 'column' as const,
@@ -1627,14 +1627,14 @@ function VehicleInventoryTab() {
                         background: '#000',
                         color: '#fff',
                         padding: '1.5mm 3mm',
-                        fontSize: '8px',
+                        fontSize: '9px',
                         fontWeight: 800,
                         letterSpacing: '0.05em',
                         lineHeight: 1.2,
                         flexShrink: 0,
                       }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '9px' }}>{selectedPlaka}</span>
-                        <span style={{ fontSize: '7px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{selectedPlaka}</span>
+                        <span style={{ fontSize: '7.5px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
                       </div>
 
                       {/* İçerik — QR Sol, Bilgiler Sağ */}
@@ -1649,17 +1649,17 @@ function VehicleInventoryTab() {
                         {/* QR Kod */}
                         <div style={{
                           flexShrink: 0,
-                          width: '2.4cm',
-                          height: '2.4cm',
+                          width: '2.6cm',
+                          height: '2.6cm',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          border: '1px solid #ccc',
+                          border: '1px solid #ddd',
                           borderRadius: '3px',
                           padding: '1mm',
                           background: '#fff',
                         }}>
-                          <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={80} level={"M"} includeMargin={false} />
+                          <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={88} level={"M"} includeMargin={false} />
                         </div>
 
                         {/* Sağ — Bölme Bilgisi */}
@@ -1673,7 +1673,7 @@ function VehicleInventoryTab() {
                         }}>
                           <p style={{
                             margin: 0,
-                            fontSize: '12px',
+                            fontSize: '13px',
                             fontWeight: 900,
                             lineHeight: 1.2,
                             color: '#000',
@@ -1682,7 +1682,7 @@ function VehicleInventoryTab() {
                           </p>
                           <p style={{
                             margin: 0,
-                            fontSize: '8px',
+                            fontSize: '9px',
                             fontWeight: 600,
                             color: '#555',
                           }}>
@@ -1695,8 +1695,8 @@ function VehicleInventoryTab() {
                           }}>
                             <p style={{
                               margin: 0,
-                              fontSize: '6px',
-                              color: '#888',
+                              fontSize: '6.5px',
+                              color: '#777',
                               fontWeight: 600,
                               letterSpacing: '0.08em',
                               textTransform: 'uppercase' as const,

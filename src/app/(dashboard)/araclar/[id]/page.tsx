@@ -1885,7 +1885,7 @@ export default function VehicleDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Print Area — 7cm × 4cm Etiket Kartları */}
+      {/* Hidden Print Area — 8cm × 4cm Etiket Kartları (Argox IX4-350) */}
       <div id="vehicle-print-area" className="hidden print:block print:w-full">
         <div className="print-header-section" style={{ marginBottom: '6mm', textAlign: 'center', borderBottom: '2px solid black', paddingBottom: '4mm' }}>
           <h1 style={{ fontSize: '18px', fontWeight: 900, margin: 0, fontFamily: 'sans-serif' }}>{vehicle.plaka}</h1>
@@ -1900,10 +1900,10 @@ export default function VehicleDetailPage() {
                  key={comp}
                  className="qr-label-card"
                  style={{
-                   width: '7cm',
+                   width: '8cm',
                    height: '4cm',
                    border: '1.5px solid #000',
-                   borderRadius: '4px',
+                   borderRadius: '3px',
                    boxSizing: 'border-box',
                    display: 'flex',
                    flexDirection: 'column',
@@ -1926,8 +1926,8 @@ export default function VehicleDetailPage() {
                    lineHeight: 1.2,
                    flexShrink: 0,
                  }}>
-                   <span style={{ fontFamily: 'monospace', fontSize: '9px' }}>{vehicle.plaka}</span>
-                   <span style={{ fontSize: '7px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
+                   <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{vehicle.plaka}</span>
+                   <span style={{ fontSize: '7.5px', fontWeight: 600, opacity: 0.9 }}>Sivas İtfaiye</span>
                  </div>
 
                  {/* İçerik — QR Sol, Bilgiler Sağ */}
@@ -1942,19 +1942,19 @@ export default function VehicleDetailPage() {
                    {/* QR Kod */}
                    <div style={{
                      flexShrink: 0,
-                     width: '2.4cm',
-                     height: '2.4cm',
+                     width: '2.6cm',
+                     height: '2.6cm',
                      display: 'flex',
                      alignItems: 'center',
                      justifyContent: 'center',
-                     border: '1px solid #ccc',
+                     border: '1px solid #ddd',
                      borderRadius: '3px',
                      padding: '1mm',
                      background: '#fff',
                    }}>
                      <QRCodeSVG
                        value={qrUrl}
-                       size={80}
+                       size={88}
                        level="M"
                        includeMargin={false}
                      />
@@ -1971,7 +1971,7 @@ export default function VehicleDetailPage() {
                    }}>
                      <p style={{
                        margin: 0,
-                       fontSize: '12px',
+                       fontSize: '13px',
                        fontWeight: 900,
                        lineHeight: 1.2,
                        color: '#000',
@@ -1980,7 +1980,7 @@ export default function VehicleDetailPage() {
                      </p>
                      <p style={{
                        margin: 0,
-                       fontSize: '8px',
+                       fontSize: '9px',
                        fontWeight: 600,
                        color: '#555',
                      }}>
@@ -1993,8 +1993,8 @@ export default function VehicleDetailPage() {
                      }}>
                        <p style={{
                          margin: 0,
-                         fontSize: '6px',
-                         color: '#888',
+                         fontSize: '8.5px',
+                         color: '#777',
                          fontWeight: 600,
                          letterSpacing: '0.08em',
                          textTransform: 'uppercase',

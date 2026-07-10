@@ -259,28 +259,31 @@ img, video, svg { max-width: 100%; height: auto; }
   body > * { display: none !important; }
   body > .print-area-container, .print-area-container {
     display: block !important; position: relative !important; left: 0 !important; top: 0 !important;
-    width: 100vw !important; background: white !important; z-index: 999999 !important;
-    padding: 8mm !important; color: black !important;
+    width: 100% !important; background: white !important; z-index: 999999 !important;
+    padding: 0 !important; margin: 0 auto !important; color: black !important;
   }
   .print-area-container * { visibility: visible !important; color: black !important; }
-  @page { size: A4; margin: 6mm; }
-  body { background: white !important; overflow: visible !important; }
+  /* Argox IX4-350 PPLA — Kağıt: 83mm × 40mm */
+  @page { size: 83mm 40mm; margin: 1.5mm; }
+  body { background: white !important; overflow: visible !important; margin: 0 !important; }
 
-  /* ── 7cm × 4cm Etiket Kartı ── */
+  /* ── 8cm × 4cm Etiket Kartı (Argox IX4-350) ── */
   .qr-label-card {
-    width: 7cm !important;
+    width: 8cm !important;
     height: 4cm !important;
     min-height: 4cm !important;
     max-height: 4cm !important;
     box-sizing: border-box !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+    page-break-after: always !important;
     overflow: hidden !important;
+    margin: 0 auto !important;
   }
   .qr-label-grid {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 3mm !important;
+    gap: 0 !important;
     justify-content: center !important;
   }
   .qr-label-grid .print-header-section {
