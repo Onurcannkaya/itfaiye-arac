@@ -1902,7 +1902,7 @@ export default function VehicleDetailPage() {
                  style={{
                    width: '8cm',
                    height: '4cm',
-                   border: '1.5px solid #000',
+                   border: '2.5px solid #000',
                    borderRadius: '3px',
                    boxSizing: 'border-box',
                    display: 'flex',
@@ -1942,8 +1942,8 @@ export default function VehicleDetailPage() {
                    {/* QR Kod */}
                    <div style={{
                      flexShrink: 0,
-                     width: '2.6cm',
-                     height: '2.6cm',
+                     width: '3.2cm',
+                     height: '3.2cm',
                      display: 'flex',
                      alignItems: 'center',
                      justifyContent: 'center',
@@ -1954,7 +1954,7 @@ export default function VehicleDetailPage() {
                    }}>
                      <QRCodeSVG
                        value={qrUrl}
-                       size={88}
+                       size={108}
                        level="M"
                        includeMargin={false}
                      />
@@ -1971,7 +1971,7 @@ export default function VehicleDetailPage() {
                    }}>
                      <p style={{
                        margin: 0,
-                       fontSize: '13px',
+                       fontSize: '18px',
                        fontWeight: 900,
                        lineHeight: 1.2,
                        color: '#000',
@@ -1980,9 +1980,9 @@ export default function VehicleDetailPage() {
                      </p>
                      <p style={{
                        margin: 0,
-                       fontSize: '9px',
-                       fontWeight: 600,
-                       color: '#555',
+                       fontSize: '11px',
+                       fontWeight: 800,
+                       color: '#000',
                      }}>
                        {vehicle.bolmeler?.[comp]?.length || 0} Malzeme
                      </p>
@@ -1993,9 +1993,9 @@ export default function VehicleDetailPage() {
                      }}>
                        <p style={{
                          margin: 0,
-                         fontSize: '8.5px',
-                         color: '#777',
-                         fontWeight: 600,
+                         fontSize: '8px',
+                         color: '#555',
+                         fontWeight: 700,
                          letterSpacing: '0.08em',
                          textTransform: 'uppercase',
                        }}>

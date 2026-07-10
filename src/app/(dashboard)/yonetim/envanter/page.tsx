@@ -1609,7 +1609,7 @@ function VehicleInventoryTab() {
                       style={{
                         width: '8cm',
                         height: '4cm',
-                        border: '1.5px solid #000',
+                        border: '2.5px solid #000',
                         borderRadius: '3px',
                         boxSizing: 'border-box' as const,
                         display: 'flex',
@@ -1649,8 +1649,8 @@ function VehicleInventoryTab() {
                         {/* QR Kod */}
                         <div style={{
                           flexShrink: 0,
-                          width: '2.6cm',
-                          height: '2.6cm',
+                          width: '3.2cm',
+                          height: '3.2cm',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -1659,7 +1659,7 @@ function VehicleInventoryTab() {
                           padding: '1mm',
                           background: '#fff',
                         }}>
-                          <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={88} level={"M"} includeMargin={false} />
+                          <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={108} level={"M"} includeMargin={false} />
                         </div>
 
                         {/* Sağ — Bölme Bilgisi */}
@@ -1673,7 +1673,7 @@ function VehicleInventoryTab() {
                         }}>
                           <p style={{
                             margin: 0,
-                            fontSize: '13px',
+                            fontSize: '18px',
                             fontWeight: 900,
                             lineHeight: 1.2,
                             color: '#000',
@@ -1682,9 +1682,9 @@ function VehicleInventoryTab() {
                           </p>
                           <p style={{
                             margin: 0,
-                            fontSize: '9px',
-                            fontWeight: 600,
-                            color: '#555',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            color: '#000',
                           }}>
                             {tableRows.filter(r => r.bolme_kapak === comp).length} Malzeme
                           </p>
@@ -1695,9 +1695,9 @@ function VehicleInventoryTab() {
                           }}>
                             <p style={{
                               margin: 0,
-                              fontSize: '6.5px',
-                              color: '#777',
-                              fontWeight: 600,
+                              fontSize: '8px',
+                              color: '#555',
+                              fontWeight: 700,
                               letterSpacing: '0.08em',
                               textTransform: 'uppercase' as const,
                             }}>

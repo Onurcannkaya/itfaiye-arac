@@ -64,7 +64,7 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
               style={{
                 width: '8cm',
                 height: '4cm',
-                border: '1.5px solid #000',
+                border: '2.5px solid #000',
                 borderRadius: '3px',
                 boxSizing: 'border-box',
                 display: 'flex',
@@ -106,8 +106,8 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
                 {/* QR Kod */}
                 <div style={{
                   flexShrink: 0,
-                  width: '2.6cm',
-                  height: '2.6cm',
+                  width: '3.2cm',
+                  height: '3.2cm',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -118,7 +118,7 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
                 }}>
                   <QRCode
                     value={qrValue}
-                    size={88}
+                    size={108}
                     level="M"
                     bgColor="#FFFFFF"
                     fgColor="#000000"
@@ -136,7 +136,7 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
                 }}>
                   <p style={{
                     margin: 0,
-                    fontSize: '15px',
+                    fontSize: '18px',
                     fontWeight: 900,
                     lineHeight: 1.15,
                     color: '#000',
@@ -147,9 +147,9 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
                   </p>
                   <p style={{
                     margin: 0,
-                    fontSize: '9px',
-                    fontWeight: 600,
-                    color: '#444',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    color: '#000',
                     lineHeight: 1.3,
                   }}>
                     {aracTipi}{marka ? ` — ${marka}` : ""}
@@ -157,8 +157,8 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
                   {compartmentLabel && (
                     <p style={{
                       margin: 0,
-                      fontSize: '8.5px',
-                      fontWeight: 700,
+                      fontSize: '10px',
+                      fontWeight: 800,
                       color: '#000',
                       background: '#f0f0f0',
                       padding: '0.5mm 2mm',
@@ -176,9 +176,9 @@ export function QRLabelModal({ isOpen, onClose, plaka, aracTipi, marka, compartm
                   }}>
                     <p style={{
                       margin: 0,
-                      fontSize: '6.5px',
-                      color: '#777',
-                      fontWeight: 600,
+                      fontSize: '8px',
+                      color: '#555',
+                      fontWeight: 700,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
                     }}>
