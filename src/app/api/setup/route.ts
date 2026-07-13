@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import fs from "fs";
@@ -331,8 +331,13 @@ const DRIVER_LICENSES: { fullName: string; expiry: string | null }[] = [
 // ════════════════════════════════════════════════════════════════════════════
 // POST /api/setup — Seed all personnel
 // ════════════════════════════════════════════════════════════════════════════
-export async function POST() {
+export async function POST(request: NextRequest) {
   const logs: string[] = [];
+  const setupToken = process.env.SETUP_API_TOKEN;
+  if (!setupToken || request.headers.get('x-setup-token') !== setupToken) {
+    return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  }
+
   const log = (msg: string) => {
     logs.push(msg);
     console.log(`[SETUP] ${msg}`);

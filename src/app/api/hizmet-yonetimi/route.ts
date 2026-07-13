@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne, queryMany } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 interface BacaRow {
   id: number;
@@ -91,6 +92,10 @@ async function ensureTablesExist(): Promise<void> {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    if (!getSessionFromRequest(request)) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     await ensureTablesExist();
 
     // 1. COUNT(*) queries for each table

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Klasör oluştur
     const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '');
-    const uploadDir = path.resolve(UPLOAD_DIR, safeFolder);
+    const uploadDir = path.resolve(/* turbopackIgnore: true */ UPLOAD_DIR, safeFolder);
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
     }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import * as xlsx from "xlsx";
@@ -165,9 +165,14 @@ function parseDate(str: string): string | null {
   return null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const logs: string[] = [];
+    const setupToken = process.env.SETUP_API_TOKEN;
+    if (!setupToken || request.headers.get('x-setup-token') !== setupToken) {
+      return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    }
+
     const defaultPasswordHash = await hashPassword("1234");
 
     // 1. Personnel seeding is skipped here because it is now handled by /api/setup route with Sivas Fire Department's official roster.

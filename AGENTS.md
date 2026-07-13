@@ -18,7 +18,7 @@ Sadece bir kişiye SMS göndermek için kullanılır.
 - **Request Body Formatı:**
 ```json
 {
-  "phoneNumber": "05412983450",
+  "phoneNumber": "05446580135",
   "content": "Mesaj içeriği buraya gelecek",
   "scheduledAt": "2026-01-15T10:00:00Z" // (Opsiyonel) İleri tarihli gönderim için ISO 8601
 }

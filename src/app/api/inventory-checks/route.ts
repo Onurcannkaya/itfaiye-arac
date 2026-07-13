@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { getSessionFromRequest } from "@/lib/auth";
 
 /**
  * GET /api/inventory-checks?plaka=58+ACT+367&compartment=kabin_ici
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!getSessionFromRequest(request)) {
+      return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const plaka = searchParams.get("plaka");
     const compartment = searchParams.get("compartment");

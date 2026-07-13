@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Client } from "pg";
 import { getActivePostaForStation } from "@/lib/shiftUtils";
+import { getSessionFromRequest } from "@/lib/auth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    if (!getSessionFromRequest(req)) {
+      return NextResponse.json({ success: false, error: "Authentication required." }, { status: 401 });
+    }
+
     const action = body.action || 'incident'; // 'incident', 'training', 'inventory'
 
     if (!process.env.SMS_API_KEY || !process.env.SMS_API_SECRET) {

@@ -3,14 +3,18 @@ import { query } from '@/lib/db';
 import { getSessionFromRequest, AuthError, hashPassword } from '@/lib/auth';
 import webpush from 'web-push';
 
-const vapidPublicKey = 'BGijonw6gf_TxWXTfukZCAc_bHPYE11lBPQF6CvGiVuAis5tVPiCFZ0A1y9Q7E7yV9fjiw5JnJWBQsun_Jj7PYM';
-const vapidPrivateKey = 'ZAuqCRNE2BJ2pH7RvajHaRkTkmzwFRFcN4wik2mpU4I';
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
-webpush.setVapidDetails(
-  'mailto:sivas-itfaiye@sivas.bel.tr',
-  vapidPublicKey,
-  vapidPrivateKey
-);
+// Push credentials are deployment secrets. Do not prevent the rest of the API
+// from starting when push notifications have not been configured yet.
+if (vapidPublicKey && vapidPrivateKey) {
+  webpush.setVapidDetails(
+    'mailto:sivas-itfaiye@sivas.bel.tr',
+    vapidPublicKey,
+    vapidPrivateKey
+  );
+}
 
 const JSON_COLUMNS = [
   'details', 'baca_detaylari', 'isyeri_detaylari', 
@@ -21,6 +25,11 @@ const JSON_COLUMNS = [
 
 async function sendIncidentPushNotifications(incidentId: string, assignedSicilNos: string[]) {
   try {
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.warn('[WebPush] VAPID credentials are not configured; notification skipped.');
+    return;
+  }
+
     const locRes = await query(`
       SELECT ST_X(location::geometry) AS lng, ST_Y(location::geometry) AS lat, olay_turu, mahalle, adres 
       FROM public.incidents 
@@ -917,6 +926,11 @@ export async function GET(
 ) {
   try {
     const { table } = await params;
+    const session = getSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     if (!ALLOWED_TABLES.includes(table)) {
       return NextResponse.json({ error: 'Geçersiz tablo adı.' }, { status: 400 });
     }
