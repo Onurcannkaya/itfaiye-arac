@@ -100,14 +100,33 @@ export default function TarayiciPage() {
   const parseQRContent = (raw: string): { plaka: string; compartment?: string } | null => {
     const trimmed = raw.trim()
 
-    // 1. URL format: /arac/{plaka-slug}/{compartment?}
-    const urlPattern = /\/arac\/([^/?#]+)(?:\/([^/?#]+))?/
-    const urlMatch = trimmed.match(urlPattern)
-    if (urlMatch) {
-      return {
-        plaka: urlMatch[1].replace(/-/g, " ").toUpperCase(),
-        compartment: urlMatch[2] || undefined,
+    // 1. URL format: /arac/{plaka-slug}/{compartment?} or /araclar/{plaka-slug}?bolme={compartment}
+    try {
+      let urlString = trimmed
+      if (!urlString.startsWith('http://') && !urlString.startsWith('https://')) {
+        if (urlString.startsWith('/')) {
+          urlString = 'http://localhost' + urlString
+        } else {
+          urlString = 'http://localhost/' + urlString
+        }
       }
+      const url = new URL(urlString)
+      const pathParts = url.pathname.split('/').filter(Boolean)
+      if (pathParts[0] === 'arac' || pathParts[0] === 'araclar') {
+        const plakaSlug = pathParts[1]
+        let compartment = pathParts[2] || undefined
+        if (!compartment) {
+          compartment = url.searchParams.get('bolme') || undefined
+        }
+        if (plakaSlug) {
+          return {
+            plaka: plakaSlug.replace(/-/g, " ").toUpperCase(),
+            compartment: compartment || undefined,
+          }
+        }
+      }
+    } catch {
+      // Fallback to next patterns if URL parsing fails
     }
 
     // 2. Dash-separated compartment format: "58ACT367-kabin_ici" or "58 ACT 367-sol_on_kapak"
@@ -293,7 +312,8 @@ export default function TarayiciPage() {
 
     const parsed = parseQRContent(rawValue)
     if (!parsed) {
-      setErrorMsg("Geçersiz QR kodu. Lütfen araç veya malzeme etiketini okutun.")
+      const displayVal = rawValue.length > 60 ? rawValue.substring(0, 57) + "..." : rawValue
+      setErrorMsg(`Geçersiz QR kodu ("${displayVal}"). Lütfen araç veya malzeme etiketini okutun.`)
       setMode("error")
       return
     }

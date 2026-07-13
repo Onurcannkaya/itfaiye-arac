@@ -1944,7 +1944,7 @@ export default function VehicleDetailPage() {
                        value={qrUrl}
                        size={108}
                        level="M"
-                       includeMargin={false}
+                       style={{ height: "auto", maxWidth: "100%", width: "100%" }}
                      />
                    </div>
 
