@@ -100,13 +100,13 @@ export default function TarayiciPage() {
   const parseQRContent = (raw: string): { plaka: string; compartment?: string } | null => {
     const trimmed = raw.trim()
 
-    // 1. URL format: /arac/{plaka-slug}/{compartment}
-    const urlPattern = /\/arac\/([^/]+)\/([^/?#]+)/
+    // 1. URL format: /arac/{plaka-slug}/{compartment?}
+    const urlPattern = /\/arac\/([^/?#]+)(?:\/([^/?#]+))?/
     const urlMatch = trimmed.match(urlPattern)
     if (urlMatch) {
       return {
         plaka: urlMatch[1].replace(/-/g, " ").toUpperCase(),
-        compartment: urlMatch[2],
+        compartment: urlMatch[2] || undefined,
       }
     }
 

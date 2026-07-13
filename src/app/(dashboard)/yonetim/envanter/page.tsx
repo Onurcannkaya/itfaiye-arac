@@ -31,7 +31,7 @@ import {
   HelpCircle,
   Wrench
 } from "lucide-react"
-import { QRCodeSVG } from "qrcode.react"
+import QRCode from "react-qr-code"
 import { useAuthStore } from "@/lib/authStore"
 import { COMPARTMENT_NAMES, APP_BASE_URL } from "@/lib/constants"
 import jsPDF from "jspdf"
@@ -1647,7 +1647,7 @@ function VehicleInventoryTab() {
                           padding: '1mm',
                           background: '#fff',
                         }}>
-                          <QRCodeSVG value={buildQrUrl(selectedPlaka, comp)} size={108} level={"M"} includeMargin={false} />
+                          <QRCode value={buildQrUrl(selectedPlaka, comp)} size={108} level={"M"} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                         </div>
 
                         {/* Sağ — Bölme Bilgisi */}
@@ -1825,7 +1825,7 @@ function VehicleInventoryTab() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', gap: '2px' }}>
                     <div style={{ background: 'white', padding: '2px', border: '2px solid black', display: 'inline-block' }}>
-                      <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={60} level="H" />
+                      <QRCode value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={60} level="H" style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                     </div>
                     <span style={{ fontSize: '8px', fontFamily: 'monospace', fontWeight: 'bold' }}>UUID: {activePrintAssignment.uuid}</span>
                   </div>
@@ -2402,7 +2402,7 @@ export default function EnvanterPage() {
 
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', gap: '2px' }}>
                         <div style={{ background: 'white', padding: '2px', border: '2px solid black', display: 'inline-block' }}>
-                          <QRCodeSVG value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={60} level="H" />
+                          <QRCode value={`${window.location.origin}/zimmet/${activePrintAssignment.uuid}`} size={60} level="H" style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                         </div>
                         <span style={{ fontSize: '8px', fontFamily: 'monospace', fontWeight: 'bold' }}>UUID: {activePrintAssignment.uuid}</span>
                       </div>

@@ -52,7 +52,7 @@ const Vehicle3DGarage = dynamic(
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { api } from "@/lib/api"
-import { QRCodeSVG } from "qrcode.react"
+import QRCode from "react-qr-code"
 import { APP_BASE_URL } from "@/lib/constants"
 import { useAuthStore } from "@/lib/authStore"
 import { InventoryAddEditModal } from "@/components/inventory/InventoryAddEditModal"
@@ -1940,7 +1940,7 @@ export default function VehicleDetailPage() {
                      padding: '1mm',
                      background: '#fff',
                    }}>
-                     <QRCodeSVG
+                     <QRCode
                        value={qrUrl}
                        size={108}
                        level="M"
