@@ -86,12 +86,13 @@ const VEHICLE_MODEL_CONFIGS: Record<string, {
   envMapIntensity: number
   yOffset?: number
   rotationY?: number
+  maxMeshExtent?: number // max local dimension to consider a mesh as valid vehicle part
 }> = {
-  default: { targetLength: 6.0, envMapIntensity: 1.5 },
-  fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, yOffset: -0.02 },
-  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, yOffset: -0.02 },
-  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.85 },
-  merdiven: { targetLength: 10.0, envMapIntensity: 1.5, rotationY: -Math.PI / 2, yOffset: 0.01 },
+  default: { targetLength: 6.0, envMapIntensity: 1.5, maxMeshExtent: 10 },
+  fiat_doblo: { targetLength: 4.5, envMapIntensity: 2.0, maxMeshExtent: 200 },
+  hyundai_accent: { targetLength: 4.3, envMapIntensity: 1.5, maxMeshExtent: 80, yOffset: -0.85 },
+  sprinter: { targetLength: 5.8, envMapIntensity: 1.5, yOffset: -0.75 },
+  merdiven: { targetLength: 10.0, envMapIntensity: 1.5, rotationY: -Math.PI / 2, maxMeshExtent: 15 },
 }
 
 function normalizeVehicleModel(str?: string): string {
@@ -99,33 +100,39 @@ function normalizeVehicleModel(str?: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
-function getModelConfig(vehicleModel?: string) {
+function getModelConfig(vehicleModel?: string, url?: string) {
   const norm = normalizeVehicleModel(vehicleModel)
+  const normUrl = (url || '').toLowerCase()
   if (norm) {
-    if (norm.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
-    if (norm.includes('hyundai') || norm.includes('accent')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
-    if (norm.includes('sprinter')) return VEHICLE_MODEL_CONFIGS.sprinter
-    if (norm.includes('aeh 221') || norm.includes('aeh221') || norm.includes('merdiven')) return VEHICLE_MODEL_CONFIGS.merdiven
+    if (norm.includes('doblo') || normUrl.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
+    if (norm.includes('hyundai') || norm.includes('accent') || normUrl.includes('hyundai')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
+    if (norm.includes('sprinter') || normUrl.includes('58-tl-737')) return VEHICLE_MODEL_CONFIGS.sprinter
+    if (norm.includes('aeh 221') || norm.includes('aeh221') || norm.includes('merdiven') || normUrl.includes('merdiven')) return VEHICLE_MODEL_CONFIGS.merdiven
+  } else if (normUrl) {
+    if (normUrl.includes('doblo')) return VEHICLE_MODEL_CONFIGS.fiat_doblo
+    if (normUrl.includes('hyundai')) return VEHICLE_MODEL_CONFIGS.hyundai_accent
+    if (normUrl.includes('58-tl-737')) return VEHICLE_MODEL_CONFIGS.sprinter
+    if (normUrl.includes('merdiven')) return VEHICLE_MODEL_CONFIGS.merdiven
   }
   return VEHICLE_MODEL_CONFIGS.default
 }
 
-function isDobloModel(vehicleModel?: string): boolean {
-  return normalizeVehicleModel(vehicleModel).includes('doblo')
+function isDobloModel(vehicleModel?: string, url?: string): boolean {
+  return normalizeVehicleModel(vehicleModel).includes('doblo') || (url || '').toLowerCase().includes('doblo')
 }
 
-function isHyundaiModel(vehicleModel?: string): boolean {
+function isHyundaiModel(vehicleModel?: string, url?: string): boolean {
   const norm = normalizeVehicleModel(vehicleModel)
-  return norm.includes('hyundai') || norm.includes('accent')
+  return norm.includes('hyundai') || norm.includes('accent') || (url || '').toLowerCase().includes('hyundai')
 }
 
-function isSprinterModel(vehicleModel?: string): boolean {
-  return normalizeVehicleModel(vehicleModel).includes('sprinter')
+function isSprinterModel(vehicleModel?: string, url?: string): boolean {
+  return normalizeVehicleModel(vehicleModel).includes('sprinter') || (url || '').toLowerCase().includes('58-tl-737')
 }
 
-function isMerdivenModel(vehicleModel?: string): boolean {
+function isMerdivenModel(vehicleModel?: string, url?: string): boolean {
   const norm = normalizeVehicleModel(vehicleModel)
-  return norm.includes('aeh 221') || norm.includes('aeh221') || norm.includes('merdiven')
+  return norm.includes('aeh 221') || norm.includes('aeh221') || norm.includes('merdiven') || (url || '').toLowerCase().includes('merdiven')
 }
 
 // ——— Doblo Hotspots (smaller utility vehicle, scaled to ~4.5 unit length) ———
@@ -165,18 +172,18 @@ const MERDIVEN_HOTSPOTS: Record<string, { position: [number, number, number]; la
 // ——— Vehicle Model sub-component ———
 function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: string }) {
   const { scene } = useGLTF(url)
-  const config = getModelConfig(vehicleModel)
-  const doblo = isDobloModel(vehicleModel)
-  const isHyundai = isHyundaiModel(vehicleModel)
-  const isSprinter = isSprinterModel(vehicleModel)
-  const isMerdiven = isMerdivenModel(vehicleModel)
+  const config = getModelConfig(vehicleModel, url)
+  const doblo = isDobloModel(vehicleModel, url)
+  const isHyundai = isHyundaiModel(vehicleModel, url)
+  const isSprinter = isSprinterModel(vehicleModel, url)
+  const isMerdiven = isMerdivenModel(vehicleModel, url)
 
   useEffect(() => {
     if (scene) {
-      if (doblo || isHyundai || isSprinter || isMerdiven) {
-        // --- Doblo/Hyundai/Sprinter/Merdiven-specific logic ---
-        // The GLTF root node has a matrix with -90° X rotation (Collada/OBJ → Three.js Y-up).
-        // We must NOT reset rotation or the model breaks.
+      if (doblo || isHyundai || isMerdiven) {
+        // --- Doblo/Hyundai/Merdiven-specific logic ---
+        // These GLTF models have root node matrices with coordinate system transforms.
+        // We must preserve the GLTF root matrix (handles Collada/OBJ → Three.js Y-up conversion).
         scene.position.set(0, 0, 0)
         scene.scale.setScalar(1)
         // Do NOT touch scene.rotation — the GLTF root matrix handles coordinate conversion.
@@ -213,8 +220,13 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
            scene.rotation.y = (config as any).rotationY
         }
 
-        // Compute bounds manually by filtering out corrupted or huge helper meshes (like ground planes or stray vertices)
-        // A valid vehicle part mesh should not be larger than 10 units in any local dimension.
+        // Ensure all world matrices are up-to-date before computing bounds
+        scene.updateWorldMatrix(true, true)
+        scene.updateMatrixWorld(true)
+
+        // Compute bounds in world-space by iterating visible meshes
+        // Uses per-model maxMeshExtent threshold to filter out ground planes and helper geometry
+        const maxExtent = config.maxMeshExtent || 10
         const computeValidBounds = (targetScene: THREE.Object3D) => {
           const boundingBox = new THREE.Box3()
           let hasValidMesh = false
@@ -229,8 +241,8 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
                   const sizeY = localBox.max.y - localBox.min.y
                   const sizeZ = localBox.max.z - localBox.min.z
                   
-                  // Filter out huge ground planes or corrupted meshes
-                  if (sizeX < 10 && sizeY < 10 && sizeZ < 10) {
+                  // Filter out huge ground planes or corrupted meshes using per-model threshold
+                  if (sizeX < maxExtent && sizeY < maxExtent && sizeZ < maxExtent) {
                     boundingBox.expandByObject(child)
                     hasValidMesh = true
                   }
@@ -239,6 +251,15 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
             }
           });
           
+          if (!hasValidMesh) {
+            // Fallback: use all visible meshes without filtering
+            targetScene.traverse((child: any) => {
+              if (child.isMesh && child.visible) {
+                boundingBox.expandByObject(child)
+                hasValidMesh = true
+              }
+            })
+          }
           if (!hasValidMesh) {
             boundingBox.setFromObject(targetScene)
           }
@@ -250,9 +271,14 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
 
         // Scale the longest axis to target length
         const longestAxis = Math.max(size.x, size.y, size.z)
-        const scaleFactor = config.targetLength / longestAxis
-        
-        scene.scale.multiplyScalar(scaleFactor)
+        if (longestAxis > 0) {
+          const scaleFactor = config.targetLength / longestAxis
+          scene.scale.multiplyScalar(scaleFactor)
+        }
+
+        // Update matrices again after scaling
+        scene.updateWorldMatrix(true, true)
+        scene.updateMatrixWorld(true)
 
         // Recompute bounds after scaling using the same robust filter
         const scaledBox = computeValidBounds(scene)
@@ -265,23 +291,32 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
           scene.position.z - scaledCenter.z
         )
       } else {
-        // --- Default (Fire Truck) logic — completely unchanged ---
+        // --- Default / Sprinter code path ---
+        // Uses Three.js setFromObject for reliable bounds computation.
+        // This approach handles complex transform chains (like Sprinter's compound 0.733*0.01 scale)
+        // better than the custom computeValidBounds.
         scene.position.set(0, 0, 0)
         scene.scale.setScalar(1)
         scene.rotation.set(0, 0, 0)
+
+        // Ensure matrices are updated before computing bounds to prevent production misalignment
+        scene.updateMatrixWorld(true)
 
         const box = new THREE.Box3().setFromObject(scene)
         const size = box.getSize(new THREE.Vector3())
         const center = box.getCenter(new THREE.Vector3())
 
         const targetLength = config.targetLength
-        const scaleFactor = targetLength / size.z
+        // For the default fire truck, Z is length. For Sprinter and others, use longest axis.
+        const scaleFactor = isSprinter
+          ? targetLength / Math.max(size.x, size.y, size.z)
+          : targetLength / size.z
 
         scene.scale.setScalar(scaleFactor)
 
         scene.position.set(
           -center.x * scaleFactor,
-          -box.min.y * scaleFactor,
+          -box.min.y * scaleFactor + (config.yOffset || 0),
           -center.z * scaleFactor
         )
       }
@@ -295,13 +330,20 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
             child.material.envMapIntensity = config.envMapIntensity
 
             // Doblo: override blue body color to grey
-            if (doblo && child.material.name) {
-              const matName = child.material.name.toUpperCase()
-              if (matName.includes('FIAT_BLUE_PRIMARY') || matName.includes('PRIMARY_COLOR')) {
-                child.material.color = new THREE.Color(0x8a8f94) // Medium grey
+            if (doblo && child.material.color) {
+              // Detect blue-ish colors via HSL analysis (works even if GLB optimizer strips material names)
+              const hsl = { h: 0, s: 0, l: 0 }
+              child.material.color.getHSL(hsl)
+              const matName = (child.material.name || '').toUpperCase()
+              const isBlueByHSL = hsl.s > 0.15 && hsl.h > 0.45 && hsl.h < 0.85
+              const isBlueByName = matName.includes('FIAT_BLUE_PRIMARY') || matName.includes('PRIMARY_COLOR')
+              const isBadgeByName = matName.includes('FIAT_BLUE_BADGE') || matName.includes('BADGE')
+              
+              if (isBlueByName || (isBlueByHSL && hsl.l > 0.15)) {
+                child.material.color = new THREE.Color(0x8a8f94) // Medium grey body
                 child.material.metalness = 0.4
                 child.material.roughness = 0.45
-              } else if (matName.includes('FIAT_BLUE_BADGE')) {
+              } else if (isBadgeByName) {
                 child.material.color = new THREE.Color(0x6b7280) // Darker grey for badges
               }
             }
@@ -335,7 +377,7 @@ function FireTruckModel({ url, vehicleModel }: { url: string; vehicleModel?: str
         }
       })
     }
-  }, [scene, config, doblo, isMerdiven])
+  }, [scene, config, doblo, isHyundai, isSprinter, isMerdiven])
 
   return <primitive object={scene} />
 }
@@ -579,7 +621,7 @@ function Scene({
       {plaka && isHyundai && (
         <>
           {/* Front License Plate (Hyundai) */}
-          <Html position={[0.0, 0.22, 2.15]} transform scale={0.14}>
+          <Html position={[0.0, 0.05, 2.15]} transform scale={0.14}>
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px] leading-none"
@@ -588,7 +630,7 @@ function Scene({
             </div>
           </Html>
           {/* Rear License Plate (Hyundai) */}
-          <Html position={[0.0, 0.35, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
+          <Html position={[0.0, 0.15, -2.15]} transform rotation={[0, Math.PI, 0]} scale={0.14}>
             <div 
               style={{ backfaceVisibility: 'hidden' }}
               className="bg-white border border-slate-400 px-1.5 py-0.5 rounded text-black font-extrabold text-[10px] tracking-wider select-none flex items-center justify-center gap-1 shadow-md border-l-[3px] border-l-blue-600 font-sans min-w-[58px] h-[13px]"
