@@ -27,6 +27,7 @@ import {
   MapPin,
   Info,
   X,
+  Settings
 } from "lucide-react"
 import Link from "next/link"
 import { CriticalAlertsWidget } from "@/components/dashboard/CriticalAlertsWidget"
@@ -401,6 +402,45 @@ export default function DashboardPage() {
   }, [])
 
   const [loading, setLoading] = useState(true)
+  const [customShiftTimes, setCustomShiftTimes] = useState<any>(null)
+  const [isShiftEditModalOpen, setIsShiftEditModalOpen] = useState(false)
+  const [editMerkezTime, setEditMerkezTime] = useState("08:00")
+  const [editEsentepeTime, setEditEsentepeTime] = useState("08:45")
+  const [editOrganizeTime, setEditOrganizeTime] = useState("09:15")
+  const [isSavingShiftTimes, setIsSavingShiftTimes] = useState(false)
+
+  useEffect(() => {
+    if (isShiftEditModalOpen) {
+      const getFormatted = (station: string, def: string) => {
+        if (customShiftTimes && customShiftTimes[station]) {
+          const { hours, minutes } = customShiftTimes[station]
+          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+        }
+        return def
+      }
+      setEditMerkezTime(getFormatted('Merkez', '08:00'))
+      setEditEsentepeTime(getFormatted('Esentepe', '08:45'))
+      setEditOrganizeTime(getFormatted('Organize', '09:15'))
+    }
+  }, [isShiftEditModalOpen, customShiftTimes])
+
+  const handleSaveShiftTimes = async () => {
+    setIsSavingShiftTimes(true)
+    try {
+      await api.update('system_settings', { value: editMerkezTime }, { key: 'merkez_shift_time' })
+      await api.update('system_settings', { value: editEsentepeTime }, { key: 'esentepe_shift_time' })
+      await api.update('system_settings', { value: editOrganizeTime }, { key: 'organize_shift_time' })
+
+      await fetchDashboardData()
+      setIsShiftEditModalOpen(false)
+    } catch (e) {
+      console.error("Error saving shift times:", e)
+      alert("Saatler kaydedilirken bir hata oluştu.")
+    } finally {
+      setIsSavingShiftTimes(false)
+    }
+  }
+
   const [kpi, setKpi] = useState<KPIData>({
     activeIncidents: 0,
     vehiclesInMaintenance: 0,
@@ -869,6 +909,28 @@ export default function DashboardPage() {
       if (statsData?.success && statsData?.stats) {
         setAvgResponseTime(statsData.stats.avg_response_time || 0)
       }
+
+      // ── 12. Sistem Ayarları (Posta Değişim Saatleri) Sorgulaması ──
+      const { data: settingsData } = await api
+        .from("system_settings")
+        .select("*")
+      
+      if (Array.isArray(settingsData) && settingsData.length > 0) {
+        const times: any = {
+          Merkez: { hours: 8, minutes: 0 },
+          Esentepe: { hours: 8, minutes: 45 },
+          Organize: { hours: 9, minutes: 15 },
+          Default: { hours: 8, minutes: 0 }
+        }
+        settingsData.forEach((s: any) => {
+          const [h, m] = s.value.split(':').map(Number)
+          if (s.key === 'merkez_shift_time') times.Merkez = { hours: h, minutes: m }
+          if (s.key === 'esentepe_shift_time') times.Esentepe = { hours: h, minutes: m }
+          if (s.key === 'organize_shift_time') times.Organize = { hours: h, minutes: m }
+        })
+        times.Default = times.Merkez
+        setCustomShiftTimes(times)
+      }
     } catch (err) {
       console.error("Dashboard veri hatası:", err)
     } finally {
@@ -1021,11 +1083,11 @@ export default function DashboardPage() {
     if (personnelList.length === 0) return []
     // Filter to active posta only, based on station-specific shift times
     return personnelList.filter(p => {
-      const activePosta = getActivePostaForStation(p.istasyon, new Date());
+      const activePosta = getActivePostaForStation(p.istasyon, new Date(), customShiftTimes);
       const isIdari = ['Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu'].includes(p.unvan || '');
       return p.posta_no === activePosta && !isIdari;
     });
-  }, [personnelList])
+  }, [personnelList, customShiftTimes])
 
   const handlePersonnelUpdate = (sicilNo: string, finalStatus: string) => {
     setPersonnelList(prev => prev.map(p => p.sicil_no === sicilNo ? { ...p, durum: finalStatus } : p))
@@ -1641,8 +1703,17 @@ export default function DashboardPage() {
                   <Users size={20} className="text-[var(--fd-info)]" />
                   Nöbetçi Vardiya Personel Listesi
                 </h2>
-                <p className="text-sm text-[var(--fd-text3)] mt-1">İstasyon bazlı günlük nöbetçiler ve saatlik karargah nöbet çizelgesi.</p>
-                <ShiftCountdown />
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <ShiftCountdown customTimes={customShiftTimes} />
+                  {user?.rol === 'Admin' && (
+                    <button
+                      onClick={() => setIsShiftEditModalOpen(true)}
+                      className="mt-2 sm:mt-0 flex items-center gap-1 bg-[var(--fd-accent)] hover:opacity-90 text-white text-xs font-semibold px-2.5 py-1.5 rounded-[var(--fd-r-sm)] border-none cursor-pointer transition-opacity flex-shrink-0"
+                    >
+                      <Settings size={12} /> Saatleri Düzenle
+                    </button>
+                  )}
+                </div>
               </div>
               <button onClick={() => setIsPersonnelModalOpen(false)} className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] transition-colors p-1 bg-transparent border-none cursor-pointer">
                 <X size={20} />
@@ -1679,7 +1750,7 @@ export default function DashboardPage() {
 
             <div className="p-6 overflow-y-auto flex-1">
               {activeShiftTab === 'daily' ? (
-                <ShiftList personnel={sortedPersonnel} activePosta={0} onPersonnelUpdate={handlePersonnelUpdate} />
+                <ShiftList personnel={sortedPersonnel} activePosta={0} onPersonnelUpdate={handlePersonnelUpdate} customTimes={customShiftTimes} />
               ) : activeShiftTab === 'hourly' ? (
                 <HourlyShifts personnel={sortedPersonnel} allPersonnel={personnelList} activePosta={0} />
               ) : activeShiftTab === 'schedule' ? (
@@ -1698,6 +1769,81 @@ export default function DashboardPage() {
                   Kapat
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shift Swap Hours Edit Modal */}
+      {isShiftEditModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[var(--fd-surface)] border border-[var(--fd-border)] rounded-[var(--fd-r)] shadow-[var(--fd-shadow-lg)] overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-[var(--fd-surface2)]/40 border-b border-[var(--fd-border)] p-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-[var(--fd-text)] flex items-center gap-2">
+                <Settings size={18} className="text-[var(--fd-accent)]" />
+                Posta Değişim Saatlerini Düzenle
+              </h3>
+              <button 
+                onClick={() => setIsShiftEditModalOpen(false)} 
+                className="text-[var(--fd-text3)] hover:text-[var(--fd-text)] p-1 bg-transparent border-none cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--fd-text2)] uppercase tracking-wider">🚒 Merkez İtfaiye Müdürlüğü</label>
+                <input 
+                  type="time" 
+                  value={editMerkezTime} 
+                  onChange={(e) => setEditMerkezTime(e.target.value)}
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] px-3 py-2 rounded-[var(--fd-r-sm)] font-mono text-sm focus:border-[var(--fd-accent)] focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--fd-text2)] uppercase tracking-wider">🚒 Esentepe Şubesi</label>
+                <input 
+                  type="time" 
+                  value={editEsentepeTime} 
+                  onChange={(e) => setEditEsentepeTime(e.target.value)}
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] px-3 py-2 rounded-[var(--fd-r-sm)] font-mono text-sm focus:border-[var(--fd-accent)] focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--fd-text2)] uppercase tracking-wider">🚒 Organize Sanayi Şubesi (OSB)</label>
+                <input 
+                  type="time" 
+                  value={editOrganizeTime} 
+                  onChange={(e) => setEditOrganizeTime(e.target.value)}
+                  className="w-full bg-[var(--fd-surface2)] border border-[var(--fd-border)] text-[var(--fd-text)] px-3 py-2 rounded-[var(--fd-r-sm)] font-mono text-sm focus:border-[var(--fd-accent)] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="bg-[var(--fd-surface2)]/40 border-t border-[var(--fd-border)] p-4 flex justify-end gap-2">
+              <button 
+                onClick={() => setIsShiftEditModalOpen(false)}
+                className="px-4 py-2 rounded-[var(--fd-r-sm)] bg-[var(--fd-surface3)] hover:bg-[var(--fd-surface3)]/80 text-[var(--fd-text)] text-sm font-medium transition-colors border border-transparent cursor-pointer"
+                disabled={isSavingShiftTimes}
+              >
+                İptal
+              </button>
+              <button 
+                onClick={handleSaveShiftTimes}
+                className="px-4 py-2 rounded-[var(--fd-r-sm)] bg-[var(--fd-accent)] hover:opacity-90 text-white text-sm font-medium transition-opacity border-none cursor-pointer flex items-center gap-1.5"
+                disabled={isSavingShiftTimes}
+              >
+                {isSavingShiftTimes ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> Kaydediliyor...
+                  </>
+                ) : (
+                  'Kaydet'
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -115,7 +115,7 @@ const ALLOWED_TABLES = [
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
-  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs', 'egitim_mufredati'
+  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs', 'egitim_mufredati', 'system_settings'
 ];
 
 async function ensureRolePermissionsTableExists() {
@@ -194,6 +194,32 @@ async function ensureRolePermissionsTableExists() {
     }
   } catch (err) {
     console.error('ensureRolePermissionsTableExists hatası:', err);
+  }
+}
+
+async function ensureSystemSettingsTableExists() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+
+    const defaults = [
+      { key: 'merkez_shift_time', value: '08:00' },
+      { key: 'esentepe_shift_time', value: '08:45' },
+      { key: 'organize_shift_time', value: '09:15' }
+    ];
+
+    for (const d of defaults) {
+      const check = await query('SELECT key FROM system_settings WHERE key = $1', [d.key]);
+      if (check.rowCount === 0) {
+        await query('INSERT INTO system_settings (key, value) VALUES ($1, $2)', [d.key, d.value]);
+      }
+    }
+  } catch (err) {
+    console.error('ensureSystemSettingsTableExists hatası:', err);
   }
 }
 
@@ -937,6 +963,9 @@ export async function GET(
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
     }
+    if (table === 'system_settings') {
+      await ensureSystemSettingsTableExists();
+    }
     if (table === 'personnel_details') {
       await ensurePersonnelDetailsTableExists();
     }
@@ -1062,6 +1091,12 @@ export async function POST(
     }
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
+    }
+    if (table === 'system_settings') {
+      if (session.rol !== 'Admin') {
+        return NextResponse.json({ error: 'Bu işlem için yetkiniz yok.' }, { status: 403 });
+      }
+      await ensureSystemSettingsTableExists();
     }
     if (table === 'personnel_details') {
       await ensurePersonnelDetailsTableExists();
@@ -1334,6 +1369,12 @@ export async function PATCH(
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
     }
+    if (table === 'system_settings') {
+      if (session.rol !== 'Admin') {
+        return NextResponse.json({ error: 'Bu işlem için yetkiniz yok.' }, { status: 403 });
+      }
+      await ensureSystemSettingsTableExists();
+    }
     if (table === 'radio_logs') {
       await ensureRadioLogsTableExists();
     }
@@ -1550,6 +1591,12 @@ export async function DELETE(
     }
     if (table === 'role_permissions') {
       await ensureRolePermissionsTableExists();
+    }
+    if (table === 'system_settings') {
+      if (session.rol !== 'Admin') {
+        return NextResponse.json({ error: 'Bu işlem için yetkiniz yok.' }, { status: 403 });
+      }
+      await ensureSystemSettingsTableExists();
     }
     if (table === 'radio_logs') {
       await ensureRadioLogsTableExists();

@@ -85,7 +85,7 @@ const STATION_GROUPS: StationGroup[] = [
   },
 ]
 
-export function ShiftList({ personnel, activePosta, onPersonnelUpdate }: { personnel: Personnel[], activePosta: number, onPersonnelUpdate?: (sicilNo: string, finalStatus: string) => void }) {
+export function ShiftList({ personnel, activePosta, onPersonnelUpdate, customTimes }: { personnel: Personnel[], activePosta: number, onPersonnelUpdate?: (sicilNo: string, finalStatus: string) => void, customTimes?: any }) {
   const { user } = useAuthStore()
   const canEdit = user?.rol === 'Admin' || user?.rol === 'Editor'
   const [list, setList] = useState<Personnel[]>(personnel)
@@ -172,7 +172,7 @@ export function ShiftList({ personnel, activePosta, onPersonnelUpdate }: { perso
     const person = list.find(p => p.sicil_no === sicilNo);
     const stationName = person?.istasyon;
     const stationKey = normalizeStationName(stationName);
-    const shiftTime = STATION_SHIFT_TIMES[stationKey];
+    const shiftTime = (customTimes && customTimes[stationKey]) || STATION_SHIFT_TIMES[stationKey];
 
     const shiftDate = new Date();
     if (shiftDate.getHours() < shiftTime.hours || 

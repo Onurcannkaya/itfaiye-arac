@@ -21,9 +21,13 @@ export const normalizeStationName = (stationName: string | undefined): keyof typ
  * Calculates the active posta number for a given station and current time.
  * Referans: 04.06.2026 tarihinde 2. Posta nöbette. Döngü sırasıyla: 2 -> 3 -> 1 -> 2 -> 3 -> 1
  */
-export const getActivePostaForStation = (stationName: string | undefined, date: Date = new Date()): number => {
+export const getActivePostaForStation = (
+  stationName: string | undefined, 
+  date: Date = new Date(),
+  customTimes?: typeof STATION_SHIFT_TIMES
+): number => {
   const stationKey = normalizeStationName(stationName);
-  const shiftTime = STATION_SHIFT_TIMES[stationKey];
+  const shiftTime = (customTimes && customTimes[stationKey]) || STATION_SHIFT_TIMES[stationKey];
   
   const referenceDate = new Date("2026-06-04T00:00:00");
   referenceDate.setHours(0, 0, 0, 0);
@@ -48,9 +52,13 @@ export const getActivePostaForStation = (stationName: string | undefined, date: 
 /**
  * Calculates the time remaining until the next shift change for a given station.
  */
-export const getTimeUntilNextShift = (stationName: string | undefined, date: Date = new Date()) => {
+export const getTimeUntilNextShift = (
+  stationName: string | undefined, 
+  date: Date = new Date(),
+  customTimes?: typeof STATION_SHIFT_TIMES
+) => {
   const stationKey = normalizeStationName(stationName);
-  const shiftTime = STATION_SHIFT_TIMES[stationKey];
+  const shiftTime = (customTimes && customTimes[stationKey]) || STATION_SHIFT_TIMES[stationKey];
   
   const nextShiftDate = new Date(date);
   nextShiftDate.setHours(shiftTime.hours, shiftTime.minutes, 0, 0);
