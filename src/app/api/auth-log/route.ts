@@ -1,29 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { getSessionFromRequest } from "@/lib/auth";
 
 /**
  * POST /api/auth-log
- * Kullanıcı giriş/çıkış/başarısız deneme olaylarını kaydeder.
+ * Oturum içi kimlik doğrulama olaylarını kaydeder.
+ *
+ * Not: Başarılı/başarısız giriş ve çıkış olayları zaten /api/auth/login ve
+ * /api/auth/logout içinde sunucu tarafında loglanır. Bu endpoint yalnızca
+ * doğrulanmış oturumdan gelen ek istemci olayları için kullanılır; sicil_no
+ * istemci gövdesinden DEĞİL oturumdan alınır (kimlik sahteciliği engellenir).
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { sicil_no, event_type, details } = body;
-
-    if (!sicil_no || !event_type) {
-      return NextResponse.json(
-        { error: "sicil_no ve event_type zorunludur." },
-        { status: 400 }
-      );
+    const session = getSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json({ error: "Oturum açmanız gerekiyor." }, { status: 401 });
     }
+
+    const body = await request.json();
+    const { event_type, details } = body;
 
     const validEvents = ["login_success", "login_failed", "logout"];
-    if (!validEvents.includes(event_type)) {
+    if (!event_type || !validEvents.includes(event_type)) {
       return NextResponse.json(
-        { error: "Geçersiz event_type." },
+        { error: "Geçersiz veya eksik event_type." },
         { status: 400 }
       );
     }
+
+    const sicil_no = session.sicilNo;
+    const actorName = `${session.ad || ''} ${session.soyad || ''}`.trim() || sicil_no;
 
     const forwarded = request.headers.get("x-forwarded-for");
     const ip_address = forwarded?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
@@ -36,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     await query(
       `INSERT INTO audit_logs (action_type, actor_sicil_no, actor_name, target, details) VALUES ($1, $2, $3, $4, $5)`,
-      [event_type, sicil_no, details || sicil_no, 'auth', JSON.stringify({ ip_address, user_agent })]
+      [event_type, sicil_no, actorName, 'auth', JSON.stringify({ ip_address, user_agent })]
     );
 
     return NextResponse.json({ success: true });

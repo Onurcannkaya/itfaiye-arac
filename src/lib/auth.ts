@@ -3,7 +3,28 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-me-in-production';
+/**
+ * JWT imzalama anahtarını çözümle.
+ * Üretim ortamında JWT_SECRET zorunludur; tanımlı değilse uygulama başlatılmaz.
+ * Böylece tahmin edilebilir sabit bir varsayılan anahtarla token imzalanması engellenir.
+ */
+function resolveJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret && secret.length >= 16) {
+    return secret;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'JWT_SECRET ortam değişkeni tanımlı değil veya çok kısa. Üretim ortamında en az 16 karakterlik güvenli bir anahtar zorunludur.'
+    );
+  }
+  console.warn(
+    '[auth] JWT_SECRET tanımlı değil — yalnızca geliştirme ortamı için güvensiz bir varsayılan kullanılıyor. Üretimde mutlaka ayarlayın.'
+  );
+  return 'dev-only-insecure-secret-do-not-use-in-production';
+}
+
+const JWT_SECRET = resolveJwtSecret();
 const COOKIE_NAME = 'itfaiye_token';
 const TOKEN_EXPIRY = '24h';
 
@@ -91,6 +112,26 @@ export function requireAuth(request: NextRequest, allowedRoles?: string[]): JWTP
     throw new AuthError('Bu işlem için yetkiniz bulunmamaktadır.', 403);
   }
   return session;
+}
+
+/**
+ * Kullanıcı Admin/Müdür seviyesinde mi? (rol/izin yönetimi, sistem ayarları gibi en yüksek yetkiler)
+ */
+export function isAdminSession(session: JWTPayload): boolean {
+  const rol = (session.rol || '').toLowerCase();
+  const unvan = (session.unvan || '').toLowerCase();
+  return rol === 'admin' || unvan === 'müdür' || unvan === 'mudur';
+}
+
+/**
+ * Kullanıcı yönetici seviyesinde mi? (Admin/Editor/Shift_Leader veya Müdür/Amir/Çavuş/Başçavuş unvanları)
+ */
+export function isManagerSession(session: JWTPayload): boolean {
+  if (isAdminSession(session)) return true;
+  const rol = session.rol || '';
+  const unvan = (session.unvan || '').toLowerCase();
+  if (rol === 'Editor' || rol === 'Shift_Leader') return true;
+  return /amir|çavuş|cavus/.test(unvan);
 }
 
 export class AuthError extends Error {

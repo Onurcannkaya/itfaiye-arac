@@ -115,7 +115,7 @@ function LoginForm() {
           return;
         }
 
-        setSimulatedOtp(data.otp);
+        setSimulatedOtp(data.otp || "");
         setIsOtpSent(true);
       } else {
         // 2. Aşama: OTP Doğrula ve Başvuruyu Kaydet
@@ -673,12 +673,21 @@ function LoginForm() {
                       </>
                     ) : (
                       <>
-                        {/* SMS OTP Simülasyon Ekranı */}
+                        {/* SMS OTP Paneli — kod yalnızca geliştirme ortamında ekranda gösterilir;
+                            üretimde kod SMS ile telefona gönderilir ve ekranda gösterilmez. */}
                         <div className="bg-[var(--fd-accent)]/10 border border-[var(--fd-accent)]/20 p-3.5 rounded-[var(--fd-r-sm)] text-[var(--fd-accent)] text-xs font-mono text-center flex flex-col gap-2 my-2 animate-in slide-in-from-top-2">
-                          <span className="font-bold uppercase tracking-wider text-[9px] text-[var(--fd-accent)]">Simüle Edilen SMS Paneli</span>
-                          <span className="text-[11px] leading-relaxed text-[var(--fd-text)]">
-                            Sivas Bld: <span className="font-semibold text-white px-1.5 py-0.5 rounded bg-[var(--fd-surface2)] border border-[var(--fd-accent)]/30 text-sm tracking-wider">{simulatedOtp}</span> doğrulama kodu ile başvurunuzu tamamlayabilirsiniz.
-                          </span>
+                          {simulatedOtp ? (
+                            <>
+                              <span className="font-bold uppercase tracking-wider text-[9px] text-[var(--fd-accent)]">Simüle Edilen SMS Paneli (Geliştirme)</span>
+                              <span className="text-[11px] leading-relaxed text-[var(--fd-text)]">
+                                Sivas Bld: <span className="font-semibold text-white px-1.5 py-0.5 rounded bg-[var(--fd-surface2)] border border-[var(--fd-accent)]/30 text-sm tracking-wider">{simulatedOtp}</span> doğrulama kodu ile başvurunuzu tamamlayabilirsiniz.
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[11px] leading-relaxed text-[var(--fd-text)]">
+                              Doğrulama kodu telefonunuza SMS ile gönderildi. Lütfen aşağıya girin.
+                            </span>
+                          )}
                         </div>
 
                         <div className="space-y-2 py-2">

@@ -103,23 +103,68 @@ function toTurkishUpperCase(str: string): string {
   return str.split('').map(char => map[char] || char.toUpperCase()).join('');
 }
 
-// SOAP NVİ Kimlik Doğrulama Fonksiyonu (Offl// SOAP NVİ Kimlik Doğrulama Fonksiyonu (Offline Fallback / Mock Kalkanı Dahil)
+// Test/demo kimlik bypass'ı ve NVİ servis kesintisinde fail-open davranışı yalnızca
+// üretim DIŞI ortamlarda (veya açıkça ALLOW_TEST_IDENTITY=true ile) izinlidir.
+// Üretimde bu kalkanlar kapalıdır: sahte/test TC'ler reddedilir ve servis erişilemezse
+// başvuru fail-closed olarak reddedilir.
+const ALLOW_TEST_IDENTITY =
+  process.env.NODE_ENV !== 'production' || process.env.ALLOW_TEST_IDENTITY === 'true';
+
+/**
+ * OTP kodunu Sivas Belediyesi SMS API'si üzerinden gönderir.
+ * Başarılıysa true döner. SMS anahtarları tanımlı değilse false döner
+ * (bu durumda OTP yalnızca üretim dışı ortamda ekrana simüle edilebilir).
+ */
+async function sendOtpSms(phoneNumber: string, otp: string): Promise<boolean> {
+  const apiKey = process.env.SMS_API_KEY;
+  const apiSecret = process.env.SMS_API_SECRET;
+  if (!apiKey || !apiSecret) {
+    console.warn('[citizen-requests] SMS_API_KEY/SMS_API_SECRET tanımlı değil — OTP SMS gönderilemedi.');
+    return false;
+  }
+  try {
+    const res = await fetch('https://bildirim.sivas.bel.tr/api/v1/sms-send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Key': apiKey,
+        'X-Api-Secret': apiSecret,
+      },
+      body: JSON.stringify({
+        phoneNumber,
+        content: `Sivas Itfaiye basvuru dogrulama kodunuz: ${otp}. Kod 5 dakika gecerlidir.`,
+      }),
+    });
+    if (!res.ok) {
+      console.error('[citizen-requests] OTP SMS gönderimi başarısız:', res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[citizen-requests] OTP SMS gönderim hatası:', err);
+    return false;
+  }
+}
+
+// SOAP NVİ Kimlik Doğrulama Fonksiyonu
 async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: number): Promise<boolean> {
   const cleanTc = tc.trim();
   const cleanAd = ad.trim().toLocaleUpperCase('tr-TR');
   const cleanSoy = soyad.trim().toLocaleUpperCase('tr-TR');
 
-  // Test amaçlı sahte T.C. kimlik numaraları veya sunum/test modları için mock kalkanı
+  // Test amaçlı sahte T.C. kimlik numaraları / sunum modları için mock kalkanı
+  // (YALNIZCA üretim dışı ortamlarda etkin).
   if (
-    cleanTc === '11111111111' || 
-    cleanTc === '22222222222' || 
-    cleanTc === '33333333333' || 
-    cleanTc === '44444444444' || 
-    cleanTc === '55555555555' || 
-    cleanTc === '66666666666' || 
-    cleanTc === '77777777777' || 
-    cleanTc === '88888888888' || 
-    cleanTc === '99999999999' || 
+    ALLOW_TEST_IDENTITY && (
+    cleanTc === '11111111111' ||
+    cleanTc === '22222222222' ||
+    cleanTc === '33333333333' ||
+    cleanTc === '44444444444' ||
+    cleanTc === '55555555555' ||
+    cleanTc === '66666666666' ||
+    cleanTc === '77777777777' ||
+    cleanTc === '88888888888' ||
+    cleanTc === '99999999999' ||
     cleanTc === '12345678901' ||
     cleanTc.startsWith('0000') ||
     cleanAd.includes('TEST') ||
@@ -127,9 +172,9 @@ async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: nu
     cleanAd.includes('DEMO') ||
     cleanSoy.includes('TEST') ||
     cleanSoy.includes('MOCK') ||
-    cleanSoy.includes('DEMO')
+    cleanSoy.includes('DEMO'))
   ) {
-    console.log(`[NVİ Mock] Test/Sahte veri tespiti (${tc} - ${ad} ${soyad}). Offline Fallback (Mock) Kalkanı devrede.`);
+    console.log(`[NVİ Mock] Test/Sahte veri tespiti (${tc} - ${ad} ${soyad}). Test kalkanı (üretim dışı) devrede.`);
     return true;
   }
 
@@ -169,8 +214,8 @@ async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: nu
     const xmlText = await response.text();
 
     if (contentType.includes('text/html') || !xmlText.includes('TCKimlikNoDogrulaResult')) {
-      console.warn('[NVİ Servis Kapanması/Kesintisi] NVİ SOAP servisi geçersiz yanıt döndürdü (muhtemelen kapatıldı veya erişim engellendi). Çevrimdışı test doğrulaması aktif edildi.');
-      return true; // Servis kesintisinde veya servis kapalıyken başvurunun engellenmemesi için true dönüyoruz
+      console.warn('[NVİ Servis Kesintisi] NVİ SOAP servisi geçersiz yanıt döndürdü. Fail-open yalnızca üretim dışında etkin.');
+      return ALLOW_TEST_IDENTITY; // Üretimde fail-closed (reddet); geliştirmede geç
     }
 
     if (xmlText.includes('<TCKimlikNoDogrulaResult>true</TCKimlikNoDogrulaResult>')) {
@@ -178,8 +223,8 @@ async function validateNVI(tc: string, ad: string, soyad: string, dogum_yili: nu
     }
     return false;
   } catch (err) {
-    console.warn('[NVİ SOAP Hatası] İstek başarısız oldu veya zaman aşımına uğradı. Çevrimdışı test kalkanı devreye alınıyor:', err);
-    return true; // Donanım/İnternet kesintisi veya servis arızasında doğrulamayı başarılı say
+    console.warn('[NVİ SOAP Hatası] İstek başarısız oldu veya zaman aşımına uğradı. Fail-open yalnızca üretim dışında etkin:', err);
+    return ALLOW_TEST_IDENTITY; // Üretimde fail-closed (reddet); geliştirmede geç
   }
 }
 
@@ -226,12 +271,30 @@ export async function POST(request: NextRequest) {
         [telefon.trim(), tc.trim(), generatedOtp]
       );
 
-      console.log(`[SMS OTP Simülasyonu] TC: ${tc}, Tel: ${telefon}, Üretilen OTP: ${generatedOtp}`);
+      // OTP'yi gerçek SMS ile gönder
+      const smsSent = await sendOtpSms(telefon.trim(), generatedOtp);
+
+      // OTP değeri ASLA üretimde yanıtta dönmez (aksi halde SMS doğrulaması anlamsız olur).
+      // Yalnızca üretim dışı ortamda, geliştirme kolaylığı için ekrana simüle edilir.
+      const includeOtpInResponse = ALLOW_TEST_IDENTITY;
+
+      if (!smsSent && !includeOtpInResponse) {
+        return NextResponse.json(
+          { error: 'Doğrulama SMS kodu gönderilemedi. Lütfen daha sonra tekrar deneyin.' },
+          { status: 502 }
+        );
+      }
+
+      if (includeOtpInResponse) {
+        console.log(`[SMS OTP - Üretim Dışı] TC: ${tc}, Tel: ${telefon}, OTP: ${generatedOtp}`);
+      }
 
       return NextResponse.json({
         success: true,
-        message: 'Kimlik doğrulama başarılı. OTP SMS kodu simüle edildi.',
-        otp: generatedOtp // Ekranda simüle edilmesi için geri döndürüyoruz
+        message: smsSent
+          ? 'Kimlik doğrulama başarılı. Doğrulama kodu telefonunuza SMS ile gönderildi.'
+          : 'Kimlik doğrulama başarılı. (Geliştirme modu: OTP ekranda gösteriliyor.)',
+        ...(includeOtpInResponse ? { otp: generatedOtp } : {}),
       });
     }
 

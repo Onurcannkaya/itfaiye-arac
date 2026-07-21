@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSessionFromRequest, AuthError, hashPassword } from '@/lib/auth';
+import { getSessionFromRequest, AuthError, hashPassword, isAdminSession, isManagerSession, type JWTPayload } from '@/lib/auth';
 import webpush from 'web-push';
 
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
@@ -117,6 +117,79 @@ const ALLOWED_TABLES = [
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
   'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs', 'egitim_mufredati', 'system_settings'
 ];
+
+// ─── Yazma (POST/PATCH/DELETE) Yetkilendirme Politikası ──────────────────────
+// Amaç: JWT'si olan herhangi bir kullanıcının (ör. "Er") hassas tablolara serbestçe
+// yazarak yetki yükseltmesini engellemek.
+
+// Yalnızca Admin/Müdür seviyesinin yazabileceği tablolar (rol/izin yönetimi, sistem
+// ayarları, parola kayıtları, kara liste).
+const ADMIN_WRITE_TABLES = new Set<string>([
+  'role_permissions', 'system_settings', 'temp_passwords',
+]);
+
+// Yönetici (Admin/Editor/Shift_Leader veya Müdür/Amir/Çavuş/Başçavuş) seviyesinin
+// yazabileceği tablolar (KVKK kapsamındaki personel verileri ve kara liste yönetimi).
+const MANAGER_WRITE_TABLES = new Set<string>([
+  'personnel_details', 'personnel_leaves', 'personnel_records', 'personnel_equipment',
+  'staff_certifications', 'blacklist_institutions',
+]);
+
+// Denetim izleri: istemci bu tablolara generic endpoint üzerinden hiç yazamaz.
+// (Uygulama bu tablolara sunucu tarafında query() ile doğrudan yazar; forge edilmiş
+// denetim kaydı enjeksiyonunu önlemek için istemci yazımı tamamen kapalıdır.)
+const SERVER_ONLY_WRITE_TABLES = new Set<string>([
+  'audit_logs', 'auth_logs',
+]);
+
+// personnel tablosunda yalnızca yöneticilerin değiştirebileceği hassas kolonlar
+// (rol/unvan/izin bayrakları/parola/aktiflik/kimlik alanları).
+const PERSONNEL_SENSITIVE_COLUMNS = new Set<string>([
+  'rol', 'unvan', 'view_only', 'can_approve', 'can_print',
+  'password_hash', 'password', 'aktif', 'sicil_no', 'username', 'id',
+]);
+
+/**
+ * Bir yazma isteğinin yetkili olup olmadığını denetler.
+ * Yetkisizse { error, status } döner; yetkiliyse null.
+ *
+ * @param rows    POST için satır nesneleri dizisi, PATCH için [data]; kolon adları buradan okunur
+ * @param filters PATCH/DELETE hedef filtreleri (personnel self-update kontrolü için)
+ */
+function authorizeWrite(
+  session: JWTPayload,
+  table: string,
+  rows: Array<Record<string, unknown>>,
+  filters?: Record<string, unknown>
+): { error: string; status: number } | null {
+  if (SERVER_ONLY_WRITE_TABLES.has(table)) {
+    return { error: 'Bu tabloya doğrudan yazma yetkiniz yok.', status: 403 };
+  }
+  if (ADMIN_WRITE_TABLES.has(table) && !isAdminSession(session)) {
+    return { error: 'Bu işlem için yönetici (Müdür/Admin) yetkisi gereklidir.', status: 403 };
+  }
+  if (MANAGER_WRITE_TABLES.has(table) && !isManagerSession(session)) {
+    return { error: 'Bu işlem için yönetici yetkisi gereklidir.', status: 403 };
+  }
+
+  // personnel: yöneticiler tam yetkili. Yönetici olmayanlar yalnızca KENDİ kayıtlarında
+  // ve yalnızca hassas olmayan alanlarda (push token, konum vb.) değişiklik yapabilir.
+  if (table === 'personnel' && !isManagerSession(session)) {
+    const targetSicil = filters?.sicil_no;
+    if (targetSicil === undefined || String(targetSicil) !== String(session.sicilNo)) {
+      return { error: 'Yalnızca kendi personel kaydınızı güncelleyebilirsiniz.', status: 403 };
+    }
+    for (const row of rows) {
+      for (const col of Object.keys(row)) {
+        if (PERSONNEL_SENSITIVE_COLUMNS.has(col)) {
+          return { error: `'${col}' alanını değiştirme yetkiniz yok.`, status: 403 };
+        }
+      }
+    }
+  }
+
+  return null;
+}
 
 async function ensureRolePermissionsTableExists() {
   try {
@@ -1153,6 +1226,12 @@ export async function POST(
     const upsert = body.upsert === true;
     const conflictColumn = body.conflictColumn;
 
+    // Yazma yetkilendirmesi (yetki yükseltme koruması)
+    const writeError = authorizeWrite(session, table, rows);
+    if (writeError) {
+      return NextResponse.json({ error: writeError.error }, { status: writeError.status });
+    }
+
     if (table === 'daily_summary_reports') {
       for (const row of rows) {
         const amirId = row.devreden_amir_id;
@@ -1425,6 +1504,12 @@ export async function PATCH(
     const body = await request.json();
     const { data, filters } = body;
 
+    // Yazma yetkilendirmesi (yetki yükseltme koruması)
+    const writeError = authorizeWrite(session, table, [data || {}], filters);
+    if (writeError) {
+      return NextResponse.json({ error: writeError.error }, { status: writeError.status });
+    }
+
     // Sync durum/status on updates
     if (table === 'external_educations' && data && data.kurum_tipi !== undefined) {
       const allowed = ['Isyeri', 'Okul', 'Kamu Kurumu', 'Itfaiye Ziyaret', 'Ev-Site', 'Ekip Egitimi'];
@@ -1631,9 +1716,17 @@ export async function DELETE(
 
     const { searchParams } = new URL(request.url);
     const filters = parseFilters(searchParams);
-    
+
     if (filters.length === 0) {
       return NextResponse.json({ error: 'Filtre olmadan toplu silme yapılamaz.' }, { status: 400 });
+    }
+
+    // Yazma yetkilendirmesi (denetim tabloları ve admin-only tablolar için ek koruma)
+    const filterRecord: Record<string, unknown> = {};
+    for (const f of filters) filterRecord[f.column] = f.value;
+    const writeError = authorizeWrite(session, table, [], filterRecord);
+    if (writeError) {
+      return NextResponse.json({ error: writeError.error }, { status: writeError.status });
     }
 
     const { clause, params: whereParams } = buildWhereClause(filters);

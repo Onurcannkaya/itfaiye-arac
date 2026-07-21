@@ -77,27 +77,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Şifre kontrolü
+    // Şifre kontrolü — parola hash'i yoksa hesap henüz kurulmamıştır; giriş reddedilir.
+    // (Sabit varsayılan "1234" parolası güvenlik nedeniyle kaldırıldı.)
     if (!person.password_hash) {
-      // Eğer hash yoksa, varsayılan şifre "1234" ile dene (ilk kurulum için)
-      if (password !== '1234') {
-        return NextResponse.json(
-          { error: 'Kullanıcı adı/sicil numarası veya parola hatalı.' },
-          { status: 401 }
-        );
-      }
-    } else {
-      const valid = await verifyPassword(password, person.password_hash);
-      if (!valid) {
-        await query(
-          'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
-          [person.sicil_no, 'login_failed', 'Hatalı parola']
-        );
-        return NextResponse.json(
-          { error: 'Kullanıcı adı/sicil numarası veya parola hatalı.' },
-          { status: 401 }
-        );
-      }
+      await query(
+        'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
+        [person.sicil_no, 'login_failed', 'Parola tanımlı değil — yönetici parola atamalı']
+      );
+      return NextResponse.json(
+        { error: 'Hesabınız için parola tanımlı değil. Lütfen yöneticinizle iletişime geçin.' },
+        { status: 401 }
+      );
+    }
+
+    const valid = await verifyPassword(password, person.password_hash);
+    if (!valid) {
+      await query(
+        'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
+        [person.sicil_no, 'login_failed', 'Hatalı parola']
+      );
+      return NextResponse.json(
+        { error: 'Kullanıcı adı/sicil numarası veya parola hatalı.' },
+        { status: 401 }
+      );
     }
 
     // Check if the user is logging in with a temporary password

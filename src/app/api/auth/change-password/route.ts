@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (newPassword.length < 4) {
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: 'Yeni parola en az 4 karakter olmalıdır.' },
+        { error: 'Yeni parola en az 8 karakter olmalıdır.' },
         { status: 400 }
       );
     }
@@ -47,27 +47,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify current password
-    if (person.password_hash) {
-      const valid = await verifyPassword(currentPassword, person.password_hash);
-      if (!valid) {
-        await query(
-          'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
-          [session.sicilNo, 'password_change_failed', 'Mevcut parola hatalı']
-        );
-        return NextResponse.json(
-          { error: 'Mevcut parola hatalı.' },
-          { status: 401 }
-        );
-      }
-    } else {
-      // No hash stored; accept "1234" as the default
-      if (currentPassword !== '1234') {
-        return NextResponse.json(
-          { error: 'Mevcut parola hatalı.' },
-          { status: 401 }
-        );
-      }
+    // Verify current password. Parola hash'i yoksa hesap kurulmamıştır; parola değişimi
+    // için önce yöneticinin parola ataması gerekir. (Sabit "1234" varsayılanı kaldırıldı.)
+    if (!person.password_hash) {
+      return NextResponse.json(
+        { error: 'Hesabınız için parola tanımlı değil. Lütfen yöneticinizle iletişime geçin.' },
+        { status: 401 }
+      );
+    }
+
+    const valid = await verifyPassword(currentPassword, person.password_hash);
+    if (!valid) {
+      await query(
+        'INSERT INTO auth_logs (sicil_no, event_type, details) VALUES ($1, $2, $3)',
+        [session.sicilNo, 'password_change_failed', 'Mevcut parola hatalı']
+      );
+      return NextResponse.json(
+        { error: 'Mevcut parola hatalı.' },
+        { status: 401 }
+      );
     }
 
     // Hash new password and update

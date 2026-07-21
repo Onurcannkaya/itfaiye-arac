@@ -26,7 +26,23 @@ function getUserRole(session: JWTPayload | null | undefined): 'MUDUR' | 'AMIR' |
   return 'ER';
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "default-secret-change-me-in-production";
+function resolveJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret && secret.length >= 16) {
+    return secret;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "JWT_SECRET ortam değişkeni tanımlı değil veya çok kısa. Üretim ortamında en az 16 karakterlik güvenli bir anahtar zorunludur."
+    );
+  }
+  console.warn(
+    "[proxy] JWT_SECRET tanımlı değil — yalnızca geliştirme ortamı için güvensiz bir varsayılan kullanılıyor. Üretimde mutlaka ayarlayın."
+  );
+  return "dev-only-insecure-secret-do-not-use-in-production";
+}
+
+const JWT_SECRET = resolveJwtSecret();
 
 // Convert base64url to Uint8Array for Web Crypto API signature validation
 function base64UrlToBytes(base64Url: string): Uint8Array {
