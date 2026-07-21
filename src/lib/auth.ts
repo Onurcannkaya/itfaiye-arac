@@ -5,8 +5,12 @@ import { NextRequest } from 'next/server';
 
 /**
  * JWT imzalama anahtarını çözümle.
- * Üretim ortamında JWT_SECRET zorunludur; tanımlı değilse uygulama başlatılmaz.
+ * Üretim ortamında JWT_SECRET zorunludur; tanımlı değilse hata fırlatır.
  * Böylece tahmin edilebilir sabit bir varsayılan anahtarla token imzalanması engellenir.
+ *
+ * ÖNEMLİ: Bu kontrol MODÜL YÜKLEMEDE DEĞİL, anahtarın kullanıldığı anda (token
+ * imzalama/doğrulama) yapılır. Aksi halde `next build` sırasında sayfa verisi
+ * toplama adımı (JWT_SECRET henüz tanımlı olmadan) derlemeyi başarısız kılardı.
  */
 function resolveJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -24,7 +28,6 @@ function resolveJwtSecret(): string {
   return 'dev-only-insecure-secret-do-not-use-in-production';
 }
 
-const JWT_SECRET = resolveJwtSecret();
 const COOKIE_NAME = 'itfaiye_token';
 const TOKEN_EXPIRY = '24h';
 
@@ -55,7 +58,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * JWT token üret.
  */
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+  return jwt.sign(payload, resolveJwtSecret(), { expiresIn: TOKEN_EXPIRY });
 }
 
 /**
@@ -63,7 +66,7 @@ export function signToken(payload: JWTPayload): string {
  */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    return jwt.verify(token, resolveJwtSecret()) as JWTPayload;
   } catch {
     return null;
   }

@@ -26,6 +26,8 @@ function getUserRole(session: JWTPayload | null | undefined): 'MUDUR' | 'AMIR' |
   return 'ER';
 }
 
+// ÖNEMLİ: Anahtar MODÜL YÜKLEMEDE değil, token doğrulama anında çözümlenir.
+// Aksi halde `next build` sırasında (JWT_SECRET tanımlı olmadan) derleme başarısız olur.
 function resolveJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (secret && secret.length >= 16) {
@@ -41,8 +43,6 @@ function resolveJwtSecret(): string {
   );
   return "dev-only-insecure-secret-do-not-use-in-production";
 }
-
-const JWT_SECRET = resolveJwtSecret();
 
 // Convert base64url to Uint8Array for Web Crypto API signature validation
 function base64UrlToBytes(base64Url: string): Uint8Array {
@@ -133,7 +133,7 @@ async function verifyTokenEdge(token: string | undefined): Promise<JWTPayload | 
     headerB64,
     payloadB64,
     signatureB64,
-    JWT_SECRET
+    resolveJwtSecret()
   );
   if (!isValidSignature) {
     return null;
