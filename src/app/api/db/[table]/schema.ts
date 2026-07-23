@@ -494,7 +494,18 @@ async function ensureUnifiedSystemLogsViewExists() {
           THEN 'Sorunlu'
           ELSE 'Kusursuz'
         END) AS durum,
-        notlar AS detaylar
+        -- Girilen tüm kontrol alanları detay olarak gösterilir (eskiden yalnızca notlar
+        -- gösterildiği için not yazılmayan kontroller raporda "boş/geçersiz" görünüyordu).
+        CONCAT_WS(' · ',
+          NULLIF('Yakıt: ' || yakit_durumu, 'Yakıt: '),
+          NULLIF('Su: ' || su_durumu, 'Su: '),
+          NULLIF('Köpük: ' || kopuk_durumu, 'Köpük: '),
+          NULLIF('Pompa: ' || pompa_durumu, 'Pompa: '),
+          NULLIF('Lastik: ' || lastik_durumu, 'Lastik: '),
+          NULLIF('Far: ' || far_durumu, 'Far: '),
+          NULLIF('Temizlik: ' || genel_temizlik, 'Temizlik: '),
+          NULLIF('Not: ' || notlar, 'Not: ')
+        ) AS detaylar
       FROM public.daily_vehicle_checks
 
       UNION ALL
