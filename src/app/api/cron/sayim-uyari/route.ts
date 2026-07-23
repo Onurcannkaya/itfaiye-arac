@@ -117,8 +117,10 @@ export async function GET(request: NextRequest) {
       const kontrolAni = new Date(shiftChange.getTime() + GECIKME_DK * 60000);
       const pencereSonu = new Date(kontrolAni.getTime() + PENCERE_DK * 60000);
 
-      // Yalnızca [posta+20dk, posta+20dk+pencere] aralığındaysak değerlendir
-      if (now < kontrolAni || now > pencereSonu) {
+      // Yalnızca [posta+20dk, posta+20dk+pencere] aralığındaysak değerlendir.
+      // dryRun (önizleme) modunda pencere kontrolü atlanır — böylece istenen an
+      // "şu an sayımı eksik araçlar kimler" görülebilir.
+      if (!dryRun && (now < kontrolAni || now > pencereSonu)) {
         rapor.push({ istasyon: grup.label, atlandi: "zaman penceresi dışında" });
         continue;
       }
@@ -155,7 +157,7 @@ export async function GET(request: NextRequest) {
          LIMIT 1`,
         [grup.label, today]
       );
-      if (damga.rowCount && damga.rowCount > 0) {
+      if (!dryRun && damga.rowCount && damga.rowCount > 0) {
         rapor.push({ istasyon: grup.label, atlandi: "bugün zaten gönderildi" });
         continue;
       }
