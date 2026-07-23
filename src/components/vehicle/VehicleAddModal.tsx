@@ -364,10 +364,10 @@ export function VehicleAddModal({ isOpen, onClose, onSuccess }: VehicleAddModalP
 
           {/* Legal / Expiring dates */}
           <div className="border-t border-[var(--fd-border)]/50 pt-4 mt-2">
-            <p className="text-xs font-bold text-[var(--fd-text)] mb-3 uppercase tracking-wider flex items-center gap-2">
+            <div className="text-xs font-bold text-[var(--fd-text)] mb-3 uppercase tracking-wider flex items-center gap-2">
               <Badge variant="outline" className="px-1.5 py-0 border-[var(--fd-accent)]/30 bg-[var(--fd-accent)]/5 text-[var(--fd-accent)] font-semibold text-[9px]">Lojistik Uyarı</Badge>
               Ruhsat & Belge Tarih Takibi
-            </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-[var(--fd-text3)] uppercase tracking-wider">Sigorta Bitiş Tarihi</label>
