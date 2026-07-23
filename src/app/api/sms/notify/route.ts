@@ -68,19 +68,8 @@ export async function POST(req: NextRequest) {
         queryParams = [activePosta, personnelIds || []];
         smsContent = `[EĞİTİM PLANLAMASI]\nTarih: ${date}\nKonu: ${topic}\nİlgili posta ve idari kadroya duyurulur. Lütfen katılım sağlayınız.`;
       } 
-      else if (action === 'inventory') {
-        const { plaka } = body;
-        query = `
-          SELECT p.ad, p.soyad, COALESCE(p.telefon, pd.telefon) as phone
-          FROM public.personnel p
-          LEFT JOIN public.personnel_details pd ON p.sicil_no = pd.sicil_no
-          WHERE (p.unvan IN ('Müdür', 'Amir', 'Baş Şoför', 'Eğitim Çavuşu') OR (p.ad ILIKE '%Onurcan%' AND p.soyad ILIKE '%Kaya%'))
-            AND COALESCE(p.telefon, pd.telefon) IS NOT NULL
-            AND COALESCE(p.telefon, pd.telefon) != ''
-            AND p.aktif = true
-        `;
-        smsContent = `[ENVANTER SAYIMI]\n${plaka} plakalı aracın bölme ve envanter sayımı gerçekleştirilmiştir.\nBilgilerinize sunulur.`;
-      } 
+      // Not: 'inventory' (sayım yapıldı) SMS'i kaldırıldı. Sayım yapılmadığında
+      // uyarı /api/cron/sayim-uyari üzerinden gönderilir.
       else {
         return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
       }

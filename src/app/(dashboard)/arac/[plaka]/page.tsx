@@ -60,16 +60,8 @@ export default function VehicleDeepLinkPage() {
   const handleInventorySaved = async () => {
     setSuccessMsg(`${vehicle?.plaka} — ${COMPARTMENT_NAMES[compartmentKey] || compartmentKey} sayımı kaydedildi!`)
     setMode("success")
-
-    try {
-      await fetch('/api/sms/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'inventory', plaka: vehicle?.plaka })
-      });
-    } catch (smsErr) {
-      console.error("Envanter SMS gönderilemedi:", smsErr);
-    }
+    // Not: Sayım yapıldığında artık SMS gönderilmez. Yerine, posta değişiminden
+    // 20 dk sonra sayımı YAPILMAYAN araçlar için /api/cron/sayim-uyari uyarı gönderir.
   }
 
   const handleDailySaved = () => {

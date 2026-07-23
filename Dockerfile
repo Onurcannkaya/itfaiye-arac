@@ -32,6 +32,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Türkiye saat dilimi — vardiya/posta saatleri ve sayım-uyarı cron'unun doğru
+# çalışması için sunucu yerel saati Europe/Istanbul olmalıdır (Alpine'de tzdata gerekir).
+RUN apk add --no-cache tzdata
+ENV TZ=Europe/Istanbul
+
 # Root olmayan kullanıcı
 RUN addgroup --system --gid 1001 nodejs \
     && adduser  --system --uid 1001 nextjs

@@ -50,16 +50,8 @@ export default function DeepLinkCompartmentPage() {
     setModalOpen(false)
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 4000)
-
-    try {
-      await fetch('/api/sms/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'inventory', plaka: vehicle?.plaka })
-      });
-    } catch (smsErr) {
-      console.error("Envanter SMS gönderilemedi:", smsErr);
-    }
+    // Not: Sayım yapıldığında artık SMS gönderilmez. Yerine, posta değişiminden
+    // 20 dk sonra sayımı YAPILMAYAN araçlar için /api/cron/sayim-uyari uyarı gönderir.
   }
 
   const compartmentName = COMPARTMENT_NAMES[bolmeKey] || bolmeKey
