@@ -40,7 +40,8 @@ const ALLOWED_TABLES = [
   'role_permissions', 'duty_logs', 'arac_bakim_gecmisi', 'temp_passwords',
   'baca_temizlik_basvurulari', 'yangin_rapor_basvurulari', 'inventory', 'vehicle_inventory',
   'personnel_shifts_log', 'service_applications', 'temp_otps', 'hourly_shifts',
-  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs', 'egitim_mufredati', 'system_settings'
+  'temporary_assignments', 'daily_summary_reports', 'blacklist_institutions', 'external_educations', 'external_missions', 'radio_logs', 'egitim_mufredati', 'system_settings',
+  'radio_recordings'
 ];
 
 // ─── Yazma (POST/PATCH/DELETE) Yetkilendirme Politikası ──────────────────────

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import jsPDF from "jspdf"
 import { useAuthStore } from "@/lib/authStore"
 import { api } from "@/lib/api"
+import { RadioRecordingsPanel } from "@/components/radio/RadioRecordingsPanel"
 import PageGuard from "@/components/PageGuard"
 import { Badge } from "@/components/ui/Badge"
 import { 
@@ -71,6 +72,7 @@ interface RadioLog {
 
 export default function TelsizPage() {
   const { user } = useAuthStore()
+  const [moduleView, setModuleView] = useState<'muhabere' | 'ses'>('muhabere')
   const [personnelUuid, setPersonnelUuid] = useState<string>("")
   
   // Channels and selection state
@@ -533,7 +535,26 @@ export default function TelsizPage() {
   return (
     <PageGuard pageId="telsiz">
       <div className="flex flex-col min-h-[calc(100vh-8rem)] lg:min-h-[calc(100vh-4rem)] text-[var(--fd-text)] font-sans w-full relative">
-        
+
+        {/* MODÜL SEKMELERİ — Muhabere (mevcut) / Ses Kayıtları (yeni) */}
+        <div className="flex gap-1 p-1 mb-4 rounded-[var(--fd-r-sm)] bg-[var(--fd-surface2)] border border-[var(--fd-border)] w-fit">
+          {([['muhabere', 'Muhabere'], ['ses', 'Ses Kayıtları']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setModuleView(key)}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-[var(--fd-r-sm)] text-[calc(var(--fd-fs)*0.85)] font-bold transition-colors ${
+                moduleView === key ? 'bg-[var(--fd-accent)] text-white' : 'text-[var(--fd-text2)] hover:text-[var(--fd-text)]'
+              }`}
+            >
+              <Radio className="w-4 h-4" /> {label}
+            </button>
+          ))}
+        </div>
+
+        {moduleView === 'ses' ? (
+          <RadioRecordingsPanel />
+        ) : (
+        <>
         {/* TOP STATUS CONTROL BAR */}
         <div className="flex flex-col md:flex-row md:items-center justify-between border border-[var(--fd-border)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] px-4 py-3 rounded-xl gap-4 mb-4">
           <div className="flex items-center gap-3">
@@ -969,6 +990,9 @@ export default function TelsizPage() {
           </div>
 
         </div>
+
+        </>
+        )}
 
       </div>
     </PageGuard>

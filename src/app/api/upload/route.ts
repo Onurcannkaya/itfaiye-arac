@@ -11,7 +11,10 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
   'video/mp4', 'video/webm',
-  'application/pdf'
+  'application/pdf',
+  // Telsiz ses kayıtları (mikrofon kaydı + harici dosya yükleme)
+  'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp3', 'audio/mp4',
+  'audio/wav', 'audio/x-wav', 'audio/aac', 'audio/x-m4a',
 ];
 
 /**

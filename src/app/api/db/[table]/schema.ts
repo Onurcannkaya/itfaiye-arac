@@ -574,6 +574,27 @@ export async function autoSeedVehiclesIfEmpty() {
   });
 }
 
+async function ensureRadioRecordingsTableExists() {
+  return once('radio_recordings', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS public.radio_recordings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        incident_id UUID REFERENCES public.incidents(id) ON DELETE CASCADE,
+        olay_bilgi VARCHAR,
+        sicil_no VARCHAR NOT NULL,
+        personel_ad VARCHAR NOT NULL,
+        audio_url TEXT NOT NULL,
+        kaynak VARCHAR NOT NULL DEFAULT 'MIKROFON' CHECK (kaynak IN ('MIKROFON','YUKLEME')),
+        sure_sn INTEGER,
+        aciklama VARCHAR,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_radio_recordings_incident ON public.radio_recordings(incident_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_radio_recordings_sicil ON public.radio_recordings(sicil_no)`);
+  });
+}
+
 /**
  * Verilen tablo için gerekli şema kurulumunu (memoize edilmiş) çalıştırır.
  * GET/POST/PATCH/DELETE handler'larında tek çağrıyla kullanılır.
@@ -603,6 +624,7 @@ export async function ensureTableSchema(table: string): Promise<void> {
     case 'external_missions': await ensureExternalMissionsTableExists(); break;
     case 'egitim_mufredati': await ensureEgitimMufredatiTableExists(); break;
     case 'unified_system_logs': await ensureUnifiedSystemLogsViewExists(); break;
+    case 'radio_recordings': await ensureRadioRecordingsTableExists(); break;
     default: break;
   }
 }
