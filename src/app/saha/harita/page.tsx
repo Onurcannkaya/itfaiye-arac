@@ -70,14 +70,15 @@ export default function SahaHaritaPage() {
     })()
   }, [])
 
-  // Odaklanılacak / yol tarifi verilecek vaka: aktif varsa o, yoksa en son
-  const target = useMemo(() => {
-    if (!incidents.length) return null
-    const aktif = incidents.find((i) =>
+  // Haritada YALNIZCA aktif vakalar gösterilir; kapalı/test kayıtları görünmez.
+  const activeIncidents = useMemo(
+    () => incidents.filter((i) =>
       ["aktif", "active", "devam ediyor", "müdahale"].includes((i.status || "").toLowerCase())
-    )
-    return aktif || incidents[0]
-  }, [incidents])
+    ),
+    [incidents]
+  )
+  // Odaklanılacak / yol tarifi verilecek vaka: aktif vakaların ilki (yoksa yok).
+  const target = useMemo(() => activeIncidents[0] || null, [activeIncidents])
 
   const targetCoord = useMemo<[number, number] | null>(() => target ? parseLoc(target.location) : null, [target])
 
@@ -101,13 +102,15 @@ export default function SahaHaritaPage() {
       {/* Harita (mevcut bileşen, gerçek veri) */}
       <div className="absolute inset-0">
         <Map
-          incidents={incidents}
+          incidents={activeIncidents}
           hydrants={hydrants}
           vehicles={EMPTY_ARR}
           externalMissions={EMPTY_ARR}
           mode="idle"
           onMapClick={onMapClick}
           focusLocation={focus}
+          showPersonnelLayer={false}
+          defaultShowHydrants={false}
         />
       </div>
 

@@ -55,6 +55,8 @@ interface MapProps {
   onDeleteIncident?: (id: string) => void
   onEditIncident?: (incident: Incident) => void
   showPersonnelLayer?: boolean
+  /** Hidrant katmanının başlangıç görünürlüğü (varsayılan true — mevcut davranış). Saha Modu false verir. */
+  defaultShowHydrants?: boolean
   onTogglePersonnelLayer?: (val: boolean) => void
   onCompleteExternalMission?: (id: string) => void
   isSimulation?: boolean
@@ -257,6 +259,7 @@ export default function Map({
   onDeleteIncident, 
   onEditIncident,
   showPersonnelLayer = true,
+  defaultShowHydrants = true,
   onTogglePersonnelLayer,
   onCompleteExternalMission,
   isSimulation = false,
@@ -291,7 +294,7 @@ export default function Map({
   const [showNumarataj, setShowNumarataj] = useState(false)
   const [showMahalleler, setShowMahalleler] = useState(false)
   const [showSokaklar, setShowSokaklar] = useState(false)
-  const [showHidrantlar, setShowHidrantlar] = useState(true)
+  const [showHidrantlar, setShowHidrantlar] = useState(defaultShowHydrants)
   const [showPasifVakalar, setShowPasifVakalar] = useState(false)
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [binalarOpacity, setBinalarOpacity] = useState(0.3)

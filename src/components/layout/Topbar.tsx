@@ -602,9 +602,10 @@ export function Topbar() {
         <Link
           href="/saha"
           title="Saha Modu"
-          className="flex items-center space-x-[calc(var(--fd-sp)*1)] bg-[var(--fd-accent)] hover:brightness-110 text-white px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*0.8)] rounded-[var(--fd-r-sm)] transition-all shrink-0 mr-1"
+          aria-label="Saha Modu"
+          className="flex items-center justify-center gap-1.5 bg-[var(--fd-accent)] hover:brightness-110 text-white w-8 h-8 sm:w-auto sm:h-auto sm:px-[calc(var(--fd-sp)*1.5)] sm:py-[calc(var(--fd-sp)*0.8)] rounded-[var(--fd-r-sm)] transition-all shrink-0"
         >
-          <LayoutGrid size={16} strokeWidth={2} />
+          <LayoutGrid size={15} strokeWidth={2} />
           <span className="hidden sm:inline text-[calc(var(--fd-fs)*0.85)] font-bold">Saha Modu</span>
         </Link>
 

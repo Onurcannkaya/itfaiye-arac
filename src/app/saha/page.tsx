@@ -140,9 +140,9 @@ export default function SahaPage() {
       </div>
       <button
         onClick={() => router.push("/yonetim")}
-        className="mx-auto flex items-center gap-1.5 px-4 py-2 rounded-[var(--fd-r-sm)] text-[calc(var(--fd-fs)*0.8)] font-semibold text-[var(--fd-text3)] hover:bg-[var(--fd-surface2)] hover:text-[var(--fd-text2)] transition-colors"
+        className="mx-auto flex items-center justify-center gap-2 w-full max-w-[280px] px-4 py-3 rounded-[var(--fd-r)] border border-[var(--fd-border-strong)] bg-[var(--fd-surface)] shadow-[var(--fd-shadow-sm)] text-[calc(var(--fd-fs)*0.9)] font-bold text-[var(--fd-text)] hover:bg-[var(--fd-surface2)] active:scale-[0.98] transition-all"
       >
-        <ChevronLeft size={14} strokeWidth={1.8} /> Yönetim Paneline Dön
+        <ChevronLeft size={16} strokeWidth={2} /> Yönetim Paneline Dön
       </button>
     </div>
   )
