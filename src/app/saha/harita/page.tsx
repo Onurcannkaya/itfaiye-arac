@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { api, getAuthHeaders } from "@/lib/api"
@@ -37,6 +37,9 @@ function parseWKBPoint(wkbHex: string): [number, number] | null {
   }
   return [hexToDouble(coordsHex.substring(0, 16)), hexToDouble(coordsHex.substring(16, 32))]
 }
+
+// Map'e verilecek stabil boş dizi referansları (her render aynı — döngü önlenir)
+const EMPTY_ARR: any[] = []
 function parseLoc(loc: any): [number, number] | null {
   if (!loc) return null
   if (typeof loc === "string") {
@@ -77,7 +80,15 @@ export default function SahaHaritaPage() {
   }, [incidents])
 
   const targetCoord = useMemo<[number, number] | null>(() => target ? parseLoc(target.location) : null, [target])
-  const focus = useMemo<[number, number] | null>(() => targetCoord ? [targetCoord[1], targetCoord[0]] : null, [targetCoord])
+
+  // Odak konumunu YALNIZCA BİR KEZ sabitle. Map, focusLocation'a göre otomatik vaka
+  // seçtiği için sürekli değişen bir referans "Maximum update depth" döngüsüne yol açar.
+  const [focus, setFocus] = useState<[number, number] | null>(null)
+  useEffect(() => {
+    if (targetCoord && !focus) setFocus([targetCoord[1], targetCoord[0]])
+  }, [targetCoord, focus])
+
+  const onMapClick = useCallback(() => {}, [])
 
   const openDirections = () => {
     if (!targetCoord) return
@@ -92,8 +103,10 @@ export default function SahaHaritaPage() {
         <Map
           incidents={incidents}
           hydrants={hydrants}
+          vehicles={EMPTY_ARR}
+          externalMissions={EMPTY_ARR}
           mode="idle"
-          onMapClick={() => {}}
+          onMapClick={onMapClick}
           focusLocation={focus}
         />
       </div>
