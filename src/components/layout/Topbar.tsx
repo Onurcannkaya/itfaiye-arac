@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X, BookOpen, Sliders, Menu, ChevronRight } from 'lucide-react'
+import { Bell, LogOut, Camera, AlertTriangle, ShieldAlert, CheckCircle2, Info, Flame, Trash2, Check, Key, X, BookOpen, Sliders, Menu, ChevronRight, LayoutGrid } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/lib/authStore'
@@ -597,10 +597,20 @@ export function Topbar() {
         <Breadcrumb />
       </div>
       <div className="flex items-center space-x-[calc(var(--fd-sp)*1.5)] shrink-0">
-        
+
+        {/* Saha Modu — sade mobil ekran (mevcut panel değişmez) */}
+        <Link
+          href="/saha"
+          title="Saha Modu"
+          className="flex items-center space-x-[calc(var(--fd-sp)*1)] bg-[var(--fd-accent)] hover:brightness-110 text-white px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*0.8)] rounded-[var(--fd-r-sm)] transition-all shrink-0 mr-1"
+        >
+          <LayoutGrid size={16} strokeWidth={2} />
+          <span className="hidden sm:inline text-[calc(var(--fd-fs)*0.85)] font-bold">Saha Modu</span>
+        </Link>
+
         {/* Desktop Quick Scan Button */}
-        <Link 
-          href="/yonetim/tarayici" 
+        <Link
+          href="/yonetim/tarayici"
           className="hidden md:flex items-center space-x-[calc(var(--fd-sp)*1)] bg-[var(--fd-accent-soft)] hover:bg-[var(--fd-accent-soft2)] text-[var(--fd-accent)] px-[calc(var(--fd-sp)*1.5)] py-[calc(var(--fd-sp)*0.8)] rounded-[var(--fd-r-sm)] transition-colors mr-2"
         >
           <Camera size={16} strokeWidth={2} />

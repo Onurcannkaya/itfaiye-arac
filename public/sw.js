@@ -201,8 +201,17 @@ self.addEventListener('push', (event) => {
     }
   };
 
+  // Bildirim gösterilir (mevcut davranış) + uygulama AÇIKSA istemcilere haber verilir
+  // (Saha Modu tam ekran alarm katmanı bunu dinler). Kapalıyken yalnızca bildirim çıkar.
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    Promise.all([
+      self.registration.showNotification(data.title, options),
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+        for (const client of windowClients) {
+          client.postMessage({ type: 'INCIDENT_ALARM', payload: data });
+        }
+      }),
+    ])
   );
 });
 

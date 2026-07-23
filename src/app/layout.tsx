@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
+import { AlarmOverlay } from "@/components/layout/AlarmOverlay";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className="min-h-screen w-full overflow-x-hidden bg-background text-foreground antialiased selection:bg-primary/20 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
+          <AlarmOverlay />
         </ThemeProvider>
         <ServiceWorkerRegister />
       </body>
