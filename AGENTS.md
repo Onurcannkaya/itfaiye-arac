@@ -37,3 +37,31 @@ Birden fazla kişiye aynı anda SMS göndermek için kullanılır.
 ```
 
 *Not: Başarılı istekler HTTP 200 döner ve JSON olarak `{"status":true,"message":"SMS accepted","data":"uuid","errors":[]}` formatında bir yanıt verir. API Döküman adresi (MCP): https://bildirim.sivas.bel.tr/mcp/a3f8c2e1b7d94f5a8c6e2b1d3f7a9c5e*
+
+# Dosya Depolama (MinIO) Rehberi
+
+**Tüm dosya yüklemeleri MinIO nesne depolamaya yapılır (yerel diske DEĞİL).** Depolama
+adresi `assets.sivas.bel.tr`, bucket `public`. Dosyalar `<bucket>/itfaiye/<klasör>/`
+altına yüklenir ve şu adresten herkese açık erişilir:
+`https://assets.sivas.bel.tr/public/itfaiye/<klasör>/<dosya>`
+
+## Nasıl kullanılır (ZORUNLU kural)
+- Yeni bir dosya yükleme özelliği eklerken **kendi yükleme mantığını yazma**; mevcut
+  merkezi uçları kullan:
+  - **Sunucu tarafı:** `src/lib/storage.ts` içindeki `uploadToMinio(folder, fileName, buffer, contentType)` → herkese açık URL döndürür.
+  - **API ucu:** `POST /api/upload` (multipart form-data: `file` + `folder`). Kimlik doğrulaması gerekir. `{ url, fileName, size, type }` döner.
+  - **İstemci tarafı:** `api.upload(file, folder)` (`src/lib/api.ts`) → `{ url, error }`. Ya da doğrudan `/api/upload`'a `FormData` (`file`, `folder`).
+- **`folder`** dosyanın mantıksal kategorisidir; otomatik olarak `itfaiye/<folder>/` altına yazılır.
+  Mevcut klasörler: `incidents` (olay/vaka medyası, PDF), `certificates` (personel sertifikaları),
+  `arizalar` (araç arıza fotoğrafları), `telsiz-ses` (telsiz ses kayıtları), `general`.
+  Yeni bir kategori gerekiyorsa yeni bir `folder` adı ver (kebab-case).
+- Dönen `url` doğrudan DB'ye kaydedilir ve `<img>/<audio>/<a>` ile gösterilir; ekstra işlem gerekmez.
+
+## Ortam değişkenleri
+`MINIO_ACCESS_KEY` ve `MINIO_SECRET_KEY` **zorunlu** (runtime env; Docker/Dokploy'da tanımlı olmalı).
+Diğerleri belirtilmezse üretim varsayılanları kullanılır:
+`MINIO_ENDPOINT=assets.sivas.bel.tr`, `MINIO_PORT=443`, `MINIO_USE_SSL=true`,
+`MINIO_BUCKET=public`, `MINIO_PUBLIC_URL=https://assets.sivas.bel.tr`.
+
+*Not: Yükleme tipi/boyut kısıtları `/api/upload` içinde (`ALLOWED_TYPES`, 50MB). Yeni bir dosya
+türü desteklenecekse oraya eklenir. Yerel diske (`public/uploads`) yazma KULLANILMAZ.*
