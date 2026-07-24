@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { getSessionFromRequest } from '@/lib/auth';
+import { uploadToMinio } from '@/lib/storage';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './public/uploads';
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const ALLOWED_TYPES = [
@@ -20,7 +18,7 @@ const ALLOWED_TYPES = [
 /**
  * POST /api/upload
  * Multipart form-data ile dosya yükleme.
- * Dosyalar public/uploads/ dizinine kaydedilir.
+ * Dosyalar MinIO'ya (assets.sivas.bel.tr) `public/itfaiye/<folder>/` altına yüklenir.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -48,25 +46,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Desteklenmeyen dosya türü: ' + file.type }, { status: 400 });
     }
 
-    // Klasör oluştur
-    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '');
-    const uploadDir = path.resolve(/* turbopackIgnore: true */ UPLOAD_DIR, safeFolder);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
     // Benzersiz dosya adı: UUID + timestamp + orijinal uzantı
-    const ext = path.extname(file.name) || '.jpg';
+    const ext = path.extname(file.name) || '.bin';
     const uniqueName = `${crypto.randomUUID()}_${Date.now()}${ext}`;
-    const filePath = path.join(uploadDir, uniqueName);
 
-    // Dosyayı kaydet
+    // MinIO'ya yükle ve herkese açık URL'yi al
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // Public URL döndür
-    const publicUrl = `/uploads/${safeFolder}/${uniqueName}`;
+    const publicUrl = await uploadToMinio(folder, uniqueName, buffer, file.type);
 
     return NextResponse.json({
       url: publicUrl,
