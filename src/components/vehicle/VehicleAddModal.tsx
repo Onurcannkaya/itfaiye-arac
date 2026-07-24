@@ -175,7 +175,6 @@ export function VehicleAddModal({ isOpen, onClose, onSuccess }: VehicleAddModalP
         data: {
           plaka: trimmedPlaka,
           arac_tipi: formData.arac_tipi,
-          aracTipi: formData.arac_tipi,
           marka: formData.marka.trim().toUpperCase() || "S-ADD",
           durum: formData.durum,
           sigortaBitis: formData.sigortaBitis || null,
@@ -185,8 +184,7 @@ export function VehicleAddModal({ isOpen, onClose, onSuccess }: VehicleAddModalP
           istasyon: formData.istasyon,
           yil: parseInt(formData.yil, 10) || new Date().getFullYear(),
           model: formData.model.trim() || `${formData.arac_tipi} Araç`,
-          bolmeler: presetCompartments,
-          aktifPersonel: []
+          bolmeler: presetCompartments
         }
       }
 
