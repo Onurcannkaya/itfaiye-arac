@@ -144,14 +144,27 @@ export async function runSayimUyari(dryRun = false): Promise<SayimUyariResult> {
 
     const aktifPosta = getActivePostaForStation(grup.label, now, shiftTimes);
     const postaLabel = `${aktifPosta}. Posta`;
+    // Şubenin istasyon adı kalıpları (personnel.istasyon eşleştirmesi)
+    const istPatterns =
+      grup.key === "Merkez" ? ["%merkez%"]
+      : grup.key === "Esentepe" ? ["%esentepe%"]
+      : ["%organize%", "%osb%"];
+    // Şube bazlı alıcılar:
+    //  1) O şubedeki aktif postanın çavuş/başçavuşları
+    //  2) O postanın başçavuşu (posta sorumlusu — şube farketmez)
+    //  3) Sabit Amir Ahmet Yıldız
     const alRes = await query(
       `SELECT DISTINCT COALESCE(p.telefon, pd.telefon) AS tel
        FROM public.personnel p
        LEFT JOIN public.personnel_details pd ON p.sicil_no = pd.sicil_no
        WHERE p.aktif = true
-         AND ((p.posta = $1 AND (p.unvan ILIKE '%çvş%' OR p.unvan ILIKE '%çavuş%')) OR p.sicil_no = $2)
+         AND (
+           (p.posta = $1 AND (p.unvan ILIKE '%çvş%' OR p.unvan ILIKE '%çavuş%') AND p.istasyon ILIKE ANY($2))
+           OR (p.posta = $1 AND (p.unvan ILIKE '%baş%çvş%' OR p.unvan ILIKE '%başçavuş%' OR p.unvan ILIKE '%baş.çvş%'))
+           OR p.sicil_no = $3
+         )
          AND COALESCE(p.telefon, pd.telefon) IS NOT NULL AND COALESCE(p.telefon, pd.telefon) <> ''`,
-      [postaLabel, AMIR_SABIT_SICIL]
+      [postaLabel, istPatterns, AMIR_SABIT_SICIL]
     );
     const phones = alRes.rows.map((r) => String(r.tel).replace(/\s+/g, "")).filter((p) => p.length >= 10);
 
